@@ -45,6 +45,21 @@ from app.api.two_factor import router as two_factor_router
 from app.api.user_lookup import router as user_lookup_router
 from app.api.workspaces import router as workspaces_router
 from app.api.admin import router as admin_router, check_registration_enabled
+from app.billing.guards import (
+    accounts_guard,
+    agents_guard,
+    assets_guard,
+    budgets_guard,
+    goals_guard,
+    groups_guard,
+    imports_guard,
+    invoices_guard,
+    reconciliation_guard,
+    recurring_guard,
+    reports_guard,
+    rules_guard,
+    workspace_guard,
+)
 from app.core.auth import fastapi_users
 from app.core.auth_policy import require_local_auth_enabled
 from app.core.config import get_settings
@@ -89,7 +104,6 @@ async def _warm_tesouro_cache() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: dispatch sync for all stale bank connections
     try:
         from app.worker import celery_app  # noqa: F811
 
@@ -97,11 +111,8 @@ async def lifespan(app: FastAPI):
         logger.info("Startup: dispatched sync_all_connections task to Celery")
     except Exception:
         logger.exception("Startup: failed to dispatch sync task")
-    # Background pre-warm of the Tesouro cache (non-blocking; gated to BRL
-    # instances inside the helper). Kept on app.state so it isn't GC'd.
     app.state.tesouro_warm_task = asyncio.create_task(_warm_tesouro_cache())
     yield
-    # Shutdown
     await close_redis()
 
 
@@ -120,23 +131,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Auth routes — custom login/logout with 2FA support (mounted first to take precedence)
 app.include_router(
     custom_auth_router,
     prefix="/api/auth",
     tags=["auth"],
     dependencies=[Depends(login_rate_limit)],
 )
-app.include_router(
-    two_factor_router,
-    prefix="/api/auth",
-    tags=["auth"],
-)
-app.include_router(
-    passkeys_router,
-    prefix="/api/auth",
-    tags=["auth"],
-)
+app.include_router(two_factor_router, prefix="/api/auth", tags=["auth"])
+app.include_router(passkeys_router, prefix="/api/auth", tags=["auth"])
 app.include_router(oidc_auth_router)
 app.include_router(
     fastapi_users.get_register_router(UserRead, UserCreate),
@@ -154,9 +156,6 @@ app.include_router(
     tags=["auth"],
     dependencies=[Depends(require_local_auth_enabled), Depends(password_reset_rate_limit)],
 )
-# user_lookup must precede the fastapi-users router below so the
-# `/api/users/lookup` path isn't captured by the catch-all `/{id}`
-# route fastapi-users mounts.
 app.include_router(user_lookup_router)
 app.include_router(
     fastapi_users.get_users_router(UserRead, UserUpdate),
@@ -164,26 +163,29 @@ app.include_router(
     tags=["users"],
 )
 
-# Domain routes
+# Domain routes. Billing guards are attached at the router boundary so hidden
+# controls and direct HTTP requests share the same server-side policy. Each
+# guard is path/method aware and leaves read-only/downgrade-safe operations
+# alone unless the product capability itself is paid.
 app.include_router(billing_router)
 app.include_router(categories_router)
 app.include_router(category_groups_router)
-app.include_router(rules_router)
-app.include_router(reconciliation_router)
+app.include_router(rules_router, dependencies=[Depends(rules_guard)])
+app.include_router(reconciliation_router, dependencies=[Depends(reconciliation_guard)])
 app.include_router(transactions_router)
-app.include_router(import_router)
+app.include_router(import_router, dependencies=[Depends(imports_guard)])
 app.include_router(import_logs_router)
-app.include_router(accounts_router)
+app.include_router(accounts_router, dependencies=[Depends(accounts_guard)])
 app.include_router(connections_router)
-app.include_router(recurring_router)
-app.include_router(budgets_router)
-app.include_router(goals_router)
-app.include_router(groups_router)
-app.include_router(assets_router)
+app.include_router(recurring_router, dependencies=[Depends(recurring_guard)])
+app.include_router(budgets_router, dependencies=[Depends(budgets_guard)])
+app.include_router(goals_router, dependencies=[Depends(goals_guard)])
+app.include_router(groups_router, dependencies=[Depends(groups_guard)])
+app.include_router(assets_router, dependencies=[Depends(assets_guard)])
 app.include_router(asset_groups_router)
 app.include_router(collections_router)
 app.include_router(dashboard_router)
-app.include_router(reports_router)
+app.include_router(reports_router, dependencies=[Depends(reports_guard)])
 app.include_router(search_router)
 app.include_router(setup_router)
 app.include_router(currencies_router)
@@ -192,18 +194,15 @@ app.include_router(export_router)
 app.include_router(attachments_router)
 app.include_router(fiscal_router)
 app.include_router(payees_router)
-app.include_router(invoices_router)
-app.include_router(invoice_attachments_router)
+app.include_router(invoices_router, dependencies=[Depends(invoices_guard)])
+app.include_router(invoice_attachments_router, dependencies=[Depends(invoices_guard)])
 app.include_router(public_invoices_router)
 app.include_router(settings_router)
-app.include_router(workspaces_router)
+app.include_router(workspaces_router, dependencies=[Depends(workspace_guard)])
 app.include_router(admin_router)
 app.include_router(info_router)
 
 
-# Optional agents/MCP/LLM module — fully gated by AGENTS_ENABLED so users
-# who don't want this feature pay zero cost (no imports, no routes, no
-# background tasks). The module itself is self-contained in app/agents/.
 if os.getenv("AGENTS_ENABLED", "false").strip().lower() in ("1", "true", "yes", "on"):
     try:
         from app.agents.api.info import router as agents_info_router
@@ -214,16 +213,13 @@ if os.getenv("AGENTS_ENABLED", "false").strip().lower() in ("1", "true", "yes", 
         from app.agents.api.knowledge import router as agents_knowledge_router
         from app.agents.api.mcp_tokens import router as agents_mcp_tokens_router
 
-        # Mount literal-prefix routers (conversations, connections,
-        # mcp-tokens) BEFORE the generic agents router so paths like
-        # /api/agents/connections don't get captured by /api/agents/{agent_id}.
         app.include_router(agents_info_router)
-        app.include_router(agents_connections_router)
-        app.include_router(agents_conversations_router)
-        app.include_router(agents_mcp_tokens_router)
-        app.include_router(agents_router)
-        app.include_router(agents_chat_router)
-        app.include_router(agents_knowledge_router)
+        app.include_router(agents_connections_router, dependencies=[Depends(agents_guard)])
+        app.include_router(agents_conversations_router, dependencies=[Depends(agents_guard)])
+        app.include_router(agents_mcp_tokens_router, dependencies=[Depends(agents_guard)])
+        app.include_router(agents_router, dependencies=[Depends(agents_guard)])
+        app.include_router(agents_chat_router, dependencies=[Depends(agents_guard)])
+        app.include_router(agents_knowledge_router, dependencies=[Depends(agents_guard)])
         logger.info("Agents feature enabled — mounted /api/agents routes")
     except Exception:
         logger.exception("Agents feature flag is on but import failed; routes not mounted")

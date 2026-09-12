@@ -24,7 +24,7 @@ jobs:
           ref: design/finco-identity-overhaul
           fetch-depth: 2
 
-      - name: Normalize remaining INR fallbacks
+      - name: Normalize remaining INR fallbacks and expectations
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -62,6 +62,33 @@ jobs:
           if updated != text:
               mcp.write_text(updated, encoding='utf-8')
               changed.append(str(mcp))
+
+          # Tests that intentionally exercise the new app-wide fallback should
+          # assert INR. Explicit USD/EUR fixtures elsewhere remain untouched so
+          # multi-currency coverage is preserved.
+          auth_test = Path('frontend/src/contexts/auth-context.test.tsx')
+          text = auth_test.read_text(encoding='utf-8')
+          updated = text.replace(
+              '  preferences: {},\n',
+              "  preferences: { currency_display: 'INR' },\n",
+              1,
+          )
+          if updated != text:
+              auth_test.write_text(updated, encoding='utf-8')
+              changed.append(str(auth_test))
+
+          format_test = Path('frontend/src/lib/format.test.ts')
+          text = format_test.read_text(encoding='utf-8')
+          updated = text.replace(
+              "expect(resolveDisplayLocale('auto', 'XYZ')).toBe('en-US')",
+              "expect(resolveDisplayLocale('auto', 'XYZ')).toBe('en-IN')",
+          ).replace(
+              "expect(resolveDisplayLocale('auto', undefined)).toBe('en-US')",
+              "expect(resolveDisplayLocale('auto', undefined)).toBe('en-IN')",
+          )
+          if updated != text:
+              format_test.write_text(updated, encoding='utf-8')
+              changed.append(str(format_test))
 
           print('Normalized files:')
           for path in changed:

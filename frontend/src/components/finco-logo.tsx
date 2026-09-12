@@ -1,37 +1,46 @@
+import { cn } from '@/lib/utils'
+
 type FinCoLogoProps = {
   size?: number
   className?: string
+  /**
+   * `auto` follows the application theme. `on-dark` and `on-light` are for
+   * branded surfaces whose background is intentionally independent of the
+   * current app theme (for example the always-dark auth artwork panel).
+   */
+  mode?: 'auto' | 'on-dark' | 'on-light'
 }
 
-/** FinCo-Pilot mark: a rising finance path ending in a pilot beacon. */
-export function FinCoLogo({ size = 24, className }: FinCoLogoProps) {
+/** FinCo-Pilot F mark, derived from the supplied production brand artwork. */
+export function FinCoLogo({ size = 24, className, mode = 'auto' }: FinCoLogoProps) {
+  const common = 'h-full w-full object-contain select-none'
+
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 32 32"
-      preserveAspectRatio="xMidYMid meet"
-      className={className}
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
+    <span
+      className={cn('inline-flex shrink-0 items-center justify-center', className)}
+      style={{ width: size, height: size }}
       aria-hidden="true"
     >
-      <path
-        d="M5 24V18.5M11 24V14M17 24V17M23 24V10"
-        stroke="currentColor"
-        strokeWidth="2.6"
-        strokeLinecap="round"
-        opacity="0.42"
-      />
-      <path
-        d="M5 18.5L11 13.5L17 17L25.5 7.5"
-        stroke="currentColor"
-        strokeWidth="2.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <circle cx="25.5" cy="7.5" r="3.1" fill="currentColor" />
-      <circle cx="25.5" cy="7.5" r="1.1" fill="white" fillOpacity="0.9" />
-    </svg>
+      {mode === 'on-dark' ? (
+        <img src="/brand/finco-mark-dark.png" alt="" className={common} draggable={false} />
+      ) : mode === 'on-light' ? (
+        <img src="/brand/finco-mark-light.png" alt="" className={common} draggable={false} />
+      ) : (
+        <>
+          <img
+            src="/brand/finco-mark-light.png"
+            alt=""
+            className={cn(common, 'dark:hidden')}
+            draggable={false}
+          />
+          <img
+            src="/brand/finco-mark-dark.png"
+            alt=""
+            className={cn(common, 'hidden dark:block')}
+            draggable={false}
+          />
+        </>
+      )}
+    </span>
   )
 }

@@ -11,6 +11,7 @@
   "background_color": "#000000",
   "theme_color": "#000000",
   "categories": ["finance", "productivity"],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/android-icon-192x192.png",
@@ -19,15 +20,15 @@
       "purpose": "any"
     },
     {
-      "src": "/finco-pwa-icon.svg",
+      "src": "/android-icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/finco-pwa-maskable.svg",
+      "src": "/android-icon-maskable-512x512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "maskable"
     }
   ],
@@ -36,25 +37,25 @@
       "name": "Dashboard",
       "short_name": "Dashboard",
       "url": "/",
-      "icons": [{ "src": "/finco-pwa-icon.svg", "sizes": "512x512", "type": "image/svg+xml" }]
+      "icons": [{ "src": "/android-icon-192x192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Transactions",
       "short_name": "Transactions",
       "url": "/transactions",
-      "icons": [{ "src": "/finco-pwa-icon.svg", "sizes": "512x512", "type": "image/svg+xml" }]
+      "icons": [{ "src": "/android-icon-192x192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Accounts",
       "short_name": "Accounts",
       "url": "/accounts",
-      "icons": [{ "src": "/finco-pwa-icon.svg", "sizes": "512x512", "type": "image/svg+xml" }]
+      "icons": [{ "src": "/android-icon-192x192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Reports",
       "short_name": "Reports",
       "url": "/reports",
-      "icons": [{ "src": "/finco-pwa-icon.svg", "sizes": "512x512", "type": "image/svg+xml" }]
+      "icons": [{ "src": "/android-icon-192x192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }

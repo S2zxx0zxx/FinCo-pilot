@@ -11,7 +11,7 @@ WeekendAdjustment = Literal["none", "previous_friday", "next_monday"]
 class RecurringTransactionCreate(BaseModel):
     description: str
     amount: Decimal
-    currency: str = "USD"
+    currency: str = "INR"
     type: str  # debit, credit
     frequency: str  # weekly, biweekly, monthly, quarterly, semiannual, yearly
     weekend_adjustment: WeekendAdjustment = "none"

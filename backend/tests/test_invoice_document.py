@@ -1044,14 +1044,17 @@ def test_a_line_taller_than_a_page_still_finishes():
     def give_up(signum, frame):
         raise AssertionError("pagination did not terminate")
 
-    signal.signal(signal.SIGALRM, give_up)
-    signal.alarm(20)
+    has_sigalrm = hasattr(signal, "SIGALRM")
+    if has_sigalrm:
+        signal.signal(signal.SIGALRM, give_up)
+        signal.alarm(20)
     try:
         document = _doc(1)
         document.lines[0].description = huge
         pdf = invoice_pdf.render_pdf(document)
     finally:
-        signal.alarm(0)
+        if has_sigalrm:
+            signal.alarm(0)
 
     import io as _io
 

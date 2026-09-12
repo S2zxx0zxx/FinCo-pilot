@@ -33,7 +33,7 @@ class Account(Base):
     masked_number: Mapped[Optional[str]] = mapped_column(String(4), nullable=True)
     type: Mapped[str] = mapped_column(String(50))  # checking, savings, credit_card
     balance: Mapped[Decimal] = mapped_column(Numeric(precision=15, scale=2), default=Decimal("0.00"))
-    currency: Mapped[str] = mapped_column(String(3), default="USD")
+    currency: Mapped[str] = mapped_column(String(3), default="INR")
     balance_primary: Mapped[Optional[Decimal]] = mapped_column(Numeric(precision=15, scale=2), nullable=True)
     credit_limit: Mapped[Optional[Decimal]] = mapped_column(Numeric(precision=15, scale=2), nullable=True)
     statement_close_day: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)

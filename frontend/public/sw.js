@@ -1,8 +1,9 @@
 /* FinCo-Pilot service worker
  *
  * Deliberately conservative for a finance application:
- * - app shell and immutable/static assets may be cached;
+ * - app shell and immutable build assets may be cached;
  * - /api requests are never placed in Cache Storage;
+ * - user-uploaded/same-origin images are not generically cached;
  * - write requests are never replayed in the background;
  * - updates wait for explicit user approval before taking control.
  */
@@ -10,8 +11,8 @@
 const VERSION = 'finco-pwa-v1'
 const SHELL_CACHE = `${VERSION}:shell`
 const STATIC_CACHE = `${VERSION}:static`
-const IMAGE_CACHE = `${VERSION}:images`
 const CACHE_PREFIX = 'finco-pwa-'
+const MAX_STATIC_ENTRIES = 96
 
 const APP_SHELL = [
   '/',
@@ -25,6 +26,8 @@ const APP_SHELL = [
   '/apple-touch-icon.png',
   '/android-icon-192x192.png',
 ]
+
+const PUBLIC_ASSETS = new Set(APP_SHELL.filter((url) => url !== '/'))
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -47,7 +50,7 @@ self.addEventListener('activate', (event) => {
       const keys = await caches.keys()
       await Promise.all(
         keys
-          .filter((key) => key.startsWith(CACHE_PREFIX) && ![SHELL_CACHE, STATIC_CACHE, IMAGE_CACHE].includes(key))
+          .filter((key) => key.startsWith(CACHE_PREFIX) && ![SHELL_CACHE, STATIC_CACHE].includes(key))
           .map((key) => caches.delete(key)),
       )
       await self.clients.claim()
@@ -60,6 +63,12 @@ self.addEventListener('message', (event) => {
     void self.skipWaiting()
   }
 })
+
+async function trimCache(cache, maxEntries) {
+  const keys = await cache.keys()
+  if (keys.length <= maxEntries) return
+  await Promise.all(keys.slice(0, keys.length - maxEntries).map((key) => cache.delete(key)))
+}
 
 async function networkFirstNavigation(request) {
   const cache = await caches.open(SHELL_CACHE)
@@ -88,21 +97,21 @@ async function cacheFirstStatic(request) {
   if (cached) return cached
 
   const response = await fetch(request)
-  if (response.ok) await cache.put(request, response.clone())
+  if (response.ok) {
+    await cache.put(request, response.clone())
+    await trimCache(cache, MAX_STATIC_ENTRIES)
+  }
   return response
 }
 
-async function staleWhileRevalidateImage(request) {
-  const cache = await caches.open(IMAGE_CACHE)
+async function cacheFirstPublicAsset(request) {
+  const cache = await caches.open(SHELL_CACHE)
   const cached = await cache.match(request)
-  const network = fetch(request)
-    .then(async (response) => {
-      if (response.ok) await cache.put(request, response.clone())
-      return response
-    })
-    .catch(() => undefined)
+  if (cached) return cached
 
-  return cached ?? (await network) ?? Response.error()
+  const response = await fetch(request)
+  if (response.ok) await cache.put(request, response.clone())
+  return response
 }
 
 self.addEventListener('fetch', (event) => {
@@ -128,7 +137,7 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  if (request.destination === 'image' || request.destination === 'font') {
-    event.respondWith(staleWhileRevalidateImage(request))
+  if (PUBLIC_ASSETS.has(url.pathname)) {
+    event.respondWith(cacheFirstPublicAsset(request))
   }
 })

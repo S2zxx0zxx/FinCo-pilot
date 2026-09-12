@@ -16,14 +16,14 @@ function retireBootSurface() {
   const boot = document.getElementById('finco-boot')
   if (!boot) return
 
-  // Two frames let React commit its first visual state before the static launch
-  // surface dissolves. If a lazy route is still loading, the delayed route
-  // loader is already entering underneath it, preventing a blank flash.
+  // Keep the zero-JS launch surface just long enough to bridge React's first
+  // render and the 130ms lazy-route fallback threshold. This prevents a white
+  // or empty flash on cold starts while remaining comfortably sub-second.
   requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
+    window.setTimeout(() => {
       boot.classList.add('finco-boot--leaving')
       window.setTimeout(() => boot.remove(), 220)
-    })
+    }, 150)
   })
 }
 

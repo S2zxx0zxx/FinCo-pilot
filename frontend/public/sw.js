@@ -8,7 +8,7 @@
  * - updates wait for explicit user approval before taking control.
  */
 
-const VERSION = 'finco-pwa-v1'
+const VERSION = 'finco-pwa-v2'
 const SHELL_CACHE = `${VERSION}:shell`
 const STATIC_CACHE = `${VERSION}:static`
 const CACHE_PREFIX = 'finco-pwa-'
@@ -25,6 +25,8 @@ const APP_SHELL = [
   '/favicon-96x96.png',
   '/apple-touch-icon.png',
   '/android-icon-192x192.png',
+  '/android-icon-512x512.png',
+  '/android-icon-maskable-512x512.png',
 ]
 
 const PUBLIC_ASSETS = new Set(APP_SHELL.filter((url) => url !== '/'))

@@ -1,0 +1,329 @@
+/* FinCo-Pilot installed-app and navigation motion layer.
+ * Transform/opacity are used for continuous motion so the loader stays smooth
+ * on mobile GPUs. No WebGL dependency is needed for a branded depth effect.
+ */
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  min-height: 100dvh;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.finco-route-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  min-height: 100dvh;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--background) 94%, transparent);
+  color: var(--foreground);
+  backdrop-filter: blur(18px) saturate(0.8);
+  -webkit-backdrop-filter: blur(18px) saturate(0.8);
+  animation: finco-loader-enter 180ms ease-out both;
+}
+
+.finco-route-loader::before {
+  content: '';
+  position: absolute;
+  width: min(68vw, 560px);
+  aspect-ratio: 1;
+  border-radius: 9999px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--foreground) 8%, transparent) 0%, transparent 68%);
+  filter: blur(18px);
+  pointer-events: none;
+}
+
+.finco-route-loader__scene {
+  position: relative;
+  display: grid;
+  width: 132px;
+  height: 132px;
+  place-items: center;
+  perspective: 900px;
+  transform-style: preserve-3d;
+}
+
+.finco-route-loader__logo {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  color: var(--foreground);
+  filter: drop-shadow(0 18px 28px color-mix(in srgb, var(--foreground) 12%, transparent));
+  transform-style: preserve-3d;
+  will-change: transform, opacity;
+  animation: finco-logo-float 2.15s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.finco-route-loader__halo {
+  position: absolute;
+  inset: 29px;
+  z-index: 1;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--foreground) 7%, transparent);
+  box-shadow:
+    0 0 42px color-mix(in srgb, var(--foreground) 10%, transparent),
+    inset 0 0 22px color-mix(in srgb, var(--foreground) 7%, transparent);
+  animation: finco-halo-breathe 2.15s ease-in-out infinite;
+}
+
+.finco-route-loader__orbit {
+  position: absolute;
+  z-index: 2;
+  border: 1px solid color-mix(in srgb, var(--foreground) 19%, transparent);
+  border-radius: 9999px;
+  transform-style: preserve-3d;
+  will-change: transform, opacity;
+}
+
+.finco-route-loader__orbit::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -3px;
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-radius: 9999px;
+  background: var(--foreground);
+  box-shadow: 0 0 15px color-mix(in srgb, var(--foreground) 58%, transparent);
+}
+
+.finco-route-loader__orbit--outer {
+  inset: 4px;
+  animation: finco-orbit-outer 3.4s linear infinite;
+}
+
+.finco-route-loader__orbit--inner {
+  inset: 18px;
+  opacity: 0.58;
+  animation: finco-orbit-inner 2.7s linear infinite reverse;
+}
+
+.finco-route-loader__copy {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  margin-top: 20px;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.finco-route-loader__brand {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.finco-route-loader__destination {
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.finco-route-loader__progress {
+  position: relative;
+  z-index: 2;
+  width: min(180px, 48vw);
+  height: 2px;
+  margin-top: 18px;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--foreground) 9%, transparent);
+}
+
+.finco-route-loader__progress > span {
+  position: absolute;
+  inset-block: 0;
+  left: -44%;
+  width: 44%;
+  border-radius: inherit;
+  background: var(--foreground);
+  will-change: transform;
+  animation: finco-progress-sweep 1.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.finco-network-banner {
+  position: fixed;
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  left: 50%;
+  z-index: 150;
+  display: flex;
+  max-width: calc(100vw - 24px);
+  transform: translateX(-50%);
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  padding: 7px 11px;
+  color: var(--foreground);
+  box-shadow: 0 12px 34px color-mix(in srgb, #000 18%, transparent);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  font-size: 11px;
+  font-weight: 600;
+  animation: finco-banner-in 220ms ease-out both;
+}
+
+.finco-pwa-card {
+  position: fixed;
+  right: calc(16px + env(safe-area-inset-right, 0px));
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index: 145;
+  display: flex;
+  width: min(430px, calc(100vw - 32px));
+  align-items: center;
+  gap: 11px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--card) 94%, transparent);
+  padding: 11px;
+  color: var(--card-foreground);
+  box-shadow: 0 20px 60px color-mix(in srgb, #000 24%, transparent);
+  backdrop-filter: blur(22px) saturate(0.9);
+  -webkit-backdrop-filter: blur(22px) saturate(0.9);
+  animation: finco-card-in 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.finco-pwa-card__mark {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 11px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.finco-pwa-card__title {
+  overflow: hidden;
+  margin: 0;
+  color: var(--foreground);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.finco-pwa-card__copy {
+  overflow: hidden;
+  margin: 3px 0 0;
+  color: var(--muted-foreground);
+  font-size: 10.5px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.finco-pwa-card__dismiss {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 8px;
+  color: var(--muted-foreground);
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.finco-pwa-card__dismiss:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+@keyframes finco-loader-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes finco-logo-float {
+  0%, 100% { transform: translate3d(0, 2px, 18px) rotateX(4deg) rotateY(-7deg) scale(0.985); }
+  50% { transform: translate3d(0, -4px, 28px) rotateX(-4deg) rotateY(7deg) scale(1.025); }
+}
+
+@keyframes finco-halo-breathe {
+  0%, 100% { transform: scale(0.94); opacity: 0.45; }
+  50% { transform: scale(1.08); opacity: 0.88; }
+}
+
+@keyframes finco-orbit-outer {
+  from { transform: rotateX(68deg) rotateZ(0deg); }
+  to { transform: rotateX(68deg) rotateZ(360deg); }
+}
+
+@keyframes finco-orbit-inner {
+  from { transform: rotateY(67deg) rotateZ(0deg); }
+  to { transform: rotateY(67deg) rotateZ(360deg); }
+}
+
+@keyframes finco-progress-sweep {
+  0% { transform: translate3d(0, 0, 0); opacity: 0.35; }
+  50% { opacity: 1; }
+  100% { transform: translate3d(330%, 0, 0); opacity: 0.35; }
+}
+
+@keyframes finco-card-in {
+  from { opacity: 0; transform: translate3d(0, 10px, 0) scale(0.98); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes finco-banner-in {
+  from { opacity: 0; transform: translate3d(-50%, -8px, 0); }
+  to { opacity: 1; transform: translate3d(-50%, 0, 0); }
+}
+
+@media (max-width: 640px) {
+  .finco-pwa-card {
+    right: calc(12px + env(safe-area-inset-right, 0px));
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    width: calc(100vw - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+  }
+
+  .finco-route-loader__scene {
+    width: 116px;
+    height: 116px;
+  }
+
+  .finco-route-loader__logo svg {
+    width: 60px;
+    height: 60px;
+  }
+}
+
+@media (display-mode: standalone) {
+  body {
+    overscroll-behavior-y: none;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .finco-route-loader,
+  .finco-route-loader__logo,
+  .finco-route-loader__halo,
+  .finco-route-loader__orbit,
+  .finco-route-loader__progress > span,
+  .finco-network-banner,
+  .finco-pwa-card {
+    animation: none !important;
+  }
+
+  .finco-route-loader__orbit {
+    opacity: 0.32;
+  }
+}

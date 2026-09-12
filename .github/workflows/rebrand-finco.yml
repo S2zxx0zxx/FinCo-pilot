@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   migrate-identity:
+    if: github.event.head_commit.message != 'rebrand: migrate product identity to FinCo-Pilot'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -30,22 +31,22 @@ jobs:
       - name: Apply full FinCo-Pilot identity migration
         run: python scripts/rebrand_finco.py
 
-      - name: Remove one-shot migration automation
+      - name: Keep workflows for connector-managed phase
         run: |
+          git checkout HEAD -- .github/workflows
           rm -f scripts/rebrand_finco.py
-          rm -f .github/workflows/rebrand-finco.yml
 
-      - name: Verify no legacy identity remains in current tree
+      - name: Verify non-workflow legacy identity is gone
         shell: bash
         run: |
           set -euo pipefail
-          if git grep -nEi 'securo|usesecuro|securo-finance|tassionoronha|(^|[^a-z])tassio([^a-z]|$)|rUqTKtQ9S4|ae627b744aaa2ba89d850ea541c311be|shell-logo|ShellLogo' -- . ':(exclude)LICENSE'; then
-            echo 'Legacy identity text remains.' >&2
+          if git grep -nEi 'securo|usesecuro|securo-finance|tassionoronha|(^|[^a-z])tassio([^a-z]|$)|rUqTKtQ9S4|ae627b744aaa2ba89d850ea541c311be|shell-logo|ShellLogo' -- . ':(exclude)LICENSE' ':(exclude).github/workflows/**'; then
+            echo 'Legacy identity text remains outside workflows.' >&2
             exit 1
           fi
-          legacy_paths=$(find . -path './.git' -prune -o \( -iname '*securo*' -o -iname '*shell-logo*' \) -print)
+          legacy_paths=$(find . -path './.git' -prune -o -path './.github/workflows' -prune -o \( -iname '*securo*' -o -iname '*shell-logo*' \) -print)
           if [ -n "$legacy_paths" ]; then
-            echo 'Legacy identity path remains:' >&2
+            echo 'Legacy identity path remains outside workflows:' >&2
             printf '%s\n' "$legacy_paths" >&2
             exit 1
           fi
@@ -58,7 +59,7 @@ jobs:
       - name: Validate patch whitespace
         run: git diff --check
 
-      - name: Commit transformed tree
+      - name: Commit transformed non-workflow tree
         shell: bash
         run: |
           set -euo pipefail

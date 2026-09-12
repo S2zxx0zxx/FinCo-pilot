@@ -30,7 +30,13 @@ const PERSONAL_MODULES: ModuleId[] = [
 const linkKeys = (items: NavItem[]) =>
   items.filter((i) => i.type === 'link').map((i) => i.key)
 
-const moduleLinks = () => navItems.filter((i) => i.type === 'link' && i.module !== undefined)
+type LinkItem = Extract<NavItem, { type: 'link' }>
+type ModuleLinkItem = LinkItem & { module: ModuleId }
+
+const moduleLinks = (): ModuleLinkItem[] =>
+  navItems.filter(
+    (item): item is ModuleLinkItem => item.type === 'link' && item.module !== undefined,
+  )
 
 describe('nav catalog', () => {
   it('maps every module-backed link to a known module', () => {

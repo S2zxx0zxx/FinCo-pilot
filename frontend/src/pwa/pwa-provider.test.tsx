@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import { PWAProvider, usePWA } from '@/pwa/pwa-provider'
+import { PWAProvider } from '@/pwa/pwa-provider'
+import { usePWA } from '@/pwa/pwa-context'
 
 function Probe() {
   const { isOnline, canInstall, install } = usePWA()

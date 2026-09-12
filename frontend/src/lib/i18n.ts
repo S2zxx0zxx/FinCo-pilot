@@ -11,6 +11,28 @@ const localeLoaders = import.meta.glob<{ default: ResourceLanguage }>([
   '../locales/*.json', '!../locales/en.json', '!../locales/pt-BR.json',
 ])
 
+// Pricing is an app-level destination rather than a workspace module. Keep the
+// two new nav labels colocated here so we do not force a broad translation-file
+// churn for a tiny navigation addition; every other locale safely falls back to
+// English until a native translation is added.
+const enWithPricingNavigation = {
+  ...en,
+  nav: {
+    ...en.nav,
+    groupPersonal: 'Personal',
+    planBilling: 'Plan & Billing',
+  },
+}
+
+const ptBRWithPricingNavigation = {
+  ...ptBR,
+  nav: {
+    ...ptBR.nav,
+    groupPersonal: 'Pessoal',
+    planBilling: 'Plano e cobrança',
+  },
+}
+
 function syncHtmlLang(lng: string) {
   document.documentElement.lang = lng
 }
@@ -35,8 +57,8 @@ export const i18nReady = i18n
   .use(initReactI18next)
   .init({
     resources: {
-      'pt-BR': { translation: ptBR },
-      en: { translation: en },
+      'pt-BR': { translation: ptBRWithPricingNavigation },
+      en: { translation: enWithPricingNavigation },
     },
     partialBundledLanguages: true,
     initAsync: false,

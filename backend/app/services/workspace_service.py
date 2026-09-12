@@ -12,6 +12,7 @@ from fastapi import HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.billing.service import ensure_free_subscription
 from app.models.user import User
 from app.models.workspace import (
     MANAGER_VIRTUAL_ROLE,
@@ -49,6 +50,11 @@ async def create_personal_workspace_for_user(
     to flush-only because callers often want to bundle this with the
     user-create transaction.
     """
+    # Every application user has a server-owned billing row, including Free.
+    # Keeping this in the common workspace bootstrap covers normal register,
+    # setup/admin creation and other programmatic user-creation paths.
+    await ensure_free_subscription(session, user.id)
+
     existing = await session.execute(
         select(Workspace)
         .join(WorkspaceMember, WorkspaceMember.workspace_id == Workspace.id)

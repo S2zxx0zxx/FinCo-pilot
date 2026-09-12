@@ -1,0 +1,57 @@
+export type PlanId = 'free' | 'pro' | 'max'
+export type BillingInterval = 'none' | 'monthly' | 'annual'
+export type SubscriptionStatus = 'free' | 'active' | 'grace' | 'past_due' | 'canceled' | 'expired'
+
+export type Capability =
+  | 'advanced_reports'
+  | 'rules'
+  | 'smart_reconciliation'
+  | 'business_workspaces'
+  | 'invoices'
+  | 'agents_automation'
+
+export type Metric =
+  | 'total_workspaces'
+  | 'personal_workspaces'
+  | 'business_workspaces'
+  | 'accounts'
+  | 'active_budgets'
+  | 'active_goals'
+  | 'active_recurring'
+  | 'assets'
+  | 'imports_monthly'
+  | 'rules'
+  | 'active_split_groups'
+  | 'group_members'
+  | 'invoices_monthly'
+  | 'ai_actions_monthly'
+  | 'storage_bytes'
+
+export interface PriceOption {
+  plan: PlanId
+  interval: BillingInterval
+  amount_minor: number
+  currency: string
+}
+
+export interface PricingCatalog {
+  prices: PriceOption[]
+  pro_annual_saving_minor: number
+}
+
+export interface Entitlements {
+  plan: PlanId
+  status: SubscriptionStatus
+  billing_interval: BillingInterval
+  current_period_end: string | null
+  cancel_at_period_end: boolean
+  capabilities: Record<Capability, boolean>
+  limits: Record<Metric, number>
+  usage: Partial<Record<Metric, number>>
+  resets_at: Partial<Record<Metric, string | null>>
+}
+
+export interface UpgradeIntent {
+  plan: Exclude<PlanId, 'free'>
+  reason?: string
+}

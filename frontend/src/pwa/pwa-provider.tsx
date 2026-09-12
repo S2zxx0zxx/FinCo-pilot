@@ -28,6 +28,20 @@ function standaloneMode() {
   return iosStandalone || Boolean(getDisplayModeQuery()?.matches)
 }
 
+function serviceWorkerContextAllowed() {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false
+  if (!('serviceWorker' in navigator)) return false
+
+  // Service workers require a secure context. Browsers treat localhost as a
+  // trustworthy development origin, so allow it explicitly for real install
+  // testing without requiring a special Vite flag. A LAN http://192.168.x.x
+  // URL is intentionally excluded: browsers cannot install a real PWA there;
+  // use HTTPS for device testing instead of silently falling back to a shortcut.
+  const hostname = window.location.hostname
+  const localTrustworthyHost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1'
+  return window.isSecureContext || localTrustworthyHost
+}
+
 function syncThemeColor() {
   if (typeof document === 'undefined') return
   const dark = document.documentElement.classList.contains('dark')
@@ -89,8 +103,8 @@ export function PWAProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    const pwaEnabled = import.meta.env.PROD || import.meta.env.VITE_PWA_DEV === 'true'
-    if (!pwaEnabled || typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return
+    const pwaEnabled = import.meta.env.PROD || import.meta.env.VITE_PWA_DEV === 'true' || ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname)
+    if (!pwaEnabled || !serviceWorkerContextAllowed()) return
 
     let disposed = false
 
@@ -111,9 +125,14 @@ export function PWAProvider({ children }: { children: ReactNode }) {
 
     navigator.serviceWorker
       .register('/sw.js', { scope: '/', updateViaCache: 'none' })
-      .then((registration) => {
+      .then(async (registration) => {
         if (disposed) return
         watchRegistration(registration)
+        // `ready` confirms the worker is active for this origin. This matters
+        // for installability on Chromium/WebAPK flows and avoids presenting a
+        // browser-home-screen shortcut as if it were an installed app.
+        await navigator.serviceWorker.ready
+        if (!disposed) void registration.update()
       })
       .catch(() => {
         // PWA enhancement must never stop the finance app from booting.

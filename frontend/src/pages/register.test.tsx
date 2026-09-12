@@ -80,7 +80,7 @@ describe('RegisterPage', () => {
     const [email, password, preferences] = authContext.register.mock.calls[0]
     expect(email).toBe('new@example.com')
     expect(password).toBe('sufficiently-long')
-    expect(preferences).toEqual({ currency_display: 'USD', language: 'en' })
+    expect(preferences).toEqual({ currency_display: 'INR', language: 'en' })
     await waitFor(() => expect(navigate).toHaveBeenCalledWith('/'))
   })
 
@@ -178,9 +178,9 @@ describe('RegisterPage', () => {
     expect(navigate).not.toHaveBeenCalledWith('/login', { replace: true })
   })
 
-  it('defaults the currency to USD', async () => {
+  it('defaults the currency to INR', async () => {
     await renderRegister()
 
-    expect(screen.getByLabelText(t('auth.currency'))).toHaveTextContent('USD')
+    expect(screen.getByLabelText(t('auth.currency'))).toHaveTextContent('INR')
   })
 })

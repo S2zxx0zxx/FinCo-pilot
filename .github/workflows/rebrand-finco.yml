@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   migrate-identity:
-    if: github.event.head_commit.message != 'rebrand: migrate product identity to FinCo-Pilot'
+    if: "${{ github.event.head_commit.message != 'rebrand: migrate product identity to FinCo-Pilot' }}"
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -40,7 +40,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if git grep -nEi 'securo|usesecuro|securo-finance|tassionoronha|(^|[^a-z])tassio([^a-z]|$)|rUqTKtQ9S4|ae627b744aaa2ba89d850ea541c311be|shell-logo|ShellLogo' -- . ':(exclude)LICENSE' ':(exclude).github/workflows/**'; then
+          if git grep -nEi 'securo|usesecuro|securo-finance|tassionoronha|(^|[^a-z])tassio([^a-z]|$)|rUqTKtQ9S4|ae627b744aaa2ba89d8501c311be|shell-logo|ShellLogo' -- . ':(exclude)LICENSE' ':(exclude).github/workflows/**'; then
             echo 'Legacy identity text remains outside workflows.' >&2
             exit 1
           fi

@@ -1,17 +1,60 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="application-name" content="FinCo-Pilot" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="FinCo-Pilot" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#000000" data-finco-dynamic="true" />
+    <meta name="color-scheme" content="dark light" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" type="image/svg+xml" href="/finco-favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <title>FinCo-Pilot</title>
+    <script>
+      ;(() => {
+        try {
+          const theme = localStorage.getItem('theme') || 'dark'
+          document.documentElement.classList.toggle('dark', theme !== 'light')
+          document.documentElement.style.colorScheme = theme === 'light' ? 'light' : 'dark'
+        } catch {
+          document.documentElement.classList.add('dark')
+        }
+      })()
+    </script>
+    <style>
+      html,body,#root{min-height:100%;margin:0}body{background:#000;color:#fafafa}html:not(.dark) body{background:#fafafa;color:#09090b}
+      #finco-boot{position:fixed;inset:0;display:grid;place-items:center;background:inherit;color:inherit;overflow:hidden}
+      #finco-boot-scene{position:relative;display:grid;width:128px;height:128px;place-items:center;perspective:900px}
+      #finco-boot-halo{position:absolute;inset:26px;border-radius:999px;background:currentColor;opacity:.045;box-shadow:0 0 48px currentColor}
+      #finco-boot-ring{position:absolute;inset:7px;border:1px solid currentColor;border-radius:999px;opacity:.18;transform:rotateX(68deg);animation:finco-boot-orbit 3.2s linear infinite}
+      #finco-boot-logo{width:66px;height:66px;filter:drop-shadow(0 18px 28px rgb(255 255 255/.08));animation:finco-boot-float 2.1s ease-in-out infinite}
+      html:not(.dark) #finco-boot-logo{filter:drop-shadow(0 18px 28px rgb(0 0 0/.10))}
+      #finco-boot-label{position:absolute;top:calc(50% + 82px);left:50%;transform:translateX(-50%);font:600 12px/1.2 system-ui,-apple-system,sans-serif;letter-spacing:-.01em;opacity:.72;white-space:nowrap}
+      @keyframes finco-boot-orbit{to{transform:rotateX(68deg) rotateZ(360deg)}}
+      @keyframes finco-boot-float{0%,100%{transform:translate3d(0,2px,18px) rotateY(-7deg) scale(.985)}50%{transform:translate3d(0,-4px,28px) rotateY(7deg) scale(1.025)}}
+      @media(prefers-reduced-motion:reduce){#finco-boot-ring,#finco-boot-logo{animation:none}}
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="finco-boot" role="status" aria-label="Opening FinCo-Pilot">
+        <div id="finco-boot-scene" aria-hidden="true">
+          <div id="finco-boot-halo"></div>
+          <div id="finco-boot-ring"></div>
+          <svg id="finco-boot-logo" viewBox="0 0 1000 1000" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path fill="currentColor" d="M 882.6,70.0 L 307.9,71.0 L 279.4,77.1 L 261.1,83.2 L 230.5,97.5 L 197.9,119.9 L 175.5,141.3 L 151.0,172.9 L 129.6,214.7 L 121.5,242.2 L 116.4,274.8 L 117.4,929.0 L 161.2,923.9 L 186.7,914.7 L 207.0,903.5 L 236.6,879.1 L 247.8,865.8 L 263.1,841.4 L 274.3,811.8 L 279.4,779.2 L 279.4,644.7 L 281.4,628.4 L 287.5,607.0 L 296.7,588.6 L 310.0,570.3 L 330.3,550.9 L 343.6,541.8 L 364.0,531.6 L 387.4,524.5 L 401.7,522.4 L 627.9,522.4 L 653.4,521.4 L 673.7,516.3 L 684.9,510.2 L 696.1,501.0 L 804.2,367.5 L 425.1,366.5 L 397.6,370.6 L 365.0,383.8 L 344.6,398.1 L 328.3,414.4 L 261.1,495.9 L 260.0,308.4 L 266.1,281.9 L 280.4,257.5 L 293.7,244.2 L 306.9,235.1 L 329.3,225.9 L 347.7,222.8 L 723.7,222.8 L 743.0,218.8 L 765.4,207.6 L 784.8,189.2 Z" />
+          </svg>
+        </div>
+        <div id="finco-boot-label" aria-hidden="true">FinCo-Pilot</div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -65,7 +65,7 @@ class Workspace(Base):
     # Workspace-level defaults. Individual members can still override via
     # their own user preferences for display, but new accounts inherit
     # `default_currency` etc. from here.
-    default_currency: Mapped[str] = mapped_column(String(3), default="USD", server_default="USD")
+    default_currency: Mapped[str] = mapped_column(String(3), default="INR", server_default="INR")
     locale: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     # Where this workspace operates fiscally. Selects the jurisdiction pack
     # that names and validates fiscal documents, and the axis any future

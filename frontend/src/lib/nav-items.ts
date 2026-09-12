@@ -2,6 +2,7 @@ import {
   ArrowLeftRight,
   BarChart3,
   Building2,
+  CreditCard,
   Landmark,
   PiggyBank,
   Receipt,
@@ -21,12 +22,12 @@ import type { ModuleId } from './modules'
  * Sidebar destinations. Lives outside `app-layout.tsx` so the filtering
  * below can be tested without mounting the whole layout.
  *
- * Every link carries the module it belongs to. That is what makes the
- * "a personal workspace shows exactly what it always showed" guarantee
- * checkable rather than aspirational.
+ * Workspace-module links carry the module they belong to. App-level links
+ * (currently Plan & Billing) deliberately omit `module`: pricing must remain
+ * reachable even when a workspace has a restricted module catalog.
  */
 export type NavItem =
-  | { type: 'link'; key: string; path: string; icon: React.ElementType; module: ModuleId }
+  | { type: 'link'; key: string; path: string; icon: React.ElementType; module?: ModuleId }
   | { type: 'separator'; labelKey: string }
 
 export const navItems: NavItem[] = [
@@ -50,18 +51,21 @@ export const navItems: NavItem[] = [
   { type: 'link', key: 'payees', path: '/payees', icon: Users, module: 'payees' },
   { type: 'link', key: 'splitGroups', path: '/groups', icon: Split, module: 'split_groups' },
   { type: 'link', key: 'rules', path: '/rules', icon: SlidersHorizontal, module: 'rules' },
+  { type: 'separator', labelKey: 'nav.groupPersonal' },
+  { type: 'link', key: 'planBilling', path: '/pricing', icon: CreditCard },
 ]
 
 /**
- * Drop links whose module is off, then drop any section header left
- * with nothing under it. Without the second pass, hiding a section's
- * only link leaves a floating heading.
+ * Drop links whose workspace module is off, then drop any section header left
+ * with nothing under it. App-level links have no module and always survive.
  */
 export function visibleNavItems(
   items: NavItem[],
   hasModule: (id: ModuleId) => boolean,
 ): NavItem[] {
-  const kept = items.filter((item) => item.type !== 'link' || hasModule(item.module))
+  const kept = items.filter(
+    (item) => item.type !== 'link' || item.module === undefined || hasModule(item.module),
+  )
   return kept.filter((item, index) => {
     if (item.type !== 'separator') return true
     // Links always follow their own header, so the item right after a

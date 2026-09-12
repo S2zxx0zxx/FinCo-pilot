@@ -23,10 +23,7 @@ export function PWAChrome() {
   const ios = isIOSDevice()
 
   useEffect(() => {
-    if (isStandalone || (!canInstall && !ios)) {
-      setShowInstall(false)
-      return
-    }
+    if (isStandalone || (!canInstall && !ios)) return
 
     const dismissedAt = Number(localStorage.getItem(INSTALL_DISMISS_KEY) || 0)
     if (Date.now() - dismissedAt < INSTALL_SNOOZE_MS) return
@@ -78,7 +75,7 @@ export function PWAChrome() {
         </aside>
       )}
 
-      {!updateReady && showInstall && canInstall && (
+      {!updateReady && !isStandalone && showInstall && canInstall && (
         <aside className="finco-pwa-card" aria-live="polite">
           <div className="finco-pwa-card__mark" aria-hidden="true">
             <FinCoLogo size={22} />
@@ -106,7 +103,7 @@ export function PWAChrome() {
         </aside>
       )}
 
-      {!updateReady && showInstall && !canInstall && ios && (
+      {!updateReady && !isStandalone && showInstall && !canInstall && ios && (
         <aside className="finco-pwa-card" aria-live="polite">
           <div className="finco-pwa-card__mark" aria-hidden="true">
             <Share2 size={18} />

@@ -28,7 +28,7 @@ jobs:
       - uses: actions/github-script@v9
         with:
           script: |
-            const OWNERS = ['tassionoronha'];   // who decides the axes
+            const OWNERS = ['S2zxx0zxx'];   // FinCo-Pilot authority owner
 
             const actor = context.payload.sender.login;
             // Without this it is an infinite loop: the revert itself fires

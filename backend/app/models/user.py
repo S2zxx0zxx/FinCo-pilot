@@ -39,7 +39,7 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
             "language": "en",
             "date_format": "MM/DD/YYYY",
             "timezone": "UTC",
-            "currency_display": "USD",
+            "currency_display": "INR",
         },
     )
 

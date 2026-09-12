@@ -8,9 +8,9 @@ from sqlalchemy import distinct, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.billing.catalog import PLAN_CATALOG, get_plan_spec
-from app.billing.enums import Metric, PlanId
-from app.billing.errors import PlanLimitReachedError
-from app.billing.service import effective_plan
+from app.billing.enums import Capability, Metric, PlanId
+from app.billing.errors import EntitlementRequiredError, PlanLimitReachedError
+from app.billing.service import effective_plan, minimum_plan_for_capability
 from app.models.account import Account
 from app.models.asset import Asset
 from app.models.billing_usage import BillingUsageCounter
@@ -67,9 +67,6 @@ async def ensure_subscription_row(
     subscription = Subscription(user_id=user_id)
     session.add(subscription)
     await session.flush()
-    if for_update:
-        # Newly inserted row is already write-locked by this transaction.
-        return subscription
     return subscription
 
 
@@ -239,6 +236,43 @@ async def enforce_limit(
         )
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=error.detail())
     return usage, limit, plan
+
+
+async def enforce_workspace_creation(
+    session: AsyncSession,
+    owner_id: uuid.UUID,
+    *,
+    kind: str,
+) -> PlanId:
+    """Protect the workspace-creation bypass surface before a row is inserted."""
+    subscription = await ensure_subscription_row(session, owner_id, for_update=True)
+    plan = effective_plan(subscription)
+    spec = get_plan_spec(plan)
+
+    if kind == "business" and not spec.has(Capability.BUSINESS_WORKSPACES):
+        error = EntitlementRequiredError(
+            capability=Capability.BUSINESS_WORKSPACES,
+            current_plan=plan,
+            required_plan=minimum_plan_for_capability(Capability.BUSINESS_WORKSPACES),
+        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=error.detail())
+
+    for metric in (
+        Metric.TOTAL_WORKSPACES,
+        Metric.BUSINESS_WORKSPACES if kind == "business" else Metric.PERSONAL_WORKSPACES,
+    ):
+        usage = await current_usage(session, owner_id, metric)
+        limit = spec.limit(metric)
+        if usage + 1 > limit:
+            error = PlanLimitReachedError(
+                metric=metric,
+                usage=usage,
+                limit=limit,
+                current_plan=plan,
+                required_plan=minimum_plan_for_metric(metric, usage + 1),
+            )
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=error.detail())
+    return plan
 
 
 async def consume_monthly(

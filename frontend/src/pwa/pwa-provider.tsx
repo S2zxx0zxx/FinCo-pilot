@@ -27,13 +27,19 @@ type PWAContextValue = {
 
 const PWAContext = createContext<PWAContextValue | null>(null)
 
+function getDisplayModeQuery() {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return null
+  return window.matchMedia('(display-mode: standalone)')
+}
+
 function standaloneMode() {
   if (typeof window === 'undefined') return false
   const iosStandalone = Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone)
-  return iosStandalone || window.matchMedia('(display-mode: standalone)').matches
+  return iosStandalone || Boolean(getDisplayModeQuery()?.matches)
 }
 
 function syncThemeColor() {
+  if (typeof document === 'undefined') return
   const dark = document.documentElement.classList.contains('dark')
   const color = dark ? '#000000' : '#FAFAFA'
   let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"][data-finco-dynamic]')
@@ -66,26 +72,27 @@ export function PWAProvider({ children }: { children: ReactNode }) {
       promptEvent.preventDefault()
       setInstallPrompt(promptEvent)
     }
-    const displayMode = window.matchMedia('(display-mode: standalone)')
+    const displayMode = getDisplayModeQuery()
     const displayChanged = () => setIsStandalone(standaloneMode())
 
     window.addEventListener('online', online)
     window.addEventListener('offline', offline)
     window.addEventListener('appinstalled', installed)
     window.addEventListener('beforeinstallprompt', beforeInstall)
-    displayMode.addEventListener?.('change', displayChanged)
+    displayMode?.addEventListener?.('change', displayChanged)
 
     return () => {
       window.removeEventListener('online', online)
       window.removeEventListener('offline', offline)
       window.removeEventListener('appinstalled', installed)
       window.removeEventListener('beforeinstallprompt', beforeInstall)
-      displayMode.removeEventListener?.('change', displayChanged)
+      displayMode?.removeEventListener?.('change', displayChanged)
     }
   }, [])
 
   useEffect(() => {
     syncThemeColor()
+    if (typeof MutationObserver === 'undefined') return
     const observer = new MutationObserver(syncThemeColor)
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
     return () => observer.disconnect()
@@ -93,7 +100,7 @@ export function PWAProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const pwaEnabled = import.meta.env.PROD || import.meta.env.VITE_PWA_DEV === 'true'
-    if (!pwaEnabled || !('serviceWorker' in navigator)) return
+    if (!pwaEnabled || typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return
 
     let disposed = false
 

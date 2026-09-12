@@ -52,4 +52,4 @@ jobs:
           python backend/scripts/check_migration_chain.py
 
       - name: Validate diff whitespace
-        run: git diff --check main...HEAD
+        run: git diff --check origin/main...HEAD

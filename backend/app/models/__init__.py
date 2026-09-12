@@ -32,6 +32,7 @@ from app.models.reconciliation import (
     ReconciliationRule,
     ReconciliationSuggestion,
 )
+from app.models.subscription import Subscription
 
 # Side-effect import: register the before_insert listener that auto-stamps
 # workspace_id from user_id on financial entities. Imported last so all
@@ -79,6 +80,7 @@ __all__ = [
     "ReconciliationEvent",
     "ReconciliationRule",
     "ReconciliationSuggestion",
+    "Subscription",
     "collection_accounts",
     "collection_asset_groups",
 ]

@@ -110,7 +110,7 @@ export function ReconciliationQueue({ canWrite }: { canWrite: boolean }) {
   const decline = useSettleMutation('decline', queryClient, t)
 
   const money = (value: string | number | null | undefined, currency?: string | null) =>
-    mask(formatCurrency(Number(value ?? 0), currency || 'USD', locale))
+    mask(formatCurrency(Number(value ?? 0), currency || 'INR', locale))
   const showDate = (iso: string) =>
     new Date(`${iso}T00:00:00`).toLocaleDateString(dateLocale)
 

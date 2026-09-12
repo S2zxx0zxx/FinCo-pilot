@@ -6,7 +6,6 @@ import {
   BriefcaseBusiness,
   Check,
   ChevronDown,
-  FileText,
   Infinity as InfinityIcon,
   Lock,
   RefreshCw,

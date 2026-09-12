@@ -62,7 +62,7 @@ class Settings(BaseSettings):
     webauthn_challenge_ttl_seconds: int = 300
 
     # Defaults
-    default_currency: str = "USD"  # fallback currency when user preference is unavailable
+    default_currency: str = "INR"  # fallback currency when user preference is unavailable
 
     # FX Rates
     openexchangerates_app_id: str = ""

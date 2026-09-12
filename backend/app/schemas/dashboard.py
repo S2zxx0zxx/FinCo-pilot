@@ -22,7 +22,7 @@ class DashboardSummary(BaseModel):
     pending_categorization_amount: float
     assets_value: dict[str, float] = Field(default_factory=dict)  # currency -> total asset value
     assets_value_primary: float = 0.0
-    primary_currency: str = "USD"
+    primary_currency: str = "INR"
     # Net pending balance from group splits (in primary currency).
     # Negative = the user is a net debtor (others paid for them, debt
     # owed). Positive = the user is a net creditor (paid for others,

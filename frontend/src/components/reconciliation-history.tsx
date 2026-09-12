@@ -66,7 +66,7 @@ export function ReconciliationHistory() {
   // before the field existed) still has to render something, and the
   // viewer's own currency is the least wrong guess available.
   const { user } = useAuth()
-  const displayCurrency = user?.preferences?.currency_display ?? 'USD'
+  const displayCurrency = user?.preferences?.currency_display ?? 'INR'
 
   const { data: events } = useQuery<ReconciliationHistoryEvent[]>({
     queryKey: ['reconciliation-history'],

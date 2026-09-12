@@ -6,71 +6,80 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #F8F9FB;
-  --foreground: #0F172A;
+  --background: #FAFAFA;
+  --foreground: #09090B;
   --card: #FFFFFF;
-  --card-foreground: #0F172A;
+  --card-foreground: #09090B;
   --popover: #FFFFFF;
-  --popover-foreground: #0F172A;
-  --primary: #F97316;
+  --popover-foreground: #09090B;
+  --primary: #0A0A0A;
   --primary-foreground: #FFFFFF;
-  --secondary: #F1F5F9;
-  --secondary-foreground: #0F172A;
-  --muted: #F1F5F9;
-  --muted-foreground: #64748B;
-  --accent: #FFF1E8;
-  --accent-foreground: #C2410C;
-  --destructive: #F43F5E;
+  --secondary: #F4F4F5;
+  --secondary-foreground: #18181B;
+  --muted: #F4F4F5;
+  --muted-foreground: #71717A;
+  --accent: #F1F1F2;
+  --accent-foreground: #09090B;
+  --destructive: #E11D48;
   --destructive-foreground: #FFFFFF;
-  --border: #E8ECF1;
-  --input: #E8ECF1;
-  --ring: #F97316;
+  --border: #E4E4E7;
+  --input: #E4E4E7;
+  --ring: #0A0A0A;
   --radius: 0.625rem;
-  --chart-1: #F97316;
-  --chart-2: #FB7185;
+  --chart-1: #18181B;
+  --chart-2: #52525B;
   --chart-3: #10B981;
-  --chart-4: #F59E0B;
-  --chart-5: #F43F5E;
+  --chart-4: #0EA5E9;
+  --chart-5: #E11D48;
   --sidebar: #FFFFFF;
-  --sidebar-foreground: #0F172A;
-  --sidebar-primary: #F97316;
+  --sidebar-foreground: #09090B;
+  --sidebar-primary: #0A0A0A;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #F1F5F9;
-  --sidebar-accent-foreground: #C2410C;
-  --sidebar-border: #E8ECF1;
-  --sidebar-ring: #F97316;
-  --sidebar-muted: #64748B;
+  --sidebar-accent: #F1F1F2;
+  --sidebar-accent-foreground: #09090B;
+  --sidebar-border: #E4E4E7;
+  --sidebar-ring: #0A0A0A;
+  --sidebar-muted: #71717A;
+  --skeleton-base: #E8E8EA;
+  --skeleton-shine: rgba(10, 10, 10, 0.13);
 }
 
 .dark {
-  --background: #0C0D12;
-  --foreground: #F0F0F5;
-  --card: #16171F;
-  --card-foreground: #F0F0F5;
-  --popover: #16171F;
-  --popover-foreground: #F0F0F5;
-  --primary: #FB7A5B;
-  --primary-foreground: #FFFFFF;
-  --secondary: #252836;
-  --secondary-foreground: #F0F0F5;
-  --muted: #252836;
-  --muted-foreground: #8A8F9E;
-  --accent: #3A1F18;
-  --accent-foreground: #FDBA9A;
+  --background: #000000;
+  --foreground: #FAFAFA;
+  --card: #080808;
+  --card-foreground: #FAFAFA;
+  --popover: #0A0A0A;
+  --popover-foreground: #FAFAFA;
+  --primary: #FFFFFF;
+  --primary-foreground: #000000;
+  --secondary: #151515;
+  --secondary-foreground: #FAFAFA;
+  --muted: #151515;
+  --muted-foreground: #A1A1AA;
+  --accent: #171717;
+  --accent-foreground: #FAFAFA;
   --destructive: #FB7185;
-  --destructive-foreground: #0C0D12;
-  --border: #2A2D3A;
-  --input: #2A2D3A;
-  --ring: #FB7A5B;
-  --sidebar: #16171F;
-  --sidebar-foreground: #F0F0F5;
-  --sidebar-primary: #FB7A5B;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #252836;
-  --sidebar-accent-foreground: #FDBA9A;
-  --sidebar-border: #2A2D3A;
-  --sidebar-ring: #FB7A5B;
-  --sidebar-muted: #8A8F9E;
+  --destructive-foreground: #0A0A0A;
+  --border: #242424;
+  --input: #262626;
+  --ring: #FFFFFF;
+  --chart-1: #FAFAFA;
+  --chart-2: #A1A1AA;
+  --chart-3: #34D399;
+  --chart-4: #60A5FA;
+  --chart-5: #FB7185;
+  --sidebar: #030303;
+  --sidebar-foreground: #FAFAFA;
+  --sidebar-primary: #FFFFFF;
+  --sidebar-primary-foreground: #000000;
+  --sidebar-accent: #151515;
+  --sidebar-accent-foreground: #FAFAFA;
+  --sidebar-border: #202020;
+  --sidebar-ring: #FFFFFF;
+  --sidebar-muted: #A1A1AA;
+  --skeleton-base: #111111;
+  --skeleton-shine: rgba(255, 255, 255, 0.18);
 }
 
 @theme inline {
@@ -145,11 +154,11 @@
 
 @keyframes fincopilot-highlight-flash {
   0% {
-    background-color: color-mix(in srgb, var(--primary) 22%, transparent);
+    background-color: color-mix(in srgb, var(--primary) 18%, transparent);
     box-shadow: inset 3px 0 0 var(--primary);
   }
   60% {
-    background-color: color-mix(in srgb, var(--primary) 14%, transparent);
+    background-color: color-mix(in srgb, var(--primary) 10%, transparent);
     box-shadow: inset 3px 0 0 var(--primary);
   }
   100% {
@@ -162,9 +171,39 @@
   animation: fincopilot-highlight-flash 2.4s ease-out;
 }
 
-/* Soft ambient glow for the FinCo-Pilot auth panel. Warm coral and amber
-   light over a graphite base — slow enough to feel alive, not busy.
-   Only transform/opacity animate, never layout. */
+/* Slow monochrome loading language. Light mode uses a restrained dark sheen;
+   dark mode uses a soft white sheen. This intentionally replaces the old
+   warm/orange pulse while keeping loading states visible and calm. */
+@keyframes fincopilot-skeleton-shimmer {
+  0% { background-position: 180% 0; }
+  100% { background-position: -80% 0; }
+}
+
+.finco-skeleton {
+  background: linear-gradient(
+    110deg,
+    var(--skeleton-base) 30%,
+    var(--skeleton-shine) 45%,
+    var(--skeleton-base) 60%
+  );
+  background-size: 220% 100%;
+  animation: fincopilot-skeleton-shimmer 2.9s ease-in-out infinite;
+}
+
+/* Several older feature-specific loaders still use Tailwind's animate-pulse.
+   Slow them globally so every section transition feels consistent. */
+@keyframes fincopilot-slow-pulse {
+  0%, 100% { opacity: 0.42; }
+  50% { opacity: 1; }
+}
+
+.animate-pulse {
+  animation: fincopilot-slow-pulse 2.9s ease-in-out infinite;
+}
+
+/* Soft monochrome ambient glow for the FinCo-Pilot auth panel. The previous
+   coral/orange aurora is intentionally replaced by neutral light so the brand
+   remains black/white in both themes. Only transform/opacity animate. */
 @keyframes fincopilot-aurora-1 {
   0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
   50% { transform: translate3d(7%, 10%, 0) scale(1.18); }
@@ -181,7 +220,7 @@
 .fincopilot-aurora {
   position: absolute;
   border-radius: 9999px;
-  filter: blur(72px);
+  filter: blur(88px);
   will-change: transform;
 }
 .fincopilot-aurora-1 {
@@ -189,31 +228,33 @@
   left: -8%;
   width: 62%;
   height: 62%;
-  opacity: 0.55;
-  background: radial-gradient(circle at center, #fb7185 0%, transparent 70%);
-  animation: fincopilot-aurora-1 24s ease-in-out infinite;
+  opacity: 0.13;
+  background: radial-gradient(circle at center, #FFFFFF 0%, transparent 70%);
+  animation: fincopilot-aurora-1 28s ease-in-out infinite;
 }
 .fincopilot-aurora-2 {
   right: -12%;
   bottom: -18%;
   width: 68%;
   height: 68%;
-  opacity: 0.5;
-  background: radial-gradient(circle at center, #fb923c 0%, transparent 70%);
-  animation: fincopilot-aurora-2 29s ease-in-out infinite;
+  opacity: 0.12;
+  background: radial-gradient(circle at center, #A1A1AA 0%, transparent 70%);
+  animation: fincopilot-aurora-2 32s ease-in-out infinite;
 }
 .fincopilot-aurora-3 {
   top: 28%;
   left: 22%;
   width: 46%;
   height: 46%;
-  opacity: 0.4;
-  background: radial-gradient(circle at center, #fdba74 0%, transparent 70%);
-  animation: fincopilot-aurora-3 33s ease-in-out infinite;
+  opacity: 0.09;
+  background: radial-gradient(circle at center, #E4E4E7 0%, transparent 70%);
+  animation: fincopilot-aurora-3 36s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .fincopilot-aurora {
+  .fincopilot-aurora,
+  .finco-skeleton,
+  .animate-pulse {
     animation: none;
   }
 }

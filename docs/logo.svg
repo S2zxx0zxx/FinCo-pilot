@@ -1,12 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 160" role="img" aria-labelledby="title desc">
   <title id="title">FinCo-Pilot</title>
-  <desc id="desc">FinCo-Pilot finance path and beacon mark</desc>
-  <rect width="520" height="160" rx="32" fill="#0B0B0F"/>
-  <g transform="translate(34 34)" fill="none" stroke="#FF7A59" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M4 76V58M24 76V42M44 76V52M64 76V26" stroke-width="8" opacity=".38"/>
-    <path d="M4 58L24 40L44 52L75 16" stroke-width="9"/>
-    <circle cx="75" cy="16" r="10" fill="#FF7A59" stroke="none"/>
-    <circle cx="75" cy="16" r="3.5" fill="#FFF4EE" stroke="none"/>
+  <desc id="desc">FinCo-Pilot F mark and wordmark</desc>
+  <rect width="520" height="160" rx="32" fill="#000000"/>
+  <g transform="translate(26 24) scale(.112)">
+    <path fill="#FFFFFF" d="M 882.6,70.0 L 307.9,71.0 L 279.4,77.1 L 261.1,83.2 L 230.5,97.5 L 197.9,119.9 L 175.5,141.3 L 151.0,172.9 L 129.6,214.7 L 121.5,242.2 L 116.4,274.8 L 117.4,929.0 L 161.2,923.9 L 186.7,914.7 L 207.0,903.5 L 236.6,879.1 L 247.8,865.8 L 263.1,841.4 L 274.3,811.8 L 279.4,779.2 L 279.4,644.7 L 281.4,628.4 L 287.5,607.0 L 296.7,588.6 L 310.0,570.3 L 330.3,550.9 L 343.6,541.8 L 364.0,531.6 L 387.4,524.5 L 401.7,522.4 L 627.9,522.4 L 653.4,521.4 L 673.7,516.3 L 684.9,510.2 L 696.1,501.0 L 804.2,367.5 L 425.1,366.5 L 397.6,370.6 L 365.0,383.8 L 344.6,398.1 L 328.3,414.4 L 261.1,495.9 L 260.0,308.4 L 266.1,281.9 L 280.4,257.5 L 293.7,244.2 L 306.9,235.1 L 329.3,225.9 L 347.7,222.8 L 723.7,222.8 L 743.0,218.8 L 765.4,207.6 L 784.8,189.2 Z"/>
   </g>
-  <text x="142" y="94" fill="#F7F7FA" font-family="Inter, Geist, Arial, sans-serif" font-size="50" font-weight="700" letter-spacing="-1.5">FinCo-Pilot</text>
+  <text x="155" y="96" fill="#FAFAFA" font-family="Geist, Inter, Arial, sans-serif" font-size="48" font-weight="700" letter-spacing="-1.8">FinCo-Pilot</text>
 </svg>

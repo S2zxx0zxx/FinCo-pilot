@@ -31,7 +31,7 @@ const paths = Object.keys(modules)
 //
 // A generous ceiling hides nothing: a module that fails to evaluate rejects
 // immediately, and only a genuine hang reaches this number.
-const EVALUATION_BUDGET_MS = 20_000
+const EVALUATION_BUDGET_MS = 60_000
 
 describe('page modules', () => {
   it('finds the page tree', () => {

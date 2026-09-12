@@ -12,9 +12,9 @@ from mcp_server.tools._helpers import parse_date, resolve_workspace_id
 
 
 def _pri_currency(ctx: CallContext) -> str:
-    # The user model defaults to USD; reports reach into the DB for the
+    # The user model defaults to INR; reports reach into the DB for the
     # actual primary currency, so the value passed here is just the fallback.
-    return "USD"
+    return "INR"
 
 
 def _serialize_report(r: Any) -> dict[str, Any]:

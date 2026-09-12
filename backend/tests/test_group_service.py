@@ -19,7 +19,7 @@ async def test_create_group_defaults(session: AsyncSession, test_user, test_work
     )
     assert group.name == "Roommates"
     assert group.kind == "social"
-    assert group.default_currency == "USD"
+    assert group.default_currency == "INR"
     assert group.is_archived is False
     assert group.user_id == test_user.id
 
@@ -152,7 +152,8 @@ async def test_update_member_promotes_to_self_demotes_others(
     )
     assert m1 is not None
     m2 = await group_service.create_member(
-        session, group.id, test_workspace.id, GroupMemberCreate(name="B")
+        session, group.id,
+        test_workspace.id, GroupMemberCreate(name="B")
     )
 
     assert m2 is not None

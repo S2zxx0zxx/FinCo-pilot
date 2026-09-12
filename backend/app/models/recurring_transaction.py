@@ -36,7 +36,7 @@ class RecurringTransaction(Base):
     category_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("categories.id"), nullable=True)
     description: Mapped[str] = mapped_column(String(500))
     amount: Mapped[Decimal] = mapped_column(Numeric(precision=15, scale=2))
-    currency: Mapped[str] = mapped_column(String(3), default="USD")
+    currency: Mapped[str] = mapped_column(String(3), default="INR")
     type: Mapped[str] = mapped_column(String(10))  # debit, credit
     frequency: Mapped[str] = mapped_column(String(20))  # weekly, biweekly, monthly, quarterly, semiannual, yearly
     weekend_adjustment: Mapped[str] = mapped_column(

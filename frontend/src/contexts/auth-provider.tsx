@@ -5,6 +5,14 @@ import type { User } from '@/types'
 
 import { AuthContext, type LoginResult } from '@/contexts/auth-context'
 
+const normalizeUser = (value: User): User => ({
+  ...value,
+  preferences: {
+    ...(value.preferences ?? {}),
+    currency_display: value.preferences?.currency_display || 'INR',
+  },
+})
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'))
@@ -20,7 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!token) return
     let cancelled = false
     auth.me()
-      .then((me) => { if (!cancelled) setUser(me) })
+      .then((me) => { if (!cancelled) setUser(normalizeUser(me)) })
       .catch(() => {
         if (cancelled) return
         localStorage.removeItem('token')
@@ -52,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('token', accessToken)
     setToken(accessToken)
     const me = await auth.me()
-    setUser(me)
+    setUser(normalizeUser(me))
     return { requires_2fa: false }
   }, [])
 
@@ -61,17 +69,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('token', data.access_token)
     setToken(data.access_token)
     const me = await auth.me()
-    setUser(me)
+    setUser(normalizeUser(me))
   }, [])
 
   const loginWithToken = useCallback((accessToken: string) => {
     localStorage.setItem('token', accessToken)
     setToken(accessToken)
-    auth.me().then(setUser).catch(() => {})
+    auth.me().then((me) => setUser(normalizeUser(me))).catch(() => {})
   }, [])
 
   const updateUser = useCallback((updatedUser: User) => {
-    setUser(updatedUser)
+    setUser(normalizeUser(updatedUser))
   }, [])
 
   const register = useCallback(async (email: string, password: string, preferences?: Record<string, string>) => {

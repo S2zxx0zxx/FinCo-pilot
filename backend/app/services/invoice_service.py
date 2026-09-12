@@ -576,6 +576,8 @@ async def create_invoice(
     data: dict[str, Any],
 ) -> Invoice:
     settings = await get_settings(session, workspace_id)
+    workspace = await session.get(Workspace, workspace_id)
+    default_currency = workspace.default_currency if workspace else "INR"
     await _assert_payee(session, data.get("payee_id"), workspace_id)
 
     lines_data = data.pop("lines", None) or []
@@ -611,7 +613,7 @@ async def create_invoice(
         # Defaults to the issue date, and stays its own field so an
         # accrual-basis report can disagree with the invoice date.
         competence_date=data.get("competence_date") or issue_date,
-        currency=data.get("currency") or "USD",
+        currency=data.get("currency") or default_currency,
         discount=data.get("discount") or ZERO,
         subtotal=data.get("subtotal") or ZERO,
         tax_total=data.get("tax_total") or ZERO,
@@ -671,7 +673,6 @@ async def create_invoice(
         if (invoice.total or ZERO) <= ZERO:
             raise InvoiceError("empty_total", "An invoice with no value cannot be issued")
         locked = await _settings_for_update(session, workspace_id)
-        workspace = await session.get(Workspace, workspace_id)
         _issue(invoice, locked, workspace, await _snapshot_tax_ids(session, workspace_id))
 
     await session.flush()

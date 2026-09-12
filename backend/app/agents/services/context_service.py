@@ -54,7 +54,7 @@ async def build_context_primer(
     from app.services import account_service
 
     prefs = getattr(user, "preferences", None) or {}
-    primary_currency = prefs.get("currency_display") or "USD"
+    primary_currency = prefs.get("currency_display") or "INR"
     language = prefs.get("language") or "en"
     timezone_label = prefs.get("timezone") or "UTC"
 

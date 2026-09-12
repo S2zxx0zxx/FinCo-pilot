@@ -10,9 +10,9 @@ import { useAuth } from '@/contexts/auth-context'
  *
  * Combines the admin-wide `number_format` setting with the signed-in user's
  * display currency. When the admin leaves the format on "auto" the separators
- * follow the currency (EUR → 1.000,00, USD → 1,000.00); an explicit choice
+ * follow the currency (EUR → 1.000,00, INR → 1,00,000.00); an explicit choice
  * overrides that for everyone. Falls back to the UI language when neither is
- * known.
+ * known, using Indian English as the product default for English.
  *
  * Used everywhere a value is shown to replace the old language-derived locale,
  * so number/date formatting no longer silently tracks the UI language.
@@ -28,7 +28,7 @@ export function useDisplayLocale(): string {
     retry: false,
   })
 
-  const fallback = i18n.language === 'en' ? 'en-US' : i18n.language
+  const fallback = i18n.language === 'en' ? 'en-IN' : i18n.language
   return resolveDisplayLocale(data?.format, user?.preferences?.currency_display, fallback)
 }
 

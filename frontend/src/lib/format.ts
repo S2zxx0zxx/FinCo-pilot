@@ -78,7 +78,7 @@ const CURRENCY_LOCALE: Record<string, string> = {
 export function resolveDisplayLocale(
   numberFormat: NumberFormat | undefined,
   currency: string | undefined,
-  fallback = 'en-US',
+  fallback = 'en-IN',
 ): string {
   if (numberFormat && numberFormat !== 'auto') {
     return FORMAT_LOCALE[numberFormat]
@@ -153,10 +153,10 @@ function currencyFormatter(currency: string, locale: string): Intl.NumberFormat 
   try {
     return new Intl.NumberFormat(locale, {
       style: 'currency',
-      currency: currency || 'USD',
+      currency: currency || 'INR',
     })
   } catch {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' })
   }
 }
 
@@ -168,8 +168,8 @@ function currencyFormatter(currency: string, locale: string): Intl.NumberFormat 
  */
 export function formatCurrency(
   value: number | null | undefined,
-  currency = 'USD',
-  locale = 'en-US',
+  currency = 'INR',
+  locale = 'en-IN',
 ): string {
   if (value == null) return '—'
   const formatter = currencyFormatter(currency, locale)
@@ -208,7 +208,7 @@ function localeSeparators(locale: string): { group: string; decimal: string } {
  * Returns null for empty or unparseable input — never NaN, so callers can't
  * accidentally persist one.
  */
-export function parseAmountInput(value: string, locale = 'en-US'): number | null {
+export function parseAmountInput(value: string, locale = 'en-IN'): number | null {
   const { group, decimal } = localeSeparators(locale)
   // Spaces only ever appear as grouping — drop them up front. JS \s covers
   // the NBSP and narrow-NBSP that Intl emits for space_comma locales.
@@ -237,7 +237,7 @@ export function parseAmountInput(value: string, locale = 'en-US'): number | null
  */
 export function formatAmountInput(
   value: number,
-  locale = 'en-US',
+  locale = 'en-IN',
   maximumFractionDigits = 2,
 ): string {
   try {

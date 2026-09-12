@@ -1,36 +1,47 @@
-export function setThemeBasedOnSystem(lightColor: string | null, darkColor: string | null, resolvedTheme?: string) {
+const MONOCHROME_THEME = {
+  light: {
+    primary: '#0A0A0A',
+    ring: '#0A0A0A',
+    sidebarPrimary: '#0A0A0A',
+    accent: '#F1F1F2',
+    accentForeground: '#09090B',
+    muted: '#F4F4F5',
+    sidebarAccent: '#F1F1F2',
+    sidebarAccentForeground: '#09090B',
+  },
+  dark: {
+    primary: '#FFFFFF',
+    ring: '#FFFFFF',
+    sidebarPrimary: '#FFFFFF',
+    accent: '#171717',
+    accentForeground: '#FAFAFA',
+    muted: '#151515',
+    sidebarAccent: '#151515',
+    sidebarAccentForeground: '#FAFAFA',
+  },
+} as const
+
+/**
+ * Keep the historical function signature because auth/layout callers and the
+ * backend still expose saved theme-color settings from older installations.
+ * FinCo-Pilot's current identity is deliberately monochrome, so those legacy
+ * values no longer override the visual system. This also prevents an existing
+ * orange/coral setting in the database from reappearing after a page load.
+ */
+export function setThemeBasedOnSystem(
+  _lightColor: string | null,
+  _darkColor: string | null,
+  resolvedTheme?: string,
+) {
   const root = document.documentElement
-  const isDark = resolvedTheme === 'dark'
+  const palette = resolvedTheme === 'dark' ? MONOCHROME_THEME.dark : MONOCHROME_THEME.light
 
-  const themeColor = isDark 
-    ? darkColor
-    : lightColor
-
-  if (themeColor) {
-    root.style.setProperty('--primary', themeColor)
-    root.style.setProperty('--ring', themeColor)
-    root.style.setProperty('--sidebar-primary', themeColor)
-
-    const mixBase = isDark ? 'black' : 'white'
-    const contrastBase = isDark ? 'white' : 'black'
-
-    const accentBg = `color-mix(in srgb, ${themeColor}, ${mixBase} 90%)`
-    const mutedBg = `color-mix(in srgb, ${themeColor}, ${mixBase} 94%)`
-    root.style.setProperty('--accent', accentBg)
-    root.style.setProperty('--sidebar-accent', accentBg)
-    root.style.setProperty('--muted', mutedBg)
-
-    const accentFg = `color-mix(in srgb, ${themeColor}, ${contrastBase} 20%)`
-    root.style.setProperty('--accent-foreground', accentFg)
-    root.style.setProperty('--sidebar-accent-foreground', accentFg)
-  } else {
-    root.style.removeProperty('--primary')
-    root.style.removeProperty('--ring')
-    root.style.removeProperty('--sidebar-primary')
-    root.style.removeProperty('--accent')
-    root.style.removeProperty('--accent-foreground')
-    root.style.removeProperty('--muted')
-    root.style.removeProperty('--sidebar-accent')
-    root.style.removeProperty('--sidebar-accent-foreground')
-  }
+  root.style.setProperty('--primary', palette.primary)
+  root.style.setProperty('--ring', palette.ring)
+  root.style.setProperty('--sidebar-primary', palette.sidebarPrimary)
+  root.style.setProperty('--accent', palette.accent)
+  root.style.setProperty('--accent-foreground', palette.accentForeground)
+  root.style.setProperty('--muted', palette.muted)
+  root.style.setProperty('--sidebar-accent', palette.sidebarAccent)
+  root.style.setProperty('--sidebar-accent-foreground', palette.sidebarAccentForeground)
 }

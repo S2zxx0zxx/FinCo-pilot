@@ -19,16 +19,26 @@ describe('FinCoLogo', () => {
     expect(svg).toHaveAttribute('height', '64')
   })
 
-  it('keeps a fixed viewBox so the mark never distorts', () => {
+  it('keeps the traced artwork viewBox so the F mark never distorts', () => {
     const { container } = renderWithProviders(<FinCoLogo size={120} />)
     const svg = container.querySelector('svg')!
-    expect(svg).toHaveAttribute('viewBox', '0 0 32 32')
+    expect(svg).toHaveAttribute('viewBox', '0 0 1000 1000')
     expect(svg).toHaveAttribute('preserveAspectRatio', 'xMidYMid meet')
   })
 
   it('uses currentColor so it follows the theme', () => {
     const { container } = renderWithProviders(<FinCoLogo />)
-    expect(container.querySelector('path')).toHaveAttribute('stroke', 'currentColor')
+    expect(container.querySelector('path')).toHaveAttribute('fill', 'currentColor')
+  })
+
+  it('pins white on dark branded surfaces', () => {
+    const { container } = renderWithProviders(<FinCoLogo mode="on-dark" />)
+    expect(container.querySelector('svg')).toHaveStyle({ color: '#FFFFFF' })
+  })
+
+  it('pins black on light branded surfaces', () => {
+    const { container } = renderWithProviders(<FinCoLogo mode="on-light" />)
+    expect(container.querySelector('svg')).toHaveStyle({ color: '#09090B' })
   })
 
   it('accepts a className', () => {

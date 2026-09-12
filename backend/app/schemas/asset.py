@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, field_validator
 class AssetCreate(BaseModel):
     name: str
     type: str
-    currency: str = "USD"
+    currency: str = "INR"
     units: Optional[Decimal] = None
     valuation_method: str = "manual"
     purchase_date: Optional[_date] = None

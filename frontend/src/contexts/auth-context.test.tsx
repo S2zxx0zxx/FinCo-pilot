@@ -23,7 +23,7 @@ const USER: User = {
   is_superuser: false,
   is_verified: true,
   is_2fa_enabled: false,
-  preferences: {},
+  preferences: { currency_display: 'INR' },
 }
 
 function wrapper({ children }: { children: ReactNode }) {

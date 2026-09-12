@@ -11,7 +11,7 @@ GroupKind = Literal["social", "cost_center", "project", "client", "other"]
 class GroupBase(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     kind: GroupKind = "social"
-    default_currency: str = Field(default="USD", min_length=3, max_length=3)
+    default_currency: str = Field(default="INR", min_length=3, max_length=3)
     icon: str = "users"
     color: str = "#6B7280"
     notes: Optional[str] = None

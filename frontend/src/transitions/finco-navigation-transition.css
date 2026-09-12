@@ -1,0 +1,12 @@
+.finco-route-loader--leaving {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease, visibility 180ms ease;
+  visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .finco-route-loader--leaving {
+    transition: none;
+  }
+}

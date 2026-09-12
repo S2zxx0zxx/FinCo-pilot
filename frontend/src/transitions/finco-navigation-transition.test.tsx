@@ -29,10 +29,11 @@ describe('FinCoNavigationTransition', () => {
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Go reports' }))
+    act(() => vi.advanceTimersByTime(20))
     expect(screen.getByRole('status', { name: 'Opening Reports' })).toBeInTheDocument()
     expect(screen.getByText('Preparing Reports')).toBeInTheDocument()
 
-    act(() => vi.advanceTimersByTime(360))
+    act(() => vi.advanceTimersByTime(340))
     expect(screen.getByRole('status', { name: 'Opening Reports' })).toHaveClass('finco-route-loader--leaving')
 
     act(() => vi.advanceTimersByTime(180))

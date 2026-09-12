@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Download, RefreshCw, Share2, WifiOff, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { FinCoLogo } from '@/components/finco-logo'
 import { Button } from '@/components/ui/button'
-import { usePWA } from '@/pwa/pwa-provider'
+import { usePWA } from '@/pwa/pwa-context'
 
 const INSTALL_DISMISS_KEY = 'finco:pwa-install-dismissed-at'
 const INSTALL_SNOOZE_MS = 7 * 24 * 60 * 60 * 1000
@@ -20,7 +20,7 @@ export function PWAChrome() {
   const { t } = useTranslation()
   const { isOnline, canInstall, isStandalone, updateReady, install, applyUpdate } = usePWA()
   const [showInstall, setShowInstall] = useState(false)
-  const ios = useMemo(isIOSDevice, [])
+  const ios = isIOSDevice()
 
   useEffect(() => {
     if (isStandalone || (!canInstall && !ios)) {

@@ -2,8 +2,8 @@ import { useTranslation } from 'react-i18next'
 import { FinCoLogo } from '@/components/finco-logo'
 
 // Left-hand brand panel for the auth/onboarding screens. A graphite→warm-coral
-// field with a slow purple aurora drifting behind an oversized, translucent
-// FinCo-Pilot watermark. Decorative only — hidden below `lg`, where the form takes
+// field with a slow amber glow drifting behind an oversized translucent
+// FinCo-Pilot mark. Decorative only — hidden below `lg`, where the form takes
 // the full width and carries its own compact header.
 export function AuthBrandPanel() {
   const { t } = useTranslation()
@@ -16,14 +16,14 @@ export function AuthBrandPanel() {
           'linear-gradient(150deg, #0B0B0F 0%, #171217 52%, #2B1711 100%)',
       }}
     >
-      {/* Soft animated aurora */}
+      {/* Soft animated FinCo-Pilot ambient glow */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
         <div className="fincopilot-aurora fincopilot-aurora-1" />
         <div className="fincopilot-aurora fincopilot-aurora-2" />
         <div className="fincopilot-aurora fincopilot-aurora-3" />
       </div>
 
-      {/* Oversized translucent shell, bleeding off the lower-right edge */}
+      {/* Oversized translucent FinCo-Pilot mark, bleeding off the lower-right edge */}
       <div
         aria-hidden
         className="pointer-events-none absolute -right-28 -bottom-24 text-white/[0.06]"
@@ -38,7 +38,7 @@ export function AuthBrandPanel() {
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            'radial-gradient(115% 90% at 78% 8%, transparent 42%, rgba(20, 12, 60, 0.38) 100%)',
+            'radial-gradient(115% 90% at 78% 8%, transparent 42%, rgba(43, 23, 17, 0.48) 100%)',
         }}
       />
 

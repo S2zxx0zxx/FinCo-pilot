@@ -69,6 +69,7 @@ async def create_personal_workspace_for_user(
         name=_resolve_personal_name(lang),
         kind="personal",
         created_by_user_id=user.id,
+        billing_owner_user_id=user.id,
         default_currency=prefs.get("currency_display", "INR"),
         locale=lang,
     )
@@ -240,6 +241,7 @@ async def create_workspace(
         kind=kind,
         created_by_user_id=creator.id,
         managed_by_user_id=creator.id,
+        billing_owner_user_id=creator.id,
         default_currency=default_currency or prefs.get("currency_display", "INR"),
         locale=workspace_locale,
         tax_jurisdiction=tax_jurisdiction,

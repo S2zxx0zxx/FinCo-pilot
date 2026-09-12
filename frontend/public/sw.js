@@ -8,7 +8,7 @@
  * - updates wait for explicit user approval before taking control.
  */
 
-const VERSION = 'finco-pwa-v2'
+const VERSION = 'finco-pwa-v3'
 const SHELL_CACHE = `${VERSION}:shell`
 const STATIC_CACHE = `${VERSION}:static`
 const CACHE_PREFIX = 'finco-pwa-'
@@ -31,6 +31,42 @@ const APP_SHELL = [
 
 const PUBLIC_ASSETS = new Set(APP_SHELL.filter((url) => url !== '/'))
 
+async function trimCache(cache, maxEntries) {
+  const keys = await cache.keys()
+  if (keys.length <= maxEntries) return
+  await Promise.all(keys.slice(0, keys.length - maxEntries).map((key) => cache.delete(key)))
+}
+
+/**
+ * Vite's entry filenames are content-hashed and therefore unknown when this
+ * source file is authored. Parse the built index document at runtime and warm
+ * only its /static/ JS/CSS entry assets. That makes the installed shell usable
+ * after the first install without introducing a broad cache of user data.
+ */
+async function warmStaticAssetsFromDocument(response) {
+  try {
+    const html = await response.clone().text()
+    const urls = new Set()
+    const assetPattern = /(?:src|href)=["'](\/static\/[^"'?#]+(?:\?[^"']*)?)["']/g
+    let match
+    while ((match = assetPattern.exec(html)) !== null) urls.add(match[1])
+    if (urls.size === 0) return
+
+    const cache = await caches.open(STATIC_CACHE)
+    await Promise.allSettled(
+      [...urls].map(async (url) => {
+        const cached = await cache.match(url)
+        if (cached) return
+        const asset = await fetch(url, { cache: 'reload' })
+        if (asset.ok) await cache.put(url, asset)
+      }),
+    )
+    await trimCache(cache, MAX_STATIC_ENTRIES)
+  } catch {
+    // Shell warming is an optimisation; a failure must never abort install.
+  }
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(SHELL_CACHE).then(async (cache) => {
@@ -42,6 +78,9 @@ self.addEventListener('install', (event) => {
           if (response.ok) await cache.put(url, response)
         }),
       )
+
+      const shell = await cache.match('/')
+      if (shell) await warmStaticAssetsFromDocument(shell)
     }),
   )
 })
@@ -66,12 +105,6 @@ self.addEventListener('message', (event) => {
   }
 })
 
-async function trimCache(cache, maxEntries) {
-  const keys = await cache.keys()
-  if (keys.length <= maxEntries) return
-  await Promise.all(keys.slice(0, keys.length - maxEntries).map((key) => cache.delete(key)))
-}
-
 async function networkFirstNavigation(request) {
   const cache = await caches.open(SHELL_CACHE)
   try {
@@ -80,6 +113,7 @@ async function networkFirstNavigation(request) {
       // Store the SPA document under / so every client-side route has one safe
       // offline fallback without persisting any route-specific API response.
       await cache.put('/', response.clone())
+      void warmStaticAssetsFromDocument(response)
     }
     return response
   } catch {

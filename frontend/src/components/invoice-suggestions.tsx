@@ -70,7 +70,7 @@ export function InvoiceSuggestions({
 
   const showDate = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString(dateLocale)
   const money = (value: string | number, code?: string | null) =>
-    mask(formatCurrency(Number(value), code || 'USD', locale))
+    mask(formatCurrency(Number(value), code || 'INR', locale))
 
   return (
     <div className="bg-amber-50/60 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-900/60 overflow-hidden">

@@ -34,6 +34,9 @@ import { useLocalAuthEnabled } from '@/hooks/use-local-auth'
 import { Search, Plus, Trash2, Shield, ShieldOff, UserCog, Users, Scale, Tag, Palette, Save, Hash, CalendarDays } from 'lucide-react'
 import type { AdminUser } from '@/types'
 
+const FINCO_LIGHT_PRIMARY = '#0A0A0A'
+const FINCO_DARK_PRIMARY = '#FFFFFF'
+
 export default function AdminSettingsPage() {
   const { t, i18n } = useTranslation()
   const { user: currentUser } = useAuth()
@@ -49,7 +52,7 @@ export default function AdminSettingsPage() {
   const [formPassword, setFormPassword] = useState('')
   const [formIsAdmin, setFormIsAdmin] = useState(false)
   const [formLanguage, setFormLanguage] = useState('en')
-  const [formCurrency, setFormCurrency] = useState('USD')
+  const [formCurrency, setFormCurrency] = useState('INR')
 
   const [editEmail, setEditEmail] = useState('')
   const [editIsActive, setEditIsActive] = useState(true)
@@ -59,8 +62,8 @@ export default function AdminSettingsPage() {
 
   const [lastSyncedLight, setLastSyncedLight] = useState<string | undefined>()
   const [lastSyncedDark, setLastSyncedDark] = useState<string | undefined>()
-  const [localLight, setLocalLight] = useState<string>('#6366F1')
-  const [localDark, setLocalDark] = useState<string>('#818CF8')
+  const [localLight, setLocalLight] = useState<string>(FINCO_LIGHT_PRIMARY)
+  const [localDark, setLocalDark] = useState<string>(FINCO_DARK_PRIMARY)
 
   const { data: usersData, isLoading: usersLoading } = useQuery({
     queryKey: ['admin', 'users', search],
@@ -123,7 +126,10 @@ export default function AdminSettingsPage() {
     },
   })
 
-  // Theme color settings
+  // Keep legacy settings readable for old installs, but FinCo-Pilot's current
+  // product identity is intentionally fixed to black in light mode and white
+  // in dark mode. Reading the values lets us normalize stale orange/coral
+  // settings back to the canonical pair without letting them recolor the UI.
   const { data: themeColorLightSetting } = useQuery({
     queryKey: ['admin', 'settings', 'theme_color_light'],
     queryFn: () => adminApi.getSetting('theme_color_light').catch(() => null),
@@ -229,23 +235,25 @@ export default function AdminSettingsPage() {
 
   if (themeColorLightSetting?.value && themeColorLightSetting.value !== lastSyncedLight) {
     setLastSyncedLight(themeColorLightSetting.value)
-    setLocalLight(themeColorLightSetting.value)
+    setLocalLight(FINCO_LIGHT_PRIMARY)
   }
   if (themeColorDarkSetting?.value && themeColorDarkSetting.value !== lastSyncedDark) {
     setLastSyncedDark(themeColorDarkSetting.value)
-    setLocalDark(themeColorDarkSetting.value)
+    setLocalDark(FINCO_DARK_PRIMARY)
   }
 
   const saveColorsMutation = useMutation({
     mutationFn: async () => {
       await Promise.all([
-        adminApi.updateSetting('theme_color_light', localLight),
-        adminApi.updateSetting('theme_color_dark', localDark),
+        adminApi.updateSetting('theme_color_light', FINCO_LIGHT_PRIMARY),
+        adminApi.updateSetting('theme_color_dark', FINCO_DARK_PRIMARY),
       ])
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'settings'] })
-      setThemeBasedOnSystem(localLight, localDark, resolvedTheme)
+      setLocalLight(FINCO_LIGHT_PRIMARY)
+      setLocalDark(FINCO_DARK_PRIMARY)
+      setThemeBasedOnSystem(FINCO_LIGHT_PRIMARY, FINCO_DARK_PRIMARY, resolvedTheme)
       toast.success(t('admin.settings.updated'))
     },
     onError: () => {
@@ -260,7 +268,7 @@ export default function AdminSettingsPage() {
     setFormLanguage('en')
     // New users default to the admin's current display currency so they
     // follow the currency the workspace is running in.
-    setFormCurrency(currentUser?.preferences?.currency_display ?? 'USD')
+    setFormCurrency(currentUser?.preferences?.currency_display ?? 'INR')
   }
 
   function openEdit(u: AdminUser) {
@@ -380,6 +388,7 @@ export default function AdminSettingsPage() {
             <Button
               onClick={() => saveColorsMutation.mutate()}
               disabled={saveColorsMutation.isPending}
+              variant="outline"
             >
               <Save size={13} />
               {saveColorsMutation.isPending ? t('common.loading') : t('common.save')}
@@ -394,11 +403,12 @@ export default function AdminSettingsPage() {
               <div className="space-y-1.5">
                 <Label className="text-xs">{t('settings.themeColor')}</Label>
                 <div className="flex items-center gap-2">
-                  <Input 
-                    type="color" 
-                    className="w-12 h-9 p-1 cursor-pointer" 
+                  <Input
+                    type="color"
+                    className="w-12 h-9 p-1 cursor-default"
                     value={localLight}
-                    onChange={(e) => setLocalLight(e.target.value)}
+                    disabled
+                    readOnly
                   />
                   <span className="text-xs font-mono text-muted-foreground">{localLight}</span>
                 </div>
@@ -413,11 +423,12 @@ export default function AdminSettingsPage() {
               <div className="space-y-1.5">
                 <Label className="text-xs">{t('settings.themeColor')}</Label>
                 <div className="flex items-center gap-2">
-                  <Input 
-                    type="color" 
-                    className="w-12 h-9 p-1 cursor-pointer" 
+                  <Input
+                    type="color"
+                    className="w-12 h-9 p-1 cursor-default"
                     value={localDark}
-                    onChange={(e) => setLocalDark(e.target.value)}
+                    disabled
+                    readOnly
                   />
                   <span className="text-xs font-mono text-muted-foreground">{localDark}</span>
                 </div>
@@ -512,8 +523,8 @@ export default function AdminSettingsPage() {
           ] as const).map((opt) => {
             // Live preview of how this option renders a sample amount, resolved
             // against the admin's currency + UI language.
-            const adminCurrency = currentUser?.preferences?.currency_display ?? 'USD'
-            const numLocale = resolveDisplayLocale(opt.value as NumberFormat, adminCurrency, i18n.language === 'en' ? 'en-US' : i18n.language)
+            const adminCurrency = currentUser?.preferences?.currency_display ?? 'INR'
+            const numLocale = resolveDisplayLocale(opt.value as NumberFormat, adminCurrency, i18n.language === 'en' ? 'en-IN' : i18n.language)
             const numExample = new Intl.NumberFormat(numLocale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(1234.56)
             return (
               <button
@@ -559,7 +570,7 @@ export default function AdminSettingsPage() {
           ] as const).map((opt) => {
             // Live preview, resolved against the current number format + UI
             // language. Sample 4 June makes the day/month order unambiguous.
-            const adminCurrency = currentUser?.preferences?.currency_display ?? 'USD'
+            const adminCurrency = currentUser?.preferences?.currency_display ?? 'INR'
             const dateLocale = resolveDateLocale(opt.value as DateFormat, numberFormat as NumberFormat, adminCurrency, resolveSupportedLang(i18n.resolvedLanguage ?? i18n.language))
             const numericExample = new Date(2026, 5, 4).toLocaleDateString(dateLocale)
             const wordedExample = new Date(2026, 5, 4).toLocaleDateString(dateLocale, { day: 'numeric', month: 'short', year: 'numeric' })

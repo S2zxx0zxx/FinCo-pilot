@@ -1,0 +1,182 @@
+name: FinCo Finalize Identity
+
+on:
+  push:
+    branches:
+      - design/finco-identity-overhaul
+
+permissions:
+  contents: write
+
+concurrency:
+  group: finco-finalize-identity
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    if: ${{ !contains(github.event.head_commit.message, '[finco-cleanup]') }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out feature branch
+        uses: actions/checkout@v7
+        with:
+          ref: design/finco-identity-overhaul
+          fetch-depth: 2
+
+      - name: Normalize remaining INR fallbacks
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          root = Path('frontend/src')
+          replacements = {
+              "currency_display ?? 'USD'": "currency_display ?? 'INR'",
+              "currency_display || 'USD'": "currency_display || 'INR'",
+              "default_currency ?? 'USD'": "default_currency ?? 'INR'",
+              "default_currency || 'USD'": "default_currency || 'INR'",
+              "currency ?? 'USD'": "currency ?? 'INR'",
+              "currency || 'USD'": "currency || 'INR'",
+          }
+
+          changed = []
+          for path in sorted(root.rglob('*')):
+              if path.suffix not in {'.ts', '.tsx'}:
+                  continue
+              if '.test.' in path.name or '__tests__' in path.parts or 'test' in path.parts:
+                  continue
+              text = path.read_text(encoding='utf-8')
+              updated = text
+              for old, new in replacements.items():
+                  updated = updated.replace(old, new)
+              if updated != text:
+                  path.write_text(updated, encoding='utf-8')
+                  changed.append(str(path))
+
+          mcp = Path('backend/mcp_server/tools/proposals.py')
+          text = mcp.read_text(encoding='utf-8')
+          updated = text.replace(
+              '(currency or acc.currency or "USD")',
+              '(currency or acc.currency or "INR")',
+          )
+          if updated != text:
+              mcp.write_text(updated, encoding='utf-8')
+              changed.append(str(mcp))
+
+          print('Normalized files:')
+          for path in changed:
+              print(f'  {path}')
+          PY
+
+      - name: Audit default-currency and legacy-brand fallbacks
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          bad = []
+          patterns = (
+              "currency_display ?? 'USD'",
+              "currency_display || 'USD'",
+              "default_currency ?? 'USD'",
+              "default_currency || 'USD'",
+              "currency ?? 'USD'",
+              "currency || 'USD'",
+          )
+          for path in Path('frontend/src').rglob('*'):
+              if path.suffix not in {'.ts', '.tsx'}:
+                  continue
+              if '.test.' in path.name or '__tests__' in path.parts or 'test' in path.parts:
+                  continue
+              text = path.read_text(encoding='utf-8')
+              for pattern in patterns:
+                  if pattern in text:
+                      bad.append(f'{path}: {pattern}')
+
+          proposal = Path('backend/mcp_server/tools/proposals.py').read_text(encoding='utf-8')
+          if '(currency or acc.currency or "USD")' in proposal:
+              bad.append('backend/mcp_server/tools/proposals.py: USD account fallback')
+
+          for base in (Path('frontend/src'), Path('frontend/public')):
+              if not base.exists():
+                  continue
+              for path in base.rglob('*'):
+                  if not path.is_file() or path.suffix.lower() not in {'.ts', '.tsx', '.js', '.jsx', '.css', '.html', '.svg', '.json'}:
+                      continue
+                  text = path.read_text(encoding='utf-8', errors='ignore')
+                  if 'securo' in text.lower():
+                      bad.append(f'{path}: legacy Securo reference')
+
+          if bad:
+              print('Audit failures:')
+              print('\n'.join(f'  {x}' for x in bad))
+              raise SystemExit(1)
+          print('Static identity/default audit passed.')
+          PY
+
+      - name: Check migration chain
+        run: python3 backend/scripts/check_migration_chain.py
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Frontend lint
+        working-directory: frontend
+        run: npm run lint -- --max-warnings=0
+
+      - name: Frontend typecheck and build
+        working-directory: frontend
+        run: npm run build
+
+      - name: Frontend tests
+        working-directory: frontend
+        run: npm test
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version-file: backend/.python-version
+          cache: pip
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: |
+          pip install -q uv==0.12.10
+          uv export --frozen --all-extras --no-emit-project -o /tmp/requirements-dev.txt
+          pip install --require-hashes -r /tmp/requirements-dev.txt
+          pip install --no-deps -e .
+
+      - name: Verify backend lockfile
+        working-directory: backend
+        run: uv lock --check
+
+      - name: Backend lint
+        working-directory: backend
+        run: ruff check .
+
+      - name: Backend typecheck
+        working-directory: backend
+        run: ty check .
+
+      - name: Backend tests
+        working-directory: backend
+        run: pytest -n auto --dist loadfile --cov=app --cov-report=term-missing --cov-fail-under=60 -ra -W error
+
+      - name: Commit finalized cleanup
+        run: |
+          if git diff --quiet; then
+            echo 'No cleanup changes were required.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add frontend/src backend/mcp_server/tools/proposals.py
+          git commit -m 'fix: finish FinCo monochrome INR defaults [finco-cleanup]'
+          git push origin HEAD:design/finco-identity-overhaul

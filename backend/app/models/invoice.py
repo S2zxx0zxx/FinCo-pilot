@@ -221,7 +221,7 @@ class Invoice(Base):
     # from "recorded but never sent" without inflating the enum.
     sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    currency: Mapped[str] = mapped_column(String(3), default="USD")
+    currency: Mapped[str] = mapped_column(String(3), default="INR", server_default="INR")
     subtotal: Mapped[Decimal] = mapped_column(Numeric(precision=15, scale=2), default=Decimal("0"))
     discount: Mapped[Decimal] = mapped_column(Numeric(precision=15, scale=2), default=Decimal("0"))
     # Tax charged TO the client — part of what they owe. Tax withheld BY

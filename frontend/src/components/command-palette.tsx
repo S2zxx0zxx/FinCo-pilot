@@ -225,7 +225,7 @@ function formatHitAmount(amount: number | null, currency: string | null, locale:
   try {
     return new Intl.NumberFormat(locale, {
       style: 'currency',
-      currency: currency ?? 'USD',
+      currency: currency ?? 'INR',
       maximumFractionDigits: 2,
     }).format(amount)
   } catch {

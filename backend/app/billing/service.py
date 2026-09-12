@@ -68,33 +68,15 @@ async def get_subscription(session: AsyncSession, user_id: uuid.UUID) -> Subscri
     return result.scalar_one_or_none()
 
 
-async def ensure_free_subscription(session: AsyncSession, user_id: uuid.UUID) -> Subscription:
-    """Create the server-owned Free billing row for a newly-created user.
-
-    Registration/bootstrap paths call this inside their existing user/workspace
-    transaction. Legacy users are backfilled by migration 091. Normal clients
-    never call a plan-mutation endpoint.
-    """
-    existing = await get_subscription(session, user_id)
-    if existing is not None:
-        return existing
-
-    subscription = Subscription(
-        user_id=user_id,
-        plan=PlanId.FREE.value,
-        status=SubscriptionStatus.FREE.value,
-        billing_interval=BillingInterval.NONE.value,
-    )
-    session.add(subscription)
-    await session.flush()
-    return subscription
-
-
 async def get_effective_plan(session: AsyncSession, user_id: uuid.UUID) -> PlanId:
     return effective_plan(await get_subscription(session, user_id))
 
 
 async def get_entitlements(session: AsyncSession, user_id: uuid.UUID) -> EntitlementsRead:
+    # Local import prevents a module cycle: usage.py deliberately reuses the
+    # pure `effective_plan` function above while this read model includes usage.
+    from app.billing.usage import next_month_reset, usage_snapshot
+
     subscription = await get_subscription(session, user_id)
     plan = effective_plan(subscription)
     spec = get_plan_spec(plan)
@@ -110,6 +92,7 @@ async def get_entitlements(session: AsyncSession, user_id: uuid.UUID) -> Entitle
         period_end = subscription.current_period_end
         cancel_at_period_end = subscription.cancel_at_period_end
 
+    reset = next_month_reset()
     return EntitlementsRead(
         plan=plan,
         status=status,
@@ -118,10 +101,12 @@ async def get_entitlements(session: AsyncSession, user_id: uuid.UUID) -> Entitle
         cancel_at_period_end=cancel_at_period_end,
         capabilities={cap.value: spec.has(cap) for cap in Capability},
         limits={metric.value: int(limit) for metric, limit in spec.limits.items()},
-        # Phase B wires server-owned live counters. Keeping this partial is
-        # intentional: clients must never infer zero for absent metrics.
-        usage={},
-        resets_at={"imports_monthly": None, "ai_actions_monthly": None},
+        usage=await usage_snapshot(session, user_id),
+        resets_at={
+            "imports_monthly": reset,
+            "invoices_monthly": reset,
+            "ai_actions_monthly": reset,
+        },
     )
 
 

@@ -7,6 +7,7 @@ from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.accounts import router as accounts_router
+from app.api.billing import router as billing_router
 from app.api.budgets import router as budgets_router
 from app.api.goals import router as goals_router
 from app.api.groups import router as groups_router
@@ -164,6 +165,7 @@ app.include_router(
 )
 
 # Domain routes
+app.include_router(billing_router)
 app.include_router(categories_router)
 app.include_router(category_groups_router)
 app.include_router(rules_router)

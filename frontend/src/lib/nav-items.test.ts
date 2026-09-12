@@ -57,7 +57,8 @@ describe('nav catalog', () => {
 
   it('keeps Plan & Billing app-level instead of tying it to a workspace module', () => {
     const billing = navItems.find((i) => i.type === 'link' && i.key === 'planBilling')
-    expect(billing).toMatchObject({ type: 'link', path: '/pricing', module: undefined })
+    expect(billing).toMatchObject({ type: 'link', path: '/pricing' })
+    expect(billing && 'module' in billing).toBe(false)
   })
 })
 

@@ -8,7 +8,7 @@
  * - updates wait for explicit user approval before taking control.
  */
 
-const VERSION = 'finco-pwa-v3'
+const VERSION = 'finco-pwa-v4'
 const SHELL_CACHE = `${VERSION}:shell`
 const STATIC_CACHE = `${VERSION}:static`
 const CACHE_PREFIX = 'finco-pwa-'

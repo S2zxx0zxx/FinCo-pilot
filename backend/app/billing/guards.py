@@ -315,6 +315,13 @@ async def invoices_guard(
     path = _path(request)
     if method in {"GET", "HEAD", "OPTIONS"}:
         return
+
+    # Downgraded users keep cleanup/control of files already in their history.
+    # Uploading another file grows paid storage/business data and stays Max-only;
+    # rename/delete do not increase the paid resource and remain available.
+    if "/attachments" in path and method in {"PATCH", "DELETE"}:
+        return
+
     await require_workspace_capability(session, ctx.workspace, Capability.INVOICES)
     if method == "POST" and path == "/api/invoices":
         await consume_monthly(session, ctx.workspace, Metric.INVOICES_MONTHLY)
@@ -335,11 +342,5 @@ async def agents_guard(
     ctx: WorkspaceContext = Depends(current_workspace),
     session: AsyncSession = Depends(get_async_session),
 ) -> None:
-    """Max-only advanced agent guard; simple future assistant remains separate."""
+    """Max-only advanced agent guard; usage is consumed after chat validation."""
     await require_workspace_capability(session, ctx.workspace, Capability.AGENTS_AUTOMATION)
-    if request.method == "POST" and _path(request).endswith("/chat"):
-        await consume_monthly(session, ctx.workspace, Metric.AI_ACTIONS_MONTHLY)
-        # Streaming responses outlive ordinary endpoint setup. Persist the
-        # accepted action before the generator starts so usage cannot disappear
-        # when the stream later closes.
-        await session.commit()

@@ -209,11 +209,16 @@ async def assets_guard(
     if path == "/api/assets/import":
         body = await _json(request)
         await consume_monthly(session, ctx.workspace, Metric.IMPORTS_MONTHLY)
-        orders = body.get("orders") if isinstance(body.get("orders"), list) else []
+        orders_raw = body.get("orders")
+        orders: list[dict[str, Any]] = (
+            [item for item in orders_raw if isinstance(item, dict)]
+            if isinstance(orders_raw, list)
+            else []
+        )
         tickers = {
             str(order.get("ticker", "")).strip().upper()
             for order in orders
-            if isinstance(order, dict) and str(order.get("ticker", "")).strip()
+            if str(order.get("ticker", "")).strip()
         }
         if not tickers:
             return
@@ -258,9 +263,15 @@ async def rules_guard(
 
     if method == "POST" and path == "/api/rules/import":
         body = await _json(request)
-        payload = body.get("payload") if isinstance(body.get("payload"), dict) else {}
-        incoming = payload.get("rules") if isinstance(payload.get("rules"), list) else []
-        names = {str(item.get("name", "")).strip() for item in incoming if isinstance(item, dict)}
+        payload_raw = body.get("payload")
+        payload: dict[str, Any] = payload_raw if isinstance(payload_raw, dict) else {}
+        incoming_raw = payload.get("rules")
+        incoming: list[dict[str, Any]] = (
+            [item for item in incoming_raw if isinstance(item, dict)]
+            if isinstance(incoming_raw, list)
+            else []
+        )
+        names = {str(item.get("name", "")).strip() for item in incoming}
         names.discard("")
         if not names:
             return

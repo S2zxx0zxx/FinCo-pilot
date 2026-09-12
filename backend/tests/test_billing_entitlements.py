@@ -205,7 +205,9 @@ async def test_monthly_counter_is_deletion_proof_server_state(
     with pytest.raises(HTTPException) as exc:
         await consume_monthly(session, test_workspace, Metric.IMPORTS_MONTHLY)
     assert exc.value.status_code == 409
-    assert exc.value.detail["metric"] == "imports_monthly"
+    detail = exc.value.detail
+    assert isinstance(detail, dict)
+    assert detail.get("metric") == "imports_monthly"
 
 
 @pytest.mark.parametrize(

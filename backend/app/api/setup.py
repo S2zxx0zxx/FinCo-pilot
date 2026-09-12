@@ -21,7 +21,7 @@ class SetupStatus(BaseModel):
 class CreateAdminRequest(BaseModel):
     email: EmailStr
     password: str
-    currency: str = "USD"
+    currency: str = "INR"
     name: str = ""
     language: str = "pt-BR"
 

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Download, RefreshCw, WifiOff, X } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Download, RefreshCw, Share2, WifiOff, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { FinCoLogo } from '@/components/finco-logo'
 import { Button } from '@/components/ui/button'
@@ -8,13 +8,22 @@ import { usePWA } from '@/pwa/pwa-provider'
 const INSTALL_DISMISS_KEY = 'finco:pwa-install-dismissed-at'
 const INSTALL_SNOOZE_MS = 7 * 24 * 60 * 60 * 1000
 
+function isIOSDevice() {
+  if (typeof navigator === 'undefined') return false
+  return (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  )
+}
+
 export function PWAChrome() {
   const { t } = useTranslation()
   const { isOnline, canInstall, isStandalone, updateReady, install, applyUpdate } = usePWA()
   const [showInstall, setShowInstall] = useState(false)
+  const ios = useMemo(isIOSDevice, [])
 
   useEffect(() => {
-    if (!canInstall || isStandalone) {
+    if (isStandalone || (!canInstall && !ios)) {
       setShowInstall(false)
       return
     }
@@ -24,7 +33,7 @@ export function PWAChrome() {
 
     const timer = window.setTimeout(() => setShowInstall(true), 5000)
     return () => window.clearTimeout(timer)
-  }, [canInstall, isStandalone])
+  }, [canInstall, ios, isStandalone])
 
   const dismissInstall = () => {
     localStorage.setItem(INSTALL_DISMISS_KEY, String(Date.now()))
@@ -69,7 +78,7 @@ export function PWAChrome() {
         </aside>
       )}
 
-      {!updateReady && showInstall && (
+      {!updateReady && showInstall && canInstall && (
         <aside className="finco-pwa-card" aria-live="polite">
           <div className="finco-pwa-card__mark" aria-hidden="true">
             <FinCoLogo size={22} />
@@ -86,6 +95,30 @@ export function PWAChrome() {
             <Download size={13} aria-hidden="true" />
             {t('pwa.install', { defaultValue: 'Install' })}
           </Button>
+          <button
+            type="button"
+            className="finco-pwa-card__dismiss"
+            onClick={dismissInstall}
+            aria-label={t('common.close', { defaultValue: 'Close' })}
+          >
+            <X size={14} />
+          </button>
+        </aside>
+      )}
+
+      {!updateReady && showInstall && !canInstall && ios && (
+        <aside className="finco-pwa-card" aria-live="polite">
+          <div className="finco-pwa-card__mark" aria-hidden="true">
+            <Share2 size={18} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="finco-pwa-card__title">
+              {t('pwa.installIOS', { defaultValue: 'Install FinCo-Pilot on iPhone' })}
+            </p>
+            <p className="finco-pwa-card__copy">
+              {t('pwa.installIOSHint', { defaultValue: 'Open Share, then choose Add to Home Screen.' })}
+            </p>
+          </div>
           <button
             type="button"
             className="finco-pwa-card__dismiss"

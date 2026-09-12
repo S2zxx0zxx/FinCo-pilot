@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -288,15 +288,9 @@ export default function PricingPage() {
   const explicitPlan = requestedPlan === 'free' || requestedPlan === 'pro' || requestedPlan === 'max'
     ? requestedPlan as PlanId
     : null
-  const [selectedPlan, setSelectedPlan] = useState<PlanId>(() => explicitPlan ?? 'pro')
+  const selectedPlan: PlanId = explicitPlan ?? (user && !billingLoading ? currentPlan : 'pro')
   const [interval, setInterval] = useState<'monthly' | 'annual'>('annual')
   const [checkoutNote, setCheckoutNote] = useState(false)
-
-  useEffect(() => {
-    if (!user || explicitPlan || billingLoading) return
-    setSelectedPlan(currentPlan)
-    setCheckoutNote(false)
-  }, [billingLoading, currentPlan, explicitPlan, user])
 
   const selectedPrice = useMemo(() => {
     if (selectedPlan === 'free') return priceFor(catalog, 'free', 'none')
@@ -305,7 +299,6 @@ export default function PricingPage() {
   }, [catalog, interval, selectedPlan])
 
   const selectPlan = (next: PlanId) => {
-    setSelectedPlan(next)
     setCheckoutNote(false)
     const nextParams = new URLSearchParams(params)
     nextParams.set('plan', next)

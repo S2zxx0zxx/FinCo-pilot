@@ -1,31 +1,21 @@
 import {
-  createContext,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useRef,
   useState,
   type ReactNode,
 } from 'react'
-
-type InstallOutcome = 'accepted' | 'dismissed' | 'unavailable'
+import {
+  PWAContext,
+  type InstallOutcome,
+  type PWAContextValue,
+} from '@/pwa/pwa-context'
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>
 }
-
-type PWAContextValue = {
-  isOnline: boolean
-  isStandalone: boolean
-  canInstall: boolean
-  updateReady: boolean
-  install: () => Promise<InstallOutcome>
-  applyUpdate: () => void
-}
-
-const PWAContext = createContext<PWAContextValue | null>(null)
 
 function getDisplayModeQuery() {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return null
@@ -178,10 +168,4 @@ export function PWAProvider({ children }: { children: ReactNode }) {
   )
 
   return <PWAContext.Provider value={value}>{children}</PWAContext.Provider>
-}
-
-export function usePWA() {
-  const context = useContext(PWAContext)
-  if (!context) throw new Error('usePWA must be used inside PWAProvider')
-  return context
 }

@@ -8,10 +8,7 @@ import {
   ChevronDown,
   Infinity as InfinityIcon,
   Lock,
-  RefreshCw,
-  ShieldCheck,
   Sparkles,
-  Target,
   Upload,
   WalletCards,
   WandSparkles,
@@ -78,6 +75,25 @@ const PLAN_LIMITS = [
   ['Advanced Agents / MCP', 'Locked', 'Locked', 'Included*'],
 ] as const
 
+const NETWORK_NODES = [
+  [120, 18],
+  [191, 53],
+  [191, 127],
+  [120, 162],
+  [49, 127],
+  [49, 53],
+] as const
+
+const NETWORK_EDGES = [
+  [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 0],
+  [0, 3], [1, 4], [2, 5],
+] as const
+
+const NETWORK_FLOWS = [
+  [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 0],
+  [0, 3], [2, 5], [4, 1],
+] as const
+
 function planAllows(selected: PlanId, minPlan?: PaidPlan) {
   if (!minPlan) return true
   if (minPlan === 'pro') return selected === 'pro' || selected === 'max'
@@ -86,18 +102,70 @@ function planAllows(selected: PlanId, minPlan?: PaidPlan) {
 
 function PricingHero() {
   return (
-    <div className="relative mx-auto mb-3 grid h-36 w-56 place-items-center sm:h-40">
+    <div className="relative mx-auto mb-3 grid h-40 w-60 place-items-center sm:h-44">
       <div className="absolute size-28 rounded-full border border-foreground/10 shadow-[inset_0_0_35px_rgba(128,128,128,.08)]" />
-      <div className="absolute size-36 rounded-[42%] border border-foreground/[0.08] motion-safe:animate-[spin_18s_linear_infinite]" />
-      <div className="absolute size-44 rounded-[44%] border border-dashed border-foreground/[0.07] motion-safe:animate-[spin_28s_linear_infinite_reverse]" />
-      {[[-78,-34],[-65,42],[72,-46],[82,24],[-15,-69],[34,67]].map(([x,y], i) => (
-        <span
-          key={i}
-          className="absolute size-1.5 rounded-full bg-foreground/45 shadow-[0_0_14px_currentColor] motion-safe:animate-pulse"
-          style={{ transform: `translate(${x}px, ${y}px)`, animationDelay: `${i * 240}ms` }}
-        />
-      ))}
-      <div className="relative grid size-20 place-items-center rounded-[26px] border border-foreground/15 bg-background/85 shadow-[0_20px_55px_rgba(0,0,0,.16),inset_0_1px_0_rgba(255,255,255,.12)] backdrop-blur-xl [transform:perspective(500px)_rotateX(8deg)_rotateY(-8deg)] motion-safe:transition-transform motion-safe:duration-500 hover:[transform:perspective(500px)_rotateX(0deg)_rotateY(0deg)_scale(1.04)]">
+      <div className="absolute size-40 rounded-full border border-foreground/[0.06] shadow-[0_0_70px_rgba(128,128,128,.05)]" />
+
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 240 180"
+        className="absolute h-[180px] w-[240px] overflow-visible text-foreground motion-safe:animate-[spin_22s_linear_infinite] motion-reduce:animate-none"
+        style={{ transformOrigin: 'center' }}
+      >
+        <g fill="none" stroke="currentColor" strokeLinecap="round">
+          {NETWORK_EDGES.map(([from, to], index) => {
+            const [x1, y1] = NETWORK_NODES[from]
+            const [x2, y2] = NETWORK_NODES[to]
+            return (
+              <line
+                key={`${from}-${to}`}
+                x1={x1}
+                y1={y1}
+                x2={x2}
+                y2={y2}
+                strokeWidth={index < 6 ? 0.8 : 0.55}
+                opacity={index < 6 ? 0.14 : 0.08}
+              />
+            )
+          })}
+        </g>
+
+        <g>
+          {NETWORK_NODES.map(([x, y], index) => (
+            <g key={`${x}-${y}`}>
+              <circle cx={x} cy={y} r="7" fill="currentColor" opacity="0.035" />
+              <circle
+                cx={x}
+                cy={y}
+                r="3.1"
+                fill="currentColor"
+                opacity="0.62"
+                className="motion-safe:animate-pulse"
+                style={{ animationDelay: `${index * 180}ms` }}
+              />
+            </g>
+          ))}
+        </g>
+
+        <g className="motion-reduce:hidden">
+          {NETWORK_FLOWS.map(([from, to], index) => {
+            const [x1, y1] = NETWORK_NODES[from]
+            const [x2, y2] = NETWORK_NODES[to]
+            return (
+              <circle key={`flow-${from}-${to}`} r="2.15" fill="currentColor" opacity="0.9">
+                <animateMotion
+                  dur={`${0.92 + (index % 3) * 0.12}s`}
+                  begin={`${index * 0.11}s`}
+                  repeatCount="indefinite"
+                  path={`M ${x1} ${y1} L ${x2} ${y2}`}
+                />
+              </circle>
+            )
+          })}
+        </g>
+      </svg>
+
+      <div className="relative grid size-20 place-items-center rounded-[26px] border border-foreground/15 bg-background/88 shadow-[0_20px_55px_rgba(0,0,0,.16),0_0_34px_rgba(128,128,128,.08),inset_0_1px_0_rgba(255,255,255,.12)] backdrop-blur-xl [transform:perspective(500px)_rotateX(8deg)_rotateY(-8deg)] motion-safe:transition-transform motion-safe:duration-500 hover:[transform:perspective(500px)_rotateX(0deg)_rotateY(0deg)_scale(1.04)]">
         <FinCoLogo size={43} className="text-foreground" />
       </div>
     </div>
@@ -114,12 +182,12 @@ function FeaturePanel({ plan }: { plan: PlanId }) {
           <div
             key={feature.label}
             className={cn(
-              'flex min-h-[64px] items-center gap-3 px-4 py-3.5 sm:px-5',
-              index !== 0 && 'border-t border-border/60',
-              !allowed && 'bg-muted/20 text-muted-foreground',
+              'flex min-h-[62px] items-center gap-3 px-4 py-3.5 sm:min-h-[64px] sm:px-5',
+              index !== 0 && 'sm:border-t sm:border-border/60',
+              !allowed && 'text-muted-foreground sm:bg-muted/20',
             )}
           >
-            <span className={cn('grid size-8 shrink-0 place-items-center rounded-xl border bg-background/60', !allowed && 'opacity-60')}>
+            <span className={cn('hidden size-8 shrink-0 place-items-center rounded-xl border bg-background/60 sm:grid', !allowed && 'opacity-60')}>
               {allowed ? <Icon className="size-4" /> : <Lock className="size-3.5" />}
             </span>
             <span className="min-w-0 flex-1">
@@ -129,7 +197,10 @@ function FeaturePanel({ plan }: { plan: PlanId }) {
             {allowed ? (
               <Check className="size-4 shrink-0 text-foreground/70" />
             ) : feature.minPlan ? (
-              <PlanBadge plan={feature.minPlan} compact />
+              <span className="flex shrink-0 items-center gap-2">
+                <Lock className="size-3.5 sm:hidden" />
+                <PlanBadge plan={feature.minPlan} compact />
+              </span>
             ) : null}
           </div>
         )
@@ -212,9 +283,12 @@ export default function PricingPage() {
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const { user } = useAuth()
-  const { catalog, plan: currentPlan } = useBilling()
-  const initialPlan = (params.get('plan') === 'pro' || params.get('plan') === 'max' ? params.get('plan') : 'pro') as PlanId
-  const [selectedPlan, setSelectedPlan] = useState<PlanId>(initialPlan)
+  const { catalog, plan: currentPlan, isLoading: billingLoading } = useBilling()
+  const requestedPlan = params.get('plan')
+  const explicitPlan = requestedPlan === 'free' || requestedPlan === 'pro' || requestedPlan === 'max'
+    ? requestedPlan as PlanId
+    : null
+  const selectedPlan: PlanId = explicitPlan ?? (user && !billingLoading ? currentPlan : 'pro')
   const [interval, setInterval] = useState<'monthly' | 'annual'>('annual')
   const [checkoutNote, setCheckoutNote] = useState(false)
 
@@ -225,11 +299,24 @@ export default function PricingPage() {
   }, [catalog, interval, selectedPlan])
 
   const selectPlan = (next: PlanId) => {
-    setSelectedPlan(next)
     setCheckoutNote(false)
     const nextParams = new URLSearchParams(params)
     nextParams.set('plan', next)
     setParams(nextParams, { replace: true })
+  }
+
+  const continueWithPlan = (plan: PlanId) => {
+    if (user && currentPlan === plan) return
+    selectPlan(plan)
+
+    if (!user) {
+      navigate(plan === 'free' ? '/register' : `/login?next=${encodeURIComponent(`/pricing?plan=${plan}`)}`)
+      return
+    }
+
+    // Checkout / subscription mutation is deliberately separate from this
+    // decision page. Never flip entitlement state in the browser.
+    setCheckoutNote(true)
   }
 
   const isCurrent = Boolean(user) && currentPlan === selectedPlan
@@ -238,21 +325,9 @@ export default function PricingPage() {
     ? 'Current plan'
     : !user
       ? paid ? `Sign in for ${PLAN_COPY[selectedPlan].title}` : 'Start free'
-      : paid
-        ? `Continue with ${PLAN_COPY[selectedPlan].title}`
-        : 'Free plan active'
-
-  const handleCta = () => {
-    if (isCurrent) return
-    if (!user) {
-      navigate(selectedPlan === 'free' ? '/register' : `/login?next=${encodeURIComponent(`/pricing?plan=${selectedPlan}`)}`)
-      return
-    }
-    if (!paid) return
-    // Checkout is deliberately a separate payment-provider phase. Never flip
-    // entitlement state in the browser just because a pricing button was hit.
-    setCheckoutNote(true)
-  }
+      : selectedPlan === 'free'
+        ? 'Downgrade to Free'
+        : `Continue with ${PLAN_COPY[selectedPlan].title}`
 
   return (
     <main className="min-h-screen bg-background text-foreground [padding-bottom:max(2rem,env(safe-area-inset-bottom))]">
@@ -276,7 +351,7 @@ export default function PricingPage() {
         </section>
 
         <section className="mx-auto max-w-xl lg:hidden">
-          <div className="mb-5 grid grid-cols-3 border-b" role="tablist" aria-label="Plans">
+          <div className="mb-5 grid grid-cols-3 gap-1 rounded-2xl bg-muted/45 p-1" role="tablist" aria-label="Plans">
             {(['free', 'pro', 'max'] as const).map((plan) => (
               <button
                 key={plan}
@@ -284,11 +359,12 @@ export default function PricingPage() {
                 role="tab"
                 aria-selected={selectedPlan === plan}
                 onClick={() => selectPlan(plan)}
-                className={cn('relative flex h-12 items-center justify-center gap-2 text-sm font-medium capitalize text-muted-foreground transition', selectedPlan === plan && 'text-foreground')}
+                className={cn(
+                  'flex h-11 items-center justify-center rounded-xl text-sm font-semibold capitalize text-muted-foreground transition-[background-color,color,box-shadow,transform] duration-200',
+                  selectedPlan === plan && 'bg-background text-foreground shadow-[0_5px_18px_rgba(0,0,0,.10)] ring-1 ring-border/70',
+                )}
               >
                 {PLAN_COPY[plan].title}
-                {plan !== 'free' && selectedPlan === plan && <PlanBadge plan={plan} compact />}
-                {selectedPlan === plan && <span className="absolute inset-x-4 bottom-0 h-0.5 rounded-full bg-foreground" />}
               </button>
             ))}
           </div>
@@ -301,11 +377,11 @@ export default function PricingPage() {
 
           <FeaturePanel plan={selectedPlan} />
           <div className="mt-4"><BillingSelector plan={selectedPlan} interval={interval} onInterval={setInterval} /></div>
-          <Button disabled={isCurrent || (Boolean(user) && selectedPlan === 'free')} onClick={handleCta} className="mt-4 h-14 w-full rounded-[22px] text-base font-semibold shadow-lg">{ctaLabel}</Button>
+          <Button disabled={isCurrent} onClick={() => continueWithPlan(selectedPlan)} className="mt-4 h-14 w-full rounded-[22px] text-base font-semibold shadow-lg">{ctaLabel}</Button>
           {paid && selectedPrice && <p className="mt-2 text-center text-xs text-muted-foreground">Selected price: {formatInrMinor(selectedPrice.amount_minor)} {selectedPlan === 'pro' && interval === 'annual' ? 'per year' : 'per month'}.</p>}
           {checkoutNote && (
             <div className="mt-3 rounded-2xl border bg-muted/35 p-3 text-center text-xs leading-5 text-muted-foreground">
-              Payment checkout is intentionally the next integration step. Your plan was <strong className="text-foreground">not</strong> changed in the browser.
+              Plan changes stay server-verified. Payment/provider wiring is a separate step, so your subscription was <strong className="text-foreground">not</strong> changed in the browser.
             </div>
           )}
         </section>
@@ -325,7 +401,7 @@ export default function PricingPage() {
                 <div className="mt-5 text-4xl font-semibold tracking-tight">{formatInrMinor(price?.amount_minor ?? 0)}</div>
                 <div className="mt-1 text-xs text-muted-foreground">{plan === 'free' ? 'forever' : plan === 'pro' ? 'per year · ₹99 monthly also available' : 'per month'}</div>
                 <p className="mt-4 min-h-16 text-sm leading-6 text-muted-foreground">{PLAN_COPY[plan].description}</p>
-                <Button variant={isPro ? 'default' : 'outline'} className="mt-4 h-11 rounded-xl" onClick={() => { selectPlan(plan); if (plan !== 'free' && user) setCheckoutNote(true); else if (!user) handleCta() }} disabled={Boolean(user) && currentPlan === plan}>{Boolean(user) && currentPlan === plan ? 'Current plan' : plan === 'free' ? 'Start free' : `Choose ${PLAN_COPY[plan].title}`}</Button>
+                <Button variant={isPro ? 'default' : 'outline'} className="mt-4 h-11 rounded-xl" onClick={() => continueWithPlan(plan)} disabled={Boolean(user) && currentPlan === plan}>{Boolean(user) && currentPlan === plan ? 'Current plan' : plan === 'free' ? 'Choose Free' : `Choose ${PLAN_COPY[plan].title}`}</Button>
                 <div className="mt-5 space-y-3 border-t pt-5">
                   {FEATURES.slice(0, 6).map((feature) => {
                     const allowed = planAllows(plan, feature.minPlan)
@@ -341,7 +417,7 @@ export default function PricingPage() {
           })}
         </section>
 
-        {checkoutNote && <div className="mx-auto mt-4 hidden max-w-2xl rounded-2xl border bg-muted/35 p-3 text-center text-xs text-muted-foreground lg:block">Checkout/provider wiring is deliberately separate. Clicking a pricing choice never self-activates Pro or Max.</div>}
+        {checkoutNote && <div className="mx-auto mt-4 hidden max-w-2xl rounded-2xl border bg-muted/35 p-3 text-center text-xs text-muted-foreground lg:block">Plan changes remain server-verified. Checkout/provider wiring is separate, and this pricing page cannot self-activate Pro or Max.</div>}
 
         <section className="mx-auto mt-14 max-w-5xl">
           <div className="text-center"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Compare plans</p><h2 className="mt-2 text-2xl font-semibold sm:text-3xl">Clear limits. No surprise locks.</h2></div>
@@ -354,16 +430,6 @@ export default function PricingPage() {
             </div>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">* Advanced Agents/MCP also require the deployment capability to be enabled.</p>
-        </section>
-
-        <section className="mx-auto mt-12 grid max-w-5xl gap-4 sm:grid-cols-3">
-          {[
-            [ShieldCheck, 'Server-enforced access', 'Paid permissions are checked by the backend, not by a browser flag.'],
-            [RefreshCw, 'Downgrade without data loss', 'Existing financial history remains readable. Limits stop new growth, not access to your past.'],
-            [Target, 'No fake urgency', 'No fake crossed-out price, countdown timer, lifetime trap or forced card trial.'],
-          ].map(([Icon, title, text]) => (
-            <div key={String(title)} className="rounded-[24px] border bg-card p-5"><Icon className="size-5" /><h3 className="mt-4 text-base font-semibold">{String(title)}</h3><p className="mt-1.5 text-sm leading-6 text-muted-foreground">{String(text)}</p></div>
-          ))}
         </section>
 
         <section className="mx-auto mt-12 max-w-3xl">

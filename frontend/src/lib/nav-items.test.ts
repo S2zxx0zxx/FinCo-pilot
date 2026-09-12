@@ -30,27 +30,40 @@ const PERSONAL_MODULES: ModuleId[] = [
 const linkKeys = (items: NavItem[]) =>
   items.filter((i) => i.type === 'link').map((i) => i.key)
 
+type LinkItem = Extract<NavItem, { type: 'link' }>
+type ModuleLinkItem = LinkItem & { module: ModuleId }
+
+const moduleLinks = (): ModuleLinkItem[] =>
+  navItems.filter(
+    (item): item is ModuleLinkItem => item.type === 'link' && item.module !== undefined,
+  )
+
 describe('nav catalog', () => {
-  it('maps every link to a known module', () => {
-    for (const item of navItems) {
-      if (item.type !== 'link') continue
+  it('maps every module-backed link to a known module', () => {
+    for (const item of moduleLinks()) {
       expect(MODULE_IDS).toContain(item.module)
     }
   })
 
   it('has a link for every module in the catalog', () => {
-    const covered = navItems.filter((i) => i.type === 'link').map((i) => i.module)
+    const covered = moduleLinks().map((i) => i.module)
     expect([...covered].sort()).toEqual([...MODULE_IDS].sort())
   })
 
-  it('gives every link a distinct module', () => {
-    const covered = navItems.filter((i) => i.type === 'link').map((i) => i.module)
+  it('gives every module-backed link a distinct module', () => {
+    const covered = moduleLinks().map((i) => i.module)
     expect(new Set(covered).size).toBe(covered.length)
+  })
+
+  it('keeps Plan & Billing app-level instead of tying it to a workspace module', () => {
+    const billing = navItems.find((i) => i.type === 'link' && i.key === 'planBilling')
+    expect(billing).toMatchObject({ type: 'link', path: '/pricing' })
+    expect(billing && 'module' in billing).toBe(false)
   })
 })
 
 describe('visibleNavItems', () => {
-  it('renders a personal workspace exactly as before modules existed', () => {
+  it('renders a personal workspace with the app-level billing destination', () => {
     const personal = visibleNavItems(navItems, (id) => PERSONAL_MODULES.includes(id))
     expect(linkKeys(personal)).toEqual([
       'transactions',
@@ -65,9 +78,9 @@ describe('visibleNavItems', () => {
       'payees',
       'splitGroups',
       'rules',
+      'planBilling',
     ])
-    // All three section headers survive.
-    expect(personal.filter((i) => i.type === 'separator')).toHaveLength(3)
+    expect(personal.filter((i) => i.type === 'separator')).toHaveLength(4)
   })
 
   it('adds invoices for a workspace that has it', () => {
@@ -77,7 +90,7 @@ describe('visibleNavItems', () => {
     expect(linkKeys(business).indexOf('invoices')).toBe(1)
   })
 
-  it('hides a section header once its last link goes', () => {
+  it('hides a section header once its last module link goes', () => {
     const items: NavItem[] = [
       { type: 'separator', labelKey: 'a' },
       { type: 'link', key: 'one', path: '/1', icon: () => null, module: 'reports' },
@@ -98,8 +111,12 @@ describe('visibleNavItems', () => {
     expect(linkKeys(result)).toContain('accounts')
   })
 
-  it('drops every header when no module is on', () => {
-    expect(visibleNavItems(navItems, none)).toEqual([])
+  it('keeps only the Personal billing section when every workspace module is off', () => {
+    const result = visibleNavItems(navItems, none)
+    expect(result.map((i) => (i.type === 'separator' ? i.labelKey : i.key))).toEqual([
+      'nav.groupPersonal',
+      'planBilling',
+    ])
   })
 
   it('leaves a trailing header out rather than dangling', () => {

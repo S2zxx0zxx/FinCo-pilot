@@ -141,22 +141,22 @@ describe('formatCurrency', () => {
     expect(normalize(formatCurrency(-0.4, 'JPY', 'ja-JP'))).toBe('￥0')
   })
 
-  it('falls back to USD in en-US when the locale is malformed', () => {
+  it('falls back to INR in en-IN when the locale is malformed', () => {
     // i18next reads ?lng= from the querystring, so a hand-typed URL can put
     // junk in here. Throwing would blank the whole screen.
-    expect(normalize(formatCurrency(10, 'USD', 'not a locale'))).toBe('$10.00')
+    expect(normalize(formatCurrency(10, 'USD', 'not a locale'))).toBe('₹10.00')
   })
 
   it('falls back when the currency code is malformed', () => {
-    expect(normalize(formatCurrency(10, 'not-a-currency', 'en-US'))).toBe('$10.00')
+    expect(normalize(formatCurrency(10, 'not-a-currency', 'en-US'))).toBe('₹10.00')
   })
 
-  it('treats an empty currency as USD', () => {
-    expect(normalize(formatCurrency(10, '', 'en-US'))).toBe('$10.00')
+  it('treats an empty currency as INR', () => {
+    expect(normalize(formatCurrency(10, '', 'en-US'))).toBe('₹10.00')
   })
 
-  it('defaults to USD in en-US with no options', () => {
-    expect(normalize(formatCurrency(5))).toBe('$5.00')
+  it('defaults to INR in en-IN with no options', () => {
+    expect(normalize(formatCurrency(5))).toBe('₹5.00')
   })
 
   it('formats zero without a sign', () => {
@@ -183,7 +183,7 @@ describe('parseAmountInput', () => {
     expect(parseAmountInput('1\u202f234,56', 'fr-FR')).toBe(1234.56)
   })
 
-  it('keeps sign and defaults to en-US', () => {
+  it('keeps sign and defaults to en-IN', () => {
     expect(parseAmountInput('-2.50')).toBe(-2.5)
     expect(parseAmountInput('-1.234,56', 'de-DE')).toBe(-1234.56)
   })

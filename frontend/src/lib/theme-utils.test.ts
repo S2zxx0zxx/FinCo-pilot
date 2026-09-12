@@ -24,61 +24,53 @@ afterEach(() => {
 })
 
 describe('setThemeBasedOnSystem', () => {
-  it('applies the light colour on a light theme', () => {
-    setThemeBasedOnSystem('#ff0000', '#0000ff', 'light')
+  it('uses the canonical black primary on a light theme', () => {
+    setThemeBasedOnSystem('#ff7a59', '#818cf8', 'light')
 
-    expect(readVar('--primary')).toBe('#ff0000')
-    expect(readVar('--ring')).toBe('#ff0000')
-    expect(readVar('--sidebar-primary')).toBe('#ff0000')
+    expect(readVar('--primary')).toBe('#0A0A0A')
+    expect(readVar('--ring')).toBe('#0A0A0A')
+    expect(readVar('--sidebar-primary')).toBe('#0A0A0A')
   })
 
-  it('applies the dark colour on a dark theme', () => {
-    setThemeBasedOnSystem('#ff0000', '#0000ff', 'dark')
+  it('uses the canonical white primary on a dark theme', () => {
+    setThemeBasedOnSystem('#ff7a59', '#818cf8', 'dark')
 
-    expect(readVar('--primary')).toBe('#0000ff')
+    expect(readVar('--primary')).toBe('#FFFFFF')
+    expect(readVar('--ring')).toBe('#FFFFFF')
+    expect(readVar('--sidebar-primary')).toBe('#FFFFFF')
   })
 
   it('treats an unknown theme as light', () => {
-    setThemeBasedOnSystem('#ff0000', '#0000ff', undefined)
+    setThemeBasedOnSystem('#ff7a59', '#818cf8', undefined)
 
-    expect(readVar('--primary')).toBe('#ff0000')
+    expect(readVar('--primary')).toBe('#0A0A0A')
   })
 
-  it('mixes toward black on dark and toward white on light', () => {
-    // Getting this backwards produces an accent that vanishes into the
-    // background it sits on.
-    setThemeBasedOnSystem('#ff0000', '#0000ff', 'dark')
-    expect(readVar('--accent')).toContain('black')
-    expect(readVar('--accent-foreground')).toContain('white')
+  it('keeps saved legacy colors from recoloring the product', () => {
+    setThemeBasedOnSystem('#ff7a59', '#ff7a59', 'light')
+    expect(readVar('--primary')).not.toBe('#ff7a59')
 
-    setThemeBasedOnSystem('#ff0000', '#0000ff', 'light')
-    expect(readVar('--accent')).toContain('white')
-    expect(readVar('--accent-foreground')).toContain('black')
+    setThemeBasedOnSystem('#ff7a59', '#ff7a59', 'dark')
+    expect(readVar('--primary')).not.toBe('#ff7a59')
   })
 
-  it('derives every accent variable from the chosen colour', () => {
-    setThemeBasedOnSystem('#ff0000', '#0000ff', 'light')
+  it('uses neutral surface accents in both modes', () => {
+    setThemeBasedOnSystem(null, null, 'light')
+    expect(readVar('--accent')).toBe('#F1F1F2')
+    expect(readVar('--accent-foreground')).toBe('#09090B')
+    expect(readVar('--muted')).toBe('#F4F4F5')
+
+    setThemeBasedOnSystem(null, null, 'dark')
+    expect(readVar('--accent')).toBe('#171717')
+    expect(readVar('--accent-foreground')).toBe('#FAFAFA')
+    expect(readVar('--muted')).toBe('#151515')
+  })
+
+  it('sets every shared theme variable even when old settings are absent', () => {
+    setThemeBasedOnSystem(null, null, 'light')
 
     for (const name of VARS) {
       expect(readVar(name), name).not.toBe('')
     }
-  })
-
-  it('clears the overrides when the deployment sets no colour', () => {
-    // Leaving stale properties behind would pin a previous admin's brand
-    // colour after they cleared it.
-    setThemeBasedOnSystem('#ff0000', '#0000ff', 'light')
-    setThemeBasedOnSystem(null, null, 'light')
-
-    for (const name of VARS) {
-      expect(readVar(name), name).toBe('')
-    }
-  })
-
-  it('clears when only the colour for the active theme is missing', () => {
-    setThemeBasedOnSystem('#ff0000', '#0000ff', 'light')
-    setThemeBasedOnSystem(null, '#0000ff', 'light')
-
-    expect(readVar('--primary')).toBe('')
   })
 })

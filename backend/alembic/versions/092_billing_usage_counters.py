@@ -53,7 +53,9 @@ def upgrade() -> None:
 
     # Every billing owner needs a stable row that can be locked while a hard
     # quota is checked. Existing users therefore receive an explicit Free row;
-    # the application also creates one during new-user bootstrap.
+    # the application also creates one during new-user bootstrap. The UUID
+    # expression uses built-in md5/text functions rather than relying on the
+    # pgcrypto or uuid-ossp extensions being installed.
     op.execute(
         """
         INSERT INTO subscriptions (
@@ -61,7 +63,8 @@ def upgrade() -> None:
             cancel_at_period_end, created_at, updated_at
         )
         SELECT
-            gen_random_uuid(), u.id, 'free', 'free', 'none',
+            CAST(md5(random()::text || clock_timestamp()::text || u.id::text) AS uuid),
+            u.id, 'free', 'free', 'none',
             false, now(), now()
         FROM users AS u
         WHERE NOT EXISTS (

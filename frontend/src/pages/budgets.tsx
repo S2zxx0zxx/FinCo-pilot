@@ -59,7 +59,7 @@ export default function BudgetsPage() {
   const { mask } = usePrivacyMode()
   const { user } = useAuth()
   const { canWrite } = useWorkspace()
-  const userCurrency = user?.preferences?.currency_display ?? 'USD'
+  const userCurrency = user?.preferences?.currency_display ?? 'INR'
   const locale = useDisplayLocale()
   const queryClient = useQueryClient()
   const [selectedMonth, setSelectedMonth] = useState(currentMonth)

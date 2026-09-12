@@ -19,6 +19,8 @@ from starlette.responses import StreamingResponse
 from app.agents.runtime.executor import AgentExecutor, ExecutorEvent
 from app.agents.schemas.conversation import SendMessageRequest
 from app.agents.services import agent_service, conversation_service
+from app.billing.enums import Metric
+from app.billing.usage import consume_monthly
 from app.core.database import get_async_session
 from app.core.workspace_context import WorkspaceContext, current_writable_workspace
 
@@ -39,12 +41,6 @@ async def chat(
     # includes `propose_create_transaction` and its siblings, which write —
     # so a read-only member chatting could create financial data the HTTP
     # API would have refused them.
-    #
-    # This deliberately also blocks a viewer from *asking* questions, which
-    # is a real use case (a read-only accountant reading the books). The way
-    # to restore it is to make the tools role-aware so a viewer's session
-    # only exposes the reading ones — not to drop this gate, which would
-    # bring the write path back with it.
     ctx: WorkspaceContext = Depends(current_writable_workspace),
     session: AsyncSession = Depends(get_async_session),
 ):
@@ -54,7 +50,9 @@ async def chat(
 
     conv = None
     if body.conversation_id:
-        conv = await conversation_service.get_conversation(session, body.conversation_id, ctx.workspace.id)
+        conv = await conversation_service.get_conversation(
+            session, body.conversation_id, ctx.workspace.id
+        )
         if conv is None or conv.agent_id != agent_id:
             raise HTTPException(status_code=404, detail="conversation not found")
     if conv is None:
@@ -66,10 +64,16 @@ async def chat(
             channel=body.channel,
         )
 
+    # Meter only a request that passed workspace/agent/conversation validation.
+    # Streaming begins after the endpoint returns, so persist the accepted action
+    # here rather than relying on a later generator commit that may never happen
+    # if the client disconnects immediately.
+    await consume_monthly(session, ctx.workspace, Metric.AI_ACTIONS_MONTHLY)
+    await session.commit()
+
     executor = AgentExecutor()
 
     async def gen() -> AsyncIterator[bytes]:
-        # Send the conversation id immediately so the client can update its URL.
         yield f"event: conversation\ndata: {json.dumps({'conversation_id': str(conv.id)})}\n\n".encode()
         try:
             async for ev in executor.run(

@@ -4,6 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.billing.enums import Metric
+from app.billing.usage import enforce_limit
 from app.core.database import get_async_session
 from app.core.workspace_context import (
     WorkspaceContext,
@@ -27,6 +29,9 @@ async def upload_attachment(
     session: AsyncSession = Depends(get_async_session),
 ):
     data = await file.read()
+    # Server measures actual bytes after upload parsing; Content-Length and
+    # browser-reported sizes are never trusted for billing enforcement.
+    await enforce_limit(session, ctx.workspace, Metric.STORAGE_BYTES, increment=len(data))
     try:
         attachment = await attachment_service.upload_attachment(
             session=session,

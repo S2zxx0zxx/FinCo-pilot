@@ -12,6 +12,8 @@ from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile, status
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.billing.enums import Metric
+from app.billing.usage import enforce_limit
 from app.core.database import get_async_session
 from app.core.module_gate import require_module, require_module_write
 from app.services.module_service import ModuleId
@@ -32,7 +34,6 @@ async def upload_attachment(
     invoice_id: uuid.UUID,
     file: UploadFile,
     kind: str = Form("other"),
-    #: Which system produced the file. Omitted when a person uploads one.
     source: Optional[str] = Form(None),
     external_id: Optional[str] = Form(None),
     document_number: Optional[str] = Form(None),
@@ -41,6 +42,8 @@ async def upload_attachment(
     ctx: WorkspaceContext = Depends(_write),
     session: AsyncSession = Depends(get_async_session),
 ):
+    data = await file.read()
+    await enforce_limit(session, ctx.workspace, Metric.STORAGE_BYTES, increment=len(data))
     try:
         return await invoice_attachment_service.upload(
             session=session,
@@ -49,7 +52,7 @@ async def upload_attachment(
             invoice_id=invoice_id,
             filename=file.filename or "unnamed",
             content_type=file.content_type or "application/octet-stream",
-            data=await file.read(),
+            data=data,
             kind=kind,
             source=source,
             external_id=external_id,

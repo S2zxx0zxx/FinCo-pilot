@@ -62,6 +62,17 @@ class Workspace(Base):
     managed_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
+    # Subscription ownership is deliberately explicit. Creator, manager and
+    # workspace role are different concepts and none may be inferred as the
+    # payer after creation. New workspaces set this server-side; clients never
+    # choose it. Nullable only to allow deterministic repair of malformed
+    # historical rows during migration.
+    billing_owner_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     # Workspace-level defaults. Individual members can still override via
     # their own user preferences for display, but new accounts inherit
     # `default_currency` etc. from here.

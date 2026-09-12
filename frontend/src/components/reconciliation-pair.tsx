@@ -181,7 +181,7 @@ export function ReconciliationPair({
 
   const currency = firstInvoice?.currency ?? transaction?.currency
   const money = (value: string | number | null | undefined, code?: string | null) =>
-    mask(formatCurrency(Number(value ?? 0), code || currency || 'USD', locale))
+    mask(formatCurrency(Number(value ?? 0), code || currency || 'INR', locale))
   const showDate = (iso: string) =>
     new Date(`${iso}T00:00:00`).toLocaleDateString(dateLocale)
   const accountName = accounts.find((a) => a.id === transaction?.account_id)?.name

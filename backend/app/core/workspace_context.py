@@ -54,7 +54,6 @@ class WorkspaceContext:
 
     @property
     def is_owner(self) -> bool:
-        # Workspace managers get effective owner rights for permission gates.
         return self.role in ("owner", "manager")
 
     def require_write(self) -> None:
@@ -64,6 +63,19 @@ class WorkspaceContext:
     def require_owner(self) -> None:
         if not self.is_owner:
             raise HTTPException(status_code=403, detail="Owner role required")
+
+
+async def _repair_billing_owner(session: AsyncSession, workspace: Workspace) -> None:
+    """Repair a pre-billing/test workspace from its immutable creator audit.
+
+    Migration 091 backfills production rows. This repair makes the runtime fail
+    safely for installations/tests that create rows through metadata instead of
+    running migrations, without ever assigning ownership to the *acting* user.
+    """
+    if workspace.billing_owner_user_id is None and workspace.created_by_user_id is not None:
+        workspace.billing_owner_user_id = workspace.created_by_user_id
+        session.add(workspace)
+        await session.flush()
 
 
 async def current_workspace(
@@ -80,22 +92,21 @@ async def current_workspace(
         workspace = await session.get(Workspace, ws_uuid)
         if workspace is None or workspace.is_archived:
             raise HTTPException(status_code=404, detail="Workspace not found")
+        await _repair_billing_owner(session, workspace)
         member = await get_membership(session, ws_uuid, user.id)
         if member is None:
-            # Fall back to manager-of access.
             if await is_workspace_manager(session, ws_uuid, user.id):
                 member = _virtual_manager_member(ws_uuid, user.id)
             else:
                 raise HTTPException(status_code=404, detail="Workspace not found")
         return WorkspaceContext(workspace=workspace, member=member, user=user)
 
-    # Fallback: user's first non-archived workspace (member-of or managed).
     default = await get_default_workspace(session, user.id)
     if default is None:
         raise HTTPException(status_code=404, detail="No workspace available")
+    await _repair_billing_owner(session, default)
     member = await get_membership(session, default.id, user.id)
     if member is None:
-        # Managed-only workspace path.
         if await is_workspace_manager(session, default.id, user.id):
             member = _virtual_manager_member(default.id, user.id)
         else:
@@ -103,7 +114,6 @@ async def current_workspace(
     return WorkspaceContext(workspace=default, member=member, user=user)
 
 
-# Convenience: write-gated context. Raises 403 if the user can't write.
 async def current_writable_workspace(
     ctx: WorkspaceContext = Depends(current_workspace),
 ) -> WorkspaceContext:

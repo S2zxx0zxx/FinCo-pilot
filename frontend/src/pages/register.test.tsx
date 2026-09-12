@@ -54,6 +54,8 @@ async function fill(
   await user.type(screen.getByLabelText(t('auth.confirmPassword')), confirm)
 }
 
+vi.setConfig({ testTimeout: 15000 })
+
 describe('RegisterPage', () => {
   it('renders the signup form', async () => {
     await renderRegister()

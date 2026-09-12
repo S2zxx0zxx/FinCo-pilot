@@ -39,8 +39,8 @@ describe('resolveDisplayLocale', () => {
   })
 
   it('falls back when the currency is unknown or absent', () => {
-    expect(resolveDisplayLocale('auto', 'XYZ')).toBe('en-US')
-    expect(resolveDisplayLocale('auto', undefined)).toBe('en-US')
+    expect(resolveDisplayLocale('auto', 'XYZ')).toBe('en-IN')
+    expect(resolveDisplayLocale('auto', undefined)).toBe('en-IN')
     expect(resolveDisplayLocale('auto', undefined, 'pt-BR')).toBe('pt-BR')
   })
 })

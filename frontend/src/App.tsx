@@ -15,6 +15,7 @@ import { AppLayout } from '@/components/app-layout'
 import { PWAProvider } from '@/pwa/pwa-provider'
 import { PWAChrome } from '@/pwa/pwa-chrome'
 import { FinCoRouteLoader } from '@/transitions/finco-route-loader'
+import { FinCoNavigationTransition } from '@/transitions/finco-navigation-transition'
 
 const SetupPage = lazy(() => import('@/pages/setup'))
 const LoginPage = lazy(() => import('@/pages/login'))
@@ -62,6 +63,7 @@ function App() {
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
             <BrowserRouter>
+              <FinCoNavigationTransition />
               <AuthProvider>
                 <WorkspaceProvider>
                   <Suspense fallback={<FinCoRouteLoader />}>

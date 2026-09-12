@@ -28,7 +28,7 @@ async def business_ws(client: AsyncClient, auth_headers) -> dict:
     resp = await client.post(
         "/api/workspaces",
         headers=auth_headers,
-        json={"name": "Consultoria", "kind": "business", "self_membership": True},
+        json={"name": "Consultoria", "kind": "business", "self_membership": True, "default_currency": "USD"},
     )
     assert resp.status_code == 201, resp.text
     return resp.json()

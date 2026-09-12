@@ -155,13 +155,13 @@ async def test_list_transactions_tx_type_filter(
 async def test_list_transactions_currency_filter_matches_native(
     session: AsyncSession, ctx: CallContext, test_transactions
 ):
-    """The Transaction.currency column defaults to USD in the fixture
-    (independent of the account's BRL currency), so 'USD' should return
+    """The Transaction.currency column defaults to INR in the fixture
+    (independent of the account's BRL currency), so 'INR' should return
     everything and any narrower filter returns ≤ that count."""
     handler = REGISTRY["list_transactions"].handler
-    usd = await handler(session=session, ctx=ctx, currency="USD")
+    usd = await handler(session=session, ctx=ctx, currency="INR")
     assert usd["total"] >= 1
-    assert all(x["currency"] == "USD" for x in usd["items"])
+    assert all(x["currency"] == "INR" for x in usd["items"])
 
 
 async def test_list_transactions_currency_filter_returns_zero_for_unused(

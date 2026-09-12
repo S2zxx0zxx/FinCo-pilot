@@ -28,7 +28,7 @@ async def business_ws(client: AsyncClient, auth_headers) -> dict:
     resp = await client.post(
         "/api/workspaces",
         headers=auth_headers,
-        json={"name": "Estudio", "kind": "business", "self_membership": True},
+        json={"name": "Estudio", "kind": "business", "self_membership": True, "default_currency": "USD"},
     )
     assert resp.status_code == 201, resp.text
     return resp.json()
@@ -309,7 +309,7 @@ async def test_an_invoice_in_another_workspace_is_never_a_candidate(
     other = await client.post(
         "/api/workspaces",
         headers=auth_headers,
-        json={"name": "Outro", "kind": "business", "self_membership": True},
+        json={"name": "Outro", "kind": "business", "self_membership": True, "default_currency": "USD"},
     )
     other_headers = {**auth_headers, "X-Workspace-Id": other.json()["id"]}
     await an_invoice(client, other_headers)

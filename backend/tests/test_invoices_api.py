@@ -61,7 +61,7 @@ async def business_ws(client: AsyncClient, auth_headers) -> dict:
     resp = await client.post(
         "/api/workspaces",
         headers=auth_headers,
-        json={"name": "Consultoria", "kind": "business", "self_membership": True},
+        json={"name": "Consultoria", "kind": "business", "self_membership": True, "default_currency": "USD"},
     )
     assert resp.status_code == 201, resp.text
     body = resp.json()
@@ -180,7 +180,7 @@ async def test_invoice_in_one_workspace_is_invisible_in_another(
     other = await client.post(
         "/api/workspaces",
         headers=auth_headers,
-        json={"name": "Outra PJ", "kind": "business", "self_membership": True},
+        json={"name": "Outra PJ", "kind": "business", "self_membership": True, "default_currency": "USD"},
     )
     other_headers = {**auth_headers, "X-Workspace-Id": other.json()["id"]}
     resp = await client.get(f"/api/invoices/{created['id']}", headers=other_headers)

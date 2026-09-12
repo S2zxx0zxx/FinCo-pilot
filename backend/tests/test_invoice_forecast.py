@@ -29,7 +29,7 @@ async def business_ws(client: AsyncClient, auth_headers) -> dict:
     resp = await client.post(
         "/api/workspaces",
         headers=auth_headers,
-        json={"name": "Previsao", "kind": "business", "self_membership": True},
+        json={"name": "Previsao", "kind": "business", "self_membership": True, "default_currency": "USD"},
     )
     assert resp.status_code == 201, resp.text
     return resp.json()
@@ -264,7 +264,7 @@ async def test_another_workspace_never_leaks_into_this_forecast(
     other = await client.post(
         "/api/workspaces",
         headers=auth_headers,
-        json={"name": "Outra", "kind": "business", "self_membership": True},
+        json={"name": "Outra", "kind": "business", "self_membership": True, "default_currency": "USD"},
     )
     await an_invoice(
         client, {**auth_headers, "X-Workspace-Id": other.json()["id"]}

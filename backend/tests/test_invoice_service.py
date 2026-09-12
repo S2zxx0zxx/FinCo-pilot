@@ -175,7 +175,7 @@ class TestPresets:
 # ---------------------------------------------------------------------------
 @pytest_asyncio.fixture
 async def workspace(session: AsyncSession, test_user) -> Workspace:
-    ws = Workspace(id=uuid.uuid4(), name="PJ", kind="business", created_by_user_id=test_user.id)
+    ws = Workspace(id=uuid.uuid4(), name="PJ", kind="business", created_by_user_id=test_user.id, default_currency="USD")
     session.add(ws)
     await session.flush()
     session.add(

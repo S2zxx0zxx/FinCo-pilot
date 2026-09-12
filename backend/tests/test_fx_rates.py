@@ -815,11 +815,13 @@ class TestStampEdgeCases:
 
     @pytest.mark.asyncio
     async def test_missing_currency_field_defaults_to_default_currency(
-        self, session: AsyncSession, test_user: User, fx_rates
+        self, session: AsyncSession, test_user: User, fx_rates, monkeypatch
     ):
         """Object without a currency field falls back to the default currency (USD)
         and converts to the user's primary (BRL) at the real rate."""
         from app.services.fx_rate_service import stamp_primary_amount
+        from app.core.config import get_settings
+        monkeypatch.setattr(get_settings(), "default_currency", "USD")
 
         class FakeObj:
             amount = Decimal("100.00")

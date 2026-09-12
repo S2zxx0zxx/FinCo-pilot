@@ -37,7 +37,7 @@ class Transaction(Base):
         Boolean, default=False, server_default="false"
     )
     amount: Mapped[Decimal] = mapped_column(Numeric(precision=15, scale=2))
-    currency: Mapped[str] = mapped_column(String(3), default="USD")
+    currency: Mapped[str] = mapped_column(String(3), default="INR")
     date: Mapped[_date] = mapped_column(Date)
     # Effective date for cash-flow reporting. For regular accounts this equals
     # `date`. For credit card transactions it's the due date of the bill that

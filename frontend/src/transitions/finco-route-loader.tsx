@@ -26,28 +26,11 @@ const ROUTE_LABELS: Array<[RegExp, string]> = [
   [/^\/register/, 'Create account'],
 ]
 
-function destinationLabel(pathname: string) {
+export function routeDestinationLabel(pathname: string) {
   return ROUTE_LABELS.find(([pattern]) => pattern.test(pathname))?.[1] ?? 'FinCo-Pilot'
 }
 
-/**
- * Delayed Suspense fallback for route chunks.
- *
- * Fast navigations never flash a loader. Only a route that is genuinely still
- * waiting after 130ms gets the branded transition surface.
- */
-export function FinCoRouteLoader() {
-  const location = useLocation()
-  const [visible, setVisible] = useState(false)
-  const destination = useMemo(() => destinationLabel(location.pathname), [location.pathname])
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setVisible(true), 130)
-    return () => window.clearTimeout(timer)
-  }, [])
-
-  if (!visible) return null
-
+export function FinCoLoaderVisual({ destination }: { destination: string }) {
   return (
     <div className="finco-route-loader" role="status" aria-live="polite" aria-label={`Opening ${destination}`}>
       <div className="finco-route-loader__scene" aria-hidden="true">
@@ -67,4 +50,25 @@ export function FinCoRouteLoader() {
       </div>
     </div>
   )
+}
+
+/**
+ * Delayed Suspense fallback for route chunks.
+ *
+ * Fast chunk loads never flash a second fallback. A separate navigation
+ * transition handles the intentional app-like page hand-off, while this
+ * fallback takes over if the lazy route itself genuinely needs longer.
+ */
+export function FinCoRouteLoader() {
+  const location = useLocation()
+  const [visible, setVisible] = useState(false)
+  const destination = useMemo(() => routeDestinationLabel(location.pathname), [location.pathname])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setVisible(true), 130)
+    return () => window.clearTimeout(timer)
+  }, [])
+
+  if (!visible) return null
+  return <FinCoLoaderVisual destination={destination} />
 }

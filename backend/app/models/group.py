@@ -40,7 +40,7 @@ class Group(Base):
     )
     name: Mapped[str] = mapped_column(String(100))
     kind: Mapped[str] = mapped_column(String(20), default="social", server_default="social")
-    default_currency: Mapped[str] = mapped_column(String(3), default="USD", server_default="USD")
+    default_currency: Mapped[str] = mapped_column(String(3), default="INR", server_default="INR")
     icon: Mapped[str] = mapped_column(String(50), default="users", server_default="users")
     color: Mapped[str] = mapped_column(String(7), default="#6B7280", server_default="#6B7280")
     is_archived: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")

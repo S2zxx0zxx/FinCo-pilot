@@ -1,36 +1,22 @@
 # Security Policy
 
-## Reporting a Vulnerability
+## Reporting a vulnerability
 
-If you discover a security vulnerability in Securo, please report it responsibly.
+If you discover a security vulnerability in FinCo-Pilot, please report it responsibly and **do not open a public issue containing exploit details or sensitive information**.
 
-**Do NOT open a public GitHub issue for security vulnerabilities.**
+Use GitHub's private vulnerability reporting / Security Advisories for this repository:
 
-Instead, please email: **info@usesecuro.com** (or open a private security advisory on GitHub)
+https://github.com/S2zxx0zxx/FinCo-pilot/security/advisories/new
 
-### What to include
+Please include:
 
-- Description of the vulnerability
-- Steps to reproduce
-- Potential impact
-- Suggested fix (if any)
+- the affected component and version or commit
+- reproduction steps or a proof of concept
+- the security impact you observed
+- any suggested mitigation, if known
 
-### Response timeline
+We will review credible reports as quickly as practical and coordinate remediation before public disclosure.
 
-- Acknowledgment within 48 hours
-- Status update within 7 days
-- Fix and disclosure coordinated with the reporter
+## Supported versions
 
-## Supported Versions
-
-| Version | Supported |
-|---------|-----------|
-| latest  | Yes       |
-
-## Best Practices for Self-Hosting
-
-- Always change the default `SECRET_KEY` in production
-- Use HTTPS in production
-- Keep dependencies updated
-- Restrict database access to the backend service only
-- Review environment variables before deploying
+Security fixes target the current maintained release line. Operators should keep FinCo-Pilot and its dependencies up to date and rotate credentials if exposure is suspected.

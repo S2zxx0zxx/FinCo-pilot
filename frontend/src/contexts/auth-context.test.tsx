@@ -18,7 +18,7 @@ vi.mock('@/lib/api', () => ({ auth }))
 
 const USER: User = {
   id: '1',
-  email: 'tassio@example.com',
+  email: 'user@example.com',
   is_active: true,
   is_superuser: false,
   is_verified: true,
@@ -88,7 +88,7 @@ describe('login', () => {
     const { result } = await renderAuth()
 
     await act(async () => {
-      const outcome = await result.current.login('tassio@example.com', 'pw')
+      const outcome = await result.current.login('user@example.com', 'pw')
       expect(outcome).toEqual({ requires_2fa: false })
     })
 
@@ -109,7 +109,7 @@ describe('login', () => {
 
     let outcome!: Awaited<ReturnType<typeof result.current.login>>
     await act(async () => {
-      outcome = await result.current.login('tassio@example.com', 'pw')
+      outcome = await result.current.login('user@example.com', 'pw')
     })
 
     expect(outcome).toEqual({
@@ -129,7 +129,7 @@ describe('login', () => {
 
     await expect(
       act(async () => {
-        await result.current.login('tassio@example.com', 'wrong')
+        await result.current.login('user@example.com', 'wrong')
       }),
     ).rejects.toThrow('invalid credentials')
 

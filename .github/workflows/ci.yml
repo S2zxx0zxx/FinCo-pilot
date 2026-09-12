@@ -49,17 +49,13 @@ jobs:
         if: steps.backend-changes.outputs.run_backend == 'true'
         uses: actions/setup-python@v7
         with:
-          # Single source of truth with the Docker image: CI must test the
-          # same interpreter the backend ships with.
           python-version-file: backend/.python-version
           cache: pip
 
       - name: Install dependencies
         if: steps.backend-changes.outputs.run_backend == 'true'
         run: |
-          # Everything comes from uv.lock: export it (--frozen never touches
-          # the lock) and hand it to pip with hash checking, so CI installs
-          # exactly the audited versions.
+          # Install exactly the audited versions resolved in uv.lock.
           # renovate: datasource=pypi depName=uv
           pip install -q uv==0.12.10
           uv export --frozen --all-extras --no-emit-project -o /tmp/requirements-dev.txt
@@ -68,10 +64,7 @@ jobs:
 
       - name: Verify lockfile is in sync
         if: steps.backend-changes.outputs.run_backend == 'true'
-        run: |
-          # Fails if pyproject.toml changed without regenerating uv.lock
-          # (someone edited deps without running scripts/lock.sh).
-          uv lock --check
+        run: uv lock --check
 
       - name: Lint with Ruff
         if: steps.backend-changes.outputs.run_backend == 'true'
@@ -93,34 +86,11 @@ jobs:
           name: coverage-report
           path: backend/coverage.xml
 
-      - name: Extract coverage percentage
-        if: github.ref == 'refs/heads/main' && steps.backend-changes.outputs.run_backend == 'true'
-        id: coverage
-        run: |
-          COVERAGE=$(python -c "import xml.etree.ElementTree as ET; print(round(float(ET.parse('coverage.xml').getroot().attrib['line-rate']) * 100))")
-          echo "percentage=$COVERAGE" >> $GITHUB_OUTPUT
-
-      - name: Update coverage badge
-        if: github.repository == 'securo-finance/securo' && github.ref == 'refs/heads/main' && steps.backend-changes.outputs.run_backend == 'true'
-        uses: schneegans/dynamic-badges-action@v1.9.0
-        with:
-          auth: ${{ secrets.GIST_TOKEN }}
-          gistID: ae627b744aaa2ba89d850ea541c311be
-          filename: coverage.json
-          label: coverage
-          message: ${{ steps.coverage.outputs.percentage }}%
-          valColorRange: ${{ steps.coverage.outputs.percentage }}
-          minColorRange: 50
-          maxColorRange: 90
-
   migration-chain:
     name: Migration Chain
     runs-on: ubuntu-latest
 
     steps:
-      # No `ref:` override, so on a pull request this is the merge with the
-      # base branch. That is the whole point: a revision id that only clashes
-      # once both sides are together is visible here and nowhere else.
       - uses: actions/checkout@v7
 
       - name: Check the Alembic revision chain
@@ -175,7 +145,7 @@ jobs:
 
           changed_files="$(git diff --name-only HEAD^1 HEAD)"
 
-          if echo "$changed_files" | grep -Eq '^(charts/securo/.*|\.github/workflows/ci\.yml)$'; then
+          if echo "$changed_files" | grep -Eq '^(charts/fincopilot/.*|\.github/workflows/ci\.yml)$'; then
             echo "run_helm=true" >> "$GITHUB_OUTPUT"
           else
             echo "run_helm=false" >> "$GITHUB_OUTPUT"
@@ -193,7 +163,7 @@ jobs:
 
       - name: Lint Helm Chart
         if: steps.helm-changes.outputs.run_helm == 'true'
-        run: helm lint charts/securo
+        run: helm lint charts/fincopilot
 
       - name: Validate Helm Chart with Kubeconform
         if: steps.helm-changes.outputs.run_helm == 'true'
@@ -201,4 +171,4 @@ jobs:
           curl -sL https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz | tar -xz
           sudo mv kubeconform /usr/local/bin/
 
-          helm template securo-test charts/securo | kubeconform -summary -strict
+          helm template fincopilot-test charts/fincopilot | kubeconform -summary -strict

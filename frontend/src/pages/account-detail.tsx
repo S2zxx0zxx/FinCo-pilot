@@ -62,7 +62,7 @@ function daysInMonth(year: number, month: number): number {
  * (e.g. gold: closes day 11, today is day 13, due day 16), the user wants to
  * see the bill they're about to pay (Abr 2026), not the brand-new open cycle
  * that's busy accumulating charges for next month's bill (Mai 2026). For accounts
- * where the close hasn't happened yet (e.g. TASSIO: close 28, today 13) the
+ * where the close hasn't happened yet (e.g. PRIMARY: close 28, today 13) the
  * "next due" cycle IS the open one, so this function returns the same as
  * creditCardCycleBoundaries(closeDay, today). */
 function defaultCycleForCreditCard(

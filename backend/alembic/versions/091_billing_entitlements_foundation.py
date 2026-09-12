@@ -4,6 +4,9 @@ Revision ID: 091
 Revises: 090
 """
 
+import uuid
+from datetime import datetime, timezone
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
@@ -35,6 +38,41 @@ def upgrade() -> None:
         sa.UniqueConstraint("user_id", name="uq_subscriptions_user_id"),
     )
     op.create_index("ix_subscriptions_user_id", "subscriptions", ["user_id"], unique=False)
+
+    # Every user — including legacy users and Free users — gets a billing row.
+    # Besides making Free explicit, this row is the transaction-lock anchor for
+    # race-safe current-resource quota checks.
+    bind = op.get_bind()
+    user_ids = list(bind.execute(sa.text("SELECT id FROM users")).scalars())
+    if user_ids:
+        now = datetime.now(timezone.utc)
+        subscriptions = sa.table(
+            "subscriptions",
+            sa.column("id", postgresql.UUID(as_uuid=True)),
+            sa.column("user_id", postgresql.UUID(as_uuid=True)),
+            sa.column("plan", sa.String()),
+            sa.column("status", sa.String()),
+            sa.column("billing_interval", sa.String()),
+            sa.column("cancel_at_period_end", sa.Boolean()),
+            sa.column("created_at", sa.DateTime(timezone=True)),
+            sa.column("updated_at", sa.DateTime(timezone=True)),
+        )
+        op.bulk_insert(
+            subscriptions,
+            [
+                {
+                    "id": uuid.uuid4(),
+                    "user_id": user_id,
+                    "plan": "free",
+                    "status": "free",
+                    "billing_interval": "none",
+                    "cancel_at_period_end": False,
+                    "created_at": now,
+                    "updated_at": now,
+                }
+                for user_id in user_ids
+            ],
+        )
 
     op.add_column(
         "workspaces",

@@ -68,6 +68,28 @@ async def get_subscription(session: AsyncSession, user_id: uuid.UUID) -> Subscri
     return result.scalar_one_or_none()
 
 
+async def ensure_free_subscription(session: AsyncSession, user_id: uuid.UUID) -> Subscription:
+    """Create the server-owned Free billing row for a newly-created user.
+
+    Registration/bootstrap paths call this inside their existing user/workspace
+    transaction. Legacy users are backfilled by migration 091. Normal clients
+    never call a plan-mutation endpoint.
+    """
+    existing = await get_subscription(session, user_id)
+    if existing is not None:
+        return existing
+
+    subscription = Subscription(
+        user_id=user_id,
+        plan=PlanId.FREE.value,
+        status=SubscriptionStatus.FREE.value,
+        billing_interval=BillingInterval.NONE.value,
+    )
+    session.add(subscription)
+    await session.flush()
+    return subscription
+
+
 async def get_effective_plan(session: AsyncSession, user_id: uuid.UUID) -> PlanId:
     return effective_plan(await get_subscription(session, user_id))
 

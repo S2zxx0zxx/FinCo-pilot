@@ -68,6 +68,21 @@ async def get_subscription(session: AsyncSession, user_id: uuid.UUID) -> Subscri
     return result.scalar_one_or_none()
 
 
+async def ensure_free_subscription(session: AsyncSession, user_id: uuid.UUID) -> Subscription:
+    """Ensure a user has a stable server-owned Free billing row.
+
+    This helper never upgrades or downgrades an existing row. It is used by all
+    user/workspace bootstrap paths so quota code always has a row it can lock.
+    """
+    existing = await get_subscription(session, user_id)
+    if existing is not None:
+        return existing
+    subscription = Subscription(user_id=user_id)
+    session.add(subscription)
+    await session.flush()
+    return subscription
+
+
 async def get_effective_plan(session: AsyncSession, user_id: uuid.UUID) -> PlanId:
     return effective_plan(await get_subscription(session, user_id))
 

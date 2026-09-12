@@ -125,7 +125,7 @@ async def claims_in_range(
     return [
         Claim(
             due_date=row.due_date,
-            currency=row.currency or "USD",
+            currency=row.currency or "INR",
             amount=Decimal(str(row.outstanding)),
             direction=row.direction,
         )

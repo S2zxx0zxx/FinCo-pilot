@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import '@/billing/billing.css'
 import { FALLBACK_PRICING } from '@/billing/catalog'
 import { fetchEntitlements, fetchPricingCatalog } from '@/billing/api'
 import type { Capability, Metric, UpgradeIntent } from '@/billing/types'
@@ -28,6 +29,13 @@ export function BillingProvider({ children }: { children: ReactNode }) {
 
   const entitlements = token ? (entitlementsQuery.data ?? null) : null
   const plan = entitlements?.plan ?? 'free'
+
+  useEffect(() => {
+    document.documentElement.dataset.fincoPlan = plan
+    return () => {
+      delete document.documentElement.dataset.fincoPlan
+    }
+  }, [plan])
 
   const hasCapability = useCallback(
     (capability: Capability) => Boolean(entitlements?.capabilities?.[capability]),

@@ -79,13 +79,13 @@ describe('LoginPage', () => {
     authContext.login.mockResolvedValue({ requires_2fa: false })
     const { user } = await renderLogin()
 
-    await user.type(screen.getByLabelText(t('auth.email')), 'tassio@example.com')
+    await user.type(screen.getByLabelText(t('auth.email')), 'user@example.com')
     await user.type(screen.getByLabelText(t('auth.password')), 'secret')
     await user.click(screen.getByRole('button', { name: t('auth.login') }))
 
     await waitFor(() =>
       expect(authContext.login).toHaveBeenCalledWith(
-        'tassio@example.com',
+        'user@example.com',
         'secret',
       ),
     )
@@ -100,7 +100,7 @@ describe('LoginPage', () => {
     })
     const { user } = await renderLogin()
 
-    await user.type(screen.getByLabelText(t('auth.email')), 'tassio@example.com')
+    await user.type(screen.getByLabelText(t('auth.email')), 'user@example.com')
     await user.type(screen.getByLabelText(t('auth.password')), 'secret')
     await user.click(screen.getByRole('button', { name: t('auth.login') }))
 

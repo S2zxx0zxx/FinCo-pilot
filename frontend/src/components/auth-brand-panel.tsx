@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next'
-import { ShellLogo } from '@/components/shell-logo'
+import { FinCoLogo } from '@/components/finco-logo'
 
-// Left-hand brand panel for the auth/onboarding screens. A deep indigo→violet
+// Left-hand brand panel for the auth/onboarding screens. A graphite→warm-coral
 // field with a slow purple aurora drifting behind an oversized, translucent
-// shell watermark. Decorative only — hidden below `lg`, where the form takes
+// FinCo-Pilot watermark. Decorative only — hidden below `lg`, where the form takes
 // the full width and carries its own compact header.
 export function AuthBrandPanel() {
   const { t } = useTranslation()
@@ -13,14 +13,14 @@ export function AuthBrandPanel() {
       className="relative hidden overflow-hidden p-12 text-white lg:flex lg:flex-col lg:justify-between"
       style={{
         background:
-          'linear-gradient(150deg, #3F37C9 0%, #5B30C9 48%, #6D28D9 100%)',
+          'linear-gradient(150deg, #0B0B0F 0%, #171217 52%, #2B1711 100%)',
       }}
     >
       {/* Soft animated aurora */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div className="securo-aurora securo-aurora-1" />
-        <div className="securo-aurora securo-aurora-2" />
-        <div className="securo-aurora securo-aurora-3" />
+        <div className="fincopilot-aurora fincopilot-aurora-1" />
+        <div className="fincopilot-aurora fincopilot-aurora-2" />
+        <div className="fincopilot-aurora fincopilot-aurora-3" />
       </div>
 
       {/* Oversized translucent shell, bleeding off the lower-right edge */}
@@ -29,7 +29,7 @@ export function AuthBrandPanel() {
         className="pointer-events-none absolute -right-28 -bottom-24 text-white/[0.06]"
         style={{ transform: 'rotate(-8deg)' }}
       >
-        <ShellLogo size={640} />
+        <FinCoLogo size={640} />
       </div>
 
       {/* Depth: gentle vignette toward the edges */}
@@ -45,9 +45,9 @@ export function AuthBrandPanel() {
       {/* Wordmark */}
       <div className="relative flex items-center gap-2.5">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15">
-          <ShellLogo size={20} className="text-white" />
+          <FinCoLogo size={20} className="text-white" />
         </div>
-        <span className="text-lg font-semibold tracking-tight">Securo</span>
+        <span className="text-lg font-semibold tracking-tight">FinCo-Pilot</span>
       </div>
 
       {/* Tagline */}

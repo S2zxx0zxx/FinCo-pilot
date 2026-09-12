@@ -29,7 +29,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { APP_VERSION } from '@/lib/build-info'
-import { ShellLogo } from '@/components/shell-logo'
+import { FinCoLogo } from '@/components/finco-logo'
 import { UpdateAvailableBanner } from '@/components/update-available-banner'
 import { UpdateAvailableDialog } from '@/components/update-available-dialog'
 import { WorkspaceSwitcher } from '@/components/workspace-switcher'
@@ -211,7 +211,7 @@ export function AppLayout() {
           aria-label={t('app.name')}
           title={t('nav.dashboard')}
         >
-          <ShellLogo size={22} className="text-primary shrink-0" />
+          <FinCoLogo size={22} className="text-primary shrink-0" />
           <span className="font-bold text-sidebar-foreground">
             {t('app.name')}
           </span>
@@ -297,7 +297,7 @@ export function AppLayout() {
               aria-label={t('app.name')}
               title={t('nav.dashboard')}
             >
-              <ShellLogo size={24} className="text-primary shrink-0" />
+              <FinCoLogo size={24} className="text-primary shrink-0" />
               <span className="font-bold text-lg text-sidebar-foreground tracking-tight">
                 {t('app.name')}
               </span>

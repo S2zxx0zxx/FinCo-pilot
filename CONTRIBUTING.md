@@ -1,11 +1,11 @@
-# Contributing to Securo
+# Contributing to FinCo-Pilot
 
-Thanks for your interest in contributing to Securo! This guide will help you get started.
+Thanks for your interest in contributing to FinCo-Pilot! This guide will help you get started.
 
 ## Getting Started
 
 1. Fork the repository
-2. Clone your fork: `git clone https://github.com/your-username/securo.git`
+2. Clone your fork: `git clone https://github.com/your-username/fincopilot.git`
 3. Start the stack: `docker compose up --build`
 4. Open [http://localhost:3000](http://localhost:3000)
 
@@ -13,7 +13,7 @@ Thanks for your interest in contributing to Securo! This guide will help you get
 
 New here? The smoothest first contribution is a small, self-contained one:
 
-- Browse the [open issues](https://github.com/securo-finance/securo/issues), especially those labeled `good first issue` or `help wanted`, and pick something that already has a clear scope.
+- Browse the [open issues](https://github.com/S2zxx0zxx/FinCo-pilot/issues), especially those labeled `good first issue` or `help wanted`, and pick something that already has a clear scope.
 - Small bug fixes, docs improvements, and translation updates are always welcome and don't need any prior discussion, just open the PR.
 - Comment on an issue to let others know you're picking it up, so two people don't work on the same thing.
 
@@ -27,7 +27,7 @@ Good ways to align first:
 
 - Open a [feature request](.github/ISSUE_TEMPLATE/feature_request.md) describing what you'd like to build.
 - Comment on the related issue if one already exists.
-- Chat with us on [Discord](https://discord.gg/rUqTKtQ9S4).
+- Chat with us on [Discord](https://github.com/S2zxx0zxx/FinCo-pilot).
 
 Once there's a shared understanding, go ahead and build. Large PRs that arrive without any prior discussion are harder to review and sometimes don't align with where the project is heading, so a quick conversation up front is the best way to make your contribution count.
 
@@ -41,7 +41,7 @@ So whatever you use, before you open the PR:
 
 - **You own the approach, not just the output.** You decided the strategy and delegated the typing. If the model picked the architecture and you went along with it, you don't know the change well enough to defend it in review.
 - **You're the quality gate.** The change holds to the standards of the code already here: naming, structure, tests, error handling. AI writes plausible code, and plausible isn't the bar.
-- **It fits where the product is going.** A change can work and still be wrong for Securo. Whether it belongs here is your call before it's ours.
+- **It fits where the product is going.** A change can work and still be wrong for FinCo-Pilot. Whether it belongs here is your call before it's ours.
 - **You ran it.** Not "the tests should pass" — you ran them, you ran the app, you saw the change work.
 - **The scope is what the issue asked for.** AI is generous with refactors nobody requested. Strip them. A thirty-file diff for a one-line bug goes back.
 - **You're accountable after it merges.** If it breaks in three weeks, you're who we come to.

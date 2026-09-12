@@ -12,33 +12,33 @@
   --card-foreground: #0F172A;
   --popover: #FFFFFF;
   --popover-foreground: #0F172A;
-  --primary: #6366F1;
+  --primary: #F97316;
   --primary-foreground: #FFFFFF;
   --secondary: #F1F5F9;
   --secondary-foreground: #0F172A;
   --muted: #F1F5F9;
   --muted-foreground: #64748B;
-  --accent: #EEF2FF;
-  --accent-foreground: #4F46E5;
+  --accent: #FFF1E8;
+  --accent-foreground: #C2410C;
   --destructive: #F43F5E;
   --destructive-foreground: #FFFFFF;
   --border: #E8ECF1;
   --input: #E8ECF1;
-  --ring: #6366F1;
+  --ring: #F97316;
   --radius: 0.625rem;
-  --chart-1: #6366F1;
-  --chart-2: #8B5CF6;
+  --chart-1: #F97316;
+  --chart-2: #FB7185;
   --chart-3: #10B981;
   --chart-4: #F59E0B;
   --chart-5: #F43F5E;
   --sidebar: #FFFFFF;
   --sidebar-foreground: #0F172A;
-  --sidebar-primary: #6366F1;
+  --sidebar-primary: #F97316;
   --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent: #F1F5F9;
-  --sidebar-accent-foreground: #4F46E5;
+  --sidebar-accent-foreground: #C2410C;
   --sidebar-border: #E8ECF1;
-  --sidebar-ring: #6366F1;
+  --sidebar-ring: #F97316;
   --sidebar-muted: #64748B;
 }
 
@@ -49,27 +49,27 @@
   --card-foreground: #F0F0F5;
   --popover: #16171F;
   --popover-foreground: #F0F0F5;
-  --primary: #818CF8;
+  --primary: #FB7A5B;
   --primary-foreground: #FFFFFF;
   --secondary: #252836;
   --secondary-foreground: #F0F0F5;
   --muted: #252836;
   --muted-foreground: #8A8F9E;
-  --accent: #1E1B4B;
-  --accent-foreground: #A5B4FC;
+  --accent: #3A1F18;
+  --accent-foreground: #FDBA9A;
   --destructive: #FB7185;
   --destructive-foreground: #0C0D12;
   --border: #2A2D3A;
   --input: #2A2D3A;
-  --ring: #818CF8;
+  --ring: #FB7A5B;
   --sidebar: #16171F;
   --sidebar-foreground: #F0F0F5;
-  --sidebar-primary: #818CF8;
+  --sidebar-primary: #FB7A5B;
   --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent: #252836;
-  --sidebar-accent-foreground: #A5B4FC;
+  --sidebar-accent-foreground: #FDBA9A;
   --sidebar-border: #2A2D3A;
-  --sidebar-ring: #818CF8;
+  --sidebar-ring: #FB7A5B;
   --sidebar-muted: #8A8F9E;
 }
 
@@ -143,7 +143,7 @@
   outline: none;
 }
 
-@keyframes securo-highlight-flash {
+@keyframes fincopilot-highlight-flash {
   0% {
     background-color: color-mix(in srgb, var(--primary) 22%, transparent);
     box-shadow: inset 3px 0 0 var(--primary);
@@ -158,62 +158,62 @@
   }
 }
 
-.securo-highlight-flash {
-  animation: securo-highlight-flash 2.4s ease-out;
+.fincopilot-highlight-flash {
+  animation: fincopilot-highlight-flash 2.4s ease-out;
 }
 
-/* Soft ambient aurora for the auth brand panel. Drifting, blurred purple
-   blobs over a deep indigo base — slow enough to feel alive, not busy.
+/* Soft ambient glow for the FinCo-Pilot auth panel. Warm coral and amber
+   light over a graphite base — slow enough to feel alive, not busy.
    Only transform/opacity animate, never layout. */
-@keyframes securo-aurora-1 {
+@keyframes fincopilot-aurora-1 {
   0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
   50% { transform: translate3d(7%, 10%, 0) scale(1.18); }
 }
-@keyframes securo-aurora-2 {
+@keyframes fincopilot-aurora-2 {
   0%, 100% { transform: translate3d(0, 0, 0) scale(1.12); }
   50% { transform: translate3d(-9%, -7%, 0) scale(1); }
 }
-@keyframes securo-aurora-3 {
+@keyframes fincopilot-aurora-3 {
   0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
   50% { transform: translate3d(6%, -11%, 0) scale(1.22); }
 }
 
-.securo-aurora {
+.fincopilot-aurora {
   position: absolute;
   border-radius: 9999px;
   filter: blur(72px);
   will-change: transform;
 }
-.securo-aurora-1 {
+.fincopilot-aurora-1 {
   top: -12%;
   left: -8%;
   width: 62%;
   height: 62%;
   opacity: 0.55;
-  background: radial-gradient(circle at center, #818cf8 0%, transparent 70%);
-  animation: securo-aurora-1 24s ease-in-out infinite;
+  background: radial-gradient(circle at center, #fb7185 0%, transparent 70%);
+  animation: fincopilot-aurora-1 24s ease-in-out infinite;
 }
-.securo-aurora-2 {
+.fincopilot-aurora-2 {
   right: -12%;
   bottom: -18%;
   width: 68%;
   height: 68%;
   opacity: 0.5;
-  background: radial-gradient(circle at center, #a78bfa 0%, transparent 70%);
-  animation: securo-aurora-2 29s ease-in-out infinite;
+  background: radial-gradient(circle at center, #fb923c 0%, transparent 70%);
+  animation: fincopilot-aurora-2 29s ease-in-out infinite;
 }
-.securo-aurora-3 {
+.fincopilot-aurora-3 {
   top: 28%;
   left: 22%;
   width: 46%;
   height: 46%;
   opacity: 0.4;
-  background: radial-gradient(circle at center, #c4b5fd 0%, transparent 70%);
-  animation: securo-aurora-3 33s ease-in-out infinite;
+  background: radial-gradient(circle at center, #fdba74 0%, transparent 70%);
+  animation: fincopilot-aurora-3 33s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .securo-aurora {
+  .fincopilot-aurora {
     animation: none;
   }
 }

@@ -20,7 +20,7 @@ import {
 import { AuthBrandPanel } from '@/components/auth-brand-panel'
 import { cn } from '@/lib/utils'
 import { Sun, Moon, Globe } from 'lucide-react'
-import { ShellLogo } from '@/components/shell-logo'
+import { FinCoLogo } from '@/components/finco-logo'
 
 export default function SetupPage() {
   const { t, i18n } = useTranslation()
@@ -94,7 +94,7 @@ export default function SetupPage() {
         <form onSubmit={handleSubmit}>
           <div className="flex flex-col items-center pt-8 pb-2 px-8">
             <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-4 lg:hidden">
-              <ShellLogo size={22} className="text-primary" />
+              <FinCoLogo size={22} className="text-primary" />
             </div>
             <h1 className="text-xl font-semibold tracking-tight">{t('setup.title')}</h1>
             <p className="text-sm text-muted-foreground mt-1">{t('setup.description')}</p>

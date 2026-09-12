@@ -61,7 +61,7 @@ class TestComputeEffectiveDate:
         assert compute_effective_date(date(2026, 4, 12), 11, 16) == date(2026, 5, 16)
 
     def test_cycle_spanning_month_boundary(self):
-        # Tassio card: close 28, due 5 (of next month).
+        # Primary card: close 28, due 5 (of next month).
         # Mar 15 → cycle closes Mar 28 → bill due Apr 5.
         assert compute_effective_date(date(2026, 3, 15), 28, 5) == date(2026, 4, 5)
 

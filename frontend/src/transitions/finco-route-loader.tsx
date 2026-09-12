@@ -30,9 +30,20 @@ export function routeDestinationLabel(pathname: string) {
   return ROUTE_LABELS.find(([pattern]) => pattern.test(pathname))?.[1] ?? 'FinCo-Pilot'
 }
 
-export function FinCoLoaderVisual({ destination }: { destination: string }) {
+export function FinCoLoaderVisual({
+  destination,
+  leaving = false,
+}: {
+  destination: string
+  leaving?: boolean
+}) {
   return (
-    <div className="finco-route-loader" role="status" aria-live="polite" aria-label={`Opening ${destination}`}>
+    <div
+      className={`finco-route-loader${leaving ? ' finco-route-loader--leaving' : ''}`}
+      role="status"
+      aria-live="polite"
+      aria-label={`Opening ${destination}`}
+    >
       <div className="finco-route-loader__scene" aria-hidden="true">
         <div className="finco-route-loader__orbit finco-route-loader__orbit--outer" />
         <div className="finco-route-loader__orbit finco-route-loader__orbit--inner" />

@@ -4,12 +4,12 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { renderWithProviders } from '@/test/utils'
 
 describe('Skeleton', () => {
-  it('renders a pulsing placeholder', () => {
+  it('renders the FinCo monochrome shimmer placeholder', () => {
     const { container } = renderWithProviders(<Skeleton />)
 
     const skeleton = container.querySelector('[data-slot="skeleton"]')!
     expect(skeleton).toBeInTheDocument()
-    expect(skeleton).toHaveClass('animate-pulse')
+    expect(skeleton).toHaveClass('finco-skeleton')
   })
 
   it('keeps the caller sizing classes', () => {

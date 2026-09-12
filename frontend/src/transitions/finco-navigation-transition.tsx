@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import { FinCoLoaderVisual, routeDestinationLabel } from '@/transitions/finco-route-loader'
+import { FinCoLoaderVisual } from '@/transitions/finco-route-loader'
+import { routeDestinationLabel } from '@/transitions/route-labels'
 
 const HOLD_MS = 360
 const EXIT_MS = 180
@@ -29,7 +30,12 @@ export function FinCoNavigationTransition() {
 
     const current = ++sequence.current
     const destination = routeDestinationLabel(location.pathname)
-    setState({ destination, leaving: false })
+
+    // Schedule the visual hand-off after the router commit instead of forcing a
+    // synchronous state update from the effect itself.
+    const showFrame = window.requestAnimationFrame(() => {
+      if (sequence.current === current) setState({ destination, leaving: false })
+    })
 
     const beginExit = window.setTimeout(() => {
       if (sequence.current === current) {
@@ -42,6 +48,7 @@ export function FinCoNavigationTransition() {
     }, HOLD_MS + EXIT_MS)
 
     return () => {
+      window.cancelAnimationFrame(showFrame)
       window.clearTimeout(beginExit)
       window.clearTimeout(finish)
     }

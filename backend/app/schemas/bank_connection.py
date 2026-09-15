@@ -11,9 +11,7 @@ class BankConnectionBase(BaseModel):
 
 
 class ConnectionInstitutionRead(BaseModel):
-    """One institution reached through a connection (issue #345). Distinct
-    from InstitutionRead below, which is a provider's connectable-bank
-    catalog entry, not a linked institution."""
+    """One institution reached through an already-linked connection."""
 
     name: str
     logo_url: Optional[str] = None
@@ -30,12 +28,20 @@ class BankConnectionRead(BankConnectionBase):
     settings: Optional[dict] = None
     status: str
     last_sync_at: Optional[datetime] = None
+    last_sync_started_at: Optional[datetime] = None
+    last_provider_refresh_at: Optional[datetime] = None
+    last_sync_status: str = "idle"
+    last_sync_error: Optional[str] = None
     created_at: datetime
-    # Institutions this link spans. Empty for providers that are one
-    # institution per connection — institution_name above covers those.
     institutions: list[ConnectionInstitutionRead] = []
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class SyncDispatchResponse(BaseModel):
+    connection_id: uuid.UUID
+    task_id: str
+    status: Literal["queued", "already_running"]
 
 
 class OAuthUrlRequest(BaseModel):

@@ -7,6 +7,7 @@ import { useDisplayLocale, useDateLocale } from '@/hooks/use-display-locale'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { accounts, connections, currencies } from '@/lib/api'
+import { syncBankConnection, type SyncAwareConnection } from '@/lib/bank-sync'
 import { localDateString } from '@/lib/date-utils'
 import { invalidateFinancialQueries } from '@/lib/invalidate-queries'
 import { toast } from 'sonner'
@@ -40,9 +41,6 @@ import { useAuth } from '@/contexts/auth-context'
 import { useWorkspace } from '@/contexts/workspace-context'
 import { formatCurrency } from '@/lib/format'
 
-// Account types offered in the create/edit dialog. Shared between the manual
-// type selector and the connected-account override selector so the list stays
-// in one place.
 const ACCOUNT_TYPE_OPTIONS = [
   { value: 'checking', labelKey: 'accounts.typeChecking' },
   { value: 'savings', labelKey: 'accounts.typeSavings' },
@@ -58,6 +56,8 @@ function daysUntil(dateStr: string | null): number | null {
   today.setHours(0, 0, 0, 0)
   return Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
 }
+
+const ACTIVE_SYNC_STATES = new Set(['queued', 'running'])
 
 export default function AccountsPage() {
   const { t } = useTranslation()
@@ -89,6 +89,12 @@ export default function AccountsPage() {
   const { data: connectionsList, isLoading: connectionsLoading } = useQuery({
     queryKey: ['connections'],
     queryFn: connections.list,
+    refetchInterval: (query) => {
+      const data = query.state.data as SyncAwareConnection[] | undefined
+      return data?.some((connection) => ACTIVE_SYNC_STATES.has(connection.last_sync_status ?? 'idle'))
+        ? 1500
+        : false
+    },
   })
 
   const { data: providersList } = useQuery({
@@ -119,7 +125,6 @@ export default function AccountsPage() {
       setTokenReconnectConnection(conn)
       return
     }
-    // Widget flow (Pluggy): re-open the widget with the existing item_id.
     setReconnectConnId(conn.id)
     setReconnectItemId(conn.external_id)
   }
@@ -131,22 +136,21 @@ export default function AccountsPage() {
   const closedAccounts = closedAccountsList?.filter((a) => a.is_closed) ?? []
 
   const syncMutation = useMutation({
-    mutationFn: (id: string) => connections.sync(id),
+    mutationFn: (id: string) => syncBankConnection(id),
     onSuccess: (result) => {
       invalidateFinancialQueries(queryClient)
       queryClient.invalidateQueries({ queryKey: ['connections'] })
-      toast.success(t('accounts.syncDone'))
-      const merged = (result as BankConnection & { merged_count?: number })?.merged_count
-      if (merged && merged > 0) {
-        toast.info(t('accounts.mergedCount', { count: merged }))
+      if (result.last_sync_status === 'cached') {
+        toast.warning(result.last_sync_error || 'Bank refresh failed; showing the provider cache instead.')
+      } else {
+        toast.success(t('accounts.syncDone'))
       }
     },
     onError: (err) => {
       queryClient.invalidateQueries({ queryKey: ['connections'] })
-      const detail = axios.isAxiosError(err)
-        ? err.response?.data?.detail
-        : null
-      const message = typeof detail === 'string' ? detail : detail?.message
+      const detail = axios.isAxiosError(err) ? err.response?.data?.detail : null
+      const apiMessage = typeof detail === 'string' ? detail : detail?.message
+      const message = apiMessage || (err instanceof Error ? err.message : '')
       toast.error(message || t('accounts.syncError'))
     },
   })
@@ -242,7 +246,6 @@ export default function AccountsPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Manual Accounts */}
           <div className="bg-card rounded-xl border border-border shadow-sm">
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-border">
               <h2 className="text-sm font-medium text-muted-foreground">{t('accounts.manualAccounts')}</h2>
@@ -254,11 +257,7 @@ export default function AccountsPage() {
                   const bal = Number(acc.current_balance)
                   const isCC = acc.type === 'credit_card'
                   const dueIn = isCC ? daysUntil(acc.next_due_date) : null
-                  const dueText =
-                    dueIn == null ? null
-                      : dueIn < 0 ? t('accounts.overdue')
-                      : dueIn === 0 ? t('accounts.dueToday')
-                      : t('accounts.dueIn', { count: dueIn })
+                  const dueText = dueIn == null ? null : dueIn < 0 ? t('accounts.overdue') : dueIn === 0 ? t('accounts.dueToday') : t('accounts.dueIn', { count: dueIn })
                   const dueClass = dueIn != null && dueIn <= 3 ? 'text-amber-600' : 'text-muted-foreground'
                   const accountMask = formatAccountMask(acc)
                   return (
@@ -279,13 +278,9 @@ export default function AccountsPage() {
                           {mask(formatCurrency(bal, acc.currency, locale))}
                         </p>
                         {isCC && acc.available_credit != null ? (
-                          <p className="text-[10px] text-muted-foreground tabular-nums">
-                            {t('accounts.availableCredit')}: {mask(formatCurrency(Number(acc.available_credit), acc.currency, locale))}
-                          </p>
+                          <p className="text-[10px] text-muted-foreground tabular-nums">{t('accounts.availableCredit')}: {mask(formatCurrency(Number(acc.available_credit), acc.currency, locale))}</p>
                         ) : acc.balance_primary != null && acc.currency !== userCurrency && (
-                          <p className="text-[10px] text-muted-foreground tabular-nums">
-                            {mask(formatCurrency(acc.balance_primary, userCurrency, locale))}
-                          </p>
+                          <p className="text-[10px] text-muted-foreground tabular-nums">{mask(formatCurrency(acc.balance_primary, userCurrency, locale))}</p>
                         )}
                       </div>
                       {canWrite && (
@@ -302,98 +297,82 @@ export default function AccountsPage() {
                 })}
               </div>
             ) : (
-              <div className="px-5 py-8 text-center">
-                <p className="text-sm text-muted-foreground">{t('accounts.noManualAccounts')}</p>
-              </div>
+              <div className="px-5 py-8 text-center"><p className="text-sm text-muted-foreground">{t('accounts.noManualAccounts')}</p></div>
             )}
           </div>
 
-          {/* Bank Connections */}
           {connectionsList && connectionsList.length > 0 ? (
             <div className="space-y-3">
-              {connectionsList.map((conn) => {
+              {connectionsList.map((baseConnection) => {
+                const conn = baseConnection as SyncAwareConnection
                 const connAccounts = bankAccounts.filter((a) => a.connection_id === conn.id)
-                const needsReconnect = conn.status !== 'active'
-                const syncPending = syncMutation.isPending && syncMutation.variables === conn.id
+                const syncState = conn.last_sync_status ?? 'idle'
+                const workerBusy = ACTIVE_SYNC_STATES.has(syncState)
+                const needsReconnect = conn.status !== 'active' || syncState === 'action_required'
+                const syncPending = workerBusy || (syncMutation.isPending && syncMutation.variables === conn.id)
+                const freshnessAt = conn.last_provider_refresh_at
+                const showCachedWarning = syncState === 'cached'
+                const showSyncError = ['rate_limited', 'error', 'action_required'].includes(syncState)
+
                 return (
                   <div key={conn.id} className="bg-card rounded-xl border border-border shadow-sm">
-                    {/* Connection header */}
                     <div className="flex items-center justify-between px-5 py-3.5 border-b border-border">
-                      <div className="flex items-center gap-3">
-                        {/* One bank's favicon would misrepresent a multi-
-                            institution link — fall back to the generic icon. */}
-                        <ConnectionLogo
-                          logoUrl={(conn.institutions?.length ?? 0) > 1 ? null : conn.logo_url}
-                        />
-                        <div>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <ConnectionLogo logoUrl={(conn.institutions?.length ?? 0) > 1 ? null : conn.logo_url} />
+                        <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="text-sm font-semibold text-foreground">{getConnectionName(conn, t)}</p>
+                            <p className="text-sm font-semibold text-foreground truncate">{getConnectionName(conn, t)}</p>
                             <Badge
-                              variant={conn.status === 'active' ? 'default' : 'secondary'}
-                              className={
-                                conn.status === 'active'
-                                  ? 'text-[10px] px-1.5 py-0 h-4'
-                                  : 'text-[10px] px-1.5 py-0 h-4 border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300'
-                              }
+                              variant={conn.status === 'active' && !showSyncError ? 'default' : 'secondary'}
+                              className={conn.status === 'active' && !showSyncError
+                                ? 'text-[10px] px-1.5 py-0 h-4'
+                                : 'text-[10px] px-1.5 py-0 h-4 border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300'}
                             >
-                              {conn.status}
+                              {workerBusy ? syncState : conn.status}
                             </Badge>
                           </div>
-                          {conn.last_sync_at && (
+                          {freshnessAt ? (
                             <p className="text-[11px] text-muted-foreground mt-0.5">
-                              {t('accounts.lastSync')}: {new Date(conn.last_sync_at).toLocaleString(dateLocale)}
+                              Bank refreshed: {new Date(freshnessAt).toLocaleString(dateLocale)}
                             </p>
+                          ) : conn.last_sync_at ? (
+                            <p className="text-[11px] text-muted-foreground mt-0.5">
+                              FinCo processed data: {new Date(conn.last_sync_at).toLocaleString(dateLocale)}
+                            </p>
+                          ) : null}
+                          {showCachedWarning && (
+                            <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5">
+                              {conn.last_sync_error || 'Bank refresh failed; this may be cached provider data.'}
+                            </p>
+                          )}
+                          {showSyncError && conn.last_sync_error && (
+                            <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-0.5">{conn.last_sync_error}</p>
                           )}
                         </div>
                       </div>
                       {canWrite && (
                         <div className="flex items-center gap-1.5">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-                            onClick={() => setSettingsConnection(conn)}
-                            title={t('connections.settings')}
-                          >
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground" onClick={() => setSettingsConnection(conn)} title={t('connections.settings')}>
                             <Settings size={14} />
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className={needsReconnect
-                              ? 'relative h-8 w-8 p-0 text-amber-500 hover:bg-amber-500/10 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-300'
-                              : 'h-8 w-8 p-0 text-muted-foreground hover:text-foreground'}
+                            className={needsReconnect ? 'relative h-8 w-8 p-0 text-amber-500 hover:bg-amber-500/10 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-300' : 'h-8 w-8 p-0 text-muted-foreground hover:text-foreground'}
                             onClick={() => needsReconnect ? handleReconnectClick(conn) : syncMutation.mutate(conn.id)}
                             disabled={syncPending}
-                            title={needsReconnect
-                              ? conn.status === 'expired'
-                                ? t('accounts.connectionExpired')
-                                : t('accounts.connectionError')
-                              : t('accounts.sync')}
+                            title={needsReconnect ? conn.status === 'expired' ? t('accounts.connectionExpired') : t('accounts.connectionError') : workerBusy ? 'Bank sync is running' : t('accounts.sync')}
                             aria-label={needsReconnect ? t('accounts.reconnect') : t('accounts.sync')}
                           >
                             <RefreshCw size={14} className={syncPending ? 'animate-spin' : ''} />
-                            {needsReconnect && (
-                              <TriangleAlert
-                                size={10}
-                                className="absolute -right-0.5 -top-0.5 rounded-full bg-card text-amber-500"
-                              />
-                            )}
+                            {needsReconnect && <TriangleAlert size={10} className="absolute -right-0.5 -top-0.5 rounded-full bg-card text-amber-500" />}
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 text-muted-foreground hover:text-rose-500"
-                            onClick={() => setDisconnectingConnection(conn)}
-                            disabled={disconnectMutation.isPending}
-                            title={t('accounts.disconnect')}
-                          >
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-rose-500" onClick={() => setDisconnectingConnection(conn)} disabled={disconnectMutation.isPending || workerBusy} title={t('accounts.disconnect')}>
                             <Unlink size={14} />
                           </Button>
                         </div>
                       )}
                     </div>
-                    {/* Accounts list */}
                     {connAccounts.length > 0 ? (
                       <div className="divide-y divide-muted">
                         {connAccounts.map((acc) => {
@@ -401,11 +380,7 @@ export default function AccountsPage() {
                           const bal = Number(acc.current_balance)
                           const isCC = acc.type === 'credit_card'
                           const dueIn = isCC ? daysUntil(acc.next_due_date) : null
-                          const dueText =
-                            dueIn == null ? null
-                              : dueIn < 0 ? t('accounts.overdue')
-                              : dueIn === 0 ? t('accounts.dueToday')
-                              : t('accounts.dueIn', { count: dueIn })
+                          const dueText = dueIn == null ? null : dueIn < 0 ? t('accounts.overdue') : dueIn === 0 ? t('accounts.dueToday') : t('accounts.dueIn', { count: dueIn })
                           const dueClass = dueIn != null && dueIn <= 3 ? 'text-amber-600' : 'text-muted-foreground'
                           const accountMask = formatAccountMask(acc)
                           return (
@@ -414,238 +389,99 @@ export default function AccountsPage() {
                                 <AccountIcon account={acc} />
                                 <div className="min-w-0 flex-1">
                                   <p className="text-sm font-medium text-foreground truncate">{getAccountName(acc)}</p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {t(cfg.label)}
-                                    {accountMask && <> · <span className="tabular-nums">{accountMask}</span></>}
-                                    {dueText && <> · <span className={dueClass}>{dueText}</span></>}
-                                  </p>
+                                  <p className="text-xs text-muted-foreground">{t(cfg.label)}{accountMask && <> · <span className="tabular-nums">{accountMask}</span></>}{dueText && <> · <span className={dueClass}>{dueText}</span></>}</p>
                                 </div>
                               </Link>
                               <div className="shrink-0 text-right">
-                                <p className={`text-xs sm:text-sm font-semibold tabular-nums ${(acc.type === 'credit_card' ? bal > 0 : bal < 0) ? 'text-rose-500' : 'text-foreground'}`}>
-                                  {mask(formatCurrency(bal, acc.currency, locale))}
-                                </p>
+                                <p className={`text-xs sm:text-sm font-semibold tabular-nums ${(acc.type === 'credit_card' ? bal > 0 : bal < 0) ? 'text-rose-500' : 'text-foreground'}`}>{mask(formatCurrency(bal, acc.currency, locale))}</p>
                                 {isCC && acc.available_credit != null ? (
-                                  <p className="text-[10px] text-muted-foreground tabular-nums">
-                                    {t('accounts.availableCredit')}: {mask(formatCurrency(Number(acc.available_credit), acc.currency, locale))}
-                                  </p>
+                                  <p className="text-[10px] text-muted-foreground tabular-nums">{t('accounts.availableCredit')}: {mask(formatCurrency(Number(acc.available_credit), acc.currency, locale))}</p>
                                 ) : acc.balance_primary != null && acc.currency !== userCurrency && (
-                                  <p className="text-[10px] text-muted-foreground tabular-nums">
-                                    {mask(formatCurrency(acc.balance_primary, userCurrency, locale))}
-                                  </p>
+                                  <p className="text-[10px] text-muted-foreground tabular-nums">{mask(formatCurrency(acc.balance_primary, userCurrency, locale))}</p>
                                 )}
                               </div>
-                              {canWrite && (
-                                <AccountRowActions
-                                  accountName={getAccountName(acc)}
-                                  onEdit={() => { setEditingAccount(acc); setDialogOpen(true) }}
-                                  onClose={() => setClosingAccountId(acc.id)}
-                                  deletePending={deleteMutation.isPending}
-                                />
-                              )}
+                              {canWrite && <AccountRowActions accountName={getAccountName(acc)} onEdit={() => { setEditingAccount(acc); setDialogOpen(true) }} onClose={() => setClosingAccountId(acc.id)} deletePending={deleteMutation.isPending} />}
                             </div>
                           )
                         })}
                       </div>
                     ) : (
-                      <div className="px-5 py-4">
-                        <p className="text-sm text-muted-foreground">{t('accounts.noAccountsFound')}</p>
-                      </div>
+                      <div className="px-5 py-4"><p className="text-sm text-muted-foreground">{t('accounts.noAccountsFound')}</p></div>
                     )}
                   </div>
                 )
               })}
             </div>
           ) : (
-            <div className="bg-card rounded-xl border border-dashed border-border p-8 text-center">
-              <p className="text-sm text-muted-foreground">{t('accounts.noBankConnections')}</p>
-            </div>
+            <div className="bg-card rounded-xl border border-dashed border-border p-8 text-center"><p className="text-sm text-muted-foreground">{t('accounts.noBankConnections')}</p></div>
           )}
 
-          {/* Closed Accounts */}
           {closedAccounts.length > 0 && (
             <div className="bg-card rounded-xl border border-border shadow-sm opacity-60">
-              <div className="flex items-center justify-between px-5 py-3.5 border-b border-border">
-                <h2 className="text-sm font-medium text-muted-foreground">{t('accounts.closedAccounts')}</h2>
-              </div>
+              <div className="flex items-center justify-between px-5 py-3.5 border-b border-border"><h2 className="text-sm font-medium text-muted-foreground">{t('accounts.closedAccounts')}</h2></div>
               <div className="divide-y divide-muted">
-                {closedAccounts.map((acc) => {
-                  return (
-                    <div key={acc.id} className="flex items-center px-5 py-3">
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <AccountIcon account={acc} />
-                        <p className="text-sm font-medium text-muted-foreground truncate">{getAccountLabel(acc)}</p>
-                      </div>
-                      {canWrite && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-xs text-muted-foreground hover:text-foreground h-7 px-2 mr-3"
-                          onClick={() => reopenMutation.mutate(acc.id)}
-                          disabled={reopenMutation.isPending}
-                        >
-                          {t('accounts.reopen')}
-                        </Button>
-                      )}
-                      <p className="text-sm font-semibold tabular-nums text-muted-foreground w-32 text-right">
-                        {mask(formatCurrency(Number(acc.current_balance), acc.currency, locale))}
-                      </p>
-                    </div>
-                  )
-                })}
+                {closedAccounts.map((acc) => (
+                  <div key={acc.id} className="flex items-center px-5 py-3">
+                    <div className="flex items-center gap-3 flex-1 min-w-0"><AccountIcon account={acc} /><p className="text-sm font-medium text-muted-foreground truncate">{getAccountLabel(acc)}</p></div>
+                    {canWrite && <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-foreground h-7 px-2 mr-3" onClick={() => reopenMutation.mutate(acc.id)} disabled={reopenMutation.isPending}>{t('accounts.reopen')}</Button>}
+                    <p className="text-sm font-semibold tabular-nums text-muted-foreground w-32 text-right">{mask(formatCurrency(Number(acc.current_balance), acc.currency, locale))}</p>
+                  </div>
+                ))}
               </div>
             </div>
           )}
         </div>
       )}
 
-      {/* Confirm delete dialog */}
       <Dialog open={!!deletingId} onOpenChange={() => setDeletingId(null)}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('accounts.confirmDeleteTitle')}</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            {t('accounts.confirmDeleteDesc')}
-          </p>
+          <DialogHeader><DialogTitle>{t('accounts.confirmDeleteTitle')}</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">{t('accounts.confirmDeleteDesc')}</p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeletingId(null)}>
-              {t('common.cancel')}
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => deletingId && deleteMutation.mutate(deletingId)}
-              disabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending ? t('common.loading') : t('common.delete')}
-            </Button>
+            <Button variant="outline" onClick={() => setDeletingId(null)}>{t('common.cancel')}</Button>
+            <Button variant="destructive" onClick={() => deletingId && deleteMutation.mutate(deletingId)} disabled={deleteMutation.isPending}>{deleteMutation.isPending ? t('common.loading') : t('common.delete')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Confirm disconnect dialog */}
       <Dialog open={!!disconnectingConnection} onOpenChange={() => setDisconnectingConnection(null)}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('accounts.confirmDisconnectTitle')}</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            {t('accounts.confirmDisconnectDesc', { institution: disconnectingConnection ? getConnectionName(disconnectingConnection, t) : '' })}
-          </p>
+          <DialogHeader><DialogTitle>{t('accounts.confirmDisconnectTitle')}</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">{t('accounts.confirmDisconnectDesc', { institution: disconnectingConnection ? getConnectionName(disconnectingConnection, t) : '' })}</p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDisconnectingConnection(null)}>
-              {t('common.cancel')}
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => disconnectingConnection && disconnectMutation.mutate(disconnectingConnection.id)}
-              disabled={disconnectMutation.isPending}
-            >
-              {disconnectMutation.isPending ? t('common.loading') : t('accounts.disconnect')}
-            </Button>
+            <Button variant="outline" onClick={() => setDisconnectingConnection(null)}>{t('common.cancel')}</Button>
+            <Button variant="destructive" onClick={() => disconnectingConnection && disconnectMutation.mutate(disconnectingConnection.id)} disabled={disconnectMutation.isPending}>{disconnectMutation.isPending ? t('common.loading') : t('accounts.disconnect')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Confirm close dialog */}
       <Dialog open={!!closingAccountId} onOpenChange={() => setClosingAccountId(null)}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('accounts.close')}</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            {t('accounts.confirmClose')}
-          </p>
-          {accountsList?.find(a => a.id === closingAccountId)?.connection_id && (
-            <p className="text-sm text-amber-600 font-medium">
-              {t('accounts.confirmCloseBank')}
-            </p>
-          )}
+          <DialogHeader><DialogTitle>{t('accounts.close')}</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">{t('accounts.confirmClose')}</p>
+          {accountsList?.find(a => a.id === closingAccountId)?.connection_id && <p className="text-sm text-amber-600 font-medium">{t('accounts.confirmCloseBank')}</p>}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setClosingAccountId(null)}>
-              {t('common.cancel')}
-            </Button>
-            <Button
-              variant="default"
-              onClick={() => closingAccountId && closeMutation.mutate(closingAccountId)}
-              disabled={closeMutation.isPending}
-            >
-              {closeMutation.isPending ? t('common.loading') : t('accounts.close')}
-            </Button>
+            <Button variant="outline" onClick={() => setClosingAccountId(null)}>{t('common.cancel')}</Button>
+            <Button variant="default" onClick={() => closingAccountId && closeMutation.mutate(closingAccountId)} disabled={closeMutation.isPending}>{closeMutation.isPending ? t('common.loading') : t('accounts.close')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Connector Select Dialog */}
-      <ConnectorSelectDialog
-        open={connectorSelectOpen}
-        onClose={() => setConnectorSelectOpen(false)}
-        onSelect={(provider) => setSelectedProvider(provider)}
-      />
+      <ConnectorSelectDialog open={connectorSelectOpen} onClose={() => setConnectorSelectOpen(false)} onSelect={(provider) => setSelectedProvider(provider)} />
+      <BankConnectDialog open={!!selectedProvider && selectedProvider.flow_type === 'widget'} onClose={() => setSelectedProvider(null)} provider={selectedProvider?.name} supportsAssetSync={selectedProvider?.supports_asset_sync ?? false} />
+      <OAuthConnectDialog open={!!selectedProvider && selectedProvider.flow_type === 'oauth'} onClose={() => setSelectedProvider(null)} provider={selectedProvider?.name ?? ''} supportsAssetSync={selectedProvider?.supports_asset_sync ?? false} />
+      <TokenConnectDialog open={!!selectedProvider && selectedProvider.flow_type === 'token'} onClose={() => setSelectedProvider(null)} provider={selectedProvider?.name ?? ''} supportsAssetSync={selectedProvider?.supports_asset_sync ?? false} />
+      <BankConnectDialog open={!!reconnectConnId} onClose={() => { setReconnectConnId(null); setReconnectItemId(null) }} reconnectConnectionId={reconnectConnId ?? undefined} updateItemId={reconnectItemId ?? undefined} />
+      <TokenConnectDialog open={!!tokenReconnectConnection} onClose={() => setTokenReconnectConnection(null)} provider={tokenReconnectConnection?.provider ?? ''} reconnectConnectionId={tokenReconnectConnection?.id} />
+      <ConnectionSettingsDialog open={!!settingsConnection} onClose={() => setSettingsConnection(null)} connection={settingsConnection} supportsAssetSync={settingsConnection ? providersByName.get(settingsConnection.provider)?.supports_asset_sync ?? false : false} />
 
-      {/* Bank Connect Dialog — widget-based (Pluggy) */}
-      <BankConnectDialog
-        open={!!selectedProvider && selectedProvider.flow_type === 'widget'}
-        onClose={() => setSelectedProvider(null)}
-        provider={selectedProvider?.name}
-        supportsAssetSync={selectedProvider?.supports_asset_sync ?? false}
-      />
-
-      {/* OAuth Connect Dialog — institution-pickers (Enable Banking) */}
-      <OAuthConnectDialog
-        open={!!selectedProvider && selectedProvider.flow_type === 'oauth'}
-        onClose={() => setSelectedProvider(null)}
-        provider={selectedProvider?.name ?? ''}
-        supportsAssetSync={selectedProvider?.supports_asset_sync ?? false}
-      />
-
-      {/* Token Connect Dialog — paste-a-token flow (SimpleFIN) */}
-      <TokenConnectDialog
-        open={!!selectedProvider && selectedProvider.flow_type === 'token'}
-        onClose={() => setSelectedProvider(null)}
-        provider={selectedProvider?.name ?? ''}
-        supportsAssetSync={selectedProvider?.supports_asset_sync ?? false}
-      />
-
-      {/* Reconnect Dialog — widget-based (Pluggy) */}
-      <BankConnectDialog
-        open={!!reconnectConnId}
-        onClose={() => { setReconnectConnId(null); setReconnectItemId(null) }}
-        reconnectConnectionId={reconnectConnId ?? undefined}
-        updateItemId={reconnectItemId ?? undefined}
-      />
-
-      {/* Reconnect Dialog — paste-a-token flow (SimpleFIN) */}
-      <TokenConnectDialog
-        open={!!tokenReconnectConnection}
-        onClose={() => setTokenReconnectConnection(null)}
-        provider={tokenReconnectConnection?.provider ?? ''}
-        reconnectConnectionId={tokenReconnectConnection?.id}
-      />
-
-      {/* Connection Settings Dialog */}
-      <ConnectionSettingsDialog
-        open={!!settingsConnection}
-        onClose={() => setSettingsConnection(null)}
-        connection={settingsConnection}
-        supportsAssetSync={
-          settingsConnection
-            ? providersByName.get(settingsConnection.provider)?.supports_asset_sync ?? false
-            : false
-        }
-      />
-
-      {/* Account Dialog */}
       <AccountDialog
         open={dialogOpen}
         onClose={() => { setDialogOpen(false); setEditingAccount(null) }}
         account={editingAccount}
         onSave={(data) => {
-          if (editingAccount) {
-            updateMutation.mutate({ id: editingAccount.id, ...data })
-          } else {
-            createMutation.mutate(data as { name: string; type: string; balance?: number; balance_date?: string; currency?: string })
-          }
+          if (editingAccount) updateMutation.mutate({ id: editingAccount.id, ...data })
+          else createMutation.mutate(data as { name: string; type: string; balance?: number; balance_date?: string; currency?: string })
         }}
         loading={createMutation.isPending || updateMutation.isPending}
       />
@@ -653,13 +489,7 @@ export default function AccountsPage() {
   )
 }
 
-function AccountDialog({
-  open,
-  onClose,
-  account,
-  onSave,
-  loading,
-}: {
+function AccountDialog({ open, onClose, account, onSave, loading }: {
   open: boolean
   onClose: () => void
   account: Account | null
@@ -679,11 +509,7 @@ function AccountDialog({
   const { t } = useTranslation()
   const { user } = useAuth()
   const userCurrency = user?.preferences?.currency_display ?? 'USD'
-  const { data: supportedCurrencies } = useQuery({
-    queryKey: ['currencies'],
-    queryFn: currencies.list,
-    staleTime: Infinity,
-  })
+  const { data: supportedCurrencies } = useQuery({ queryKey: ['currencies'], queryFn: currencies.list, staleTime: Infinity })
   const [name, setName] = useState(account?.name ?? '')
   const [displayName, setDisplayName] = useState(account?.display_name ?? '')
   const [type, setType] = useState(account?.type ?? 'checking')
@@ -711,11 +537,7 @@ function AccountDialog({
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {account ? t('accounts.editAccount') : t('accounts.addManual')}
-          </DialogTitle>
-        </DialogHeader>
+        <DialogHeader><DialogTitle>{account ? t('accounts.editAccount') : t('accounts.addManual')}</DialogTitle></DialogHeader>
         <form
           key={account?.id ?? 'new'}
           onSubmit={(e) => {
@@ -739,32 +561,15 @@ function AccountDialog({
           }}
           className="space-y-4"
         >
-          <div className="space-y-2">
-            <Label>{t('accounts.accountName')}</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} required disabled={!!account?.connection_id} />
-          </div>
+          <div className="space-y-2"><Label>{t('accounts.accountName')}</Label><Input value={name} onChange={(e) => setName(e.target.value)} required disabled={!!account?.connection_id} /></div>
           {account?.connection_id && (
-            <div className="space-y-2">
-              <Label>{t('accounts.displayName')}</Label>
-              <Input
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder={name}
-              />
-              <p className="text-xs text-muted-foreground">{t('accounts.displayNameHint')}</p>
-            </div>
+            <div className="space-y-2"><Label>{t('accounts.displayName')}</Label><Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder={name} /><p className="text-xs text-muted-foreground">{t('accounts.displayNameHint')}</p></div>
           )}
           {account?.connection_id && (
             <div className="space-y-2">
               <Label>{t('accounts.accountType')}</Label>
-              <select
-                className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-              >
-                {ACCOUNT_TYPE_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{t(o.labelKey)}</option>
-                ))}
+              <select className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary" value={type} onChange={(e) => setType(e.target.value)}>
+                {ACCOUNT_TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{t(o.labelKey)}</option>)}
               </select>
               <p className="text-xs text-muted-foreground">{t('accounts.typeOverrideHint')}</p>
             </div>
@@ -774,107 +579,34 @@ function AccountDialog({
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>{t('accounts.accountType')}</Label>
-                  <select
-                    className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                    value={type}
-                    onChange={(e) => setType(e.target.value)}
-                  >
-                    {ACCOUNT_TYPE_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>{t(o.labelKey)}</option>
-                    ))}
+                  <select className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary" value={type} onChange={(e) => setType(e.target.value)}>
+                    {ACCOUNT_TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{t(o.labelKey)}</option>)}
                   </select>
                 </div>
                 <div className="space-y-2">
                   <Label>{t('accounts.currency')}</Label>
-                  <select
-                    className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                    value={currency}
-                    onChange={(e) => setCurrency(e.target.value)}
-                  >
-                    {(supportedCurrencies ?? [{ code: userCurrency, symbol: userCurrency, name: userCurrency, flag: '' }]).map((c) => (
-                      <option key={c.code} value={c.code}>{c.flag} {c.name}</option>
-                    ))}
+                  <select className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary" value={currency} onChange={(e) => setCurrency(e.target.value)}>
+                    {(supportedCurrencies ?? [{ code: userCurrency, symbol: userCurrency, name: userCurrency, flag: '' }]).map((c) => <option key={c.code} value={c.code}>{c.flag} {c.name}</option>)}
                   </select>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>
-                    {type === 'credit_card'
-                      ? t('accounts.balanceCreditCard')
-                      : t('accounts.balance')}
-                  </Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min={type === 'credit_card' ? '0' : undefined}
-                    value={balance}
-                    onChange={(e) => setBalance(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>{t('accounts.balanceDate')}</Label>
-                  <DatePickerInput
-                    value={balanceDate}
-                    onChange={setBalanceDate}
-                    className="w-full justify-start"
-                  />
-                </div>
+                <div className="space-y-2"><Label>{type === 'credit_card' ? t('accounts.balanceCreditCard') : t('accounts.balance')}</Label><Input type="number" step="0.01" min={type === 'credit_card' ? '0' : undefined} value={balance} onChange={(e) => setBalance(e.target.value)} /></div>
+                <div className="space-y-2"><Label>{t('accounts.balanceDate')}</Label><DatePickerInput value={balanceDate} onChange={setBalanceDate} className="w-full justify-start" /></div>
               </div>
-              {type === 'credit_card' && (
-                <p className="text-xs text-muted-foreground -mt-2">
-                  {t('accounts.balanceCreditCardHint')}
-                </p>
-              )}
+              {type === 'credit_card' && <p className="text-xs text-muted-foreground -mt-2">{t('accounts.balanceCreditCardHint')}</p>}
             </>
           )}
           {type === 'credit_card' && (
             <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
-              <div className="space-y-2">
-                <Label>{t('accounts.creditLimit')}</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={creditLimit}
-                  onChange={(e) => setCreditLimit(e.target.value)}
-                  placeholder="0.00"
-                />
-              </div>
+              <div className="space-y-2"><Label>{t('accounts.creditLimit')}</Label><Input type="number" step="0.01" min="0" value={creditLimit} onChange={(e) => setCreditLimit(e.target.value)} placeholder="0.00" /></div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>{t('accounts.statementCloseDay')}</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    max="31"
-                    value={statementCloseDay}
-                    onChange={(e) => setStatementCloseDay(e.target.value)}
-                    placeholder={t('accounts.dayOfMonthHint')}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>{t('accounts.paymentDueDay')}</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    max="31"
-                    value={paymentDueDay}
-                    onChange={(e) => setPaymentDueDay(e.target.value)}
-                    placeholder={t('accounts.dayOfMonthHint')}
-                  />
-                </div>
+                <div className="space-y-2"><Label>{t('accounts.statementCloseDay')}</Label><Input type="number" min="1" max="31" value={statementCloseDay} onChange={(e) => setStatementCloseDay(e.target.value)} placeholder={t('accounts.dayOfMonthHint')} /></div>
+                <div className="space-y-2"><Label>{t('accounts.paymentDueDay')}</Label><Input type="number" min="1" max="31" value={paymentDueDay} onChange={(e) => setPaymentDueDay(e.target.value)} placeholder={t('accounts.dayOfMonthHint')} /></div>
               </div>
             </div>
           )}
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              {t('common.cancel')}
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? t('common.loading') : t('common.save')}
-            </Button>
-          </DialogFooter>
+          <DialogFooter><Button type="button" variant="outline" onClick={onClose}>{t('common.cancel')}</Button><Button type="submit" disabled={loading}>{loading ? t('common.loading') : t('common.save')}</Button></DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

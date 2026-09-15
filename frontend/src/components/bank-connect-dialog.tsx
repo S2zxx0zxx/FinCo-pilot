@@ -1,8 +1,9 @@
-import { useState, useEffect, useEffectEvent } from 'react'
+import { useEffect, useEffectEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
 import { PluggyConnect } from 'react-pluggy-connect'
 import { connections } from '@/lib/api'
+import { syncBankConnection } from '@/lib/bank-sync'
 import { invalidateFinancialQueries } from '@/lib/invalidate-queries'
 import { toast } from 'sonner'
 import {
@@ -63,9 +64,7 @@ export function BankConnectDialog({
           : await connections.getConnectToken(provider)
         if (!cancelled) setConnectToken(token)
       } catch {
-        if (!cancelled) {
-          onTokenError()
-        }
+        if (!cancelled) onTokenError()
       }
     }
     fetchToken()
@@ -76,7 +75,9 @@ export function BankConnectDialog({
   const handleSuccess = async (data: { item: { id: string } }) => {
     try {
       if (reconnectConnectionId) {
-        await connections.sync(reconnectConnectionId)
+        // Reconnect refreshes are queued server-side so slow institutions never
+        // hold this browser request open for 60–90 seconds.
+        await syncBankConnection(reconnectConnectionId)
       } else {
         await connections.handleCallback(
           data.item.id,
@@ -88,8 +89,9 @@ export function BankConnectDialog({
       invalidateFinancialQueries(queryClient)
       queryClient.invalidateQueries({ queryKey: ['connections'] })
       toast.success(t('accounts.connected'))
-    } catch {
-      toast.error(t('accounts.connectError'))
+    } catch (error) {
+      const message = error instanceof Error ? error.message : ''
+      toast.error(message || t('accounts.connectError'))
     } finally {
       handleClose()
     }

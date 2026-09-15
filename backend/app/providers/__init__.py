@@ -77,10 +77,12 @@ def all_known_providers() -> list[dict]:
 def _auto_register_providers() -> None:
     """Auto-register providers when credentials are configured."""
     from app.core.config import get_settings
+
     settings = get_settings()
 
     if settings.pluggy_client_id and settings.pluggy_client_secret:
         from app.providers.pluggy import PluggyProvider
+
         register_provider("pluggy", PluggyProvider)
 
     eb_has_key = bool(
@@ -88,10 +90,12 @@ def _auto_register_providers() -> None:
     )
     if settings.enable_banking_app_id and eb_has_key:
         from app.providers.enable_banking import EnableBankingProvider
+
         register_provider("enable_banking", EnableBankingProvider)
 
     if settings.simplefin_enabled:
         from app.providers.simplefin import SimpleFinProvider
+
         register_provider("simplefin", SimpleFinProvider)
 
 
@@ -112,10 +116,14 @@ def get_storage_provider():
             from app.providers.local_storage import LocalStorageProvider
 
             _storage_provider = LocalStorageProvider()
+        elif settings.storage_provider == "s3":
+            from app.providers.s3_storage import S3StorageProvider
+
+            _storage_provider = S3StorageProvider()
         else:
             raise NotImplementedError(
-                f"Storage provider '{settings.storage_provider}' is not yet implemented. "
-                "Supported: 'local'"
+                f"Storage provider '{settings.storage_provider}' is not implemented. "
+                "Supported: local, s3"
             )
     return _storage_provider
 

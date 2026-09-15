@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 import redis.asyncio as redis_lib
-from sqlalchemy import select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.config import get_settings
@@ -38,17 +38,40 @@ def _make_session_maker():
 
 
 async def _stale_connections() -> list[tuple[uuid.UUID, uuid.UUID]]:
-    """Return stale connection/user pairs without doing any provider work."""
+    """Return connections that need scheduling, including orphaned jobs.
+
+    A worker can die after writing ``queued``/``running``. Those rows must not
+    be excluded forever; once their job timestamp is old enough they become
+    eligible again. The per-connection Redis lock remains the final arbiter, so
+    a genuinely long-running worker with a live heartbeat is still deduplicated.
+    """
+    settings = get_settings()
     engine, session_maker = _make_session_maker()
     try:
-        cutoff = datetime.now(timezone.utc) - STALE_THRESHOLD
+        now = datetime.now(timezone.utc)
+        data_cutoff = now - STALE_THRESHOLD
+        orphan_cutoff = now - timedelta(
+            seconds=max(settings.bank_sync_lock_ttl_seconds * 2, 1800)
+        )
+        normal_stale = and_(
+            BankConnection.last_sync_status.notin_(["queued", "running"]),
+            or_(
+                BankConnection.last_sync_at < data_cutoff,
+                BankConnection.last_sync_at.is_(None),
+            ),
+        )
+        orphaned_job = and_(
+            BankConnection.last_sync_status.in_(["queued", "running"]),
+            or_(
+                BankConnection.last_sync_started_at < orphan_cutoff,
+                BankConnection.last_sync_started_at.is_(None),
+            ),
+        )
         async with session_maker() as session:
             result = await session.execute(
                 select(BankConnection.id, BankConnection.user_id).where(
                     BankConnection.status.in_(["active", "error"]),
-                    BankConnection.last_sync_status.notin_(["queued", "running"]),
-                    (BankConnection.last_sync_at < cutoff)
-                    | (BankConnection.last_sync_at.is_(None)),
+                    or_(normal_stale, orphaned_job),
                 )
             )
             return list(result.all())
@@ -70,18 +93,42 @@ async def _release_lock(redis_client, key: str, token: str) -> None:
         logger.warning("Failed to release bank-sync lock %s", key, exc_info=True)
 
 
+async def _renew_lock(redis_client, key: str, token: str, ttl_seconds: int) -> None:
+    """Keep ownership alive while a slow institution is syncing.
+
+    The compare-and-expire Lua script guarantees a worker never extends a lock
+    that has been replaced by another owner. Losing the lock stops the heartbeat;
+    the DB job state and idempotent sync logic remain the secondary safety net.
+    """
+    script = """
+    if redis.call('get', KEYS[1]) == ARGV[1] then
+        return redis.call('expire', KEYS[1], ARGV[2])
+    end
+    return 0
+    """
+    interval = max(15, ttl_seconds // 3)
+    try:
+        while True:
+            await asyncio.sleep(interval)
+            renewed = await redis_client.eval(script, 1, key, token, ttl_seconds)
+            if not renewed:
+                logger.warning("Bank-sync lock ownership lost for %s", key)
+                return
+    except asyncio.CancelledError:
+        raise
+    except Exception:
+        # Redis availability is already a readiness dependency. A temporary
+        # renewal failure should not throw away a financial sync in progress;
+        # idempotency protects a possible retry.
+        logger.warning("Bank-sync lock heartbeat failed for %s", key, exc_info=True)
+
+
 async def _sync_one_celery(
     connection_id: str,
     user_id: str,
     trigger_provider_refresh: bool,
 ) -> dict:
-    """Run exactly one connection sync behind a distributed per-link lock.
-
-    Celery invokes this through ``asyncio.run``. A Redis client therefore must
-    be created and closed inside the same event loop; reusing the API process's
-    module-level async client across task loops can raise ``event loop closed``
-    errors under worker reuse.
-    """
+    """Run exactly one connection sync behind a renewable distributed lock."""
     settings = get_settings()
     conn_uuid = uuid.UUID(connection_id)
     user_uuid = uuid.UUID(user_id)
@@ -100,6 +147,14 @@ async def _sync_one_celery(
         logger.info("Bank sync already running for %s", connection_id)
         return {"status": "already_running", "connection_id": connection_id}
 
+    heartbeat = asyncio.create_task(
+        _renew_lock(
+            redis_client,
+            lock_key,
+            lock_token,
+            settings.bank_sync_lock_ttl_seconds,
+        )
+    )
     engine, session_maker = _make_session_maker()
     provider_refresh_outcome = "not_requested"
     try:
@@ -116,9 +171,6 @@ async def _sync_one_celery(
             workspace_id = connection.workspace_id
             before_sync_at = connection.last_sync_at
 
-            # Manual refresh happens here, outside the HTTP request. We record
-            # whether the upstream provider actually refreshed so a cached read
-            # can never masquerade as freshly fetched bank data.
             if trigger_provider_refresh:
                 try:
                     provider = get_provider(connection.provider)
@@ -134,10 +186,7 @@ async def _sync_one_celery(
                             "The bank/provider requires reconnection before fresh data can be fetched."
                         )
                         await session.commit()
-                        return {
-                            "status": "action_required",
-                            "connection_id": connection_id,
-                        }
+                        return {"status": "action_required", "connection_id": connection_id}
                     await session.commit()
                 except ValueError as exc:
                     raise ProviderNotConfiguredError(str(exc)) from exc
@@ -150,8 +199,6 @@ async def _sync_one_celery(
                 trigger_provider_refresh=False,
             )
 
-            # connection_service intentionally treats provider throttling as a
-            # soft skip. If last_sync_at did not advance, expose that truth.
             if connection.last_sync_at == before_sync_at:
                 connection.last_sync_status = "rate_limited"
                 connection.last_sync_error = "Provider rate limit prevented this sync; retry later."
@@ -198,6 +245,11 @@ async def _sync_one_celery(
                 await session.commit()
         raise
     finally:
+        heartbeat.cancel()
+        try:
+            await heartbeat
+        except asyncio.CancelledError:
+            pass
         await engine.dispose()
         await _release_lock(redis_client, lock_key, lock_token)
         await redis_client.aclose()

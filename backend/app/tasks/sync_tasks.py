@@ -3,11 +3,11 @@ import logging
 import uuid
 from datetime import datetime, timedelta, timezone
 
+import redis.asyncio as redis_lib
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.config import get_settings
-from app.core.redis import get_redis
 from app.models.bank_connection import BankConnection
 from app.providers import get_provider
 from app.providers.base import (
@@ -56,7 +56,7 @@ async def _stale_connections() -> list[tuple[uuid.UUID, uuid.UUID]]:
         await engine.dispose()
 
 
-async def _release_lock(redis, key: str, token: str) -> None:
+async def _release_lock(redis_client, key: str, token: str) -> None:
     """Delete only the lock value this worker owns."""
     script = """
     if redis.call('get', KEYS[1]) == ARGV[1] then
@@ -65,7 +65,7 @@ async def _release_lock(redis, key: str, token: str) -> None:
     return 0
     """
     try:
-        await redis.eval(script, 1, key, token)
+        await redis_client.eval(script, 1, key, token)
     except Exception:
         logger.warning("Failed to release bank-sync lock %s", key, exc_info=True)
 
@@ -75,20 +75,28 @@ async def _sync_one_celery(
     user_id: str,
     trigger_provider_refresh: bool,
 ) -> dict:
-    """Run exactly one connection sync behind a distributed per-link lock."""
+    """Run exactly one connection sync behind a distributed per-link lock.
+
+    Celery invokes this through ``asyncio.run``. A Redis client therefore must
+    be created and closed inside the same event loop; reusing the API process's
+    module-level async client across task loops can raise ``event loop closed``
+    errors under worker reuse.
+    """
     settings = get_settings()
     conn_uuid = uuid.UUID(connection_id)
     user_uuid = uuid.UUID(user_id)
     lock_key = f"bank-sync:{connection_id}"
     lock_token = uuid.uuid4().hex
-    redis = await get_redis()
-    acquired = await redis.set(
+    redis_client = redis_lib.from_url(settings.redis_url, decode_responses=True)
+
+    acquired = await redis_client.set(
         lock_key,
         lock_token,
         nx=True,
         ex=settings.bank_sync_lock_ttl_seconds,
     )
     if not acquired:
+        await redis_client.aclose()
         logger.info("Bank sync already running for %s", connection_id)
         return {"status": "already_running", "connection_id": connection_id}
 
@@ -191,7 +199,8 @@ async def _sync_one_celery(
         raise
     finally:
         await engine.dispose()
-        await _release_lock(redis, lock_key, lock_token)
+        await _release_lock(redis_client, lock_key, lock_token)
+        await redis_client.aclose()
 
 
 @celery_app.task(name="app.tasks.sync_tasks.sync_all_connections")
@@ -221,9 +230,6 @@ def sync_single_connection(
             _sync_one_celery(connection_id, user_id, trigger_provider_refresh)
         )
     except Exception as exc:
-        # Keep the Celery result useful while DB state carries the user-facing
-        # error. Re-raising would also mark the task failed, but the scheduler
-        # should not retry credential/user-action failures blindly.
         return {
             "status": "error",
             "connection_id": connection_id,

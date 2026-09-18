@@ -1,0 +1,68 @@
+name: fincopilot-omniroute
+
+services:
+  redis:
+    image: docker.io/library/redis:8.6.5-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - omniroute-internal
+
+  omniroute:
+    # Intentionally pinned. Do not use latest/next/main in production.
+    image: ${OMNIROUTE_IMAGE:-diegosouzapw/omniroute:3.8.50}
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      DATA_DIR: /app/data
+      PORT: "20128"
+      DASHBOARD_PORT: "20128"
+      # Split the inference/API plane from the dashboard. The host Caddy
+      # example exposes only this API port publicly; dashboard stays loopback.
+      API_PORT: "20129"
+      API_HOST: "0.0.0.0"
+      REDIS_URL: redis://redis:6379
+      REQUIRE_API_KEY: "true"
+      OMNIROUTE_ENABLE_LIVE_WS: "0"
+      OMNI_MAX_CONCURRENT_CONNECTIONS: ${OMNI_MAX_CONCURRENT_CONNECTIONS:-16}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      API_KEY_SECRET: ${API_KEY_SECRET:?set API_KEY_SECRET in .env}
+      INITIAL_PASSWORD: ${INITIAL_PASSWORD:?set INITIAL_PASSWORD in .env}
+      OMNIROUTE_WS_BRIDGE_SECRET: ${OMNIROUTE_WS_BRIDGE_SECRET:?set OMNIROUTE_WS_BRIDGE_SECRET in .env}
+      STORAGE_ENCRYPTION_KEY: ${STORAGE_ENCRYPTION_KEY:?set STORAGE_ENCRYPTION_KEY in .env}
+      STORAGE_ENCRYPTION_KEY_VERSION: ${STORAGE_ENCRYPTION_KEY_VERSION:-v1}
+    ports:
+      # Management/dashboard: reachable only from the VPS itself or an SSH tunnel.
+      - "127.0.0.1:${OMNIROUTE_DASHBOARD_PORT:-20128}:20128"
+      # Inference/API: also loopback. Publish through the TLS reverse proxy.
+      - "127.0.0.1:${OMNIROUTE_API_PORT:-20129}:20129"
+    volumes:
+      - omniroute-data:/app/data
+    networks:
+      - omniroute-internal
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.mjs"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  redis-data:
+  omniroute-data:
+
+networks:
+  omniroute-internal:
+    driver: bridge

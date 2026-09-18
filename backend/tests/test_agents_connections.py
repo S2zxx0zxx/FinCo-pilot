@@ -1,5 +1,6 @@
 """LLM connections — encryption, CRUD via HTTP, executor wiring."""
 import uuid
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch, AsyncMock
 
 import bcrypt as _bcrypt
@@ -10,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.services import connection_service
 from app.agents.services.crypto import decrypt, encrypt
+from app.models.subscription import Subscription
 from app.models.user import User
 
 
@@ -177,6 +179,21 @@ async def other_auth_headers_conn(client: AsyncClient, session: AsyncSession) ->
         preferences={"language": "en", "currency_display": "USD"},
     )
     session.add(user)
+    await session.flush()
+    from app.services.workspace_service import create_personal_workspace_for_user
+
+    await create_personal_workspace_for_user(session, user)
+    now = datetime.now(timezone.utc)
+    session.add(
+        Subscription(
+            user_id=user.id,
+            plan="max",
+            status="active",
+            billing_interval="monthly",
+            current_period_start=now,
+            current_period_end=now + timedelta(days=31),
+        )
+    )
     await session.commit()
     resp = await client.post(
         "/api/auth/login",

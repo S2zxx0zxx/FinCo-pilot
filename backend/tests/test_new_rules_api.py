@@ -1,10 +1,12 @@
 # backend/tests/test_new_rules_api.py
 import uuid
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.subscription import Subscription
 from app.models.user import User
 from app.schemas.rule import RuleAction, RuleCondition, RuleCreate
 from app.services.category_service import create_default_categories
@@ -752,6 +754,17 @@ async def test_rule_user_isolation(
     session.add(user2)
     await session.flush()
     await create_personal_workspace_for_user(session, user2)
+    now = datetime.now(timezone.utc)
+    session.add(
+        Subscription(
+            user_id=user2.id,
+            plan="pro",
+            status="active",
+            billing_interval="monthly",
+            current_period_start=now,
+            current_period_end=now + timedelta(days=31),
+        )
+    )
     await session.commit()
 
     # Login as user2

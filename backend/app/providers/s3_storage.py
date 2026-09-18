@@ -1,7 +1,7 @@
 import hashlib
 import hmac
 from datetime import datetime, timezone
-from urllib.parse import parse_qsl, quote, urlencode, urlsplit, urlunsplit
+from urllib.parse import parse_qsl, quote, urlsplit, urlunsplit
 
 import httpx
 

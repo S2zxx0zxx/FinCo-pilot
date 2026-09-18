@@ -52,8 +52,12 @@ async def test_public_pricing_catalog_uses_locked_launch_prices(client: AsyncCli
 
 @pytest.mark.asyncio
 async def test_client_plan_fields_cannot_change_server_entitlements(
-    client: AsyncClient, auth_headers: dict
+    client: AsyncClient,
+    auth_headers: dict,
+    session: AsyncSession,
+    test_user: User,
 ):
+    await _set_plan(session, test_user, PlanId.FREE)
     response = await client.get(
         "/api/billing/entitlements?plan=max&is_pro=true",
         headers={**auth_headers, "X-Plan": "max"},
@@ -88,8 +92,12 @@ async def test_active_pro_subscription_is_resolved_server_side(
 
 @pytest.mark.asyncio
 async def test_free_account_quota_cannot_be_bypassed_via_direct_api(
-    client: AsyncClient, auth_headers: dict
+    client: AsyncClient,
+    auth_headers: dict,
+    session: AsyncSession,
+    test_user: User,
 ):
+    await _set_plan(session, test_user, PlanId.FREE)
     for index in range(3):
         response = await client.post(
             "/api/accounts",
@@ -119,8 +127,12 @@ async def test_free_account_quota_cannot_be_bypassed_via_direct_api(
 
 @pytest.mark.asyncio
 async def test_free_rule_mutation_is_blocked_but_read_is_available(
-    client: AsyncClient, auth_headers: dict
+    client: AsyncClient,
+    auth_headers: dict,
+    session: AsyncSession,
+    test_user: User,
 ):
+    await _set_plan(session, test_user, PlanId.FREE)
     listing = await client.get("/api/rules", headers=auth_headers)
     assert listing.status_code == 200
     blocked = await client.post(
@@ -144,8 +156,12 @@ async def test_free_rule_mutation_is_blocked_but_read_is_available(
 
 @pytest.mark.asyncio
 async def test_free_cannot_create_business_workspace_with_forged_plan(
-    client: AsyncClient, auth_headers: dict
+    client: AsyncClient,
+    auth_headers: dict,
+    session: AsyncSession,
+    test_user: User,
 ):
+    await _set_plan(session, test_user, PlanId.FREE)
     blocked = await client.post(
         "/api/workspaces",
         headers=auth_headers,
@@ -196,6 +212,7 @@ async def test_monthly_counter_is_deletion_proof_server_state(
     test_user: User,
     test_workspace: Workspace,
 ):
+    await _set_plan(session, test_user, PlanId.FREE)
     test_workspace.billing_owner_user_id = test_user.id
     session.add(test_workspace)
     await session.commit()

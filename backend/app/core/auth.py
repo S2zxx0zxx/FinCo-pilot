@@ -1,3 +1,4 @@
+import logging
 import uuid
 from decimal import Decimal
 from typing import Optional
@@ -16,7 +17,12 @@ from app.core.auth_policy import require_local_auth_enabled
 from app.core.config import get_settings
 from app.core.database import get_async_session
 from app.models.user import User
+from app.services.email_service import (
+    send_password_reset_email,
+    send_verification_email,
+)
 
+logger = logging.getLogger(__name__)
 settings = get_settings()
 
 
@@ -41,12 +47,12 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
         return await super().update(user_update, user, safe=safe, request=request)
 
     async def on_after_register(self, user: User, request: Optional[Request] = None):
-        print(f"User {user.id} has registered.")
-        # If request is None, this was called programmatically (e.g., from setup endpoint)
-        # which handles wallet creation, categories, and rules itself.
+        logger.info("Registered user %s", user.id)
+        # If request is None, this was called programmatically (e.g. setup)
+        # which handles wallet/category/workspace creation itself.
         if request is None:
             return
-        # Create default wallet for users registered via /auth/register.
+
         from app.models.account import Account
         from app.services.category_service import create_default_categories
         from app.services.rule_service import create_default_rules
@@ -55,26 +61,42 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
         session = self.user_db.session
         currency = user.primary_currency
         lang = (user.preferences or {}).get("language", "en")
-
-        # Every new user gets a Personal workspace + owner membership.
-        # All their seeded data (wallet, categories, rules) reparent to it.
         workspace = await create_personal_workspace_for_user(session, user)
 
         wallet_name = "Carteira" if lang.startswith("pt") else "Wallet"
-        wallet = Account(
-            user_id=user.id,
-            workspace_id=workspace.id,
-            name=wallet_name,
-            type="checking",
-            balance=Decimal("0.00"),
-            currency=currency,
+        session.add(
+            Account(
+                user_id=user.id,
+                workspace_id=workspace.id,
+                name=wallet_name,
+                type="checking",
+                balance=Decimal("0.00"),
+                currency=currency,
+            )
         )
-        session.add(wallet)
         await session.commit()
-
-        # Create default categories and rules for the new user
         await create_default_categories(session, user.id, lang, workspace_id=workspace.id)
         await create_default_rules(session, user.id, lang, workspace_id=workspace.id)
+
+    async def on_after_forgot_password(
+        self,
+        user: User,
+        token: str,
+        request: Optional[Request] = None,
+    ) -> None:
+        # Never log reset tokens or the user's email address. Delivery failures
+        # propagate only when production explicitly requires transactional mail.
+        await send_password_reset_email(user.email, token)
+        logger.info("Password reset email processed for user %s", user.id)
+
+    async def on_after_request_verify(
+        self,
+        user: User,
+        token: str,
+        request: Optional[Request] = None,
+    ) -> None:
+        await send_verification_email(user.email, token)
+        logger.info("Verification email processed for user %s", user.id)
 
 
 async def get_user_manager(user_db: SQLAlchemyUserDatabase = Depends(get_user_db)):

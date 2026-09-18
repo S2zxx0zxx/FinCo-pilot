@@ -5,6 +5,7 @@ import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.billing.service import get_subscription
 from app.models.user import User
 from app.schemas.rule import RuleAction, RuleCondition, RuleCreate
 from app.services.category_service import create_default_categories
@@ -752,6 +753,11 @@ async def test_rule_user_isolation(
     session.add(user2)
     await session.flush()
     await create_personal_workspace_for_user(session, user2)
+    subscription = await get_subscription(session, user2.id)
+    assert subscription is not None
+    subscription.plan = "pro"
+    subscription.status = "active"
+    subscription.billing_interval = "monthly"
     await session.commit()
 
     # Login as user2

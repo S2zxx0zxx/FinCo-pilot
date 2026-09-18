@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,7 +12,6 @@ from app.core.workspace_context import (
 )
 from app.providers import all_known_providers
 from app.providers.base import (
-    ProviderNotConfiguredError,
     ProviderUserActionRequired,
     SessionExpiredError,
 )
@@ -26,9 +26,11 @@ from app.schemas.bank_connection import (
     OAuthUrlResponse,
     ReauthUrlResponse,
     ReconnectTokenResponse,
+    SyncDispatchResponse,
 )
 from app.services import connection_service
 from app.services.transfer_detection_service import detect_transfer_pairs, unlink_transfer_pair
+from app.worker import celery_app
 
 router = APIRouter(prefix="/api/connections", tags=["connections"])
 
@@ -124,9 +126,7 @@ async def oauth_callback(
             },
         )
     except SessionExpiredError as e:
-        raise HTTPException(
-            status_code=status.HTTP_410_GONE, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_410_GONE, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
@@ -160,45 +160,76 @@ async def get_reauth_url(
         )
 
 
-@router.post("/{connection_id}/sync")
+@router.post(
+    "/{connection_id}/sync",
+    response_model=SyncDispatchResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
 async def sync_connection(
     connection_id: uuid.UUID,
     ctx: WorkspaceContext = Depends(current_writable_workspace),
     session: AsyncSession = Depends(get_async_session),
 ):
+    """Queue a fresh bank sync without keeping an HTTP request open for ~90s.
+
+    The worker owns provider refresh/polling and a distributed per-connection
+    lock. DB state lets every browser/tab observe the same job and prevents
+    cached provider data from being presented as a confirmed bank refresh.
+    """
+    connection = await connection_service.get_connection(
+        session, connection_id, ctx.workspace.id
+    )
+    if not connection:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Connection not found")
+
+    if connection.last_sync_status in {"queued", "running"}:
+        return SyncDispatchResponse(
+            connection_id=connection.id,
+            task_id=f"existing:{connection.id}",
+            status="already_running",
+        )
+
+    # Provider APIs have tight refresh quotas. A successful/error terminal job
+    # can be retried after a short cooldown; repeated clicks inside that window
+    # are rejected before they ever reach Celery/provider infrastructure.
+    now = datetime.now(timezone.utc)
+    if connection.last_sync_started_at:
+        started = connection.last_sync_started_at
+        if started.tzinfo is None:
+            started = started.replace(tzinfo=timezone.utc)
+        retry_after = timedelta(seconds=30) - (now - started)
+        if retry_after.total_seconds() > 0:
+            seconds = max(1, int(retry_after.total_seconds()))
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="A bank refresh was requested recently. Please wait before retrying.",
+                headers={"Retry-After": str(seconds)},
+            )
+
+    connection.last_sync_status = "queued"
+    connection.last_sync_error = None
+    connection.last_sync_started_at = now
+    await session.commit()
+
     try:
-        # Manual sync is user-initiated, so ask the provider to pull fresh
-        # data from the bank before we read. Scheduled syncs (Celery) keep
-        # the default behaviour: read whatever the provider already has.
-        connection, merged_count = await connection_service.sync_connection(
-            session,
-            connection_id,
-            ctx.workspace.id,
-            ctx.user_id,
-            trigger_provider_refresh=True,
+        task = celery_app.send_task(
+            "app.tasks.sync_tasks.sync_single_connection",
+            args=[str(connection.id), str(connection.user_id), True],
         )
-        result = BankConnectionRead.model_validate(connection)
-        return {**result.model_dump(mode="json"), "merged_count": merged_count}
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-    except ProviderUserActionRequired as e:
+    except Exception as exc:
+        connection.last_sync_status = "error"
+        connection.last_sync_error = "Unable to queue bank sync. Background worker is unavailable."
+        await session.commit()
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail={
-                "message": str(e),
-                "code": e.code,
-                "help_url": e.help_url,
-            },
-        )
-    except SessionExpiredError as e:
-        raise HTTPException(status_code=status.HTTP_410_GONE, detail=str(e))
-    except ProviderNotConfiguredError as e:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e))
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Sync failed: {str(e)}",
-        )
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Bank sync queue is temporarily unavailable. Please retry shortly.",
+        ) from exc
+
+    return SyncDispatchResponse(
+        connection_id=connection.id,
+        task_id=str(task.id),
+        status="queued",
+    )
 
 
 @router.post("/{connection_id}/reconnect-token", response_model=ReconnectTokenResponse)
@@ -207,12 +238,6 @@ async def get_reconnect_token(
     ctx: WorkspaceContext = Depends(current_writable_workspace),
     session: AsyncSession = Depends(get_async_session),
 ):
-    """Get a connect token for reconnecting an errored/expired connection.
-
-    Write-gated: the token this hands out re-links a bank connection, which
-    is the same capability `get_reauth_url` above grants and gates. A
-    read-only member has no business minting one.
-    """
     connection = await connection_service.get_connection(session, connection_id, ctx.workspace.id)
     if not connection:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Connection not found")
@@ -267,7 +292,6 @@ async def detect_transfers(
     ctx: WorkspaceContext = Depends(current_writable_workspace),
     session: AsyncSession = Depends(get_async_session),
 ):
-    """One-time backfill scan: detect transfer pairs across all existing transactions in this workspace."""
     pairs_created = await detect_transfer_pairs(session, ctx.workspace.id)
     await session.commit()
     return {"pairs_created": pairs_created}
@@ -279,7 +303,6 @@ async def unlink_transfer(
     ctx: WorkspaceContext = Depends(current_writable_workspace),
     session: AsyncSession = Depends(get_async_session),
 ):
-    """Manual unlink: remove a transfer pair link so both transactions are treated normally."""
     unlinked = await unlink_transfer_pair(session, ctx.workspace.id, pair_id)
     if not unlinked:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Transfer pair not found")

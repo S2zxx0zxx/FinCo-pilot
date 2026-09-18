@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.services import connection_service
 from app.agents.services.crypto import decrypt, encrypt
+from app.billing.service import get_subscription
 from app.models.user import User
 
 
@@ -177,6 +178,15 @@ async def other_auth_headers_conn(client: AsyncClient, session: AsyncSession) ->
         preferences={"language": "en", "currency_display": "USD"},
     )
     session.add(user)
+    await session.flush()
+    from app.services.workspace_service import create_personal_workspace_for_user
+
+    await create_personal_workspace_for_user(session, user)
+    subscription = await get_subscription(session, user.id)
+    assert subscription is not None
+    subscription.plan = "max"
+    subscription.status = "active"
+    subscription.billing_interval = "monthly"
     await session.commit()
     resp = await client.post(
         "/api/auth/login",

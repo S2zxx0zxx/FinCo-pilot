@@ -10,6 +10,7 @@ import pytest_asyncio
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.billing.service import get_subscription
 from app.models.user import User
 
 
@@ -44,6 +45,11 @@ async def other_user(session: AsyncSession) -> User:
     session.add(user)
     await session.flush()
     await create_personal_workspace_for_user(session, user)
+    subscription = await get_subscription(session, user.id)
+    assert subscription is not None
+    subscription.plan = "max"
+    subscription.status = "active"
+    subscription.billing_interval = "monthly"
     await session.commit()
     await session.refresh(user)
     return user

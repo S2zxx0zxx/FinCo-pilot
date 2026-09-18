@@ -1,6 +1,6 @@
 import os
 import uuid
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from typing import AsyncGenerator
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -61,6 +61,7 @@ from app.models.asset_value import AssetValue  # noqa: E402,F401
 from app.models.transaction_attachment import TransactionAttachment  # noqa: E402,F401
 from app.models.payee import Payee, PayeeMapping  # noqa: E402,F401
 from app.models.app_settings import AppSetting  # noqa: E402,F401
+from app.models.subscription import Subscription  # noqa: E402
 from app.models.goal import Goal  # noqa: E402,F401
 from app.models.credit_card_bill import CreditCardBill  # noqa: E402,F401
 from app.models.group import Group, GroupMember  # noqa: E402,F401
@@ -207,6 +208,7 @@ async def test_user(session: AsyncSession, clean_db) -> User:
         name="Pessoal",
         kind="personal",
         created_by_user_id=user.id,
+        billing_owner_user_id=user.id,
         default_currency="BRL",
         locale="pt-BR",
     )
@@ -218,6 +220,22 @@ async def test_user(session: AsyncSession, clean_db) -> User:
             workspace_id=workspace.id,
             user_id=user.id,
             role="owner",
+        )
+    )
+    # General API tests predate plan gating and are intended to exercise the
+    # endpoint behavior itself, not pricing policy. Give the shared test user a
+    # Max subscription so entitlement middleware does not mask those assertions.
+    # Billing-policy tests explicitly set FREE/PRO/MAX and remain the source of
+    # truth for quota/entitlement behavior.
+    now = datetime.now(timezone.utc)
+    session.add(
+        Subscription(
+            user_id=user.id,
+            plan="max",
+            status="active",
+            billing_interval="monthly",
+            current_period_start=now,
+            current_period_end=now + timedelta(days=31),
         )
     )
     await session.commit()

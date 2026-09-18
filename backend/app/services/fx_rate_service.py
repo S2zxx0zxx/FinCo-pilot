@@ -4,9 +4,9 @@ from datetime import date
 from decimal import Decimal
 from typing import Optional
 
-from sqlalchemy import select, desc
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import desc, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.models.fx_rate import FxRate
@@ -16,6 +16,19 @@ from app.providers.openexchangerates import OpenExchangeRatesProvider
 logger = logging.getLogger(__name__)
 
 _provider = OpenExchangeRatesProvider()
+
+
+class FxRateUnavailableError(RuntimeError):
+    """Raised when a cross-currency value cannot be converted truthfully."""
+
+    def __init__(self, from_currency: str, to_currency: str, target_date: Optional[date] = None):
+        self.from_currency = from_currency
+        self.to_currency = to_currency
+        self.target_date = target_date
+        super().__init__(
+            f"FX rate unavailable for {from_currency} -> {to_currency}"
+            + (f" on {target_date.isoformat()}" if target_date else "")
+        )
 
 
 async def sync_rates(
@@ -76,8 +89,8 @@ async def _resolve_rate(
     Priority: exact date → on-demand fetch → closest available.
     Returns None (not a fake 1:1) when no rate is available, so callers that
     persist a conversion can honestly leave it NULL instead of storing a wrong
-    amount (issue #353). Pass ``allow_fetch=False`` to skip the on-demand
-    provider call and rely only on already-stored rates.
+    amount. Pass ``allow_fetch=False`` to skip the on-demand provider call and
+    rely only on already-stored rates.
     """
     if from_currency == to_currency:
         return Decimal("1")
@@ -130,23 +143,36 @@ async def get_rate(
     *,
     allow_fetch: bool = True,
 ) -> Decimal:
-    """Get FX rate from from_currency to to_currency.
+    """Get a truthful FX rate from ``from_currency`` to ``to_currency``.
 
-    Uses cross-rate through USD. When no rate can be resolved, returns a 1:1
-    fallback so live reads (balances, dashboards) still render a number. This
-    fallback is NOT meant to be persisted — persisting paths use
-    :func:`_resolve_rate` directly and leave the value NULL instead (issue #353).
+    Development/test installations can explicitly keep the historical 1:1
+    fallback via FX_ALLOW_UNSAFE_1TO1_FALLBACK=true. Production validation
+    requires that flag to be false, so an unavailable cross-currency rate
+    surfaces as a controlled error rather than a plausible-but-wrong number.
     """
     rate = await _resolve_rate(
         session, from_currency, to_currency, target_date, allow_fetch=allow_fetch
     )
-    if rate is None:
+    if rate is not None:
+        return rate
+
+    settings = get_settings()
+    if settings.fx_allow_unsafe_1to1_fallback:
         logger.warning(
-            "No FX rate found for %s -> %s on %s, returning 1",
-            from_currency, to_currency, target_date or date.today(),
+            "No FX rate found for %s -> %s on %s; unsafe development fallback returned 1",
+            from_currency,
+            to_currency,
+            target_date or date.today(),
         )
         return Decimal("1")
-    return rate
+
+    logger.error(
+        "No FX rate found for %s -> %s on %s; refusing to fabricate a conversion",
+        from_currency,
+        to_currency,
+        target_date or date.today(),
+    )
+    raise FxRateUnavailableError(from_currency, to_currency, target_date)
 
 
 async def _get_exact_date_rate(session: AsyncSession, currency: str, target: date) -> Optional[Decimal]:
@@ -183,6 +209,7 @@ async def _get_closest_rate(session: AsyncSession, currency: str, target: date) 
         return result
     # Try closest after target date
     from sqlalchemy import asc
+
     result = await session.scalar(
         select(FxRate.rate)
         .where(
@@ -207,9 +234,8 @@ async def convert(
 ) -> tuple[Decimal, Decimal]:
     """Convert an amount from one currency to another.
 
-    Returns (converted_amount, rate_used). Uses the 1:1 fallback from
-    :func:`get_rate` when no rate is available, so this is for live reads, not
-    for persisting a stored conversion.
+    Production refuses to return a fabricated cross-currency value when no
+    real rate exists. Development may opt into the legacy fallback explicitly.
     """
     if from_currency == to_currency:
         return amount, Decimal("1")
@@ -238,13 +264,10 @@ async def stamp_primary_amount(
     Works for Transaction, RecurringTransaction, etc.
 
     When the object is in a foreign currency and no real FX rate is available,
-    the fields are left untouched instead of persisting a fake 1:1 conversion
-    (issue #353). A brand-new object therefore stays NULL (honest "not converted",
-    reads fall back to the native amount via ``COALESCE(amount_primary, amount)``),
-    while an already-stamped row keeps its current value — so re-stamping never
-    pushes a visible transaction into limbo. The row heals on a later pass once a
-    rate for its date lands. Pass ``allow_fetch=False`` to avoid the on-demand
-    provider call (used by the healer to stay frugal).
+    the fields are left untouched instead of persisting a fake 1:1 conversion.
+    A brand-new object therefore stays NULL (honest "not converted"), while an
+    already-stamped row keeps its current value. It heals on a later pass once a
+    real rate for its date lands.
     """
     user = await session.get(User, user_id)
     if not user:
@@ -272,10 +295,6 @@ async def stamp_primary_amount(
     )
 
     if rate is None:
-        # No real rate available yet. Leave the fields untouched: a brand-new
-        # object stays NULL (honest "not converted"), an existing row keeps its
-        # current value. Either way we never persist a fake 1:1, and never push a
-        # visible transaction into limbo. It heals on a later pass once a rate lands.
         return
 
     setattr(obj, primary_field, (amount_dec * rate).quantize(Decimal("0.01")))

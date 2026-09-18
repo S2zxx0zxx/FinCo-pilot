@@ -670,11 +670,15 @@ def test_indian_yearly_ytd_reports_are_rejected_until_fiscal_buckets_exist():
 @pytest.mark.asyncio
 @pytest.mark.parametrize(("tax_jurisdiction", "expected_month"), [("IN", 4), ("BR", 1)])
 async def test_report_api_forwards_workspace_financial_year(
-    client, auth_headers, monkeypatch, tax_jurisdiction, expected_month
+    client, auth_headers, monkeypatch, tax_jurisdiction, expected_month, test_user
 ):
     context = SimpleNamespace(
-        workspace=SimpleNamespace(id=uuid.uuid4(), tax_jurisdiction=tax_jurisdiction),
-        user_id=uuid.uuid4(),
+        workspace=SimpleNamespace(
+            id=uuid.uuid4(),
+            tax_jurisdiction=tax_jurisdiction,
+            billing_owner_user_id=test_user.id,
+        ),
+        user_id=test_user.id,
         user=SimpleNamespace(primary_currency="INR"),
     )
 

@@ -12,7 +12,6 @@ from app.core.workspace_context import (
 )
 from app.providers import all_known_providers
 from app.providers.base import (
-    ProviderNotConfiguredError,
     ProviderUserActionRequired,
     SessionExpiredError,
 )

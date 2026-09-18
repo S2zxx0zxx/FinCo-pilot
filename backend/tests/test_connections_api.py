@@ -8,7 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.bank_connection import BankConnection
 from app.models.user import User
-from app.providers.base import ProviderUserActionRequired, SessionExpiredError
 
 
 @pytest.mark.asyncio
@@ -242,39 +241,63 @@ async def test_sync_connection_not_found(client: AsyncClient, auth_headers):
 
 
 @pytest.mark.asyncio
-async def test_sync_connection_user_action_returns_conflict(
-    client: AsyncClient, auth_headers
+async def test_sync_connection_dispatches_background_job(
+    client: AsyncClient,
+    auth_headers,
+    session: AsyncSession,
+    test_connection: BankConnection,
 ):
-    with patch("app.services.connection_service.sync_connection") as mock_sync:
-        mock_sync.side_effect = ProviderUserActionRequired(
-            "SimpleFIN refused the request (403)",
-            code="credentials_invalid",
-            help_url="https://bridge.simplefin.org/",
-        )
+    test_connection.last_sync_started_at = None
+    test_connection.last_sync_status = "idle"
+    await session.commit()
+
+    task = MagicMock()
+    task.id = "sync-task-123"
+    with patch("app.api.connections.celery_app.send_task", return_value=task) as send_task:
         resp = await client.post(
-            f"/api/connections/{uuid.uuid4()}/sync", headers=auth_headers,
+            f"/api/connections/{test_connection.id}/sync", headers=auth_headers,
         )
 
-    assert resp.status_code == 409
-    assert resp.json()["detail"] == {
-        "message": "SimpleFIN refused the request (403)",
-        "code": "credentials_invalid",
-        "help_url": "https://bridge.simplefin.org/",
-    }
+    assert resp.status_code == 202, resp.text
+    assert resp.json()["status"] == "queued"
+    assert resp.json()["task_id"] == "sync-task-123"
+    send_task.assert_called_once_with(
+        "app.tasks.sync_tasks.sync_single_connection",
+        args=[str(test_connection.id), str(test_connection.user_id), True],
+    )
+    await session.refresh(test_connection)
+    assert test_connection.last_sync_status == "queued"
+    assert test_connection.last_sync_started_at is not None
 
 
 @pytest.mark.asyncio
-async def test_sync_connection_session_expired_returns_gone(
-    client: AsyncClient, auth_headers
+async def test_sync_connection_queue_failure_returns_service_unavailable(
+    client: AsyncClient,
+    auth_headers,
+    session: AsyncSession,
+    test_connection: BankConnection,
 ):
-    with patch("app.services.connection_service.sync_connection") as mock_sync:
-        mock_sync.side_effect = SessionExpiredError("SimpleFIN access URL is missing")
+    test_connection.last_sync_started_at = None
+    test_connection.last_sync_status = "idle"
+    await session.commit()
+
+    with patch(
+        "app.api.connections.celery_app.send_task",
+        side_effect=RuntimeError("worker unavailable"),
+    ):
         resp = await client.post(
-            f"/api/connections/{uuid.uuid4()}/sync", headers=auth_headers,
+            f"/api/connections/{test_connection.id}/sync", headers=auth_headers,
         )
 
-    assert resp.status_code == 410
-    assert resp.json()["detail"] == "SimpleFIN access URL is missing"
+    assert resp.status_code == 503
+    assert resp.json()["detail"] == (
+        "Bank sync queue is temporarily unavailable. Please retry shortly."
+    )
+    await session.refresh(test_connection)
+    assert test_connection.last_sync_status == "error"
+    assert test_connection.last_sync_error == (
+        "Unable to queue bank sync. Background worker is unavailable."
+    )
 
 
 @pytest.mark.asyncio

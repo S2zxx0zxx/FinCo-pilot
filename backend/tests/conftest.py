@@ -208,6 +208,7 @@ async def test_user(session: AsyncSession, clean_db) -> User:
         name="Pessoal",
         kind="personal",
         created_by_user_id=user.id,
+        billing_owner_user_id=user.id,
         default_currency="BRL",
         locale="pt-BR",
     )

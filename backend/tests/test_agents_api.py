@@ -2,7 +2,6 @@
 and field handling. Does not exercise the LLM (see test_agents_executor.py).
 """
 import uuid
-from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 import bcrypt as _bcrypt
@@ -11,7 +10,7 @@ import pytest_asyncio
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.subscription import Subscription
+from app.billing.service import get_subscription
 from app.models.user import User
 
 
@@ -46,17 +45,11 @@ async def other_user(session: AsyncSession) -> User:
     session.add(user)
     await session.flush()
     await create_personal_workspace_for_user(session, user)
-    now = datetime.now(timezone.utc)
-    session.add(
-        Subscription(
-            user_id=user.id,
-            plan="max",
-            status="active",
-            billing_interval="monthly",
-            current_period_start=now,
-            current_period_end=now + timedelta(days=31),
-        )
-    )
+    subscription = await get_subscription(session, user.id)
+    assert subscription is not None
+    subscription.plan = "max"
+    subscription.status = "active"
+    subscription.billing_interval = "monthly"
     await session.commit()
     await session.refresh(user)
     return user

@@ -6,6 +6,7 @@ import './transitions/finco-navigation-transition.css'
 import { i18nReady } from './lib/i18n'
 import { initRoutePreloading } from './transitions/route-preloader'
 import App from './App.tsx'
+import { AppErrorBoundary } from '@/components/app-error-boundary'
 
 // Warm lazy route chunks from hover/focus/pointer intent without prefetching
 // private finance API data. The listener is installed once for the lifetime of
@@ -31,7 +32,7 @@ function retireBootSurface() {
 void i18nReady.then(() => {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
-      <App />
+      <AppErrorBoundary><App /></AppErrorBoundary>
     </StrictMode>,
   )
   retireBootSurface()

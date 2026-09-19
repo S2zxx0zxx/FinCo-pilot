@@ -1,4 +1,5 @@
 import secrets
+import uuid
 import json
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -6,7 +7,8 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.auth import get_jwt_strategy, get_user_manager
+from app.core.auth import current_active_user, get_jwt_strategy, get_user_manager
+from app.models.user import User
 from app.core.auth_policy import require_local_auth_enabled
 from app.core.database import get_async_session
 from app.core.redis import get_redis
@@ -46,7 +48,7 @@ async def login(
         temp_token = secrets.token_urlsafe(32)
         await r.set(
             f"2fa_temp:{temp_token}",
-            json.dumps({"user_id": str(user.id), "available_methods": available_methods}),
+            json.dumps({"user_id": str(user.id), "available_methods": available_methods, "credential_stamp": get_jwt_strategy().stamp(user)}),
             ex=TEMP_TOKEN_TTL,
         )
         return {"requires_2fa": True, "temp_token": temp_token, "available_methods": available_methods}
@@ -58,5 +60,12 @@ async def login(
 
 
 @router.post("/logout")
-async def logout():
-    return {"detail": "Logged out"}
+async def logout(
+    user: User = Depends(current_active_user),
+    session: AsyncSession = Depends(get_async_session),
+):
+    # Explicitly sign out all sessions. Rotation is durable across workers/restarts.
+    user.auth_epoch = str(uuid.uuid4())
+    session.add(user)
+    await session.commit()
+    return {"detail": "All sessions signed out"}

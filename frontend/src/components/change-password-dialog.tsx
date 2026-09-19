@@ -21,7 +21,7 @@ interface ChangePasswordDialogProps {
 
 export function ChangePasswordDialog({ open, onClose }: ChangePasswordDialogProps) {
   const { t } = useTranslation()
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -49,6 +49,7 @@ export function ChangePasswordDialog({ open, onClose }: ChangePasswordDialogProp
       await auth.changePassword(newPassword)
       toast.success(t('auth.passwordChanged'))
       handleClose()
+      logout()
     } catch {
       setError(t('auth.currentPasswordWrong'))
     } finally {

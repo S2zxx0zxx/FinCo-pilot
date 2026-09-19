@@ -168,6 +168,12 @@ app.include_router(
     tags=["auth"],
     dependencies=[Depends(require_local_auth_enabled), Depends(password_reset_rate_limit)],
 )
+app.include_router(
+    fastapi_users.get_verify_router(UserRead),
+    prefix="/api/auth",
+    tags=["auth"],
+    dependencies=[Depends(require_local_auth_enabled), Depends(password_reset_rate_limit)],
+)
 app.include_router(user_lookup_router)
 app.include_router(
     fastapi_users.get_users_router(UserRead, UserUpdate),
@@ -279,3 +285,18 @@ async def readiness_check():
         status_code=200 if ready else 503,
         content={"status": "ready" if ready else "not_ready", "checks": checks},
     )
+
+
+from app.core.metrics import metrics, record_request  # noqa: E402
+app.add_api_route("/metrics", metrics, methods=["GET"], include_in_schema=False)
+
+
+@app.middleware("http")
+async def request_metrics(request, call_next):
+    try:
+        response = await call_next(request)
+    except Exception:
+        record_request(request.method, 500)
+        raise
+    record_request(request.method, response.status_code)
+    return response

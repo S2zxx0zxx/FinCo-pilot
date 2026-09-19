@@ -1,4 +1,6 @@
 import json
+import hashlib
+import secrets
 import uuid
 
 import pyotp
@@ -23,6 +25,12 @@ router = APIRouter()
 TOTP_VALID_WINDOW = 1
 
 
+def _new_recovery_codes(user: User) -> list[str]:
+    codes = [secrets.token_hex(10) for _ in range(10)]
+    user.recovery_code_hashes = [hashlib.sha256(code.encode()).hexdigest() for code in codes]
+    return codes
+
+
 def _verify_totp(secret: str, code: str) -> bool:
     return pyotp.TOTP(secret).verify(code, valid_window=TOTP_VALID_WINDOW)
 
@@ -33,8 +41,7 @@ def _parse_temp_token_payload(raw: str | bytes) -> dict[str, object] | None:
     try:
         payload = json.loads(raw)
     except (TypeError, ValueError, json.JSONDecodeError):
-        # Backward compatibility with existing temp tokens that only stored user_id.
-        return {"user_id": raw, "available_methods": ["totp"]}
+        return None
     if not isinstance(payload, dict) or not isinstance(payload.get("user_id"), str):
         return None
     return payload
@@ -43,12 +50,14 @@ def _parse_temp_token_payload(raw: str | bytes) -> dict[str, object] | None:
 @router.post(
     "/2fa/setup",
     response_model=TwoFactorSetupResponse,
-    dependencies=[Depends(require_local_auth_enabled)],
+    dependencies=[Depends(require_local_auth_enabled), Depends(login_rate_limit)],
 )
 async def setup_2fa(
     user: User = Depends(current_active_user),
     session: AsyncSession = Depends(get_async_session),
 ):
+    if user.is_2fa_enabled:
+        raise HTTPException(status_code=409, detail="Disable existing 2FA with your password and current code before enrolling a new authenticator")
     secret = pyotp.random_base32()
     user.totp_secret = secret
     session.add(user)
@@ -60,12 +69,14 @@ async def setup_2fa(
     return TwoFactorSetupResponse(secret=secret, otpauth_uri=otpauth_uri)
 
 
-@router.post("/2fa/enable", dependencies=[Depends(require_local_auth_enabled)])
+@router.post("/2fa/enable", dependencies=[Depends(require_local_auth_enabled), Depends(login_rate_limit)])
 async def enable_2fa(
     body: TwoFactorEnableRequest,
     user: User = Depends(current_active_user),
     session: AsyncSession = Depends(get_async_session),
 ):
+    if user.is_2fa_enabled:
+        raise HTTPException(409, "2FA is already enabled; use the protected recovery-code replacement flow")
     if not user.totp_secret:
         raise HTTPException(status_code=400, detail="Call /2fa/setup first")
 
@@ -73,12 +84,13 @@ async def enable_2fa(
         raise HTTPException(status_code=400, detail="Invalid 2FA code")
 
     user.is_2fa_enabled = True
+    codes = _new_recovery_codes(user)
     session.add(user)
     await session.commit()
-    return {"detail": "2FA enabled"}
+    return {"detail": "2FA enabled", "recovery_codes": codes}
 
 
-@router.post("/2fa/disable")
+@router.post("/2fa/disable", dependencies=[Depends(login_rate_limit)])
 async def disable_2fa(
     body: TwoFactorDisableRequest,
     user: User = Depends(current_active_user),
@@ -106,6 +118,7 @@ async def disable_2fa(
 
     user.totp_secret = None
     user.is_2fa_enabled = False
+    user.recovery_code_hashes = []
     session.add(user)
     await session.commit()
     return {"detail": "2FA disabled"}
@@ -129,13 +142,26 @@ async def verify_2fa(
         raise HTTPException(status_code=401, detail="Invalid token")
 
     # Load user
-    result = await session.execute(select(User).where(User.id == uuid.UUID(str(payload["user_id"]))))
+    result = await session.execute(select(User).where(User.id == uuid.UUID(str(payload["user_id"]))).with_for_update())
     user = result.scalar_one_or_none()
-    if not user or not (user.is_2fa_enabled and user.totp_secret):
+    if not user or not user.is_active or not (user.is_2fa_enabled and user.totp_secret):
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    # Verify TOTP
-    if not _verify_totp(user.totp_secret, body.code):
+    stamp = payload.get("credential_stamp")
+    if not isinstance(stamp, str) or not secrets.compare_digest(stamp, get_jwt_strategy().stamp(user)):
+        raise HTTPException(401, "Login challenge invalidated; sign in again")
+
+    # Recovery codes are one-use, hashed, and consumed under a database row lock.
+    if len(body.code) == 20:
+        digest = hashlib.sha256(body.code.lower().encode()).hexdigest()
+        hashes = list(user.recovery_code_hashes or [])
+        match = next((value for value in hashes if secrets.compare_digest(value, digest)), None)
+        if match is None:
+            raise HTTPException(400, "Invalid 2FA code")
+        hashes.remove(match)
+        user.recovery_code_hashes = hashes
+        await session.commit()
+    elif not _verify_totp(user.totp_secret, body.code):
         raise HTTPException(status_code=400, detail="Invalid 2FA code")
 
     # Delete temp token
@@ -145,3 +171,20 @@ async def verify_2fa(
     strategy = get_jwt_strategy()
     token = await strategy.write_token(user)
     return {"access_token": token, "token_type": "bearer"}
+
+
+@router.post("/2fa/recovery-codes", dependencies=[Depends(require_local_auth_enabled), Depends(login_rate_limit)])
+async def regenerate_recovery_codes(
+    body: TwoFactorDisableRequest,
+    user: User = Depends(current_active_user),
+    session: AsyncSession = Depends(get_async_session),
+):
+    from app.core.auth import UserManager
+    from fastapi_users.db import SQLAlchemyUserDatabase
+    manager = UserManager(SQLAlchemyUserDatabase(session, User))
+    valid, _ = manager.password_helper.verify_and_update(body.password, user.hashed_password)
+    if not valid or not user.is_2fa_enabled or not user.totp_secret or not _verify_totp(user.totp_secret, body.code):
+        raise HTTPException(400, "Password and current authenticator code required")
+    codes = _new_recovery_codes(user)
+    await session.commit()
+    return {"recovery_codes": codes}

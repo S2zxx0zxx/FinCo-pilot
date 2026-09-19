@@ -11,6 +11,7 @@ import { createTestQueryClient } from '@/test/utils'
 const auth = vi.hoisted(() => ({
   me: vi.fn(),
   login: vi.fn(),
+  logout: vi.fn().mockResolvedValue(undefined),
   verify2fa: vi.fn(),
   register: vi.fn(),
 }))

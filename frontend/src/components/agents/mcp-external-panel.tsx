@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { agents } from '@/lib/api'
+import { useWorkspace } from '@/contexts/workspace-context'
 
 type Snippet = { label: string; value: string }
 type ClientId = 'claude' | 'openai'
@@ -71,7 +72,7 @@ function clientConfigFor(client: ClientId, url: string, token: string): string {
       server_label: 'fincopilot',
       server_url: url,
       headers: { Authorization: `Bearer ${token}` },
-      require_approval: 'never',
+      require_approval: 'always',
     },
     null,
     2,
@@ -79,15 +80,25 @@ function clientConfigFor(client: ClientId, url: string, token: string): string {
 }
 
 export function McpExternalPanel() {
+  const { current } = useWorkspace()
+  return <McpExternalPanelContent key={current?.id} />
+}
+
+function McpExternalPanelContent() {
   const { t } = useTranslation()
+  const { current } = useWorkspace()
+  const [allowWrites, setAllowWrites] = useState(false)
+  const tokens = useQuery({ queryKey: ['mcp-tokens', current?.id], queryFn: () => agents.mcpTokens.list() })
+  const revoke = useMutation({ mutationFn: (id: string) => agents.mcpTokens.revoke(id), onSuccess: () => { setResult(null); void tokens.refetch() }, onError: () => toast.error('Could not revoke token. Try again.') })
   const { data: info } = useQuery({ queryKey: ['agents-info'], queryFn: () => agents.info() })
   const [result, setResult] = useState<{ token: string; expiresInDays: number } | null>(null)
   const [client, setClient] = useState<ClientId>('claude')
 
   const mintMut = useMutation({
-    mutationFn: () => agents.mcpTokens.create(),
+    mutationFn: () => agents.mcpTokens.create(allowWrites),
     onSuccess: (res) => {
       setResult({ token: res.token, expiresInDays: res.expires_in_days })
+      void tokens.refetch()
     },
     onError: () => toast.error(t('agents.mcpExternal.mintFailed', 'Could not mint token')),
   })
@@ -140,6 +151,9 @@ export function McpExternalPanel() {
       </div>
 
       <div className="px-4 sm:px-5 py-4 space-y-4">
+        <label className="flex gap-2 text-sm"><input type="checkbox" checked={allowWrites} onChange={e => setAllowWrites(e.target.checked)} />Allow this external client to edit financial records. Leave unchecked for read-only access.</label>
+        <p className="text-xs text-muted-foreground">A write-enabled token grants the client permission to apply changes. Only enable this for a client you trust. Tokens also stop working after password changes or signing out all sessions.</p>
+        {tokens.data?.map(row => <div key={row.id} className="flex items-center justify-between gap-3 text-xs border rounded p-2"><span>{row.allow_writes ? 'Read and write' : 'Read only'} · expires {new Date(row.expires_at).toLocaleDateString()} · {row.revoked ? 'Revoked' : 'Active'}</span>{!row.revoked && <Button variant="outline" size="sm" disabled={revoke.isPending} onClick={() => revoke.mutate(row.id)}>Revoke</Button>}</div>)}
         {!result ? (
           <Button
             size="sm"
@@ -155,10 +169,7 @@ export function McpExternalPanel() {
         ) : (
           <>
             <div className="text-xs text-muted-foreground">
-              {t(
-                'agents.mcpExternal.warning',
-                "Copy now — FinCo-Pilot does not store the token, so we can't show it again. Revoke by rotating AGENTS_MCP_JWT_SECRET.",
-              )}
+              Copy your token now. It cannot be shown again. Use Revoke above to invalidate an individual token.
             </div>
             {universalSnippets.map((s) => (
               <div key={s.label}>

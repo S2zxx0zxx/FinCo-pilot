@@ -180,18 +180,21 @@ export const workspaces = {
 
 // Setup
 export const setup = {
-  status: async (): Promise<{ has_users: boolean }> => {
+  status: async (): Promise<{ has_users: boolean; setup_available?: boolean }> => {
     const { data } = await api.get('/setup/status')
     return data
   },
-  createAdmin: async (email: string, password: string, currency = 'USD', name = '', language = 'en'): Promise<{ access_token: string }> => {
-    const { data } = await api.post('/setup/create-admin', { email, password, currency, name, language })
+  createAdmin: async (email: string, password: string, currency = 'INR', name = '', language = 'en', setupToken = ''): Promise<{ access_token: string }> => {
+    const { data } = await api.post('/setup/create-admin', { email, password, currency, name, language }, { headers: setupToken ? { 'X-Setup-Token': setupToken } : {} })
     return data
   },
 }
 
 // Auth
 export const auth = {
+  logout: async (token: string): Promise<void> => {
+    await api.post('/auth/logout', {}, { headers: { Authorization: `Bearer ${token}` } })
+  },
   login: async (email: string, password: string) => {
     const formData = new URLSearchParams()
     formData.append('username', email)
@@ -221,8 +224,13 @@ export const auth = {
     const { data } = await api.post('/auth/2fa/setup')
     return data
   },
-  enable2fa: async (code: string): Promise<void> => {
-    await api.post('/auth/2fa/enable', { code })
+  enable2fa: async (code: string): Promise<{ recovery_codes: string[] }> => {
+    const { data } = await api.post('/auth/2fa/enable', { code })
+    return data
+  },
+  recoveryCodes: async (password: string, code: string): Promise<{ recovery_codes: string[] }> => {
+    const { data } = await api.post('/auth/2fa/recovery-codes', { password, code })
+    return data
   },
   disable2fa: async (password: string, code: string): Promise<void> => {
     await api.post('/auth/2fa/disable', { password, code })
@@ -1185,6 +1193,10 @@ const acctIdsParam = (accountIds?: string[]) =>
     : {}
 
 export const dashboard = {
+  spendingPlan: async (body: { horizon_days: number; emergency_buffer: string; goal_reserve: string; other_obligations: string; obligations_reviewed: boolean }): Promise<{
+    currency: string; as_of: string; through: string; status: string; cash_balance: string; card_debt_reserve: string; upcoming_outflows: string;
+    emergency_buffer: string; goal_reserve: string; other_obligations: string; safe_to_spend: string | null; daily_allowance: string | null; shortfall: string | null; blockers: string[]; assumptions: string[];
+  }> => (await api.post('/dashboard/spending-plan', body)).data,
   summary: async (month?: string, balanceDate?: string, accountIds?: string[], assetGroupIds?: string[]): Promise<DashboardSummary> => {
     const hasFilter = (accountIds && accountIds.length > 0) || (assetGroupIds && assetGroupIds.length > 0)
     const { data } = await api.get('/dashboard/summary', {
@@ -1682,8 +1694,13 @@ export const agents = {
     }
   },
   mcpTokens: {
-    create: async (): Promise<{ token: string; expires_in_seconds: number; expires_in_days: number }> => {
-      const { data } = await api.post('/agents/mcp-tokens')
+    list: async (): Promise<Array<{ id: string; allow_writes: boolean; revoked: boolean; expires_at: string }>> => {
+      const { data } = await api.get('/agents/mcp-tokens')
+      return data
+    },
+    revoke: async (id: string): Promise<void> => { await api.delete(`/agents/mcp-tokens/${id}`) },
+    create: async (allowWrites = false): Promise<{ id: string; token: string; expires_in_seconds: number; expires_in_days: number }> => {
+      const { data } = await api.post('/agents/mcp-tokens', { allow_writes: allowWrites })
       return data
     },
   },

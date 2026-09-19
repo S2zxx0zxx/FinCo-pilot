@@ -28,6 +28,7 @@ export default function SetupPage() {
   const { loginWithToken, token } = useAuth()
   const { theme, setTheme } = useTheme()
   const currentLang = resolveSupportedLang(i18n.resolvedLanguage ?? i18n.language)
+  const [setupToken, setSetupToken] = useState('')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -45,8 +46,8 @@ export default function SetupPage() {
     Promise.all([
       setup.status(),
       authApi.oidcConfig().catch(() => null),
-    ]).then(([{ has_users }, authConfig]) => {
-      if (has_users || authConfig?.local_auth_enabled === false) {
+    ]).then(([{ has_users, setup_available }, authConfig]) => {
+      if (has_users || setup_available === false || authConfig?.local_auth_enabled === false) {
         navigate('/login', { replace: true })
       } else {
         setChecking(false)
@@ -67,7 +68,7 @@ export default function SetupPage() {
 
     setIsLoading(true)
     try {
-      const { access_token } = await setup.createAdmin(email, password, currency, name, currentLang)
+      const { access_token } = await setup.createAdmin(email, password, currency, name, currentLang, setupToken)
       localStorage.removeItem('onboarding_completed')
       loginWithToken(access_token)
       navigate('/')
@@ -92,6 +93,7 @@ export default function SetupPage() {
       <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
       <Card className="w-full max-w-[400px] border-border/60 shadow-sm">
         <form onSubmit={handleSubmit}>
+          <div className="px-8 pt-5 space-y-2"><Label htmlFor="setup-token">Setup token (provided by your server administrator)</Label><Input id="setup-token" type="password" autoComplete="off" value={setupToken} onChange={e => setSetupToken(e.target.value)} /><p className="text-xs text-muted-foreground">Required for protected installations. Leave blank only for local development.</p></div>
           <div className="flex flex-col items-center pt-8 pb-2 px-8">
             <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-4 lg:hidden">
               <FinCoLogo size={22} className="text-primary" />

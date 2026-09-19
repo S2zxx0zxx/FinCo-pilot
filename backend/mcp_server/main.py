@@ -102,10 +102,10 @@ async def mcp(request: Request) -> JSONResponse:
             }))
         except KeyError as exc:
             return JSONResponse(content=_err(req_id, -32601, str(exc)))
-        except Exception as exc:  # noqa: BLE001
+        except Exception:  # noqa: BLE001
             logger.exception("MCP tool failure: %s", name)
             return JSONResponse(content=_ok(req_id, {
-                "content": [{"type": "text", "text": f"Tool error: {exc}"}],
+                "content": [{"type": "text", "text": "Tool unavailable or access denied"}],
                 "isError": True,
             }))
 

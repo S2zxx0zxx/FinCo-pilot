@@ -35,6 +35,7 @@ WRITE_GATES = {"current_writable_workspace"}
 #: inventory of everything that will need re-deciding when permissions get
 #: finer, which is why the reason is stored next to the path.
 ALLOWLIST: dict[tuple[str, str], str] = {
+    ("POST", "/api/dashboard/spending-plan"): "read-only cash calculation within current workspace; writes nothing",
     # Not workspace-scoped: the actor is the user, on their own account.
     ("PATCH", "/me"): "the requester's own user record",
     ("POST", "/2fa/setup"): "the requester's own second factor",
@@ -49,7 +50,10 @@ ALLOWLIST: dict[tuple[str, str], str] = {
     ("POST", "/passkeys/2fa/options"): "unauthenticated step of login",
     ("POST", "/passkeys/2fa/verify"): "unauthenticated step of login",
     ("POST", "/login"): "unauthenticated by definition",
-    ("POST", "/logout"): "unauthenticated by definition",
+    ("POST", "/logout"): "authenticated user revokes own sessions",
+    ("POST", "/2fa/recovery-codes"): "own account, password and TOTP checked",
+    ("POST", "/request-verify-token"): "public email verification request, rate-limited",
+    ("POST", "/verify"): "signed one-time email ownership token",
     ("POST", "/register"): "unauthenticated by definition",
     ("POST", "/forgot-password"): "unauthenticated by definition",
     ("POST", "/reset-password"): "unauthenticated by definition",
@@ -101,7 +105,7 @@ ALLOWLIST: dict[tuple[str, str], str] = {
 # user would prevent the operation. All other exemptions still require a user.
 PUBLIC_ROUTES = {
     ("POST", path) for path in (
-        "/login", "/logout", "/register", "/forgot-password", "/reset-password",
+        "/login", "/request-verify-token", "/verify", "/register", "/forgot-password", "/reset-password",
         "/2fa/verify", "/passkeys/authenticate/options", "/passkeys/authenticate/verify",
         "/passkeys/2fa/options", "/passkeys/2fa/verify", "/api/setup/create-admin",
     )

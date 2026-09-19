@@ -1,4 +1,5 @@
 from app.models.user import User
+from app.models.mcp_token import ExternalMCPToken
 from app.models.passkey import UserPasskey
 from app.models.workspace import Workspace, WorkspaceMember, WorkspaceTaxId
 from app.models.category import Category
@@ -42,6 +43,7 @@ from app.core import workspace_autostamp  # noqa: F401, E402
 
 __all__ = [
     "User",
+    "ExternalMCPToken",
     "UserPasskey",
     "Workspace",
     "WorkspaceMember",

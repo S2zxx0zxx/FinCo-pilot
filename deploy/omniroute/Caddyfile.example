@@ -1,0 +1,21 @@
+# Replace ai.example.com with the real OmniRoute API hostname.
+# The dashboard is NOT proxied here; it remains reachable only via SSH tunnel
+# to 127.0.0.1:20128 on the VPS.
+ai.example.com {
+    encode zstd gzip
+
+    # Split-port OmniRoute inference/API plane.
+    reverse_proxy 127.0.0.1:20129
+
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "no-referrer"
+        -Server
+    }
+
+    log {
+        output file /var/log/caddy/fincopilot-omniroute-access.log
+        format json
+    }
+}

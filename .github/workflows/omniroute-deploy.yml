@@ -1,0 +1,68 @@
+name: OmniRoute Deployment
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/omniroute-deploy.yml"
+      - ".env.example"
+      - "deploy/omniroute/**"
+  push:
+    branches:
+      - "feat/ai-omniroute-gateway-v1"
+    paths:
+      - ".github/workflows/omniroute-deploy.yml"
+      - ".env.example"
+      - "deploy/omniroute/**"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Validate shell
+        run: |
+          set -eu
+          for script in deploy/omniroute/*.sh; do
+            sh -n "$script"
+          done
+
+      - name: Reject committed runtime secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-files --error-unmatch deploy/omniroute/.env >/dev/null 2>&1; then
+            echo "::error::deploy/omniroute/.env must never be committed"
+            exit 1
+          fi
+
+      - name: Enforce pinned and authenticated gateway
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -Eq 'diegosouzapw/omniroute:(latest|next|main)([^0-9.]|$)' deploy/omniroute/docker-compose.yml; then
+            echo "::error::OmniRoute production image must use a pinned SemVer tag"
+            exit 1
+          fi
+          grep -F 'diegosouzapw/omniroute:3.8.50' deploy/omniroute/docker-compose.yml >/dev/null
+          grep -F 'REQUIRE_API_KEY: "true"' deploy/omniroute/docker-compose.yml >/dev/null
+          grep -F '127.0.0.1:' deploy/omniroute/docker-compose.yml >/dev/null
+
+      - name: Validate Docker Compose
+        shell: bash
+        env:
+          JWT_SECRET: ci-jwt-secret-not-for-production
+          API_KEY_SECRET: ci-api-key-secret-not-for-production
+          INITIAL_PASSWORD: ci-password-not-for-production
+          STORAGE_ENCRYPTION_KEY: ci-storage-secret-not-for-production
+          OMNIROUTE_WS_BRIDGE_SECRET: ci-ws-secret-not-for-production
+        run: |
+          set -euo pipefail
+          cp deploy/omniroute/.env.example deploy/omniroute/.env
+          trap 'rm -f deploy/omniroute/.env' EXIT
+          docker compose -f deploy/omniroute/docker-compose.yml config >/dev/null

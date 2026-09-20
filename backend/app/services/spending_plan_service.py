@@ -86,6 +86,14 @@ async def calculate_spending_plan(session: AsyncSession, workspace_id: uuid.UUID
     connection_ids = {a.connection_id for a in relevant.values() if a.connection_id}
     connections = (await session.scalars(select(BankConnection).where(BankConnection.id.in_(connection_ids)))).all() if connection_ids else []
     for conn in connections:
+        # Existing adapters can label liabilities as checking: Enable Banking
+        # maps LOAN to checking and SimpleFIN exposes no account type at all.
+        # A fresh balance is not evidence that the balance is spendable cash.
+        if conn.provider in {'enable_banking', 'simplefin'}:
+            blockers.append(
+                f'Safe-to-spend is unavailable for {conn.display_name or conn.institution_name}: '
+                'this bank connection does not yet reliably distinguish cash from loan accounts.'
+            )
         refresh = conn.last_provider_refresh_at
         refresh = refresh.replace(tzinfo=timezone.utc) if refresh and refresh.tzinfo is None else refresh
         if conn.status != 'active' or refresh is None or datetime.now(timezone.utc) - refresh > timedelta(hours=24):

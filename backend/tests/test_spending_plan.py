@@ -95,3 +95,22 @@ async def test_endpoint_input_validation_and_auth(client, auth_headers):
     assert (await client.post('/api/dashboard/spending-plan', headers=auth_headers, json={'emergency_buffer': '-1'})).status_code == 422
     assert (await client.post('/api/dashboard/spending-plan', headers=auth_headers, json={'horizon_days': 365})).status_code == 422
     assert (await client.post('/api/dashboard/spending-plan', headers=auth_headers, json={})).status_code == 200
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('provider', ['enable_banking', 'simplefin'])
+async def test_fresh_unclassified_provider_does_not_turn_debt_into_spendable_cash(
+    session, test_user, test_workspace, test_account, test_connection, provider,
+):
+    from datetime import datetime, timezone
+    test_connection.provider = provider
+    test_connection.last_provider_refresh_at = datetime.now(timezone.utc)
+    test_connection.status = 'active'
+    await session.commit()
+    plan = await calculate_spending_plan(
+        session, test_workspace.id, test_user.id,
+        SpendingPlanRequest(obligations_reviewed=True),
+    )
+    assert plan.safe_to_spend is None
+    assert plan.daily_allowance is None
+    assert any('distinguish cash from loan accounts' in message for message in plan.blockers)

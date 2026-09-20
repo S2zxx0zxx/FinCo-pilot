@@ -12,7 +12,7 @@ class TwoFactorEnableRequest(BaseModel):
 
 class TwoFactorDisableRequest(BaseModel):
     password: str
-    code: str = Field(..., min_length=6, max_length=6, pattern=r"^\d{6}$")
+    code: str = Field(..., min_length=6, max_length=20, pattern=r"^(?:\d{6}|[a-fA-F0-9]{20})$")
 
 
 class TwoFactorVerifyRequest(BaseModel):

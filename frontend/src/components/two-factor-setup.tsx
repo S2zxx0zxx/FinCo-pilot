@@ -118,7 +118,7 @@ export function TwoFactorSetup({ open, onClose }: TwoFactorSetupProps) {
               catch { setError('Enter your password and current authenticator code to replace recovery codes.') }
               finally { setDisableLoading(false) }
             }}>Generate replacement recovery codes</Button>
-            <p className="text-sm text-muted-foreground">{t('auth.disable2faDescription')}</p>
+            <p className="text-sm text-muted-foreground">{t('auth.disable2faDescription')}</p><p className="text-xs text-muted-foreground">Lost your authenticator? Enter your password and an unused recovery code. A code already used to sign in cannot be used again. After disabling, set up your new authenticator and save its new recovery codes.</p>
             <div className="space-y-2">
               <Label htmlFor="disable-password">{t('auth.password')}</Label>
               <Input
@@ -130,16 +130,16 @@ export function TwoFactorSetup({ open, onClose }: TwoFactorSetupProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="disable-code">{t('auth.twoFactor')}</Label>
+              <Label htmlFor="disable-code">Authenticator code or unused recovery code</Label>
               <Input
                 id="disable-code"
                 type="text"
-                inputMode="numeric"
+                inputMode="text"
                 value={disableCode}
-                onChange={(e) => setDisableCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                onChange={(e) => setDisableCode(e.target.value.replace(/[^a-fA-F0-9]/g, '').slice(0, 20))}
                 placeholder="000000"
                 className="text-center text-lg tracking-[0.3em] font-mono"
-                maxLength={6}
+                maxLength={20}
                 required
               />
             </div>
@@ -148,7 +148,7 @@ export function TwoFactorSetup({ open, onClose }: TwoFactorSetupProps) {
               <Button type="button" variant="outline" onClick={handleClose}>
                 {t('common.cancel')}
               </Button>
-              <Button type="submit" variant="destructive" disabled={disableLoading || disableCode.length !== 6}>
+              <Button type="submit" variant="destructive" disabled={disableLoading || ![6, 20].includes(disableCode.length)}>
                 {disableLoading ? t('common.loading') : t('auth.disable2fa')}
               </Button>
             </DialogFooter>

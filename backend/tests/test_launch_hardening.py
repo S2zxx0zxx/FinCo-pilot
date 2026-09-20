@@ -152,3 +152,25 @@ async def test_password_change_invalidates_pending_second_factor(client, auth_he
         assert changed.status_code == 200
         response = await client.post('/api/auth/2fa/verify', json={'temp_token': challenge.json()['temp_token'], 'code': pyotp.TOTP(test_user.totp_secret).now()})
         assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_lost_authenticator_can_be_replaced_with_password_and_unused_recovery_code(client, auth_headers, test_user, session):
+    setup = (await client.post('/api/auth/2fa/setup', headers=auth_headers)).json()
+    enabled = (await client.post('/api/auth/2fa/enable', headers=auth_headers, json={'code': pyotp.TOTP(setup['secret']).now()})).json()
+    code = enabled['recovery_codes'][0]
+    assert (await client.post('/api/auth/2fa/disable', headers=auth_headers, json={'password': 'wrong-password', 'code': code})).status_code == 400
+    # Wrong password must not consume the code.
+    disabled = await client.post('/api/auth/2fa/disable', headers=auth_headers, json={'password': 'testpass123', 'code': code})
+    assert disabled.status_code == 200
+    await session.refresh(test_user)
+    assert test_user.is_2fa_enabled is False
+    assert test_user.totp_secret is None
+    assert test_user.recovery_code_hashes == []
+    replacement = (await client.post('/api/auth/2fa/setup', headers=auth_headers)).json()
+    assert replacement['secret'] != setup['secret']
+    response = await client.post('/api/auth/2fa/enable', headers=auth_headers, json={'code': pyotp.TOTP(replacement['secret']).now()})
+    assert response.status_code == 200
+    assert set(response.json()['recovery_codes']).isdisjoint(enabled['recovery_codes'])
+    # An old recovery code never disables the newly enrolled authenticator.
+    assert (await client.post('/api/auth/2fa/disable', headers=auth_headers, json={'password': 'testpass123', 'code': code})).status_code == 400

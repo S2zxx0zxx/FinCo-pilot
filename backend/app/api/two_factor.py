@@ -31,6 +31,22 @@ def _new_recovery_codes(user: User) -> list[str]:
     return codes
 
 
+async def _lock_user(session: AsyncSession, user: User) -> User:
+    return (await session.scalars(select(User).where(User.id == user.id)
+        .with_for_update().execution_options(populate_existing=True))).one()
+
+
+def _consume_recovery_code(user: User, code: str) -> bool:
+    digest = hashlib.sha256(code.lower().encode()).hexdigest()
+    hashes = list(user.recovery_code_hashes or [])
+    match = next((value for value in hashes if secrets.compare_digest(value, digest)), None)
+    if match is None:
+        return False
+    hashes.remove(match)
+    user.recovery_code_hashes = hashes
+    return True
+
+
 def _verify_totp(secret: str, code: str) -> bool:
     return pyotp.TOTP(secret).verify(code, valid_window=TOTP_VALID_WINDOW)
 
@@ -56,6 +72,7 @@ async def setup_2fa(
     user: User = Depends(current_active_user),
     session: AsyncSession = Depends(get_async_session),
 ):
+    user = await _lock_user(session, user)
     if user.is_2fa_enabled:
         raise HTTPException(status_code=409, detail="Disable existing 2FA with your password and current code before enrolling a new authenticator")
     secret = pyotp.random_base32()
@@ -75,6 +92,7 @@ async def enable_2fa(
     user: User = Depends(current_active_user),
     session: AsyncSession = Depends(get_async_session),
 ):
+    user = await _lock_user(session, user)
     if user.is_2fa_enabled:
         raise HTTPException(409, "2FA is already enabled; use the protected recovery-code replacement flow")
     if not user.totp_secret:
@@ -97,24 +115,19 @@ async def disable_2fa(
     session: AsyncSession = Depends(get_async_session),
 ):
     from fastapi_users.db import SQLAlchemyUserDatabase
-    from fastapi.security import OAuth2PasswordRequestForm
-
-    # Verify password by authenticating
-    user_db = SQLAlchemyUserDatabase(session, User)
     from app.core.auth import UserManager
-    user_manager = UserManager(user_db)
 
-    creds = OAuth2PasswordRequestForm(username=user.email, password=body.password)
-    authenticated = await user_manager.authenticate(creds)
-    if authenticated is None:
-        raise HTTPException(status_code=400, detail="Invalid password")
-
-    # Verify TOTP code
-    if not user.totp_secret:
-        raise HTTPException(status_code=400, detail="2FA is not set up")
-
-    if not _verify_totp(user.totp_secret, body.code):
-        raise HTTPException(status_code=400, detail="Invalid 2FA code")
+    user = await _lock_user(session, user)
+    manager = UserManager(SQLAlchemyUserDatabase(session, User))
+    password_valid, _ = manager.password_helper.verify_and_update(body.password, user.hashed_password)
+    if not password_valid:
+        raise HTTPException(400, 'Password and current authenticator or unused recovery code required')
+    if not user.is_2fa_enabled or not user.totp_secret:
+        raise HTTPException(400, '2FA is not enabled')
+    factor_valid = (_consume_recovery_code(user, body.code) if len(body.code) == 20
+                    else _verify_totp(user.totp_secret, body.code))
+    if not factor_valid:
+        raise HTTPException(400, 'Password and current authenticator or unused recovery code required')
 
     user.totp_secret = None
     user.is_2fa_enabled = False
@@ -153,13 +166,8 @@ async def verify_2fa(
 
     # Recovery codes are one-use, hashed, and consumed under a database row lock.
     if len(body.code) == 20:
-        digest = hashlib.sha256(body.code.lower().encode()).hexdigest()
-        hashes = list(user.recovery_code_hashes or [])
-        match = next((value for value in hashes if secrets.compare_digest(value, digest)), None)
-        if match is None:
+        if not _consume_recovery_code(user, body.code):
             raise HTTPException(400, "Invalid 2FA code")
-        hashes.remove(match)
-        user.recovery_code_hashes = hashes
         await session.commit()
     elif not _verify_totp(user.totp_secret, body.code):
         raise HTTPException(status_code=400, detail="Invalid 2FA code")
@@ -181,6 +189,7 @@ async def regenerate_recovery_codes(
 ):
     from app.core.auth import UserManager
     from fastapi_users.db import SQLAlchemyUserDatabase
+    user = await _lock_user(session, user)
     manager = UserManager(SQLAlchemyUserDatabase(session, User))
     valid, _ = manager.password_helper.verify_and_update(body.password, user.hashed_password)
     if not valid or not user.is_2fa_enabled or not user.totp_secret or not _verify_totp(user.totp_secret, body.code):

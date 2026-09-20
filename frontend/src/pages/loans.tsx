@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
+const currencies = ['INR', 'USD', 'EUR', 'GBP', 'BRL', 'CAD', 'AUD', 'SGD', 'NZD', 'CHF']
+
 function message(error: unknown): string {
   if (isAxiosError(error) && typeof error.response?.data?.detail === 'string') return error.response.data.detail
   return 'Could not save this loan plan. Check your connection, reload the list before retrying, and verify your inputs.'
@@ -25,7 +27,7 @@ function LoanWorkspace({ workspaceId, currency }: { workspaceId: string; currenc
   const [selected, setSelected] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
-  const empty: LoanPlanInput = { name: '', principal: '', annual_rate: '', term_months: 12, first_due_date: '', currency, paid_installments: 0 }
+  const empty: LoanPlanInput = { name: '', principal: '', annual_rate: '', term_months: 12, first_due_date: '', currency: currencies.includes(currency) ? currency : 'INR', paid_installments: 0 }
   const [draft, setDraft] = useState(empty)
   const list = useQuery({ queryKey: ['loans', workspaceId], queryFn: loans.list })
   async function refresh() {
@@ -54,7 +56,7 @@ function LoanWorkspace({ workspaceId, currency }: { workspaceId: string; currenc
       <h2 className="font-semibold">Add a repayment plan</h2>
       <fieldset disabled={busy} className="grid gap-4 sm:grid-cols-2">
         <div><Label htmlFor="loan-name">Loan name</Label><Input id="loan-name" required maxLength={120} value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} /></div>
-        <div><Label htmlFor="loan-currency">Currency (three-letter code)</Label><Input id="loan-currency" required pattern="[A-Z]{3}" maxLength={3} value={draft.currency} onChange={e => setDraft({ ...draft, currency: e.target.value.toUpperCase() })} /></div>
+        <div><Label htmlFor="loan-currency">Currency</Label><select id="loan-currency" className="block h-10 w-full rounded-md border bg-background px-3" value={draft.currency} onChange={e => setDraft({ ...draft, currency: e.target.value })}>{currencies.map(code => <option key={code} value={code}>{code}</option>)}</select></div>
         <div><Label htmlFor="loan-principal">Original principal</Label><Input id="loan-principal" type="number" required min={1} max="999999999999" step="0.01" value={draft.principal} onChange={e => setDraft({ ...draft, principal: e.target.value })} /></div>
         <div><Label htmlFor="loan-rate">Annual interest rate (%)</Label><Input id="loan-rate" type="number" required min={0} max={60} step="0.0001" value={draft.annual_rate} onChange={e => setDraft({ ...draft, annual_rate: e.target.value })} /></div>
         <div><Label htmlFor="loan-term">Total monthly installments</Label><Input id="loan-term" type="number" required min={1} max={600} step={1} value={draft.term_months} onChange={e => setDraft({ ...draft, term_months: Number(e.target.value) })} /></div>

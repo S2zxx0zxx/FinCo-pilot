@@ -1,6 +1,7 @@
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -13,7 +14,7 @@ class LoanCreate(BaseModel):
     annual_rate: Decimal = Field(ge=0, le=60, max_digits=7, decimal_places=4, allow_inf_nan=False)
     term_months: int = Field(ge=1, le=600)
     first_due_date: date = Field(ge=date(2000, 1, 1), le=date(2100, 12, 31))
-    currency: str = Field(default="INR", pattern=r"^[A-Z]{3}$")
+    currency: Literal["INR", "USD", "EUR", "GBP", "BRL", "CAD", "AUD", "SGD", "NZD", "CHF"] = "INR"
     paid_installments: int = Field(default=0, ge=0, le=600)
 
     @model_validator(mode="after")

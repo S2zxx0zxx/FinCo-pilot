@@ -60,7 +60,7 @@ def test_extreme_contracts_reconcile(principal, rate, months):
     {"name": " "}, {"principal": "NaN"}, {"principal": "-1"}, {"principal": "1.001"},
     {"annual_rate": "Infinity"}, {"annual_rate": "-1"}, {"annual_rate": "61"},
     {"term_months": 0}, {"term_months": 601}, {"paid_installments": 13},
-    {"currency": "inr"}, {"first_due_date": "1999-12-31"}, {"surprise": True},
+    {"currency": "inr"}, {"currency": "JPY"}, {"first_due_date": "1999-12-31"}, {"surprise": True},
 ])
 def test_invalid_contract_is_rejected(overrides):
     with pytest.raises(ValidationError):
@@ -134,7 +134,7 @@ async def test_spending_plan_reserves_overdue_and_upcoming_but_not_reported_paid
 
 
 async def test_missing_loan_fx_blocks_safe_to_spend(session, test_user, test_workspace):
-    loan = Loan(workspace_id=test_workspace.id, user_id=test_user.id, **LoanCreate(**payload(currency="ZZZ")).model_dump())
+    loan = Loan(workspace_id=test_workspace.id, user_id=test_user.id, **LoanCreate(**payload(currency="USD")).model_dump())
     session.add(loan)
     await session.commit()
     plan = await calculate_spending_plan(session, test_workspace.id, test_user.id, SpendingPlanRequest(obligations_reviewed=True))

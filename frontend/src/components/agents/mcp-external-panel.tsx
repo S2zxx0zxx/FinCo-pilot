@@ -88,6 +88,8 @@ function McpExternalPanelContent() {
   const { t } = useTranslation()
   const { current } = useWorkspace()
   const [allowWrites, setAllowWrites] = useState(false)
+  const approvals = useQuery({ queryKey: ['mcp-approvals', current?.id], queryFn: () => agents.mcpTokens.approvals(), refetchInterval: 10000 })
+  const decide = useMutation({ mutationFn: ({ id, decision }: { id: string; decision: 'approve' | 'reject' }) => agents.mcpTokens.decide(id, decision), onSuccess: () => { void approvals.refetch(); toast.success('Decision recorded') }, onError: () => { void approvals.refetch(); toast.error('The action could not be confirmed. Review your records before requesting another action.') } })
   const tokens = useQuery({ queryKey: ['mcp-tokens', current?.id], queryFn: () => agents.mcpTokens.list() })
   const revoke = useMutation({ mutationFn: (id: string) => agents.mcpTokens.revoke(id), onSuccess: () => { setResult(null); void tokens.refetch() }, onError: () => toast.error('Could not revoke token. Try again.') })
   const { data: info } = useQuery({ queryKey: ['agents-info'], queryFn: () => agents.info() })
@@ -151,9 +153,21 @@ function McpExternalPanelContent() {
       </div>
 
       <div className="px-4 sm:px-5 py-4 space-y-4">
-        <label className="flex gap-2 text-sm"><input type="checkbox" checked={allowWrites} onChange={e => setAllowWrites(e.target.checked)} />Allow this external client to edit financial records. Leave unchecked for read-only access.</label>
+        <label className="flex gap-2 text-sm"><input type="checkbox" checked={allowWrites} onChange={e => setAllowWrites(e.target.checked)} />Allow this external client to request changes. Every change still needs your approval here. Leave unchecked for read-only access.</label>
         <p className="text-xs text-muted-foreground">A write-enabled token grants the client permission to apply changes. Only enable this for a client you trust. Tokens also stop working after password changes or signing out all sessions.</p>
-        {tokens.data?.map(row => <div key={row.id} className="flex items-center justify-between gap-3 text-xs border rounded p-2"><span>{row.allow_writes ? 'Read and write' : 'Read only'} · expires {new Date(row.expires_at).toLocaleDateString()} · {row.revoked ? 'Revoked' : 'Active'}</span>{!row.revoked && <Button variant="outline" size="sm" disabled={revoke.isPending} onClick={() => revoke.mutate(row.id)}>Revoke</Button>}</div>)}
+        <section className="space-y-3" aria-label="External AI action approvals">
+          <h3 className="font-medium">Review external AI actions</h3>
+          <p className="text-xs text-muted-foreground">Read the exact values before approving. Requests expire after ten minutes and can run only once. No approval is inferred from a chat message or an external client’s confirmation.</p>
+          {approvals.isError && <p role="alert">Approval requests could not be loaded. Please refresh.</p>}
+          {approvals.data?.length === 0 && <p className="text-sm text-muted-foreground">No actions to review.</p>}
+          {approvals.data?.map(action => <article key={action.id} className="rounded border p-3 space-y-2">
+            <p className="font-medium text-sm">{action.tool.replace(/^propose_/, '').replaceAll('_', ' ')} · {action.status.replaceAll('_', ' ')}</p>
+            <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded bg-muted p-2 text-xs">{JSON.stringify(action.arguments, null, 2)}</pre>
+            {action.status === 'pending' && <div className="flex flex-wrap gap-2"><Button size="sm" disabled={decide.isPending} onClick={() => decide.mutate({ id: action.id, decision: 'approve' })}>Approve this exact action</Button><Button size="sm" variant="outline" disabled={decide.isPending} onClick={() => decide.mutate({ id: action.id, decision: 'reject' })}>Reject</Button></div>}
+            {['executing', 'review_required'].includes(action.status) && <p className="text-sm">Check your financial records before requesting another action. This request will not be retried automatically.</p>}
+          </article>)}
+        </section>
+        {tokens.data?.map(row => <div key={row.id} className="flex items-center justify-between gap-3 text-xs border rounded p-2"><span>{row.allow_writes ? 'Changes require approval' : 'Read only'} · expires {new Date(row.expires_at).toLocaleDateString()} · {row.revoked ? 'Revoked' : 'Active'}</span>{!row.revoked && <Button variant="outline" size="sm" disabled={revoke.isPending} onClick={() => revoke.mutate(row.id)}>Revoke</Button>}</div>)}
         {!result ? (
           <Button
             size="sm"

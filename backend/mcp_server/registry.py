@@ -5,6 +5,7 @@ registry holds (name → ToolSpec) for /mcp's `tools/list` and `tools/call`.
 """
 from __future__ import annotations
 
+import uuid
 from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable
 
@@ -75,6 +76,8 @@ async def call_tool(
     ctx: CallContext,
     name: str,
     arguments: dict[str, Any] | None,
+    *,
+    approved_action_id: uuid.UUID | None = None,
 ) -> Any:
     spec = REGISTRY.get(name)
     if spec is None:
@@ -82,6 +85,11 @@ async def call_tool(
     if arguments and "apply" in arguments and not isinstance(arguments["apply"], bool):
         raise ValueError("apply must be a JSON boolean")
     await authorize_tool(session, ctx, spec, arguments or {})
+    if ctx.external and spec.is_proposal and (arguments or {}).get('apply') is True:
+        from app.services.mcp_approval_service import queue_approval, validate_execution
+        if approved_action_id is None:
+            return await queue_approval(session, ctx, name, arguments or {})
+        await validate_execution(session, ctx, approved_action_id, name, arguments or {})
     return await spec.handler(session=session, ctx=ctx, **(arguments or {}))
 
 

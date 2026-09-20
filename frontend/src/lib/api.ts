@@ -1694,6 +1694,8 @@ export const agents = {
     }
   },
   mcpTokens: {
+    approvals: async (): Promise<Array<{ id: string; tool: string; arguments: Record<string, unknown>; expires_at: string; status: string }>> => (await api.get('/agents/mcp-tokens/approvals')).data,
+    decide: async (id: string, decision: 'approve' | 'reject') => (await api.post(`/agents/mcp-tokens/approvals/${id}/${decision}`)).data,
     list: async (): Promise<Array<{ id: string; allow_writes: boolean; revoked: boolean; expires_at: string }>> => {
       const { data } = await api.get('/agents/mcp-tokens')
       return data

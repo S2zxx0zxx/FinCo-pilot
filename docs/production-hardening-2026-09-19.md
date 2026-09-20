@@ -27,7 +27,7 @@ Branch: `fix/production-hardening-2026-09-19`.
 | F16 — storage | Production Compose forwards bucket, region, endpoint and credentials and the object-storage requirement flag. Actual S3 upload/download/delete and restore test still required. |
 | F17 — live AI | **Unverified external gate.** Choose actual provider/model, configure the existing connection mechanism, run streamed responses, tool approval/denial, document retrieval and failure recovery on the deployed host. No workflow green tick is treated as inference proof. |
 | F18 — catalogue | Free/Pro AI action allowances set to zero to match the existing Max-only agent capability. This does not add a separate basic AI assistant. |
-| F19 — external writes | Registered external tokens default read-only. Explicit write scope, live authorization and strict JSON boolean `apply` are required; OpenAI snippet requests approval. This is a scoped delegation model, **not server-mediated per-action human confirmation**. Keep write scope off unless that delegation is intended. |
+| F19 — external writes | Registered external tokens default read-only. Explicit write scope, live authorization and strict JSON boolean `apply` are required; OpenAI snippet also requests client-side approval. Every external write now queues an exact, ten-minute approval in Agent Connections. A logged-in user must approve it in the app; the server rechecks token, membership, capability and quota. Durable single-use claims prevent replay; uncertain execution is marked for review and never automatically retried. |
 | F20 — MCP secret | Enabled production agents require a distinct configured signing secret of at least 32 characters; external token lifetime limited to 1–90 days. |
 | F21 — metrics | Token-protected `/metrics`, bounded method/status labels and per-process uptime/request totals. Multiworker aggregation, alert rules, tracing and on-call routing remain operator work. |
 | F22 — app fallback | Global React render error boundary and useful unknown-route screen. Existing page/network errors remain separate. |
@@ -72,7 +72,7 @@ Set secrets in the deployment secret manager / environment, **not in source cont
 1. Back up the database and attachment volumes; rehearse restoring them into an isolated environment.
 2. Build immutable backend/frontend images from the reviewed commit. Existing Compose release-image variables must reference these images; changing a Git branch does not update deployed containers.
 3. Configure the production environment. Validate Compose and Settings with real configuration before starting services; never disable protective validation merely to get a green boot.
-4. Run `alembic upgrade head` against the intended database. Revision 094 adds credential epoch/recovery-code columns and the external MCP credential registry. Deploy backend, workers and MCP together so every process shares the new authorization contract.
+4. Run `alembic upgrade head` against the intended database. Revision 094 adds credential epoch/recovery-code columns and the external MCP credential registry; revision 095 adds exact-action approval records. Deploy backend, workers and MCP together so every process shares the new authorization contract.
 5. Existing app JWTs, pending login challenges and old unregistered external MCP tokens deliberately require re-login/reissue. Notify users before release. Logout now signs out all devices. Offline local logout cannot contact the server to revoke a session until connectivity returns.
 6. Verify health, real account registration/recovery/verification, secure admin bootstrap, no tenant crossover, 2FA recovery, real bank sync and actual AI behavior. Exercise browser navigation on mobile and desktop; inspect console/network errors.
 7. Enable paid/India marketing claims only after their missing integrations and provider tests pass. Do not merge/deploy this branch as evidence of those features.
@@ -83,9 +83,15 @@ Rollback should restore the prior application images and a compatible backup in 
 
 - Frontend: 743 tests across 82 files passed after recovery and spending-plan additions; production build passed; ESLint passed.
 - Backend security/account tests: 294 targeted tests passed before the additional spending-plan cases. Full final regression result is recorded below when complete.
-- Ruff and ty: final checks required on the committed tree.
-- Migration chain: 94 revisions, single head `094`.
-- Added a real PostgreSQL/pgvector CI job to apply all migrations, roll back only new migration 094 on an empty disposable database, and reapply. A chain check alone is not execution evidence.
+- Ruff and ty passed after the approval implementation.
+- Migration chain: 95 revisions, single head `095`.
+- Added a real PostgreSQL/pgvector CI job to apply all migrations, roll back new migrations 094–095 on an empty disposable database, and reapply. A chain check alone is not execution evidence.
 - Browser click-through in this environment was blocked from the local application URL. Browser/device/live-provider acceptance is **not** marked passed.
 
-Final backend/CI status: pending completion of this branch's automated runs.
+## September 20 continuation
+
+The initial PR run passed frontend checks, Helm checks, migration chain and the real PostgreSQL upgrade/rollback/reapply job. Backend had 3,859 passing tests, seven PostgreSQL-specific skips and one failing recovery-code fixture. That fixture fabricated a stale credential challenge; it now obtains real password-login challenges and verifies a consumed recovery code fails even with a fresh challenge. The corrected recovery/passkey/spending group passed all 59 tests.
+
+Server-mediated external-action approvals are now implemented, including exact stored arguments, user/workspace/token binding, expiry, explicit rejection, current-role revalidation, token revocation and durable single-use execution. Approval history is visible in Agent Connections. Requests are bounded to 16 KiB and 50 per credential per hour; old expired records are pruned on subsequent submissions. A failed/uncertain execution requires inspection rather than automatic replay. Added a PostgreSQL concurrency CI test that sends two simultaneous approval requests and verifies exactly one financial mutation.
+
+Local approval/security/route regression: 198 passed. Approval UI: two interaction tests passed. Full final PR CI is being re-run on the updated commit; do not infer success from earlier commits.

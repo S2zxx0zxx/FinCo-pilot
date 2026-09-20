@@ -1,3 +1,4 @@
+from app.models.mcp_approval import MCPApproval
 from app.models.user import User
 from app.models.mcp_token import ExternalMCPToken
 from app.models.passkey import UserPasskey
@@ -42,6 +43,7 @@ from app.models.billing_usage import BillingUsageCounter
 from app.core import workspace_autostamp  # noqa: F401, E402
 
 __all__ = [
+    "MCPApproval",
     "User",
     "ExternalMCPToken",
     "UserPasskey",

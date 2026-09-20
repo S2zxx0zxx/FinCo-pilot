@@ -1,5 +1,4 @@
 """Regression cases reproduced by the September launch audit."""
-import json
 from unittest.mock import patch
 
 import httpx
@@ -7,7 +6,6 @@ import pyotp
 import pytest
 from sqlalchemy import select
 
-from app.core.auth import get_jwt_strategy
 from app.models.category import Category
 from app.models.workspace import WorkspaceMember
 
@@ -47,16 +45,20 @@ async def test_enabled_totp_cannot_be_replaced(client, auth_headers, test_user, 
 
 
 @pytest.mark.asyncio
-async def test_recovery_code_is_one_use(client, auth_headers, test_user, _mock_redis):
+async def test_recovery_code_is_one_use(client, auth_headers, test_user):
+    from tests.test_two_factor import _make_redis_mock_with_store
+    redis = _make_redis_mock_with_store()
     setup = (await client.post('/api/auth/2fa/setup', headers=auth_headers)).json()
     enabled = await client.post('/api/auth/2fa/enable', headers=auth_headers, json={'code': pyotp.TOTP(setup['secret']).now()})
     codes = enabled.json()['recovery_codes']
     assert len(codes) == len(set(codes)) == 10
     assert (await client.post('/api/auth/2fa/enable', headers=auth_headers, json={'code': pyotp.TOTP(setup['secret']).now()})).status_code == 409
-    _mock_redis.get.return_value = json.dumps({'user_id': str(test_user.id), 'available_methods': ['totp'], 'credential_stamp': get_jwt_strategy().stamp(test_user)})
-    payload = {'temp_token': 'synthetic-password-authenticated-challenge', 'code': codes[0]}
-    assert (await client.post('/api/auth/2fa/verify', json=payload)).status_code == 200
-    assert (await client.post('/api/auth/2fa/verify', json=payload)).status_code == 400
+    with patch('app.api.custom_auth.get_redis', return_value=redis), patch('app.api.two_factor.get_redis', return_value=redis):
+        for expected in (200, 400):
+            challenge = await client.post('/api/auth/login', data={'username': test_user.email, 'password': 'testpass123'})
+            assert challenge.status_code == 200
+            payload = {'temp_token': challenge.json()['temp_token'], 'code': codes[0]}
+            assert (await client.post('/api/auth/2fa/verify', json=payload)).status_code == expected
 
 
 @pytest.mark.asyncio
@@ -93,13 +95,29 @@ async def test_external_mcp_permission_and_revocation(client, auth_headers, test
     for invalid in ('true', 1, [True]):
         assert (await call(row['token'], apply=invalid))['isError'] is True
     writer = (await client.post('/api/agents/mcp-tokens', headers=auth_headers, json={'allow_writes': True})).json()
-    assert (await call(writer['token'], 'Audit allowed category'))['structuredContent']['applied'] is True
+    proposed = (await call(writer['token'], 'Audit allowed category'))['structuredContent']
+    assert proposed['applied'] is False
+    assert proposed['requires_approval'] is True
+    assert (await session.execute(select(Category).where(Category.name == 'Audit allowed category'))).first() is None
+    approve_path = '/api/agents/mcp-tokens/approvals/' + proposed['approval_id'] + '/approve'
+    approved = await client.post(approve_path, headers=auth_headers)
+    assert approved.status_code == 200, approved.text
+    assert approved.json()['result']['applied'] is True
+    assert (await client.post(approve_path, headers=auth_headers)).status_code == 409
+    denied = (await call(writer['token'], 'Audit denied category'))['structuredContent']
+    reject_path = '/api/agents/mcp-tokens/approvals/' + denied['approval_id']
+    assert (await client.post(reject_path + '/reject', headers=auth_headers)).status_code == 200
+    assert (await client.post(reject_path + '/approve', headers=auth_headers)).status_code == 409
+    revoked_pending = (await call(writer['token'], 'Audit denied category'))['structuredContent']
     assert (await client.delete('/api/agents/mcp-tokens/' + writer['id'], headers=auth_headers)).status_code == 204
     assert (await call(writer['token']))['isError'] is True
+    assert (await client.post('/api/agents/mcp-tokens/approvals/' + revoked_pending['approval_id'] + '/approve', headers=auth_headers)).status_code == 409
     writer = (await client.post('/api/agents/mcp-tokens', headers=auth_headers, json={'allow_writes': True})).json()
+    pending_before_downgrade = (await call(writer['token']))['structuredContent']
     member = (await session.execute(select(WorkspaceMember).where(WorkspaceMember.user_id == test_user.id, WorkspaceMember.workspace_id == test_workspace.id))).scalar_one()
     member.role = 'viewer'
     await session.commit()
+    assert (await client.post('/api/agents/mcp-tokens/approvals/' + pending_before_downgrade['approval_id'] + '/approve', headers=auth_headers)).status_code == 403
     assert (await call(writer['token']))['isError'] is True
     await session.delete(member)
     await session.commit()

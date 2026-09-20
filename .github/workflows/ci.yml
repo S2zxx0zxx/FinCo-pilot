@@ -128,6 +128,12 @@ jobs:
           alembic downgrade 093
           alembic upgrade head
           alembic current
+      - name: Verify concurrent external MCP approvals on PostgreSQL
+        env:
+          AGENTS_ENABLED: "true"
+          AGENTS_MCP_JWT_SECRET: synthetic-ci-only-mcp-signing-key-not-for-deployment
+          FINCO_DISPOSABLE_DB_TEST: "yes"
+        run: python -m scripts.verify_mcp_approval_postgres
 
   migration-chain:
     name: Migration Chain

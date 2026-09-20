@@ -114,3 +114,29 @@ Code commit: `8d5c8904f3d8fbdabe71c69c405a0854091e474e`.
 This completes this verified hardening checkpoint, not every product item in the original audit. Still open: Indian AA integration (F10); paid checkout/subscription lifecycle (F11); real hosted bank/mail/storage/AI/browser acceptance (F07/F16/F17/F25); approved policies/support and safe user/shared-workspace deletion (F24); dedicated loan/EMI accounting (F27); complete localisation (F28). These are implementation or acceptance requirements, not cosmetic disclaimers. The earlier finding table is the authoritative item-by-item disposition.
 
 The next integration phase needs the actual hosting/domain, selected bank/AA and payment partner accounts, provider credentials configured securely, operator/support/policy details, and the loan-accounting requirements. Granting GitHub permission does not supply those accounts or contracts. Do not advertise the missing integrations as live.
+
+
+## Loan/EMI planning implementation (September 20)
+
+Adds a workspace-scoped fixed-rate monthly reducing-balance loan planner, schedule UI at
+`/loans`, and migration 096. Monetary arithmetic uses Decimal, rounds cash flows to cents,
+preserves the original monthly due-date anchor (including month-end and leap years), and
+adjusts the final installment so scheduled principal reconciles exactly.
+
+Loan contracts are immutable; users may correct the self-reported count of consecutive full
+installments and archive/reactivate plans. Version-based updates reject stale edits. Workspace
+viewers cannot mutate plans. Loan rows are included in the existing workspace ZIP export.
+
+Safe-to-spend separately reserves unpaid loan installments due through the selected horizon,
+including overdue installments, and excludes archived plans. Missing conversion rates block the
+headline. These are manual estimates, not bank-verified repayments. A loan also entered as a
+recurring/pending expense is conservatively reserved twice; the UI explicitly discloses this.
+Do not add the same plan a third time under other obligations.
+
+**F27 remains partial:** automatic bank reconciliation, floating rates, daily interest, fees,
+partial payments and principal prepayments are not supported. Currency amounts use two decimal
+places. The schedule must be compared with the actual lender statement before relying on it.
+No bank/payment/AI connection is implied by this feature.
+
+Validation for this new change is pending GitHub CI; earlier passing results above apply only
+to their recorded commits.

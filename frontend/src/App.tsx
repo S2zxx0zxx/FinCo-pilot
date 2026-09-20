@@ -24,6 +24,7 @@ const SetupPage = lazy(() => import('@/pages/setup'))
 const LoginPage = lazy(() => import('@/pages/login'))
 const RegisterPage = lazy(() => import('@/pages/register'))
 const PricingPage = lazy(() => import('@/pages/pricing'))
+const LoansPage = lazy(() => import('@/pages/loans'))
 const SpendingPlanPage = lazy(() => import('@/pages/spending-plan'))
 const DashboardPage = lazy(() => import('@/pages/dashboard'))
 const TransactionsPage = lazy(() => import('@/pages/transactions'))
@@ -99,6 +100,7 @@ function App() {
                           }
                         >
                           <Route path="/" element={<DashboardPage />} />
+                          <Route path="/loans" element={<ModuleRoute module="accounts"><LoansPage /></ModuleRoute>} />
                           <Route path="/spending-plan" element={<ModuleRoute module="accounts"><SpendingPlanPage /></ModuleRoute>} />
                           <Route path="/transactions" element={<ModuleRoute module="transactions"><TransactionsPage /></ModuleRoute>} />
                           <Route path="/accounts" element={<ModuleRoute module="accounts"><AccountsPage /></ModuleRoute>} />

@@ -1194,7 +1194,7 @@ const acctIdsParam = (accountIds?: string[]) =>
 
 export const dashboard = {
   spendingPlan: async (body: { horizon_days: number; emergency_buffer: string; goal_reserve: string; other_obligations: string; obligations_reviewed: boolean }): Promise<{
-    currency: string; as_of: string; through: string; status: string; cash_balance: string; card_debt_reserve: string; upcoming_outflows: string;
+    currency: string; as_of: string; through: string; status: string; cash_balance: string; card_debt_reserve: string; upcoming_outflows: string; loan_due_reserve?: string;
     emergency_buffer: string; goal_reserve: string; other_obligations: string; safe_to_spend: string | null; daily_allowance: string | null; shortfall: string | null; blockers: string[]; assumptions: string[];
   }> => (await api.post('/dashboard/spending-plan', body)).data,
   summary: async (month?: string, balanceDate?: string, accountIds?: string[], assetGroupIds?: string[]): Promise<DashboardSummary> => {
@@ -2016,4 +2016,22 @@ export const publicInvoices = {
     return data
   },
   pdfUrl: (token: string): string => `/api/public/invoices/${token}/pdf`,
+}
+
+export interface LoanPlanInput {
+  name: string; principal: string; annual_rate: string; term_months: number;
+  first_due_date: string; currency: string; paid_installments: number;
+}
+export interface LoanPlan extends LoanPlanInput {
+  id: string; version: number; archived: boolean; updated_at: string;
+}
+export interface LoanPlanDetail {
+  loan: LoanPlan; monthly_payment: string; total_interest: string; remaining_principal: string;
+  schedule: { number: number; due_date: string; payment: string; principal: string; interest: string; remaining_principal: string; reported_paid: boolean }[];
+}
+export const loans = {
+  list: async (): Promise<LoanPlan[]> => (await api.get('/loans')).data,
+  create: async (body: LoanPlanInput): Promise<LoanPlan> => (await api.post('/loans', body)).data,
+  get: async (id: string): Promise<LoanPlanDetail> => (await api.get(`/loans/${id}`)).data,
+  update: async (id: string, body: { version: number; paid_installments: number; archived: boolean }): Promise<LoanPlan> => (await api.patch(`/loans/${id}`, body)).data,
 }

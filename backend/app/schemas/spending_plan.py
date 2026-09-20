@@ -20,6 +20,7 @@ class SpendingPlan(BaseModel):
     cash_balance: Decimal
     card_debt_reserve: Decimal
     upcoming_outflows: Decimal
+    loan_due_reserve: Decimal = Decimal(0)
     emergency_buffer: Decimal
     goal_reserve: Decimal
     other_obligations: Decimal

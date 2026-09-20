@@ -10,6 +10,9 @@ from decimal import Decimal, ROUND_DOWN
 from sqlalchemy import case, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.loan import Loan
+from app.schemas.loan import LoanRead
+from app.services.loan_service import amortize
 from app.models.bank_connection import BankConnection
 from app.models.fx_rate import FxRate
 from app.models.transaction import Transaction
@@ -121,7 +124,25 @@ async def calculate_spending_plan(session: AsyncSession, workspace_id: uuid.UUID
             if tx.type == 'debit' and (tx.account_id is None or uuid.UUID(tx.account_id) in relevant):
                 outflows += convert(abs(tx.amount), tx.currency)
 
-    available = cash - debt - outflows - request.emergency_buffer - request.goal_reserve - request.other_obligations
+    loan_reserve = ZERO
+    loans = (await session.scalars(select(Loan).where(
+        Loan.workspace_id == workspace_id, Loan.archived == False,
+    ))).all()
+    for loan in loans:
+        due = sum((item.payment for item in amortize(LoanRead.model_validate(loan))
+                   if not item.reported_paid and item.due_date <= through), start=ZERO)
+        if due:
+            loan_reserve += convert(due, loan.currency)
+    if loans:
+        assumptions.append(
+            'Loan reserves include every self-reported unpaid installment due through the horizon, '
+            'including overdue installments. Verify paid counts against lender statements. '
+            'These estimates exclude fees, floating rates and partial or early principal repayments. '
+            'Loan dues also entered as recurring or pending expenses are conservatively reserved twice; '
+            'do not add the same loan again under other obligations.'
+        )
+
+    available = cash - debt - outflows - loan_reserve - request.emergency_buffer - request.goal_reserve - request.other_obligations
     blockers = list(dict.fromkeys(blockers))
     # Round the usable amount down, never up. Whole decimal strings in JSON.
     usable = max(ZERO, available).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
@@ -129,6 +150,7 @@ async def calculate_spending_plan(session: AsyncSession, workspace_id: uuid.UUID
         currency=currency, as_of=today, through=through,
         status='needs_review' if blockers else 'estimated',
         cash_balance=cash, card_debt_reserve=debt, upcoming_outflows=outflows,
+        loan_due_reserve=loan_reserve,
         emergency_buffer=request.emergency_buffer, goal_reserve=request.goal_reserve,
         other_obligations=request.other_obligations,
         safe_to_spend=None if blockers else usable,

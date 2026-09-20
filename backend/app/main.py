@@ -25,6 +25,7 @@ from app.api.dashboard import router as dashboard_router
 from app.api.export import router as export_router
 from app.api.fiscal import router as fiscal_router
 from app.api.fx_rates import router as fx_rates_router
+from app.api.loans import router as loans_router
 from app.api.goals import router as goals_router
 from app.api.groups import router as groups_router
 from app.api.import_logs import router as import_logs_router
@@ -196,6 +197,7 @@ app.include_router(connections_router)
 app.include_router(recurring_router, dependencies=[Depends(recurring_guard)])
 app.include_router(budgets_router, dependencies=[Depends(budgets_guard)])
 app.include_router(goals_router, dependencies=[Depends(goals_guard)])
+app.include_router(loans_router)
 app.include_router(groups_router, dependencies=[Depends(groups_guard)])
 app.include_router(assets_router, dependencies=[Depends(assets_guard)])
 app.include_router(asset_groups_router)

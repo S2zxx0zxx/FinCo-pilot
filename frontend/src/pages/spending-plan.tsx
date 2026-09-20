@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import { useWorkspace } from '@/contexts/workspace-context'
 import { useAuth } from '@/contexts/auth-context'
@@ -40,10 +41,10 @@ function SpendingPlanForm() {
     }
   }
   return <main className="mx-auto max-w-3xl space-y-6 p-4 md:p-8">
-    <header className="space-y-2"><h1 className="text-2xl font-semibold">Safe to spend</h1><p className="text-muted-foreground">Plan from your current workspace’s cash, debts and upcoming expenses. Review all obligations before relying on an estimate.</p></header>
+    <header className="space-y-2"><h1 className="text-2xl font-semibold">Safe to spend</h1><p className="text-muted-foreground">Plan from your current workspace’s cash, debts and upcoming expenses. Review all obligations before relying on an estimate.</p><Link className="inline-block underline" to="/loans">Manage loan and EMI plans</Link></header>
     <form onSubmit={calculate} onChange={() => setResult(null)} className="rounded-xl border p-5 space-y-4">
       <div className="space-y-2"><Label htmlFor="plan-days">Plan for how many days?</Label><Input id="plan-days" type="number" min={1} max={90} required value={days} onChange={e => setDays(e.target.value)} /></div>
-      {[['emergency', 'Emergency savings to protect', emergency, setEmergency], ['goals', 'Additional goal contributions', goals, setGoals], ['other', 'Other obligations, including loan repayments not already scheduled', other, setOther]].map(([id, label, value, setter]) => <div key={id as string} className="space-y-2"><Label htmlFor={`plan-${id}`}>{label as string} ({currency})</Label><Input id={`plan-${id}`} type="number" min="0" max="999999999999" step="0.01" required value={value as string} onChange={e => (setter as (value: string) => void)(e.target.value)} /></div>)}
+      {[['emergency', 'Emergency savings to protect', emergency, setEmergency], ['goals', 'Additional goal contributions', goals, setGoals], ['other', 'Other obligations not included in loan plans or scheduled expenses', other, setOther]].map(([id, label, value, setter]) => <div key={id as string} className="space-y-2"><Label htmlFor={`plan-${id}`}>{label as string} ({currency})</Label><Input id={`plan-${id}`} type="number" min="0" max="999999999999" step="0.01" required value={value as string} onChange={e => (setter as (value: string) => void)(e.target.value)} /></div>)}
       <label className="flex gap-3 text-sm"><input type="checkbox" checked={reviewed} onChange={e => setReviewed(e.target.checked)} />I checked that my balances, upcoming bills and additional obligations are complete and current.</label>
       <Button disabled={busy}>{busy ? 'Calculating…' : 'Calculate spending plan'}</Button>
     </form>
@@ -51,7 +52,7 @@ function SpendingPlanForm() {
     {result && <section aria-live="polite" className="space-y-5 rounded-xl border p-5">
       <p className="text-sm">Snapshot: {result.as_of} · Through {result.through}</p>
       {result.safe_to_spend !== null ? <div><h2 className="text-lg">Estimated safe to spend</h2><p className="text-3xl font-semibold">{money(result.safe_to_spend)}</p><p>{money(result.daily_allowance!)} per day</p>{Number(result.shortfall) > 0 && <p role="alert" className="text-destructive">Your plan has a shortfall of {money(result.shortfall!)}. Reduce planned spending or review your obligations.</p>}</div> : <div><h2 className="font-semibold">Review needed before an amount is available</h2><ul className="list-disc pl-5">{result.blockers.map(item => <li key={item}>{item}</li>)}</ul></div>}
-      <dl className="space-y-2">{[['Cash balance', result.cash_balance], ['Card debt reserved', result.card_debt_reserve], ['Upcoming outflows reserved', result.upcoming_outflows], ['Emergency buffer', result.emergency_buffer], ['Goal contributions', result.goal_reserve], ['Other obligations', result.other_obligations]].map(([label, value]) => <div key={label} className="flex justify-between gap-4"><dt>{label}</dt><dd>{money(value)}</dd></div>)}</dl>
+      <dl className="space-y-2">{[['Cash balance', result.cash_balance], ['Card debt reserved', result.card_debt_reserve], ['Upcoming outflows reserved', result.upcoming_outflows], ['Loan installments reserved', result.loan_due_reserve ?? '0'], ['Emergency buffer', result.emergency_buffer], ['Goal contributions', result.goal_reserve], ['Other obligations', result.other_obligations]].map(([label, value]) => <div key={label} className="flex justify-between gap-4"><dt>{label}</dt><dd>{money(value)}</dd></div>)}</dl>
       <details><summary className="cursor-pointer font-medium">How this estimate works</summary><ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-muted-foreground">{result.assumptions.map(item => <li key={item}>{item}</li>)}</ul></details>
     </section>}
   </main>

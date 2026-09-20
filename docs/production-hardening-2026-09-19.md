@@ -98,3 +98,19 @@ Local approval/security/route regression: 198 passed. Approval UI: two interacti
 
 
 Lost-authenticator acceptance was extended after reviewing the complete recovery journey: password plus unused recovery code can remove the unavailable authenticator, and a new authenticator can be enrolled. Wrong passwords do not consume recovery codes; old codes cannot disable the replacement factor. Backend recovery/passkey/permission regression: 228 passed. UI test confirms a full 20-character recovery code can be submitted. Ruff, ty, frontend typecheck and ESLint passed for this follow-up.
+
+
+## Final verified implementation checkpoint — September 20
+
+Code commit: `8d5c8904f3d8fbdabe71c69c405a0854091e474e`.
+[All five CI checks passed](https://github.com/S2zxx0zxx/FinCo-pilot/actions/runs/35495535628).
+
+- Backend: **3,863 passed, seven skipped**, Python 3.14.7; **90.59% coverage**. The seven skips are existing SQLite-incompatible PostgreSQL date-formatting cases, not claimed as passing tests.
+- Frontend: **746 passed across 84 files**; lint, typecheck and production build passed.
+- Real PostgreSQL/pgvector: migrations through **095**, rollback to 093 and reapply passed; simultaneous approval requests produced exactly one mutation and subsequent replay was denied.
+- Migration chain and Helm checks passed.
+- The final code is published on the dedicated branch in [draft PR #9](https://github.com/S2zxx0zxx/FinCo-pilot/pull/9). Main has not been merged and no production deployment is claimed.
+
+This completes this verified hardening checkpoint, not every product item in the original audit. Still open: Indian AA integration (F10); paid checkout/subscription lifecycle (F11); real hosted bank/mail/storage/AI/browser acceptance (F07/F16/F17/F25); approved policies/support and safe user/shared-workspace deletion (F24); dedicated loan/EMI accounting (F27); complete localisation (F28). These are implementation or acceptance requirements, not cosmetic disclaimers. The earlier finding table is the authoritative item-by-item disposition.
+
+The next integration phase needs the actual hosting/domain, selected bank/AA and payment partner accounts, provider credentials configured securely, operator/support/policy details, and the loan-accounting requirements. Granting GitHub permission does not supply those accounts or contracts. Do not advertise the missing integrations as live.

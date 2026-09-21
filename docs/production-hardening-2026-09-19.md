@@ -35,7 +35,7 @@ Branch: `fix/production-hardening-2026-09-19`.
 | F24 — policies/support/exit | **Not completed.** Need operator identity, support channel, privacy/retention/processor details, terms and a shared-workspace deletion policy. Do not publish invented legal promises or cascade-delete collaborators' financial data. |
 | F25 — PWA | Existing shell/offline behavior retained. No offline financial editing/sync guarantee. Device installation, update and reconnect still require browser acceptance. |
 | F26 — safe-to-spend | New workspace-scoped conservative calculation and dashboard entry. Reserves full card debt, upcoming/pending debits, recurring projections and user-entered buffers/obligations. Blocks headline on incomplete review, stale/unconfirmed provider refresh, unsupported account types or missing recent FX. See limits below. |
-| F27 — loans/EMI | **Not completed.** Dedicated loan principal/interest/amortization and provider loan classification need a separate schema/ledger change and acceptance examples. Current spending plan requires users to include unrecorded loan obligations explicitly; this does not turn the existing app into a loan engine. |
+| F27 — loans/EMI | **Partial implementation verified.** Workspace loan plans, fixed-rate monthly amortization, manual paid-installment counts, optimistic concurrency, backup export and safe-to-spend reserves are implemented. Bank reconciliation, variable rates, fees, partial payments and principal prepayments remain open. |
 | F28 — copy/localisation | Checkout messaging rewritten for users instead of implementation details. New recovery/spending-plan content is currently English; full Hindi and other-locale translation remains open. |
 
 ## Spending-plan contract
@@ -72,7 +72,7 @@ Set secrets in the deployment secret manager / environment, **not in source cont
 1. Back up the database and attachment volumes; rehearse restoring them into an isolated environment.
 2. Build immutable backend/frontend images from the reviewed commit. Existing Compose release-image variables must reference these images; changing a Git branch does not update deployed containers.
 3. Configure the production environment. Validate Compose and Settings with real configuration before starting services; never disable protective validation merely to get a green boot.
-4. Run `alembic upgrade head` against the intended database. Revision 094 adds credential epoch/recovery-code columns and the external MCP credential registry; revision 095 adds exact-action approval records. Deploy backend, workers and MCP together so every process shares the new authorization contract.
+4. Run `alembic upgrade head` against the intended database. Revision 094 adds credential epoch/recovery-code columns and the external MCP credential registry; revision 095 adds exact-action approval records; revision 096 adds workspace loan plans. Deploy backend, workers and MCP together so every process shares the new authorization contract.
 5. Existing app JWTs, pending login challenges and old unregistered external MCP tokens deliberately require re-login/reissue. Notify users before release. Logout now signs out all devices. Offline local logout cannot contact the server to revoke a session until connectivity returns.
 6. Verify health, real account registration/recovery/verification, secure admin bootstrap, no tenant crossover, 2FA recovery, real bank sync and actual AI behavior. Exercise browser navigation on mobile and desktop; inspect console/network errors.
 7. Enable paid/India marketing claims only after their missing integrations and provider tests pass. Do not merge/deploy this branch as evidence of those features.
@@ -138,5 +138,23 @@ partial payments and principal prepayments are not supported. Currency amounts u
 places. The schedule must be compared with the actual lender statement before relying on it.
 No bank/payment/AI connection is implied by this feature.
 
-Validation for this new change is pending GitHub CI; earlier passing results above apply only
-to their recorded commits.
+Validated code commit: `83851b419ef50a0d41de899cc6e39c3bd0cf193f`.
+[CI run 35517954260](https://github.com/S2zxx0zxx/FinCo-pilot/actions/runs/35517954260)
+completed successfully:
+- Backend: **3,892 passed, 7 skipped**, **90.65% coverage**; Ruff and type checks passed.
+- Frontend: **752 passed across 85 files**; lint, typecheck and production build passed.
+- PostgreSQL/pgvector: upgrade through **096**, downgrade to 093 and reapply passed.
+- Concurrent MCP approval verification, migration chain and Helm checks passed.
+
+Supported loan currencies are INR, USD, EUR, GBP, BRL, CAD, AUD, SGD, NZD and CHF,
+all using two-decimal cash flows. Unsupported currency precision is rejected.
+
+The spending calculator also withholds its headline for Enable Banking and SimpleFIN
+connections. The existing Enable Banking adapter maps LOAN to checking; SimpleFIN exposes
+no account type. A fresh sync therefore does not prove that those balances are cash.
+The guard covers existing imported accounts without changing their ledger data. Correct
+provider liability classification and lender reconciliation remain release requirements;
+this guard does not claim to repair classification or other dashboard totals.
+
+This verification is for code on the dedicated branch, not a production deployment.
+The documentation-only commit recording these results does not change executable code.

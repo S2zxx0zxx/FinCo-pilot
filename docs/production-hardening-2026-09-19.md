@@ -36,7 +36,7 @@ Branch: `fix/production-hardening-2026-09-19`.
 | F25 — PWA | Existing shell/offline behavior retained. No offline financial editing/sync guarantee. Device installation, update and reconnect still require browser acceptance. |
 | F26 — safe-to-spend | New workspace-scoped conservative calculation and dashboard entry. Reserves full card debt, upcoming/pending debits, recurring projections and user-entered buffers/obligations. Blocks headline on incomplete review, stale/unconfirmed provider refresh, unsupported account types or missing recent FX. See limits below. |
 | F27 — loans/EMI | **Partial implementation verified.** Workspace loan plans, fixed-rate monthly amortization, manual paid-installment counts, optimistic concurrency, backup export and safe-to-spend reserves are implemented. Bank reconciliation, variable rates, fees, partial payments and principal prepayments remain open. |
-| F28 — copy/localisation | Checkout messaging rewritten for users instead of implementation details. New recovery/spending-plan content is currently English; full Hindi and other-locale translation remains open. |
+| F28 — copy/localisation | Recovery, spending-plan and loan-plan flows now follow the existing English/Hindi language choice, including known bank-data blockers and loan warnings. Currency formatting follows the selected locale. Untranslated server errors and other locales fall back to English; complete app-wide localisation remains open. |
 
 ## Spending-plan contract
 
@@ -158,3 +158,27 @@ this guard does not claim to repair classification or other dashboard totals.
 
 This verification is for code on the dedicated branch, not a production deployment.
 The documentation-only commit recording these results does not change executable code.
+
+
+## September 21 — Hindi launch-flow localisation
+
+Recovery, spending-plan and loan screens use the existing persisted language selection.
+Hindi includes validation feedback, known server blockers, manual-payment disclosures and
+conservative reserve warnings; English remains the fallback. Account names and currency
+pairs in server errors are preserved. No bank data, payment state or permission decision
+is changed by localisation. Language changes re-render the screens and format currency
+using the selected locale.
+
+Local validation: 13 focused tests passed; changed-file ESLint and production typecheck/build
+passed. Full frontend regression: **756 tests passed across 86 files**. This does not verify
+live bank, merchant, email or hosting accounts.
+
+The public launch still requires these concrete operator inputs:
+1. Production domain and hosting provider/project (or an accessible staging URL).
+2. Approved AA/FIU partner and access to that partner's API documentation and sandbox.
+3. Payment provider/merchant account, recurring-payment availability, plan prices and refund/cancellation rules.
+4. Operator/business identity, support email, data-retention and shared-workspace deletion decisions.
+
+Provide names and non-secret configuration in the task; configure credentials in the host's
+secret manager. Without these inputs the real provider integrations, legal copy and live
+acceptance tests cannot be completed. GitHub authorization alone does not supply them.

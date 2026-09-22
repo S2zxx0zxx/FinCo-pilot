@@ -25,6 +25,9 @@ class TransactionBase(BaseModel):
 
 
 class TransactionCreate(TransactionBase):
+    amount: Decimal = Field(ge=0, allow_inf_nan=False)
+    type: Literal["debit", "credit"]
+
     account_id: uuid.UUID
     category_id: Optional[uuid.UUID] = None
     payee_id: Optional[uuid.UUID] = None
@@ -89,9 +92,9 @@ class TransactionCreate(TransactionBase):
 
 class TransactionUpdate(BaseModel):
     description: Optional[str] = None
-    amount: Optional[Decimal] = None
+    amount: Optional[Decimal] = Field(default=None, ge=0, allow_inf_nan=False)
     date: Optional[_Date] = None
-    type: Optional[str] = None
+    type: Optional[Literal["debit", "credit"]] = None
     currency: Optional[str] = None
     account_id: Optional[uuid.UUID] = None
     category_id: Optional[uuid.UUID] = None

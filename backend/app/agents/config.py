@@ -1,6 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -63,6 +64,17 @@ class AgentSettings(BaseSettings):
     # Where uploaded knowledge files live on disk (per-instance).
     knowledge_storage_path: str = "/app/data/agent_knowledge"
     knowledge_max_file_size_mb: int = 25
+
+    @model_validator(mode="after")
+    def validate_production_secret(self):
+        from app.core.config import get_settings
+
+        if self.enabled and get_settings().is_production:
+            if self.mcp_jwt_secret == "change-me-in-production" or len(self.mcp_jwt_secret) < 32:
+                raise ValueError("Production agents require a unique AGENTS_MCP_JWT_SECRET of at least 32 characters")
+        if not 1 <= self.mcp_external_ttl_days <= 90:
+            raise ValueError("AGENTS_MCP_EXTERNAL_TTL_DAYS must be between 1 and 90")
+        return self
 
     # Same env_file pair as the main Settings: the CWD-relative ".env" for
     # backward compatibility plus the anchored backend/.env, so the API and the

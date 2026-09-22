@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from datetime import date
 from decimal import Decimal
-from typing import Any
+from typing import Literal, cast, Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -89,7 +89,7 @@ _APPLY_FIELD = {
 
 def _can_apply(ctx: CallContext, apply: bool) -> bool:
     """Gate: writes only happen when the caller is external AND set apply."""
-    return bool(apply) and ctx.external
+    return apply is True and ctx.external
 
 
 @tool(
@@ -591,7 +591,7 @@ async def propose_create_transaction(
                     description=proposed["description"],
                     amount=Decimal(str(amount)),
                     date=target_date,
-                    type=type,
+                    type=cast(Literal["debit", "credit"], type),
                     account_id=acc.id,
                     category_id=cat.id if cat else None,
                     currency=proposed["currency"],

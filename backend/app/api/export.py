@@ -16,6 +16,7 @@ from app.models.budget import Budget
 from app.models.category import Category
 from app.models.category_group import CategoryGroup
 from app.models.import_log import ImportLog
+from app.models.loan import Loan
 from app.models.recurring_transaction import RecurringTransaction
 from app.models.rule import Rule
 from app.models.transaction import Transaction
@@ -60,7 +61,10 @@ async def _collect(ctx: WorkspaceContext, session: AsyncSession) -> dict[str, ob
     else:
         asset_values = []
 
+    loans = (await session.scalars(select(Loan).where(Loan.workspace_id == ws_id))).all()
+
     entities = {
+        "loans": loans,
         "accounts": accounts,
         "transactions": transactions,
         "categories": categories,

@@ -88,6 +88,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [login])
 
   const logout = useCallback(() => {
+    const departingToken = localStorage.getItem('token')
+    if (departingToken) void auth.logout(departingToken).catch(() => {
+      // Local sign-out still completes offline. Server sessions expire normally
+      // if the revocation request cannot reach the server.
+    })
     localStorage.removeItem('token')
     setToken(null)
     setUser(null)

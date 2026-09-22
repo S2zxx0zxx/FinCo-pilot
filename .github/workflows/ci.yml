@@ -86,6 +86,55 @@ jobs:
           name: coverage-report
           path: backend/coverage.xml
 
+  postgres-migration-smoke:
+    name: PostgreSQL Migration Smoke
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: finco_ci
+          POSTGRES_PASSWORD: synthetic-ci-password
+          POSTGRES_DB: finco_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U finco_ci -d finco_ci"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      DATABASE_URL: postgresql+asyncpg://finco_ci:synthetic-ci-password@localhost:5432/finco_ci
+      SECRET_KEY: synthetic-ci-only-signing-key-not-for-deployment
+      DEPLOYMENT_ENVIRONMENT: development
+      AGENTS_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version-file: backend/.python-version
+      - name: Install locked runtime dependencies
+        run: |
+          pip install -q uv==0.12.10
+          uv export --frozen --no-emit-project -o /tmp/finco-runtime.txt
+          pip install --require-hashes -r /tmp/finco-runtime.txt
+          pip install --no-deps -e .
+      - name: Upgrade empty PostgreSQL database
+        run: alembic upgrade head
+      - name: Exercise new migration rollback and reapply
+        # Only this disposable CI database. Never run downgrade on production.
+        run: |
+          alembic downgrade 093
+          alembic upgrade head
+          alembic current
+      - name: Verify concurrent external MCP approvals on PostgreSQL
+        env:
+          AGENTS_ENABLED: "true"
+          AGENTS_MCP_JWT_SECRET: synthetic-ci-only-mcp-signing-key-not-for-deployment
+          FINCO_DISPOSABLE_DB_TEST: "yes"
+        run: python -m scripts.verify_mcp_approval_postgres
+
   migration-chain:
     name: Migration Chain
     runs-on: ubuntu-latest

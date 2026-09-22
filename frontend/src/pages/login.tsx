@@ -93,10 +93,10 @@ export default function LoginPage() {
     if (token || (oidcConfig === null && !oidcConfigFailed)) return
 
     let active = true
-    setup.status().then(({ has_users }) => {
+    setup.status().then(({ has_users, setup_available }) => {
       if (
         active &&
-        !has_users &&
+        !has_users && setup_available !== false &&
         resolveLocalAuthEnabled(oidcConfig, oidcConfigFailed)
       ) {
         navigate('/setup', { replace: true })
@@ -332,17 +332,17 @@ export default function LoginPage() {
               )}
               {selected2faMethod === 'totp' && (
                 <div className="space-y-1.5">
-                  <Label htmlFor="totp-code" className="text-sm">{t('auth.twoFactor')}</Label>
+                  <Label htmlFor="totp-code" className="text-sm">Authenticator code or one-time recovery code</Label>
                   <Input
                     id="totp-code"
                     type="text"
-                    inputMode="numeric"
+                    inputMode="text"
                     autoComplete="one-time-code"
                     value={totpCode}
-                    onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    placeholder="000000"
+                    onChange={(e) => setTotpCode(e.target.value.replace(/[^a-fA-F0-9]/g, '').slice(0, 20))}
+                    placeholder="Authenticator or recovery code"
                     className="text-center text-lg tracking-[0.3em] font-mono"
-                    maxLength={6}
+                    maxLength={20}
                     required
                     autoFocus
                   />
@@ -356,7 +356,7 @@ export default function LoginPage() {
             </CardContent>
             <CardFooter className="flex flex-col gap-4 px-8 pb-8 pt-2">
               {selected2faMethod === 'totp' ? (
-                <Button type="submit" className="w-full" disabled={isLoading || totpCode.length !== 6}>
+                <Button type="submit" className="w-full" disabled={isLoading || ![6, 20].includes(totpCode.length)}>
                   {isLoading ? t('common.loading') : t('auth.verify')}
                 </Button>
               ) : (
@@ -433,7 +433,7 @@ export default function LoginPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="password" className="text-sm">{t('auth.password')}</Label>
+                <div className="flex justify-between"><Label htmlFor="password" className="text-sm">{t('auth.password')}</Label><span className="flex gap-2 text-xs"><Link to="/request-verification" className="underline">Verify email</Link><Link to="/forgot-password" className="underline">Forgot password?</Link></span></div>
                 <Input
                   id="password"
                   type="password"

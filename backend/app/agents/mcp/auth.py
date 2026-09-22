@@ -22,6 +22,7 @@ def mint_token(
     agent_id: Optional[uuid.UUID] = None,
     ttl_seconds: Optional[int] = None,
     external: bool = False,
+    token_id: Optional[uuid.UUID] = None,
 ) -> str:
     """Mint an MCP JWT scoped to a (user, workspace) pair.
 
@@ -46,6 +47,8 @@ def mint_token(
         payload["conv_id"] = str(conversation_id)
     if agent_id:
         payload["agent_id"] = str(agent_id)
+    if token_id:
+        payload["jti"] = str(token_id)
     if external:
         payload["ext"] = True
     return jwt.encode(payload, s.mcp_jwt_secret, algorithm=JWT_ALGO)

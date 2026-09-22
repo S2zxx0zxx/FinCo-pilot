@@ -1,4 +1,10 @@
 import logging
+import hashlib
+import hmac
+
+import jwt
+from fastapi_users import exceptions
+from fastapi_users.jwt import decode_jwt, generate_jwt
 import uuid
 from decimal import Decimal
 from typing import Optional
@@ -34,6 +40,10 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
     user_db: SQLAlchemyUserDatabase
     reset_password_token_secret = settings.secret_key
     verification_token_secret = settings.secret_key
+
+    async def validate_password(self, password: str, user) -> None:
+        if len(password) < 8 or len(password) > 128:
+            raise exceptions.InvalidPasswordException(reason="Password must contain 8 to 128 characters")
 
     async def update(
         self,
@@ -106,8 +116,41 @@ async def get_user_manager(user_db: SQLAlchemyUserDatabase = Depends(get_user_db
 bearer_transport = BearerTransport(tokenUrl="api/auth/login")
 
 
-def get_jwt_strategy() -> JWTStrategy:
-    return JWTStrategy(
+class RevocableJWTStrategy(JWTStrategy):
+    """Credentials-bound tokens; password/reset and logout invalidate old sessions.
+
+    Legacy tokens without the credential stamp deliberately require re-login.
+    The password hash is never put in a JWT, even in encoded form.
+    """
+
+    def stamp(self, user: User) -> str:
+        value = f"{user.id}:{user.hashed_password}:{user.auth_epoch or ''}"
+        return hmac.new(settings.secret_key.get_secret_value().encode(), value.encode(), hashlib.sha256).hexdigest()
+
+    async def write_token(self, user: User) -> str:
+        return generate_jwt(
+            {"sub": str(user.id), "aud": self.token_audience, "credential_stamp": self.stamp(user)},
+            self.encode_key, self.lifetime_seconds, algorithm=self.algorithm,
+        )
+
+    async def read_token(self, token, user_manager):
+        user = await super().read_token(token, user_manager)
+        if user is None or token is None:
+            return None
+        try:
+            data = decode_jwt(token, self.decode_key, self.token_audience, algorithms=[self.algorithm])
+        except jwt.PyJWTError:
+            return None
+        if isinstance(user_manager, UserManager):
+            # Read current credential state even when a session identity map was
+            # populated before a concurrent password change or logout.
+            await user_manager.user_db.session.refresh(user, attribute_names=["hashed_password", "auth_epoch", "is_active"])
+        stamp = data.get("credential_stamp")
+        return user if isinstance(stamp, str) and hmac.compare_digest(stamp, self.stamp(user)) else None
+
+
+def get_jwt_strategy() -> RevocableJWTStrategy:
+    return RevocableJWTStrategy(
         secret=settings.secret_key.get_secret_value(),
         lifetime_seconds=settings.access_token_expire_minutes * 60,
     )

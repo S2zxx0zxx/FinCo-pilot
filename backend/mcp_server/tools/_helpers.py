@@ -56,11 +56,15 @@ async def resolve_workspace_id(session, ctx) -> uuid.UUID:
     the workspace migration AND keeps single-workspace callers free of
     having to specify a workspace.
     """
-    if ctx.workspace_id is not None:
-        return ctx.workspace_id
-    from app.services.workspace_service import get_default_workspace
+    from app.core.workspace_context import current_workspace
+    from app.models.user import User
+    from fastapi import HTTPException
 
-    ws = await get_default_workspace(session, ctx.user_id)
-    if ws is None:
-        raise ValueError("No workspace available for this user")
-    return ws.id
+    user = await session.get(User, ctx.user_id)
+    if user is None or not user.is_active:
+        raise HTTPException(403, "Access denied")
+    resolved = await current_workspace(
+        x_workspace_id=str(ctx.workspace_id) if ctx.workspace_id else None,
+        user=user, session=session,
+    )
+    return resolved.id

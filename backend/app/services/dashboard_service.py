@@ -1055,6 +1055,7 @@ async def get_projected_transactions(
     account_id: Optional[uuid.UUID] = None,
     from_date: Optional[date] = None,
     to_date: Optional[date] = None,
+    allow_fx_fetch: bool = True,
 ) -> list[ProjectedTransaction]:
     """Return virtual recurring transaction projections for a month,
     enriched with description and category info for display.
@@ -1138,7 +1139,7 @@ async def get_projected_transactions(
         amt_primary = None
         if rec.currency != primary_currency:
             rate = await _resolve_rate(
-                session, rec.currency, primary_currency,
+                session, rec.currency, primary_currency, allow_fetch=allow_fx_fetch,
             )
             if rate is not None:
                 amt_primary = float(

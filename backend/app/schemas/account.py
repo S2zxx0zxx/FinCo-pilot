@@ -1,9 +1,13 @@
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional
+from typing import Annotated, Literal, Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+
+AccountName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=255)]
+AccountType = Literal["checking", "savings", "credit_card", "wallet", "investment"]
+CurrencyCode = Annotated[str, StringConstraints(pattern=r"^[A-Z]{3}$")]
 
 
 class AccountBase(BaseModel):
@@ -14,29 +18,29 @@ class AccountBase(BaseModel):
 
 
 class AccountCreate(BaseModel):
-    name: str
-    type: str
+    name: AccountName
+    type: AccountType
     balance: Decimal = Decimal("0.00")
     balance_date: Optional[date] = None
-    currency: str = "INR"
-    credit_limit: Optional[Decimal] = None
-    statement_close_day: Optional[int] = None
-    payment_due_day: Optional[int] = None
-    minimum_payment: Optional[Decimal] = None
+    currency: CurrencyCode = "INR"
+    credit_limit: Optional[Decimal] = Field(default=None, ge=0)
+    statement_close_day: Optional[int] = Field(default=None, ge=1, le=31)
+    payment_due_day: Optional[int] = Field(default=None, ge=1, le=31)
+    minimum_payment: Optional[Decimal] = Field(default=None, ge=0)
     card_brand: Optional[str] = None
     card_level: Optional[str] = None
 
 
 class AccountUpdate(BaseModel):
-    name: Optional[str] = None
-    display_name: Optional[str] = None
-    type: Optional[str] = None
+    name: Optional[AccountName] = None
+    display_name: Optional[AccountName] = None
+    type: Optional[AccountType] = None
     balance: Optional[Decimal] = None
     balance_date: Optional[date] = None
-    credit_limit: Optional[Decimal] = None
-    statement_close_day: Optional[int] = None
-    payment_due_day: Optional[int] = None
-    minimum_payment: Optional[Decimal] = None
+    credit_limit: Optional[Decimal] = Field(default=None, ge=0)
+    statement_close_day: Optional[int] = Field(default=None, ge=1, le=31)
+    payment_due_day: Optional[int] = Field(default=None, ge=1, le=31)
+    minimum_payment: Optional[Decimal] = Field(default=None, ge=0)
     card_brand: Optional[str] = None
     card_level: Optional[str] = None
 

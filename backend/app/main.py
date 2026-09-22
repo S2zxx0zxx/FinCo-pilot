@@ -25,6 +25,7 @@ from app.api.dashboard import router as dashboard_router
 from app.api.export import router as export_router
 from app.api.fiscal import router as fiscal_router
 from app.api.fx_rates import router as fx_rates_router
+from app.api.loans import router as loans_router
 from app.api.goals import router as goals_router
 from app.api.groups import router as groups_router
 from app.api.import_logs import router as import_logs_router
@@ -168,6 +169,12 @@ app.include_router(
     tags=["auth"],
     dependencies=[Depends(require_local_auth_enabled), Depends(password_reset_rate_limit)],
 )
+app.include_router(
+    fastapi_users.get_verify_router(UserRead),
+    prefix="/api/auth",
+    tags=["auth"],
+    dependencies=[Depends(require_local_auth_enabled), Depends(password_reset_rate_limit)],
+)
 app.include_router(user_lookup_router)
 app.include_router(
     fastapi_users.get_users_router(UserRead, UserUpdate),
@@ -190,6 +197,7 @@ app.include_router(connections_router)
 app.include_router(recurring_router, dependencies=[Depends(recurring_guard)])
 app.include_router(budgets_router, dependencies=[Depends(budgets_guard)])
 app.include_router(goals_router, dependencies=[Depends(goals_guard)])
+app.include_router(loans_router)
 app.include_router(groups_router, dependencies=[Depends(groups_guard)])
 app.include_router(assets_router, dependencies=[Depends(assets_guard)])
 app.include_router(asset_groups_router)
@@ -279,3 +287,18 @@ async def readiness_check():
         status_code=200 if ready else 503,
         content={"status": "ready" if ready else "not_ready", "checks": checks},
     )
+
+
+from app.core.metrics import metrics, record_request  # noqa: E402
+app.add_api_route("/metrics", metrics, methods=["GET"], include_in_schema=False)
+
+
+@app.middleware("http")
+async def request_metrics(request, call_next):
+    try:
+        response = await call_next(request)
+    except Exception:
+        record_request(request.method, 500)
+        raise
+    record_request(request.method, response.status_code)
+    return response

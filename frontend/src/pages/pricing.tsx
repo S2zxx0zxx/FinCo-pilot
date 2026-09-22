@@ -381,7 +381,7 @@ export default function PricingPage() {
           {paid && selectedPrice && <p className="mt-2 text-center text-xs text-muted-foreground">Selected price: {formatInrMinor(selectedPrice.amount_minor)} {selectedPlan === 'pro' && interval === 'annual' ? 'per year' : 'per month'}.</p>}
           {checkoutNote && (
             <div className="mt-3 rounded-2xl border bg-muted/35 p-3 text-center text-xs leading-5 text-muted-foreground">
-              Plan changes stay server-verified. Payment/provider wiring is a separate step, so your subscription was <strong className="text-foreground">not</strong> changed in the browser.
+              Paid upgrades are not available yet. Your plan is unchanged and you have not been charged. You can continue using your current plan.
             </div>
           )}
         </section>
@@ -417,7 +417,7 @@ export default function PricingPage() {
           })}
         </section>
 
-        {checkoutNote && <div className="mx-auto mt-4 hidden max-w-2xl rounded-2xl border bg-muted/35 p-3 text-center text-xs text-muted-foreground lg:block">Plan changes remain server-verified. Checkout/provider wiring is separate, and this pricing page cannot self-activate Pro or Max.</div>}
+        {checkoutNote && <div className="mx-auto mt-4 hidden max-w-2xl rounded-2xl border bg-muted/35 p-3 text-center text-xs text-muted-foreground lg:block">Paid upgrades are not available yet. Your plan is unchanged and you have not been charged.</div>}
 
         <section className="mx-auto mt-14 max-w-5xl">
           <div className="text-center"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Compare plans</p><h2 className="mt-2 text-2xl font-semibold sm:text-3xl">Clear limits. No surprise locks.</h2></div>
@@ -437,7 +437,7 @@ export default function PricingPage() {
           <div className="mt-5 divide-y rounded-[26px] border bg-card px-5 sm:px-6">
             {[
               ['Will my data disappear if I cancel?', 'No. FinCo keeps existing financial records readable. If you are above a lower-plan limit, creation is blocked until you reduce usage or upgrade.'],
-              ['Can someone unlock Pro with DevTools or localStorage?', 'No. Locks in the UI are only UX. Protected API actions verify the effective server-side subscription and quota independently.'],
+              ['Can I purchase a paid plan now?', 'Paid upgrades are not available yet. You can use Free without a payment. We will show a secure checkout and confirmation when paid subscriptions become available.'],
               ['Why is there no Max annual plan?', 'Because it is not part of V1. We show only real prices that are actually approved instead of inventing a disabled or crossed-out annual number.'],
               ['Does Free show ads?', 'No. FinCo-Pilot pricing is designed without advertising inside the finance experience.'],
             ].map(([question, answer]) => (
@@ -447,7 +447,7 @@ export default function PricingPage() {
         </section>
 
         <footer className="mx-auto mt-12 max-w-xl text-center text-xs leading-5 text-muted-foreground">
-          Prices shown in INR. Paid checkout is not activated until a verified payment provider is connected; the browser cannot grant itself a paid plan.
+          Prices shown in INR. Paid upgrades are not available yet. No payment is collected on this page.
         </footer>
       </div>
     </main>

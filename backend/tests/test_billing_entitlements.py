@@ -69,7 +69,7 @@ async def test_client_plan_fields_cannot_change_server_entitlements(
     assert data["capabilities"]["rules"] is False
     assert data["capabilities"]["advanced_reports"] is False
     assert data["limits"]["accounts"] == 3
-    assert data["limits"]["ai_actions_monthly"] == 5
+    assert data["limits"]["ai_actions_monthly"] == 0
 
 
 @pytest.mark.asyncio

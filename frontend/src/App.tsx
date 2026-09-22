@@ -19,10 +19,13 @@ import { PWAChrome } from '@/pwa/pwa-chrome'
 import { FinCoRouteLoader } from '@/transitions/finco-route-loader'
 import { FinCoNavigationTransition } from '@/transitions/finco-navigation-transition'
 
+const AccountRecovery = lazy(() => import('@/pages/account-recovery'))
 const SetupPage = lazy(() => import('@/pages/setup'))
 const LoginPage = lazy(() => import('@/pages/login'))
 const RegisterPage = lazy(() => import('@/pages/register'))
 const PricingPage = lazy(() => import('@/pages/pricing'))
+const LoansPage = lazy(() => import('@/pages/loans'))
+const SpendingPlanPage = lazy(() => import('@/pages/spending-plan'))
 const DashboardPage = lazy(() => import('@/pages/dashboard'))
 const TransactionsPage = lazy(() => import('@/pages/transactions'))
 const AccountsPage = lazy(() => import('@/pages/accounts'))
@@ -73,6 +76,11 @@ function App() {
                     <Suspense fallback={<FinCoRouteLoader />}>
                       <Routes>
                         <Route path="/setup" element={<SetupPage />} />
+                        <Route path="/forgot-password" element={<AccountRecovery mode="forgot" />} />
+                        <Route path="/reset-password" element={<AccountRecovery mode="reset" />} />
+                        <Route path="/verify-email" element={<AccountRecovery mode="verify" />} />
+                        <Route path="/request-verification" element={<AccountRecovery mode="request-verification" />} />
+                        <Route path="*" element={<main className="p-10 space-y-4"><h1 className="text-xl">Page not found</h1><a className="underline" href="/">Return home</a></main>} />
                         <Route path="/login" element={<LoginPage />} />
                         <Route path="/auth/oidc/callback" element={<OIDCCallbackPage />} />
                         <Route path="/register" element={<RegisterPage />} />
@@ -92,6 +100,8 @@ function App() {
                           }
                         >
                           <Route path="/" element={<DashboardPage />} />
+                          <Route path="/loans" element={<ModuleRoute module="accounts"><LoansPage /></ModuleRoute>} />
+                          <Route path="/spending-plan" element={<ModuleRoute module="accounts"><SpendingPlanPage /></ModuleRoute>} />
                           <Route path="/transactions" element={<ModuleRoute module="transactions"><TransactionsPage /></ModuleRoute>} />
                           <Route path="/accounts" element={<ModuleRoute module="accounts"><AccountsPage /></ModuleRoute>} />
                           <Route path="/accounts/:id" element={<ModuleRoute module="accounts"><AccountDetailPage /></ModuleRoute>} />

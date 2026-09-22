@@ -9,6 +9,7 @@ from app.core.database import get_async_session
 from app.core.workspace_context import WorkspaceContext, current_workspace
 from app.schemas.dashboard import DashboardSummary, SpendingByCategory, MonthlyTrend, ProjectedTransaction, BalanceHistory
 from app.services import dashboard_service
+from app.schemas.spending_plan import SpendingPlanRequest, SpendingPlan
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
@@ -86,3 +87,14 @@ async def get_projected_transactions(
     except ValueError as exc:
         from fastapi import HTTPException
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post('/spending-plan', response_model=SpendingPlan)
+async def spending_plan(
+    body: SpendingPlanRequest,
+    ctx: WorkspaceContext = Depends(current_workspace),
+    session: AsyncSession = Depends(get_async_session),
+):
+    # Calculation only. A viewer may inspect the workspace they can read.
+    from app.services.spending_plan_service import calculate_spending_plan
+    return await calculate_spending_plan(session, ctx.id, ctx.user_id, body)

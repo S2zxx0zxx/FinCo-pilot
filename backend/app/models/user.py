@@ -43,6 +43,10 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
         },
     )
 
+    recovery_code_hashes: Mapped[Optional[list[str]]] = mapped_column(JSON, nullable=True)
+
+    auth_epoch: Mapped[str] = mapped_column(String(36), default="", server_default="")
+
     totp_secret: Mapped[Optional[str]] = mapped_column(String(32), nullable=True, default=None)
     is_2fa_enabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
     oidc_issuer: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)

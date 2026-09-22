@@ -45,15 +45,15 @@ async def list_accounts(
 @router.get("/{account_id}/summary", response_model=AccountSummary)
 async def get_account_summary(
     account_id: uuid.UUID,
-    date_from: Optional[str] = Query(None, alias="from", description="YYYY-MM-DD"),
-    date_to: Optional[str] = Query(None, alias="to", description="YYYY-MM-DD"),
+    date_from: Optional[date] = Query(None, alias="from", description="YYYY-MM-DD"),
+    date_to: Optional[date] = Query(None, alias="to", description="YYYY-MM-DD"),
     bill_id: Optional[uuid.UUID] = Query(None, description="Aggregate by bill_id (issue #92); takes precedence over from/to"),
     unbilled_only: bool = Query(False, description="Cycle-math fallback only: exclude txs already linked to any bill"),
     ctx: WorkspaceContext = Depends(current_workspace),
     session: AsyncSession = Depends(get_async_session),
 ):
-    from_date = date.fromisoformat(date_from) if date_from else None
-    to_date = date.fromisoformat(date_to) if date_to else None
+    from_date = date_from
+    to_date = date_to
     summary = await account_service.get_account_summary(
         session, account_id, ctx.workspace.id, date_from=from_date, date_to=to_date,
         bill_id=bill_id, unbilled_only=unbilled_only,
@@ -83,13 +83,13 @@ async def get_account_summary(
 @router.get("/{account_id}/balance-history")
 async def get_account_balance_history(
     account_id: uuid.UUID,
-    date_from: Optional[str] = Query(None, alias="from", description="YYYY-MM-DD"),
-    date_to: Optional[str] = Query(None, alias="to", description="YYYY-MM-DD"),
+    date_from: Optional[date] = Query(None, alias="from", description="YYYY-MM-DD"),
+    date_to: Optional[date] = Query(None, alias="to", description="YYYY-MM-DD"),
     ctx: WorkspaceContext = Depends(current_workspace),
     session: AsyncSession = Depends(get_async_session),
 ):
-    from_date = date.fromisoformat(date_from) if date_from else None
-    to_date = date.fromisoformat(date_to) if date_to else None
+    from_date = date_from
+    to_date = date_to
     history = await account_service.get_account_balance_history(
         session, account_id, ctx.workspace.id, date_from=from_date, date_to=to_date,
     )

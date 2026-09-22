@@ -1,4 +1,6 @@
+from app.models.mcp_approval import MCPApproval
 from app.models.user import User
+from app.models.mcp_token import ExternalMCPToken
 from app.models.passkey import UserPasskey
 from app.models.workspace import Workspace, WorkspaceMember, WorkspaceTaxId
 from app.models.category import Category
@@ -19,6 +21,7 @@ from app.models.fx_rate import FxRate
 from app.models.transaction_attachment import TransactionAttachment
 from app.models.payee import Payee, PayeeMapping, PayeeTaxId
 from app.models.app_settings import AppSetting
+from app.models.loan import Loan
 from app.models.goal import Goal
 from app.models.credit_card_bill import CreditCardBill
 from app.models.group import Group, GroupMember
@@ -41,7 +44,9 @@ from app.models.billing_usage import BillingUsageCounter
 from app.core import workspace_autostamp  # noqa: F401, E402
 
 __all__ = [
+    "MCPApproval",
     "User",
+    "ExternalMCPToken",
     "UserPasskey",
     "Workspace",
     "WorkspaceMember",
@@ -67,6 +72,7 @@ __all__ = [
     "PayeeTaxId",
     "AppSetting",
     "Goal",
+    "Loan",
     "CreditCardBill",
     "Group",
     "GroupMember",

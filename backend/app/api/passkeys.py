@@ -85,7 +85,7 @@ def _challenge_key(prefix: str, challenge_id: str) -> str:
     return f"{prefix}:{challenge_id}"
 
 
-async def _get_second_factor_user_id(temp_token: str) -> str:
+async def _get_second_factor_user_id(temp_token: str, session: AsyncSession) -> str:
     redis = await get_redis()
     raw_payload = await redis.get(f"2fa_temp:{temp_token}")
     if not raw_payload:
@@ -94,6 +94,11 @@ async def _get_second_factor_user_id(temp_token: str) -> str:
     available_methods = payload.get("available_methods", []) if payload else []
     if payload is None or not isinstance(available_methods, list) or "passkey" not in available_methods:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+    import secrets
+    user = await session.get(User, uuid.UUID(str(payload["user_id"])))
+    stamp = payload.get("credential_stamp")
+    if user is None or not user.is_active or not isinstance(stamp, str) or not secrets.compare_digest(stamp, get_jwt_strategy().stamp(user)):
+        raise HTTPException(status_code=401, detail="Login challenge invalidated; sign in again")
     return str(payload["user_id"])
 
 
@@ -412,7 +417,7 @@ async def passkey_second_factor_options(
     session: AsyncSession = Depends(get_async_session),
 ):
     context = resolve_webauthn_context(request)
-    user_id = await _get_second_factor_user_id(body.temp_token)
+    user_id = await _get_second_factor_user_id(body.temp_token, session)
     result = await session.execute(
         select(UserPasskey).where(UserPasskey.user_id == uuid.UUID(user_id)).order_by(UserPasskey.created_at.asc())
     )
@@ -448,7 +453,7 @@ async def verify_passkey_second_factor(
     body: PasskeySecondFactorVerifyRequest,
     session: AsyncSession = Depends(get_async_session),
 ):
-    user_id = await _get_second_factor_user_id(body.temp_token)
+    user_id = await _get_second_factor_user_id(body.temp_token, session)
     challenge = await _pop_challenge(SECOND_FACTOR_CHALLENGE_PREFIX, body.challenge_id)
     if not challenge or challenge.get("user_id") != user_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired challenge")

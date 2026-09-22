@@ -35,6 +35,7 @@ class CallContext:
     # n8n, etc.) rather than FinCo-Pilot's own runtime. Used for log tagging;
     # tool authorization is identical (same user scope).
     external: bool = False
+    token_id: Optional[uuid.UUID] = None
 
 
 def _settings():
@@ -74,4 +75,5 @@ def verify_request(request: Request) -> CallContext:
         conversation_id=uuid.UUID(conv_raw) if conv_raw else None,
         agent_id=uuid.UUID(agent_raw) if agent_raw else None,
         external=bool(payload.get("ext")),
+        token_id=uuid.UUID(payload["jti"]) if payload.get("jti") else None,
     )

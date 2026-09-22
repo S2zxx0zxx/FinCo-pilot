@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -258,7 +259,7 @@ async def test_verify_2fa_invalid_token(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_verify_2fa_with_valid_token(client: AsyncClient, test_user_with_2fa):
     mock_r = AsyncMock()
-    mock_r.get = AsyncMock(return_value=str(test_user_with_2fa.id))
+    mock_r.get = AsyncMock(return_value=json.dumps({"user_id": str(test_user_with_2fa.id), "available_methods": ["totp"], "credential_stamp": get_jwt_strategy().stamp(test_user_with_2fa)}))
     mock_r.delete = AsyncMock()
     pipe = MagicMock()
     pipe.execute = AsyncMock(return_value=[0, 0, True, True])

@@ -5,6 +5,7 @@ registry holds (name → ToolSpec) for /mcp's `tools/list` and `tools/call`.
 """
 from __future__ import annotations
 
+import uuid
 from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable
 
@@ -75,8 +76,60 @@ async def call_tool(
     ctx: CallContext,
     name: str,
     arguments: dict[str, Any] | None,
+    *,
+    approved_action_id: uuid.UUID | None = None,
 ) -> Any:
     spec = REGISTRY.get(name)
     if spec is None:
         raise KeyError(f"unknown tool: {name}")
+    if arguments and "apply" in arguments and not isinstance(arguments["apply"], bool):
+        raise ValueError("apply must be a JSON boolean")
+    await authorize_tool(session, ctx, spec, arguments or {})
+    if ctx.external and spec.is_proposal and (arguments or {}).get('apply') is True:
+        from app.services.mcp_approval_service import queue_approval, validate_execution
+        if approved_action_id is None:
+            return await queue_approval(session, ctx, name, arguments or {})
+        await validate_execution(session, ctx, approved_action_id, name, arguments or {})
     return await spec.handler(session=session, ctx=ctx, **(arguments or {}))
+
+
+async def authorize_tool(session, ctx, spec, arguments):
+    from datetime import datetime, timezone
+    import hmac
+    from fastapi import HTTPException
+    from app.core.auth import get_jwt_strategy
+    from app.core.workspace_context import current_workspace
+    from app.models.user import User
+    from app.models.mcp_token import ExternalMCPToken
+    from app.billing.dependencies import require_workspace_capability
+    from app.billing.enums import Capability, Metric
+    from app.billing.usage import enforce_limit
+
+    user = await session.get(User, ctx.user_id)
+    if user is None or not user.is_active:
+        raise HTTPException(403, "Access denied")
+    resolved = await current_workspace(
+        x_workspace_id=str(ctx.workspace_id) if ctx.workspace_id else None,
+        user=user, session=session,
+    )
+    await require_workspace_capability(session, resolved.workspace, Capability.AGENTS_AUTOMATION)
+    writing = spec.is_proposal and arguments.get("apply") is True and ctx.external
+    if ctx.external:
+        row = await session.get(ExternalMCPToken, ctx.token_id) if ctx.token_id else None
+        if row is None or row.revoked or row.user_id != user.id or row.workspace_id != resolved.id:
+            raise HTTPException(403, "External credential revoked or invalid; create a new token")
+        expiry = row.expires_at.replace(tzinfo=timezone.utc) if row.expires_at.tzinfo is None else row.expires_at
+        if expiry <= datetime.now(timezone.utc) or not hmac.compare_digest(row.credential_stamp, get_jwt_strategy().stamp(user)):
+            raise HTTPException(403, "External credential expired or invalid")
+        if writing and not row.allow_writes:
+            raise HTTPException(403, "This external credential is read-only")
+    if writing:
+        resolved.require_write()
+        metric = {
+            "propose_create_budget": Metric.ACTIVE_BUDGETS,
+            "propose_create_goal": Metric.ACTIVE_GOALS,
+            "propose_create_recurring_transaction": Metric.ACTIVE_RECURRING,
+            "propose_create_payee_rule": Metric.RULES,
+        }.get(spec.name)
+        if metric:
+            await enforce_limit(session, resolved.workspace, metric)

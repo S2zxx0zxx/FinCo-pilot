@@ -109,6 +109,10 @@ class Settings(BaseSettings):
     # paid checkout stays disabled rather than presenting a dead purchase flow.
     billing_checkout_enabled: bool = False
 
+    # Razorpay
+    razorpay_key_id: str = ""
+    razorpay_key_secret: SecretStr = SecretStr("")
+
     # OIDC
     oidc_enabled: bool = False
     oidc_provider_name: str = "OIDC"

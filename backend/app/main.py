@@ -16,6 +16,7 @@ from app.api.attachments import router as attachments_router
 from app.api.billing import router as billing_router
 from app.api.budgets import router as budgets_router
 from app.api.categories import router as categories_router
+from app.api.checkout import router as checkout_router
 from app.api.category_groups import router as category_groups_router
 from app.api.collections import router as collections_router
 from app.api.connections import router as connections_router
@@ -185,6 +186,7 @@ app.include_router(
 # Domain routes. Billing guards are attached at the router boundary so hidden
 # controls and direct HTTP requests share the same server-side policy.
 app.include_router(billing_router)
+app.include_router(checkout_router)
 app.include_router(categories_router)
 app.include_router(category_groups_router)
 app.include_router(rules_router, dependencies=[Depends(rules_guard)])

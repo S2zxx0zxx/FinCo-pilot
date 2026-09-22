@@ -305,7 +305,7 @@ export default function PricingPage() {
     setParams(nextParams, { replace: true })
   }
 
-  const continueWithPlan = (plan: PlanId) => {
+  const continueWithPlan = async (plan: PlanId) => {
     if (user && currentPlan === plan) return
     selectPlan(plan)
 
@@ -314,9 +314,66 @@ export default function PricingPage() {
       return
     }
 
-    // Checkout / subscription mutation is deliberately separate from this
-    // decision page. Never flip entitlement state in the browser.
-    setCheckoutNote(true)
+    if (plan === 'free') return;
+
+    try {
+      const priceMinor = priceFor(catalog, plan, interval)?.amount_minor ?? 0;
+      
+      const orderRes = await fetch('/api/checkout/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: priceMinor, currency: 'INR', receipt: `receipt_${Date.now()}` })
+      });
+      
+      if (!orderRes.ok) throw new Error('Failed to create order');
+      const orderData = await orderRes.json();
+      
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'FinCo-Pilot',
+        description: `${plan.toUpperCase()} Plan Subscription`,
+        order_id: orderData.order_id,
+        handler: async function (response: any) {
+          try {
+            const verifyRes = await fetch('/api/checkout/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+              })
+            });
+            if (verifyRes.ok) {
+              alert('Payment successful!');
+              window.location.reload();
+            } else {
+              alert('Payment verification failed.');
+            }
+          } catch (e) {
+            alert('Payment verification failed.');
+          }
+        },
+        modal: {
+          ondismiss: function() {
+            alert('Checkout cancelled by user.');
+          }
+        },
+        theme: { color: '#000000' }
+      };
+      
+      const rzp1 = new (window as any).Razorpay(options);
+      rzp1.on('payment.failed', function (response: any){
+        alert('Payment failed: ' + response.error.description);
+      });
+      rzp1.open();
+      
+    } catch (error) {
+      console.error(error);
+      alert('Error initiating checkout');
+    }
   }
 
   const isCurrent = Boolean(user) && currentPlan === selectedPlan

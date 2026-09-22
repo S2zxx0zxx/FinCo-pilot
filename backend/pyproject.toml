@@ -33,6 +33,7 @@ dependencies = [
     "reportlab>=4.2.0",
     "pyzipper>=0.4.0",
     "fastembed>=0.4.0",
+    "razorpay>=1.4.1",
 ]
 
 [project.optional-dependencies]

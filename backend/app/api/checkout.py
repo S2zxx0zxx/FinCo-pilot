@@ -188,6 +188,8 @@ async def create_order(
     """
     _require_checkout_enabled()
 
+    # Validate provider configuration before reserving scarce founder capacity.
+    client = _get_razorpay_client()
     settings = get_settings()
     try:
         reservation = await reserve_checkout_offer(
@@ -208,7 +210,6 @@ async def create_order(
     if reservation.provider_order_id:
         return _order_response(reservation, reservation.provider_order_id)
 
-    client = _get_razorpay_client()
     receipt = f"fp-{reservation.id.hex[:20]}"
     notes = {
         "fincopilot_reservation_id": str(reservation.id),

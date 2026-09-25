@@ -19,7 +19,6 @@ from pydantic import SecretStr
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.billing.enums import BillingInterval, PlanId
 from app.billing.offers import CampaignState, ReservationStatus
 from app.core.config import get_settings
 from app.models.pricing_offer import (

@@ -436,6 +436,11 @@ export default function PricingPage() {
 
   const isCurrent = Boolean(user) && currentPlan === selectedPlan
   const paid = selectedPlan !== 'free'
+  const taxCopy = catalog.tax_display_mode === 'inclusive'
+    ? 'Prices include applicable taxes.'
+    : catalog.tax_display_mode === 'exclusive'
+      ? 'Applicable taxes may be added at checkout.'
+      : 'Tax treatment is not configured; production paid checkout remains fail-closed.'
   const ctaLabel = isCurrent
     ? 'Current plan'
     : !user
@@ -465,6 +470,12 @@ export default function PricingPage() {
           <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-muted-foreground sm:text-base">Start free. Upgrade only when the extra power is worth it. Your existing financial history stays yours even after a downgrade.</p>
         </section>
 
+        {selectedPlan === 'pro' && (
+          <div className="mx-auto max-w-3xl">
+            <FounderOfferCard campaign={founderCampaign} />
+          </div>
+        )}
+
         <section className="mx-auto max-w-xl lg:hidden">
           <div className="mb-5 grid grid-cols-3 gap-1 rounded-2xl bg-muted/45 p-1" role="tablist" aria-label="Plans">
             {(['free', 'pro', 'max'] as const).map((plan) => (
@@ -493,11 +504,10 @@ export default function PricingPage() {
           <FeaturePanel plan={selectedPlan} />
           <div className="mt-4"><BillingSelector plan={selectedPlan} interval={interval} onInterval={setInterval} /></div>
           <Button disabled={isCurrent} onClick={() => continueWithPlan(selectedPlan)} className="mt-4 h-14 w-full rounded-[22px] text-base font-semibold shadow-lg">{ctaLabel}</Button>
-          {paid && selectedPrice && <p className="mt-2 text-center text-xs text-muted-foreground">Selected price: {formatInrMinor(selectedPrice.amount_minor)} {selectedPlan === 'pro' && interval === 'annual' ? 'per year' : 'per month'}.</p>}
-          {checkoutNote && (
-            <div className="mt-3 rounded-2xl border bg-muted/35 p-3 text-center text-xs leading-5 text-muted-foreground">
-              Paid upgrades are not available yet. Your plan is unchanged and you have not been charged. You can continue using your current plan.
-            </div>
+          {paid && selectedPrice && (
+            <p className="mt-2 text-center text-xs leading-5 text-muted-foreground">
+              The server locks your exact eligible offer before Razorpay opens. {taxCopy}
+            </p>
           )}
         </section>
 
@@ -505,7 +515,14 @@ export default function PricingPage() {
           {(['free', 'pro', 'max'] as const).map((plan) => {
             const isPro = plan === 'pro'
             const isSelected = selectedPlan === plan
-            const price = plan === 'free' ? priceFor(catalog, 'free', 'none') : plan === 'pro' ? priceFor(catalog, 'pro', 'annual') : priceFor(catalog, 'max', 'monthly')
+            const founderPro = plan === 'pro' && founderCampaign?.live && founderCampaign.current_amount_minor != null
+            const price = plan === 'free'
+              ? priceFor(catalog, 'free', 'none')
+              : plan === 'pro'
+                ? founderPro
+                  ? { amount_minor: founderCampaign.current_amount_minor }
+                  : priceFor(catalog, 'pro', 'monthly')
+                : priceFor(catalog, 'max', 'monthly')
             return (
               <article key={plan} className={cn('relative flex flex-col rounded-[30px] border bg-card p-6 shadow-sm transition', isPro && 'border-foreground/40 shadow-[0_22px_70px_rgba(0,0,0,.10)]', isSelected && 'ring-1 ring-foreground/25')}>
                 {isPro && <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full border bg-background px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em]">Most popular</div>}
@@ -514,7 +531,15 @@ export default function PricingPage() {
                   {plan !== 'free' && <PlanBadge plan={plan} />}
                 </div>
                 <div className="mt-5 text-4xl font-semibold tracking-tight">{formatInrMinor(price?.amount_minor ?? 0)}</div>
-                <div className="mt-1 text-xs text-muted-foreground">{plan === 'free' ? 'forever' : plan === 'pro' ? 'per year · ₹99 monthly also available' : 'per month'}</div>
+                <div className="mt-1 text-xs leading-5 text-muted-foreground">
+                  {plan === 'free'
+                    ? 'forever'
+                    : plan === 'pro'
+                      ? founderPro
+                        ? 'eligible founders · first 60 days · then ₹99/month'
+                        : 'per month · ₹999/year also available'
+                      : 'eligible first monthly purchase gets 60 days · then ₹349/month'}
+                </div>
                 <p className="mt-4 min-h-16 text-sm leading-6 text-muted-foreground">{PLAN_COPY[plan].description}</p>
                 <Button variant={isPro ? 'default' : 'outline'} className="mt-4 h-11 rounded-xl" onClick={() => continueWithPlan(plan)} disabled={Boolean(user) && currentPlan === plan}>{Boolean(user) && currentPlan === plan ? 'Current plan' : plan === 'free' ? 'Choose Free' : `Choose ${PLAN_COPY[plan].title}`}</Button>
                 <div className="mt-5 space-y-3 border-t pt-5">
@@ -532,7 +557,6 @@ export default function PricingPage() {
           })}
         </section>
 
-        {checkoutNote && <div className="mx-auto mt-4 hidden max-w-2xl rounded-2xl border bg-muted/35 p-3 text-center text-xs text-muted-foreground lg:block">Paid upgrades are not available yet. Your plan is unchanged and you have not been charged.</div>}
 
         <section className="mx-auto mt-14 max-w-5xl">
           <div className="text-center"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Compare plans</p><h2 className="mt-2 text-2xl font-semibold sm:text-3xl">Clear limits. No surprise locks.</h2></div>
@@ -552,7 +576,8 @@ export default function PricingPage() {
           <div className="mt-5 divide-y rounded-[26px] border bg-card px-5 sm:px-6">
             {[
               ['Will my data disappear if I cancel?', 'No. FinCo keeps existing financial records readable. If you are above a lower-plan limit, creation is blocked until you reduce usage or upgrade.'],
-              ['Can I purchase a paid plan now?', 'Paid upgrades are not available yet. You can use Free without a payment. We will show a secure checkout and confirmation when paid subscriptions become available.'],
+              ['How does the founder price work?', 'Eligible new Pro Monthly buyers get the current server-confirmed founder wave price for the first 60 days from public launch. It then returns to the standard ₹99/month price. Founder eligibility and remaining capacity are verified by the backend, not the browser.'],
+              ['Can the price change while I am paying?', 'No. Starting checkout creates a short-lived server-side reservation that locks the exact offer shown for that checkout window.'],
               ['Why is there no Max annual plan?', 'Because it is not part of V1. We show only real prices that are actually approved instead of inventing a disabled or crossed-out annual number.'],
               ['Does Free show ads?', 'No. FinCo-Pilot pricing is designed without advertising inside the finance experience.'],
             ].map(([question, answer]) => (
@@ -562,7 +587,7 @@ export default function PricingPage() {
         </section>
 
         <footer className="mx-auto mt-12 max-w-xl text-center text-xs leading-5 text-muted-foreground">
-          Prices shown in INR. Paid upgrades are not available yet. No payment is collected on this page.
+          Prices shown in INR. The backend confirms the exact offer before checkout. {taxCopy}
         </footer>
       </div>
     </main>

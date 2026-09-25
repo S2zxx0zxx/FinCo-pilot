@@ -16,15 +16,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY pyproject.toml uv.lock ./
 # renovate: datasource=pypi depName=uv
 RUN pip install --no-cache-dir uv==0.12.10 \
-    && uv export --frozen --no-emit-project -o /tmp/requirements.txt \
-    && pip install --no-cache-dir --require-hashes -r /tmp/requirements.txt \
-    && pip uninstall -y uv \
-    && rm /tmp/requirements.txt
+    && uv pip install --system --no-cache -e ".[dev]" \
+    && pip uninstall -y uv
 
 COPY . .
-# The project itself: deps are already satisfied above, so --no-deps keeps
-# this layer from re-resolving anything outside the lock.
-RUN pip install --no-cache-dir --no-deps -e .
 
 EXPOSE 8000
 

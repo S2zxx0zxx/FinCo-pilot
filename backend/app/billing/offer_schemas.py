@@ -83,3 +83,13 @@ class ProviderCatalogStatusRead(BaseModel):
     provider: str = "razorpay"
     catalog_version: str
     plans: list[ProviderPlanStatusRead]
+
+
+class PricingAuditRead(BaseModel):
+    id: str
+    actor_user_id: str | None = None
+    event_type: str
+    entity_type: str
+    entity_id: str
+    payload: dict
+    created_at: datetime

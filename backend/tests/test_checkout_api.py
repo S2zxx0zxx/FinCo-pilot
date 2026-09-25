@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import sys
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -316,8 +317,6 @@ async def test_provider_create_failure_releases_reservation(
     assert rows[0].status == ReservationStatus.CANCELLED.value
     assert rows[0].founder_position is None
 
-
-import sys
 
 @pytest.mark.asyncio
 async def test_live_razorpay_key_is_fail_closed_until_webhook_fulfilment_exists(

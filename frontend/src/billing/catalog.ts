@@ -8,6 +8,7 @@ export const FALLBACK_PRICING: PricingCatalog = {
     { plan: 'max', interval: 'monthly', amount_minor: 34_900, currency: 'INR' },
   ],
   pro_annual_saving_minor: 18_900,
+  tax_display_mode: 'unconfigured',
 }
 
 export const PLAN_RANK: Record<PlanId, number> = { free: 0, pro: 1, max: 2 }

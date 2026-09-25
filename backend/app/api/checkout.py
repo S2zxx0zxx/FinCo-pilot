@@ -98,6 +98,21 @@ def _get_razorpay_client():
             detail="Payment provider is not configured on this instance.",
         )
 
+    # Roadmap #4 is deliberately Test Mode only. Collecting real money before
+    # the signed webhook/subscription activation lifecycle exists could leave a
+    # customer charged without durable entitlement fulfilment if their browser
+    # disappears after payment. A later billing-lifecycle milestone must
+    # explicitly remove this gate after webhook reconciliation is implemented.
+    if key_id.startswith("rzp_live_"):
+        logger.error(
+            "Live Razorpay checkout refused: signed subscription/webhook "
+            "fulfilment is not implemented in this build."
+        )
+        raise HTTPException(
+            status_code=503,
+            detail="Live payment collection is not enabled in this build.",
+        )
+
     return razorpay.Client(auth=(key_id, key_secret))
 
 

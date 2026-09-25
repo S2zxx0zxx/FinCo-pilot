@@ -17,6 +17,7 @@ import hashlib
 import hmac
 import logging
 import uuid
+from datetime import datetime, timezone
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -146,6 +147,12 @@ class CancelReservationResponse(BaseModel):
     status: str
 
 
+def _iso_utc(value: datetime) -> str:
+    if value.tzinfo is None or value.utcoffset() is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc).isoformat()
+
+
 def _order_response(
     reservation: CheckoutReservation, provider_order_id: str
 ) -> CreateOrderResponse:
@@ -163,11 +170,11 @@ def _order_response(
         renewal_interval=BillingInterval(reservation.renewal_interval),
         service_period_days=reservation.service_period_days,
         service_starts_at=(
-            reservation.service_starts_at.isoformat()
+            _iso_utc(reservation.service_starts_at)
             if reservation.service_starts_at
             else None
         ),
-        reservation_expires_at=reservation.expires_at.isoformat(),
+        reservation_expires_at=_iso_utc(reservation.expires_at),
     )
 
 

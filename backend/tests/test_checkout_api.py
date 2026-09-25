@@ -264,6 +264,7 @@ async def test_founder_wave_one_uses_real_19_rupee_reserved_price(
     assert data["founder_position"] == 1
     assert data["renewal_amount_minor"] == 9_900
     assert data["service_period_days"] == 60
+    assert campaign.public_launch_at is not None
     assert data["service_starts_at"] == campaign.public_launch_at.isoformat()
 
     payload = provider.order.create.call_args.kwargs["data"]

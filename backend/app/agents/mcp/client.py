@@ -27,6 +27,7 @@ class ToolHandle:
     description: str
     parameters: dict[str, Any]
     is_proposal: bool = False
+    tags: tuple[str, ...] = ()
 
 
 @dataclass
@@ -86,6 +87,7 @@ class MCPClient:
                 description=t.get("description") or "",
                 parameters=t.get("inputSchema") or {"type": "object", "properties": {}},
                 is_proposal=bool(extras.get("is_proposal", False)),
+                tags=tuple(str(tag) for tag in (extras.get("tags") or [])),
             ))
         return out
 

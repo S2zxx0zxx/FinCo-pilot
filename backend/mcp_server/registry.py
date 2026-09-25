@@ -112,7 +112,27 @@ async def authorize_tool(session, ctx, spec, arguments):
         x_workspace_id=str(ctx.workspace_id) if ctx.workspace_id else None,
         user=user, session=session,
     )
-    await require_workspace_capability(session, resolved.workspace, Capability.AGENTS_AUTOMATION)
+    # Advanced/custom agents remain a Max capability. The built-in core
+    # Copilot is a separate first-party surface: internal calls from the
+    # caller's own system-managed Copilot may use FinCo tools without
+    # granting external MCP or custom-agent entitlement.
+    core_internal = False
+    if not ctx.external and ctx.agent_id is not None:
+        from app.agents.models.agent import Agent
+        from app.agents.services.agent_service import is_core_copilot
+
+        agent = await session.get(Agent, ctx.agent_id)
+        core_internal = bool(
+            agent is not None
+            and agent.user_id == user.id
+            and agent.workspace_id == resolved.id
+            and is_core_copilot(agent)
+        )
+    if not core_internal:
+        await require_workspace_capability(
+            session, resolved.workspace, Capability.AGENTS_AUTOMATION
+        )
+
     writing = spec.is_proposal and arguments.get("apply") is True and ctx.external
     if ctx.external:
         row = await session.get(ExternalMCPToken, ctx.token_id) if ctx.token_id else None

@@ -30,6 +30,17 @@ async def list_agents(
     )
 
 
+@router.get("/copilot", response_model=AgentRead)
+async def get_core_copilot(
+    ctx: WorkspaceContext = Depends(current_workspace),
+    session: AsyncSession = Depends(get_async_session),
+):
+    """Return the caller's system-managed FinCo Copilot for this workspace."""
+    return await agent_service.ensure_core_copilot(
+        session, ctx.workspace.id, ctx.user_id
+    )
+
+
 @router.get("/default", response_model=AgentRead)
 async def get_default_agent(
     ctx: WorkspaceContext = Depends(current_workspace),
@@ -59,7 +70,7 @@ async def get_agent(
     session: AsyncSession = Depends(get_async_session),
 ):
     agent = await agent_service.get_agent(session, agent_id, ctx.workspace.id)
-    if agent is None:
+    if agent is None or not agent_service.can_access_agent(agent, ctx.user_id):
         raise HTTPException(status_code=404, detail="agent not found")
     return agent
 
@@ -71,6 +82,11 @@ async def update_agent(
     ctx: WorkspaceContext = Depends(current_writable_workspace),
     session: AsyncSession = Depends(get_async_session),
 ):
+    existing = await agent_service.get_agent(session, agent_id, ctx.workspace.id)
+    if existing is None or not agent_service.can_access_agent(existing, ctx.user_id):
+        raise HTTPException(status_code=404, detail="agent not found")
+    if agent_service.is_core_copilot(existing):
+        raise HTTPException(status_code=403, detail="system copilot cannot be edited")
     agent = await agent_service.update_agent(session, agent_id, ctx.workspace.id, data)
     if agent is None:
         raise HTTPException(status_code=404, detail="agent not found")
@@ -83,6 +99,11 @@ async def delete_agent(
     ctx: WorkspaceContext = Depends(current_writable_workspace),
     session: AsyncSession = Depends(get_async_session),
 ):
+    existing = await agent_service.get_agent(session, agent_id, ctx.workspace.id)
+    if existing is None or not agent_service.can_access_agent(existing, ctx.user_id):
+        raise HTTPException(status_code=404, detail="agent not found")
+    if agent_service.is_core_copilot(existing):
+        raise HTTPException(status_code=403, detail="system copilot cannot be deleted")
     ok = await agent_service.delete_agent(session, agent_id, ctx.workspace.id)
     if not ok:
         raise HTTPException(status_code=404, detail="agent not found")
@@ -99,7 +120,7 @@ async def get_agent_tools(
       { servers: [{name}], tools: [{server, name, description, enabled, is_proposal}] }
     """
     agent = await agent_service.get_agent(session, agent_id, ctx.workspace.id)
-    if agent is None:
+    if agent is None or not agent_service.can_access_agent(agent, ctx.user_id):
         raise HTTPException(status_code=404, detail="agent not found")
 
     mcp = MCPRegistry()
@@ -129,8 +150,10 @@ async def put_agent_tools(
     session: AsyncSession = Depends(get_async_session),
 ):
     agent = await agent_service.get_agent(session, agent_id, ctx.workspace.id)
-    if agent is None:
+    if agent is None or not agent_service.can_access_agent(agent, ctx.user_id):
         raise HTTPException(status_code=404, detail="agent not found")
+    if agent_service.is_core_copilot(agent):
+        raise HTTPException(status_code=403, detail="system copilot tools are policy-managed")
     await agent_service.replace_tool_enablement(
         session, agent_id, [(t.server, t.tool_name, t.enabled) for t in items]
     )

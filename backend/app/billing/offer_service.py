@@ -392,13 +392,14 @@ async def reserve_checkout_offer(
     # Any eligible first monthly purchase made before the configured public
     # launch starts its service clock at launch, so pre-release buyers never
     # lose promised access days while the product is not yet public.
+    launch_at = _stored_utc(campaign.public_launch_at)
     if (
         not has_prior
         and interval is BillingInterval.MONTHLY
-        and _stored_utc(campaign.public_launch_at) is not None
-        and current < _stored_utc(campaign.public_launch_at)  # type: ignore[operator]
+        and launch_at is not None
+        and current < launch_at
     ):
-        service_starts_at = _stored_utc(campaign.public_launch_at)
+        service_starts_at = launch_at
 
     founder_eligible = (
         not has_prior

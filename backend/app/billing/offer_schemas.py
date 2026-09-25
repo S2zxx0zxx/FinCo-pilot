@@ -76,7 +76,7 @@ class ProviderPlanStatusRead(BaseModel):
     configured: bool
     provider_plan_id: str | None = None
     valid: bool | None = None
-    errors: list[str] = []
+    errors: list[str] = Field(default_factory=list)
 
 
 class ProviderCatalogStatusRead(BaseModel):

@@ -11,8 +11,11 @@ x-backend-env: &backend-env
   DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@db:5432/fincopilot}
   SECRET_KEY: ${SECRET_KEY:-dev-secret-change-in-production}
   DEBUG: ${DEBUG:-true}
-  RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-rzp_test_TgAG9e3sR82qd0}
-  RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-vlLQMh30I5CC7y0jZtyRPGe3}
+  RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
+  RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
+  # Checkout is disabled by default. Set BILLING_CHECKOUT_ENABLED=true once
+  # Razorpay credentials are configured and you are ready to accept payments.
+  BILLING_CHECKOUT_ENABLED: ${BILLING_CHECKOUT_ENABLED:-false}
   FRONTEND_URL: ${FRONTEND_URL:-http://localhost:${FRONTEND_PORT:-3000}}
   WEBAUTHN_RP_NAME: ${WEBAUTHN_RP_NAME:-FinCo-Pilot}
   WEBAUTHN_RP_ID: ${WEBAUTHN_RP_ID:-}
@@ -142,7 +145,7 @@ services:
       # Also drives Vite's allowedHosts, so a proxied domain is not blocked.
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:${FRONTEND_PORT:-3000}}
       APP_VERSION_ROOT: /workspace
-      VITE_RAZORPAY_KEY_ID: ${VITE_RAZORPAY_KEY_ID:-rzp_test_TgAG9e3sR82qd0}
+      VITE_RAZORPAY_KEY_ID: ${VITE_RAZORPAY_KEY_ID:-}
     depends_on:
       - backend
     volumes:

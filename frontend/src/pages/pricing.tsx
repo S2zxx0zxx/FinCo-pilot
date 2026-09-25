@@ -13,6 +13,7 @@ import {
   WalletCards,
   WandSparkles,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { useAuth } from '@/contexts/auth-context'
 import { useBilling } from '@/contexts/billing-context'
 import { FinCoLogo } from '@/components/finco-logo'
@@ -21,6 +22,11 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { formatInrMinor, priceFor } from '@/billing/catalog'
 import type { PlanId } from '@/billing/types'
+import type {
+  RazorpayCheckoutOptions,
+  RazorpayFailedResponse,
+  RazorpaySuccessResponse,
+} from '@/types/razorpay'
 
 type PaidPlan = Exclude<PlanId, 'free'>
 type Feature = {
@@ -309,33 +315,53 @@ export default function PricingPage() {
     if (user && currentPlan === plan) return
     selectPlan(plan)
 
-    // if (!user) {
-    //   navigate(plan === 'free' ? '/register' : `/login?next=${encodeURIComponent(`/pricing?plan=${plan}`)}`)
-    //   return
-    // }
+    // Auth guard: unauthenticated users must log in first.
+    if (!user) {
+      navigate(plan === 'free' ? '/register' : `/login?next=${encodeURIComponent(`/pricing?plan=${plan}`)}`)
+      return
+    }
 
-    if (plan === 'free') return;
+    if (plan === 'free') return
+
+    if (!window.Razorpay) {
+      toast.error('Payment SDK failed to load. Please refresh the page and try again.')
+      return
+    }
+
+    const effectiveInterval = plan === 'max' ? 'monthly' : interval
 
     try {
-      const priceMinor = priceFor(catalog, plan, interval)?.amount_minor ?? 0;
-      
+      // Send only plan + interval — backend derives the amount from its own
+      // canonical price catalog.  Never send amount from the browser.
       const orderRes = await fetch('/api/checkout/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: priceMinor, currency: 'INR', receipt: `receipt_${Date.now()}` })
-      });
-      
-      if (!orderRes.ok) throw new Error('Failed to create order');
-      const orderData = await orderRes.json();
-      
-      const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        body: JSON.stringify({ plan, interval: effectiveInterval }),
+      })
+
+      if (!orderRes.ok) {
+        const errData = await orderRes.json().catch(() => ({}))
+        const detail = (errData as { detail?: string }).detail ?? 'Could not start checkout.'
+        toast.error(detail)
+        return
+      }
+
+      const orderData = await orderRes.json() as {
+        order_id: string
+        amount: number
+        currency: string
+        plan: string
+        interval: string
+      }
+
+      const options: RazorpayCheckoutOptions = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID as string,
         amount: orderData.amount,
         currency: orderData.currency,
         name: 'FinCo-Pilot',
-        description: `${plan.toUpperCase()} Plan Subscription`,
+        description: `${plan.toUpperCase()} Plan – ${effectiveInterval}`,
         order_id: orderData.order_id,
-        handler: async function (response: any) {
+        handler: async (response: RazorpaySuccessResponse) => {
           try {
             const verifyRes = await fetch('/api/checkout/verify-payment', {
               method: 'POST',
@@ -344,35 +370,33 @@ export default function PricingPage() {
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_signature: response.razorpay_signature,
-              })
-            });
+              }),
+            })
             if (verifyRes.ok) {
-              alert('Payment successful!');
-              window.location.reload();
+              toast.success('Payment verified! Your subscription will be activated shortly.')
             } else {
-              alert('Payment verification failed.');
+              toast.error('Payment verification failed. Please contact support.')
             }
-          } catch (e) {
-            alert('Payment verification failed.');
+          } catch {
+            toast.error('Could not verify payment. Please contact support.')
           }
         },
         modal: {
-          ondismiss: function() {
-            alert('Checkout cancelled by user.');
-          }
+          ondismiss: () => {
+            toast.info('Checkout was cancelled.')
+          },
         },
-        theme: { color: '#000000' }
-      };
-      
-      const rzp1 = new (window as any).Razorpay(options);
-      rzp1.on('payment.failed', function (response: any){
-        alert('Payment failed: ' + response.error.description);
-      });
-      rzp1.open();
-      
-    } catch (error) {
-      console.error(error);
-      alert('Error initiating checkout');
+        theme: { color: '#000000' },
+      }
+
+      const rzp = new window.Razorpay(options)
+      rzp.on('payment.failed', (response: RazorpayFailedResponse) => {
+        toast.error(`Payment failed: ${response.error.description}`)
+      })
+      rzp.open()
+
+    } catch {
+      toast.error('Could not connect to the payment service. Please try again.')
     }
   }
 

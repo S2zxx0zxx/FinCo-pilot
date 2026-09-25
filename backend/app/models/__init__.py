@@ -37,6 +37,12 @@ from app.models.reconciliation import (
 )
 from app.models.subscription import Subscription
 from app.models.billing_usage import BillingUsageCounter
+from app.models.pricing_offer import (
+    CheckoutReservation,
+    FoundingMember,
+    PricingAuditEvent,
+    PricingCampaign,
+)
 
 # Side-effect import: register the before_insert listener that auto-stamps
 # workspace_id from user_id on financial entities. Imported last so all
@@ -89,6 +95,10 @@ __all__ = [
     "ReconciliationSuggestion",
     "Subscription",
     "BillingUsageCounter",
+    "PricingCampaign",
+    "CheckoutReservation",
+    "FoundingMember",
+    "PricingAuditEvent",
     "collection_accounts",
     "collection_asset_groups",
 ]

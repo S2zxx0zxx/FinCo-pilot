@@ -58,7 +58,7 @@ import { CommandPalette } from '@/components/command-palette'
 import { useCommandPaletteHotkey } from '@/hooks/use-command-palette-hotkey'
 import { GlobalChatPanel } from '@/components/global-chat-panel'
 import { useFeatureFlags } from '@/hooks/use-feature-flags'
-import { Bot, Search, Sparkles } from 'lucide-react'
+import { Search, Sparkles } from 'lucide-react'
 import { setThemeBasedOnSystem } from '@/lib/theme-utils'
 import { useLocalAuthEnabled } from '@/hooks/use-local-auth'
 import { formatCurrency } from '@/lib/format'
@@ -105,18 +105,11 @@ export function AppLayout() {
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false)
   useCommandPaletteHotkey(setPaletteOpen)
   const { agentsEnabled } = useFeatureFlags()
-  const { hasModule, isLoading: workspaceLoading, canWrite } = useWorkspace()
-  // The chat is offered only to members who can write. Sending a message
-  // reaches a tool set that persists — `propose_create_transaction` and its
-  // siblings — so the backend refuses it for a read-only role. Showing the
-  // panel anyway would put a raw `403: {"detail":"Read-only role"}` in front
-  // of the user, which is what happened before this guard.
-  //
-  // This costs a viewer the ability to *ask* questions, which is a real use
-  // case. Restoring it means making the agent's tools role-aware so a
-  // read-only session only exposes the reading ones; then this becomes
-  // `agentsEnabled` again.
-  const chatAvailable = agentsEnabled && canWrite
+  const { hasModule, isLoading: workspaceLoading } = useWorkspace()
+  // The Copilot is available to every authenticated workspace member when the
+  // AI module is enabled. Backend tool policy strips proposal/write tools for
+  // viewers, so read-only members can safely ask questions too.
+  const chatAvailable = agentsEnabled
   const localAuthEnabled = useLocalAuthEnabled()
 
   // ⌘J / Ctrl+J toggles the global slide-over chat from anywhere.
@@ -242,20 +235,7 @@ export function AppLayout() {
           >
             {isDark ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-          {/* AI chat — opens the global slide-over (also reachable via
-              ⌘J). Sits next to the theme toggle so the icon is always
-              within thumb reach on mobile too. */}
-          {chatAvailable && (
-            <button
-              onClick={() => setChatOpen(true)}
-              className="text-sidebar-muted hover:text-sidebar-foreground transition-colors p-1"
-              title={`${t('agents.globalChat.title', 'Chat')} (${isMac ? '⌘J' : 'Ctrl+J'})`}
-              aria-label={t('agents.globalChat.openHint', 'Open chat (⌘J)')}
-            >
-              <Bot size={18} />
-            </button>
-          )}
-          <UserMenu
+           <UserMenu
             userInitial={userInitial}
             logout={logout}
             onChangePassword={() => setChangePasswordOpen(true)}
@@ -311,20 +291,7 @@ export function AppLayout() {
               >
                 {privacyMode ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
-              {/* AI chat — same trigger as the mobile bar, ⌘J also
-                  works. Lives in the sidebar header so the entry point
-                  is visible even on first load (no floating button). */}
-              {chatAvailable && (
-                <button
-                  onClick={() => setChatOpen(true)}
-                  className="text-sidebar-muted hover:text-sidebar-foreground transition-colors p-1 rounded-md hover:bg-sidebar-accent"
-                  title={`${t('agents.globalChat.title', 'Chat')} (${isMac ? '⌘J' : 'Ctrl+J'})`}
-                  aria-label={t('agents.globalChat.openHint', 'Open chat (⌘J)')}
-                >
-                  <Bot size={16} />
-                </button>
-              )}
-              <button
+               <button
                 onClick={toggleTheme}
                 className="text-sidebar-muted hover:text-sidebar-foreground transition-colors p-1 rounded-md hover:bg-sidebar-accent"
                 title={
@@ -546,9 +513,26 @@ export function AppLayout() {
       )}
       <BackupDialog open={backupOpen} onClose={() => setBackupOpen(false)} />
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
-      {/* Slide-over global chat — opened from the sidebar pill or via
-          ⌘J. The previous floating bottom-right button was removed
-          since the entry point now lives in the sidebar next to ⌘K. */}
+      {/* One compact, persistent Copilot entry point on every page. The
+          floating position keeps it reachable without competing with nav. */}
+      {chatAvailable && !chatOpen && (
+        <button
+          type="button"
+          onClick={() => setChatOpen(true)}
+          className={cn(
+            'fixed bottom-4 right-4 z-40 flex h-11 w-11 items-center justify-center rounded-2xl',
+            'bg-primary text-primary-foreground shadow-lg shadow-primary/20',
+            'transition-transform duration-150 hover:scale-[1.04] active:scale-95',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+            'lg:bottom-6 lg:right-6',
+          )}
+          title={`${t('agents.globalChat.title', 'FinCo Copilot')} (${isMac ? '⌘J' : 'Ctrl+J'})`}
+          aria-label={t('agents.globalChat.openHint', 'Open FinCo Copilot')}
+        >
+          <Sparkles size={18} aria-hidden />
+          <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-emerald-400 ring-2 ring-primary" aria-hidden />
+        </button>
+      )}
       {chatAvailable && <GlobalChatPanel open={chatOpen} onOpenChange={setChatOpen} />}
       <UpdateAvailableDialog
         open={updateDialogOpen}
@@ -798,22 +782,3 @@ function UserMenu({
                 onClick={() => i18n.changeLanguage('ja')}
                 className="flex items-center gap-2"
               >
-                <span className="flex-1">日本語</span>
-                {currentLang === 'ja' && (
-                  <Check size={13} className="text-primary" />
-                )}
-              </DropdownMenuItem>
-            </DropdownMenuSubContent>
-          </DropdownMenuPortal>
-        </DropdownMenuSub>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={logout}
-          className="text-rose-600 focus:text-rose-600"
-        >
-          {t('auth.logout')}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
-}

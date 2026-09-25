@@ -1,4 +1,4 @@
-import type { Entitlements, PricingCatalog } from '@/billing/types'
+import type { Entitlements, FounderCampaignStatus, PricingCatalog } from '@/billing/types'
 
 async function parseJson<T>(response: Response): Promise<T> {
   if (!response.ok) {
@@ -17,6 +17,15 @@ async function parseJson<T>(response: Response): Promise<T> {
 export async function fetchPricingCatalog(): Promise<PricingCatalog> {
   return parseJson<PricingCatalog>(
     await fetch('/api/billing/catalog', {
+      headers: { Accept: 'application/json' },
+      credentials: 'same-origin',
+    }),
+  )
+}
+
+export async function fetchFounderCampaign(): Promise<FounderCampaignStatus> {
+  return parseJson<FounderCampaignStatus>(
+    await fetch('/api/billing/founder-campaign', {
       headers: { Accept: 'application/json' },
       credentials: 'same-origin',
     }),

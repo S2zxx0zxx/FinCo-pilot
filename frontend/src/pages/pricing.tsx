@@ -309,10 +309,10 @@ export default function PricingPage() {
     if (user && currentPlan === plan) return
     selectPlan(plan)
 
-    if (!user) {
-      navigate(plan === 'free' ? '/register' : `/login?next=${encodeURIComponent(`/pricing?plan=${plan}`)}`)
-      return
-    }
+    // if (!user) {
+    //   navigate(plan === 'free' ? '/register' : `/login?next=${encodeURIComponent(`/pricing?plan=${plan}`)}`)
+    //   return
+    // }
 
     if (plan === 'free') return;
 

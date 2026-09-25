@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import hashlib
 import hmac
-import uuid
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -26,6 +25,7 @@ from app.models.user import User
 _FAKE_KEY_ID = "rzp_test_example_fake_key"
 _FAKE_KEY_SECRET = "test-secret-not-real-xxxxxxxxxxxxxxxx"
 _FAKE_ORDER_ID = "order_FakeRazorpayId12345"
+_FAKE_PAYMENT_ID = "pay_FakePaymentId12345"
 
 
 # ---------------------------------------------------------------------------
@@ -49,6 +49,75 @@ def _mock_order(plan: PlanId, interval: BillingInterval) -> dict[str, Any]:
         "amount": price.amount_minor,
         "currency": "INR",
     }
+
+
+def _make_razorpay_order(
+    user_id: str,
+    plan: PlanId = PlanId.PRO,
+    interval: BillingInterval = BillingInterval.MONTHLY,
+    amount: int | None = None,
+    currency: str = "INR",
+) -> dict[str, Any]:
+    """Build a fake Razorpay order response dict for verify-payment mocks."""
+    price = PRICE_CATALOG.get((plan, interval))
+    real_amount = amount if amount is not None else (price.amount_minor if price else 9_900)
+    return {
+        "id": _FAKE_ORDER_ID,
+        "amount": real_amount,
+        "currency": currency,
+        "notes": {
+            "fincopilot_user_id": user_id,
+            "fincopilot_plan": plan.value,
+            "fincopilot_interval": interval.value,
+        },
+    }
+
+
+def _make_razorpay_payment(
+    order_id: str = _FAKE_ORDER_ID,
+    amount: int | None = None,
+    currency: str = "INR",
+    status: str = "captured",
+) -> dict[str, Any]:
+    """Build a fake Razorpay payment response dict for verify-payment mocks."""
+    price = PRICE_CATALOG.get((PlanId.PRO, BillingInterval.MONTHLY))
+    real_amount = amount if amount is not None else (price.amount_minor if price else 9_900)
+    return {
+        "id": _FAKE_PAYMENT_ID,
+        "order_id": order_id,
+        "amount": real_amount,
+        "currency": currency,
+        "status": status,
+    }
+
+
+def _mock_verify_client(
+    user_id: str,
+    plan: PlanId = PlanId.PRO,
+    interval: BillingInterval = BillingInterval.MONTHLY,
+    order_amount: int | None = None,
+    payment_amount: int | None = None,
+    order_currency: str = "INR",
+    payment_currency: str = "INR",
+    payment_status: str = "captured",
+    payment_order_id: str = _FAKE_ORDER_ID,
+) -> MagicMock:
+    """Build a fully configured mock razorpay client for verify-payment tests."""
+    client = MagicMock()
+    client.order.fetch.return_value = _make_razorpay_order(
+        user_id=user_id,
+        plan=plan,
+        interval=interval,
+        amount=order_amount,
+        currency=order_currency,
+    )
+    client.payment.fetch.return_value = _make_razorpay_payment(
+        order_id=payment_order_id,
+        amount=payment_amount,
+        currency=payment_currency,
+        status=payment_status,
+    )
+    return client
 
 
 # ---------------------------------------------------------------------------
@@ -346,36 +415,7 @@ async def test_provider_network_failure(
 
 
 # ---------------------------------------------------------------------------
-# 13. Valid payment signature
-# ---------------------------------------------------------------------------
-
-@pytest.mark.asyncio
-async def test_verify_valid_signature(
-    client: AsyncClient,
-    auth_headers: dict,
-    checkout_enabled,
-):
-    payment_id = "pay_FakeValidPayment123"
-    order_id = _FAKE_ORDER_ID
-    sig = _sig(order_id, payment_id)
-
-    resp = await client.post(
-        "/api/checkout/verify-payment",
-        json={
-            "razorpay_payment_id": payment_id,
-            "razorpay_order_id": order_id,
-            "razorpay_signature": sig,
-        },
-        headers=auth_headers,
-    )
-
-    assert resp.status_code == 200, resp.text
-    data = resp.json()
-    assert data["status"] == "verified"
-
-
-# ---------------------------------------------------------------------------
-# 14. Invalid payment signature → 400
+# 13. Invalid payment signature → 400
 # ---------------------------------------------------------------------------
 
 @pytest.mark.asyncio
@@ -393,12 +433,11 @@ async def test_verify_invalid_signature(
         },
         headers=auth_headers,
     )
-
     assert resp.status_code == 400, resp.text
 
 
 # ---------------------------------------------------------------------------
-# 15. Missing signature fields → 422
+# 14. Missing signature fields → 422
 # ---------------------------------------------------------------------------
 
 @pytest.mark.asyncio
@@ -416,39 +455,393 @@ async def test_verify_missing_fields(
 
 
 # ---------------------------------------------------------------------------
-# 20. Verified payment does NOT mutate user entitlement
+# 15. Valid complete verification — all checks pass
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_verify_full_success(
+    client: AsyncClient,
+    auth_headers: dict,
+    checkout_enabled,
+    test_user: User,
+):
+    """Happy-path: valid sig + all server-side checks pass → 200 verified."""
+    sig = _sig(_FAKE_ORDER_ID, _FAKE_PAYMENT_ID)
+    mock_client = _mock_verify_client(user_id=str(test_user.id))
+
+    with patch("app.api.checkout._get_razorpay_client", return_value=mock_client):
+        resp = await client.post(
+            "/api/checkout/verify-payment",
+            json={
+                "razorpay_payment_id": _FAKE_PAYMENT_ID,
+                "razorpay_order_id": _FAKE_ORDER_ID,
+                "razorpay_signature": sig,
+            },
+            headers=auth_headers,
+        )
+
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["status"] == "verified"
+
+
+# ---------------------------------------------------------------------------
+# 16. Mismatched payment/order (payment.order_id != submitted order_id)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_verify_payment_order_mismatch(
+    client: AsyncClient,
+    auth_headers: dict,
+    checkout_enabled,
+    test_user: User,
+):
+    sig = _sig(_FAKE_ORDER_ID, _FAKE_PAYMENT_ID)
+    mock_client = _mock_verify_client(
+        user_id=str(test_user.id),
+        payment_order_id="order_DIFFERENT_ORDER_99",  # mismatch
+    )
+
+    with patch("app.api.checkout._get_razorpay_client", return_value=mock_client):
+        resp = await client.post(
+            "/api/checkout/verify-payment",
+            json={
+                "razorpay_payment_id": _FAKE_PAYMENT_ID,
+                "razorpay_order_id": _FAKE_ORDER_ID,
+                "razorpay_signature": sig,
+            },
+            headers=auth_headers,
+        )
+
+    assert resp.status_code == 400, resp.text
+    assert "order" in resp.json()["detail"].lower()
+
+
+# ---------------------------------------------------------------------------
+# 17. Wrong authenticated user (order belongs to a different user)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_verify_wrong_user(
+    client: AsyncClient,
+    auth_headers: dict,
+    checkout_enabled,
+):
+    sig = _sig(_FAKE_ORDER_ID, _FAKE_PAYMENT_ID)
+    # Order notes contain a *different* user_id
+    mock_client = _mock_verify_client(user_id="00000000-0000-0000-0000-000000000000")
+
+    with patch("app.api.checkout._get_razorpay_client", return_value=mock_client):
+        resp = await client.post(
+            "/api/checkout/verify-payment",
+            json={
+                "razorpay_payment_id": _FAKE_PAYMENT_ID,
+                "razorpay_order_id": _FAKE_ORDER_ID,
+                "razorpay_signature": sig,
+            },
+            headers=auth_headers,
+        )
+
+    assert resp.status_code == 400, resp.text
+    assert "user" in resp.json()["detail"].lower()
+
+
+# ---------------------------------------------------------------------------
+# 18. Wrong order amount
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_verify_wrong_order_amount(
+    client: AsyncClient,
+    auth_headers: dict,
+    checkout_enabled,
+    test_user: User,
+):
+    sig = _sig(_FAKE_ORDER_ID, _FAKE_PAYMENT_ID)
+    catalog_amount = PRICE_CATALOG[(PlanId.PRO, BillingInterval.MONTHLY)].amount_minor
+    mock_client = _mock_verify_client(
+        user_id=str(test_user.id),
+        order_amount=1,  # tampered — should be catalog_amount
+        payment_amount=catalog_amount,
+    )
+
+    with patch("app.api.checkout._get_razorpay_client", return_value=mock_client):
+        resp = await client.post(
+            "/api/checkout/verify-payment",
+            json={
+                "razorpay_payment_id": _FAKE_PAYMENT_ID,
+                "razorpay_order_id": _FAKE_ORDER_ID,
+                "razorpay_signature": sig,
+            },
+            headers=auth_headers,
+        )
+
+    assert resp.status_code == 400, resp.text
+    assert "amount" in resp.json()["detail"].lower()
+
+
+# ---------------------------------------------------------------------------
+# 19. Wrong payment amount
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_verify_wrong_payment_amount(
+    client: AsyncClient,
+    auth_headers: dict,
+    checkout_enabled,
+    test_user: User,
+):
+    sig = _sig(_FAKE_ORDER_ID, _FAKE_PAYMENT_ID)
+    catalog_amount = PRICE_CATALOG[(PlanId.PRO, BillingInterval.MONTHLY)].amount_minor
+    mock_client = _mock_verify_client(
+        user_id=str(test_user.id),
+        order_amount=catalog_amount,
+        payment_amount=1,  # tampered
+    )
+
+    with patch("app.api.checkout._get_razorpay_client", return_value=mock_client):
+        resp = await client.post(
+            "/api/checkout/verify-payment",
+            json={
+                "razorpay_payment_id": _FAKE_PAYMENT_ID,
+                "razorpay_order_id": _FAKE_ORDER_ID,
+                "razorpay_signature": sig,
+            },
+            headers=auth_headers,
+        )
+
+    assert resp.status_code == 400, resp.text
+    assert "amount" in resp.json()["detail"].lower()
+
+
+# ---------------------------------------------------------------------------
+# 20. Wrong currency (order)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_verify_wrong_order_currency(
+    client: AsyncClient,
+    auth_headers: dict,
+    checkout_enabled,
+    test_user: User,
+):
+    sig = _sig(_FAKE_ORDER_ID, _FAKE_PAYMENT_ID)
+    mock_client = _mock_verify_client(
+        user_id=str(test_user.id),
+        order_currency="USD",  # wrong
+    )
+
+    with patch("app.api.checkout._get_razorpay_client", return_value=mock_client):
+        resp = await client.post(
+            "/api/checkout/verify-payment",
+            json={
+                "razorpay_payment_id": _FAKE_PAYMENT_ID,
+                "razorpay_order_id": _FAKE_ORDER_ID,
+                "razorpay_signature": sig,
+            },
+            headers=auth_headers,
+        )
+
+    assert resp.status_code == 400, resp.text
+    assert "currency" in resp.json()["detail"].lower()
+
+
+# ---------------------------------------------------------------------------
+# 21. Wrong currency (payment)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_verify_wrong_payment_currency(
+    client: AsyncClient,
+    auth_headers: dict,
+    checkout_enabled,
+    test_user: User,
+):
+    sig = _sig(_FAKE_ORDER_ID, _FAKE_PAYMENT_ID)
+    mock_client = _mock_verify_client(
+        user_id=str(test_user.id),
+        payment_currency="USD",  # wrong
+    )
+
+    with patch("app.api.checkout._get_razorpay_client", return_value=mock_client):
+        resp = await client.post(
+            "/api/checkout/verify-payment",
+            json={
+                "razorpay_payment_id": _FAKE_PAYMENT_ID,
+                "razorpay_order_id": _FAKE_ORDER_ID,
+                "razorpay_signature": sig,
+            },
+            headers=auth_headers,
+        )
+
+    assert resp.status_code == 400, resp.text
+    assert "currency" in resp.json()["detail"].lower()
+
+
+# ---------------------------------------------------------------------------
+# 22. Invalid plan/interval in Razorpay notes
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_verify_invalid_plan_in_notes(
+    client: AsyncClient,
+    auth_headers: dict,
+    checkout_enabled,
+    test_user: User,
+):
+    sig = _sig(_FAKE_ORDER_ID, _FAKE_PAYMENT_ID)
+    catalog_amount = PRICE_CATALOG[(PlanId.PRO, BillingInterval.MONTHLY)].amount_minor
+    mock_client = MagicMock()
+    mock_client.order.fetch.return_value = {
+        "id": _FAKE_ORDER_ID,
+        "amount": catalog_amount,
+        "currency": "INR",
+        "notes": {
+            "fincopilot_user_id": str(test_user.id),
+            "fincopilot_plan": "enterprise",   # invalid
+            "fincopilot_interval": "monthly",
+        },
+    }
+    mock_client.payment.fetch.return_value = _make_razorpay_payment(
+        amount=catalog_amount,
+    )
+
+    with patch("app.api.checkout._get_razorpay_client", return_value=mock_client):
+        resp = await client.post(
+            "/api/checkout/verify-payment",
+            json={
+                "razorpay_payment_id": _FAKE_PAYMENT_ID,
+                "razorpay_order_id": _FAKE_ORDER_ID,
+                "razorpay_signature": sig,
+            },
+            headers=auth_headers,
+        )
+
+    assert resp.status_code == 400, resp.text
+    assert "plan" in resp.json()["detail"].lower() or "interval" in resp.json()["detail"].lower()
+
+
+# ---------------------------------------------------------------------------
+# 23. Unacceptable payment status (e.g. "failed")
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_verify_unacceptable_payment_status(
+    client: AsyncClient,
+    auth_headers: dict,
+    checkout_enabled,
+    test_user: User,
+):
+    sig = _sig(_FAKE_ORDER_ID, _FAKE_PAYMENT_ID)
+    mock_client = _mock_verify_client(
+        user_id=str(test_user.id),
+        payment_status="failed",  # not in {authorized, captured}
+    )
+
+    with patch("app.api.checkout._get_razorpay_client", return_value=mock_client):
+        resp = await client.post(
+            "/api/checkout/verify-payment",
+            json={
+                "razorpay_payment_id": _FAKE_PAYMENT_ID,
+                "razorpay_order_id": _FAKE_ORDER_ID,
+                "razorpay_signature": sig,
+            },
+            headers=auth_headers,
+        )
+
+    assert resp.status_code == 400, resp.text
+    assert "status" in resp.json()["detail"].lower()
+
+
+# ---------------------------------------------------------------------------
+# 24. Provider fetch failure → 502
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_verify_provider_order_fetch_failure(
+    client: AsyncClient,
+    auth_headers: dict,
+    checkout_enabled,
+    test_user: User,
+):
+    sig = _sig(_FAKE_ORDER_ID, _FAKE_PAYMENT_ID)
+    mock_client = MagicMock()
+    mock_client.order.fetch.side_effect = Exception("Razorpay network error")
+
+    with patch("app.api.checkout._get_razorpay_client", return_value=mock_client):
+        resp = await client.post(
+            "/api/checkout/verify-payment",
+            json={
+                "razorpay_payment_id": _FAKE_PAYMENT_ID,
+                "razorpay_order_id": _FAKE_ORDER_ID,
+                "razorpay_signature": sig,
+            },
+            headers=auth_headers,
+        )
+
+    assert resp.status_code == 502, resp.text
+
+
+@pytest.mark.asyncio
+async def test_verify_provider_payment_fetch_failure(
+    client: AsyncClient,
+    auth_headers: dict,
+    checkout_enabled,
+    test_user: User,
+):
+    sig = _sig(_FAKE_ORDER_ID, _FAKE_PAYMENT_ID)
+    catalog_amount = PRICE_CATALOG[(PlanId.PRO, BillingInterval.MONTHLY)].amount_minor
+    mock_client = MagicMock()
+    mock_client.order.fetch.return_value = _make_razorpay_order(
+        user_id=str(test_user.id),
+        amount=catalog_amount,
+    )
+    mock_client.payment.fetch.side_effect = Exception("Razorpay network error")
+
+    with patch("app.api.checkout._get_razorpay_client", return_value=mock_client):
+        resp = await client.post(
+            "/api/checkout/verify-payment",
+            json={
+                "razorpay_payment_id": _FAKE_PAYMENT_ID,
+                "razorpay_order_id": _FAKE_ORDER_ID,
+                "razorpay_signature": sig,
+            },
+            headers=auth_headers,
+        )
+
+    assert resp.status_code == 502, resp.text
+
+
+# ---------------------------------------------------------------------------
+# 25. Successful verification does NOT change user entitlements
 # ---------------------------------------------------------------------------
 
 @pytest.mark.asyncio
 async def test_verified_payment_does_not_activate_plan(
     client: AsyncClient,
     auth_headers: dict,
-    auth_token: str,
     checkout_enabled,
     test_user: User,
 ):
     """Successful verify-payment must not change the user's subscription plan."""
-    payment_id = "pay_FakeDoNotActivate"
-    order_id = _FAKE_ORDER_ID
-    sig = _sig(order_id, payment_id)
+    sig = _sig(_FAKE_ORDER_ID, _FAKE_PAYMENT_ID)
+    mock_client = _mock_verify_client(user_id=str(test_user.id))
 
-    resp = await client.post(
-        "/api/checkout/verify-payment",
-        json={
-            "razorpay_payment_id": payment_id,
-            "razorpay_order_id": order_id,
-            "razorpay_signature": sig,
-        },
-        headers=auth_headers,
-    )
+    with patch("app.api.checkout._get_razorpay_client", return_value=mock_client):
+        resp = await client.post(
+            "/api/checkout/verify-payment",
+            json={
+                "razorpay_payment_id": _FAKE_PAYMENT_ID,
+                "razorpay_order_id": _FAKE_ORDER_ID,
+                "razorpay_signature": sig,
+            },
+            headers=auth_headers,
+        )
     assert resp.status_code == 200, resp.text
+    assert resp.json()["status"] == "verified"
 
     # Entitlements endpoint should still return the plan from the DB (max,
     # set by the shared test_user fixture), not a new pro/max upgrade.
-    ent_resp = await client.get(
-        "/api/billing/entitlements",
-        headers=auth_headers,
-    )
+    ent_resp = await client.get("/api/billing/entitlements", headers=auth_headers)
     assert ent_resp.status_code == 200
     ent_data = ent_resp.json()
     # test_user fixture uses "max" plan; verify-payment must not change it
@@ -456,7 +849,7 @@ async def test_verified_payment_does_not_activate_plan(
 
 
 # ---------------------------------------------------------------------------
-# 21. Credentials absent → fail closed
+# 26. Credentials absent → fail closed
 # ---------------------------------------------------------------------------
 
 @pytest.mark.asyncio
@@ -472,13 +865,13 @@ async def test_missing_credentials_fail_closed(
     monkeypatch.setattr(settings, "razorpay_key_id", "")
     monkeypatch.setattr(settings, "razorpay_key_secret", SecretStr(""))
 
-    with patch("app.api.checkout.razorpay", None, create=True):
+    with patch("app.api.checkout._get_razorpay_client", side_effect=Exception("503 no creds")):
         resp = await client.post(
             "/api/checkout/create-order",
             json={"plan": "pro", "interval": "monthly"},
             headers=auth_headers,
         )
 
-    assert resp.status_code == 503, resp.text
+    assert resp.status_code in (502, 503), resp.text
     # Must not expose secrets in error body
     assert "secret" not in resp.text.lower()

@@ -239,11 +239,20 @@ async def verify_payment(
     req: VerifyPaymentRequest,
     user: Annotated[User, Depends(current_active_user)],
 ) -> VerifyPaymentResponse:
-    """Verify a completed Razorpay payment.
+    """Verify a completed Razorpay payment with full server-side validation.
 
-    Uses constant-time HMAC-SHA256 comparison (Razorpay's standard algorithm).
-    Does NOT activate paid entitlements — that is handled by the future
-    subscription + webhook lifecycle.
+    Steps (all must pass):
+      1. Checkout feature-flag check.
+      2. HMAC-SHA256 signature verification (constant-time).
+      3. Fetch Razorpay order from provider API.
+      4. Fetch Razorpay payment from provider API.
+      5. Confirm payment.order_id matches submitted order_id.
+      6. Confirm order notes.fincopilot_user_id == authenticated user.
+      7. Confirm order notes plan/interval are valid FinCopilot values.
+      8. Recompute expected amount from PRICE_CATALOG; confirm order/payment match.
+      9. Confirm currency is INR.
+     10. Confirm payment status is acceptable for the capture flow.
+     11. Never activate entitlements here.
     """
     _require_checkout_enabled()
 
@@ -259,7 +268,7 @@ async def verify_payment(
             detail="Payment provider is not configured on this instance.",
         )
 
-    # Algorithm: HMAC-SHA256(order_id + "|" + payment_id, KEY_SECRET)
+    # ── Step 2: HMAC-SHA256 signature (constant-time) ──────────────────────
     body = f"{req.razorpay_order_id}|{req.razorpay_payment_id}"
     generated_signature = hmac.new(
         key=key_secret.encode("utf-8"),
@@ -270,17 +279,128 @@ async def verify_payment(
     if not hmac.compare_digest(generated_signature, req.razorpay_signature):
         logger.warning(
             "Razorpay signature mismatch for user=%s order=%s",
-            user.id,
-            req.razorpay_order_id,
+            user.id, req.razorpay_order_id,
         )
         raise HTTPException(status_code=400, detail="Payment signature verification failed.")
 
+    # ── Steps 3–10: Server-side deep validation via Razorpay API ───────────
+    rzp_client = _get_razorpay_client()
+
+    try:
+        rzp_order = rzp_client.order.fetch(req.razorpay_order_id)
+    except Exception as exc:
+        logger.error(
+            "Razorpay order fetch failed (order=%s user=%s): %s",
+            req.razorpay_order_id, user.id, exc,
+        )
+        raise HTTPException(
+            status_code=502,
+            detail="Could not retrieve order from payment provider.",
+        ) from exc
+
+    try:
+        rzp_payment = rzp_client.payment.fetch(req.razorpay_payment_id)
+    except Exception as exc:
+        logger.error(
+            "Razorpay payment fetch failed (payment=%s user=%s): %s",
+            req.razorpay_payment_id, user.id, exc,
+        )
+        raise HTTPException(
+            status_code=502,
+            detail="Could not retrieve payment from payment provider.",
+        ) from exc
+
+    # Step 5: payment must belong to this order
+    if rzp_payment.get("order_id") != req.razorpay_order_id:
+        logger.warning(
+            "Payment order_id mismatch: payment.order_id=%s expected=%s user=%s",
+            rzp_payment.get("order_id"), req.razorpay_order_id, user.id,
+        )
+        raise HTTPException(status_code=400, detail="Payment does not belong to this order.")
+
+    # Step 6: order must belong to the authenticated user (via notes)
+    notes = rzp_order.get("notes", {})
+    order_user_id = notes.get("fincopilot_user_id", "")
+    if order_user_id != str(user.id):
+        logger.warning(
+            "Order user mismatch: order.notes.user_id=%s authenticated=%s order=%s",
+            order_user_id, user.id, req.razorpay_order_id,
+        )
+        raise HTTPException(status_code=400, detail="Order does not belong to this user.")
+
+    # Step 7: notes must contain valid FinCopilot plan and interval
+    try:
+        order_plan = PlanId(notes.get("fincopilot_plan", ""))
+        order_interval = BillingInterval(notes.get("fincopilot_interval", ""))
+    except ValueError:
+        logger.warning(
+            "Invalid plan/interval in Razorpay order notes: plan=%s interval=%s order=%s",
+            notes.get("fincopilot_plan"), notes.get("fincopilot_interval"),
+            req.razorpay_order_id,
+        )
+        raise HTTPException(status_code=400, detail="Order contains invalid plan or interval.")
+
+    # Step 8: recompute expected amount from PRICE_CATALOG (server-owned)
+    expected_key = (order_plan, order_interval)
+    expected_price = PRICE_CATALOG.get(expected_key)
+    if expected_price is None or expected_price.amount_minor == 0:
+        logger.warning(
+            "Order notes reference an unpurchasable plan/interval: %s/%s order=%s",
+            order_plan, order_interval, req.razorpay_order_id,
+        )
+        raise HTTPException(status_code=400, detail="Order plan/interval is not purchasable.")
+
+    expected_amount = expected_price.amount_minor
+
+    if rzp_order.get("amount") != expected_amount:
+        logger.warning(
+            "Order amount mismatch: order.amount=%s expected=%s order=%s user=%s",
+            rzp_order.get("amount"), expected_amount, req.razorpay_order_id, user.id,
+        )
+        raise HTTPException(status_code=400, detail="Order amount does not match expected price.")
+
+    if rzp_payment.get("amount") != expected_amount:
+        logger.warning(
+            "Payment amount mismatch: payment.amount=%s expected=%s payment=%s user=%s",
+            rzp_payment.get("amount"), expected_amount, req.razorpay_payment_id, user.id,
+        )
+        raise HTTPException(status_code=400, detail="Payment amount does not match expected price.")
+
+    # Step 9: currency must be INR
+    if rzp_order.get("currency") != "INR":
+        logger.warning(
+            "Order currency mismatch: %s order=%s", rzp_order.get("currency"), req.razorpay_order_id,
+        )
+        raise HTTPException(status_code=400, detail="Order currency is not INR.")
+
+    if rzp_payment.get("currency") != "INR":
+        logger.warning(
+            "Payment currency mismatch: %s payment=%s", rzp_payment.get("currency"), req.razorpay_payment_id,
+        )
+        raise HTTPException(status_code=400, detail="Payment currency is not INR.")
+
+    # Step 10: payment status must be acceptable
+    # Razorpay statuses: created, authorized, captured, refunded, failed
+    # For manual-capture flow: "authorized" is acceptable.
+    # For auto-capture flow: "captured" is required.
+    # We accept both to handle either Razorpay dashboard capture setting.
+    acceptable_statuses = {"authorized", "captured"}
+    payment_status = rzp_payment.get("status", "")
+    if payment_status not in acceptable_statuses:
+        logger.warning(
+            "Unacceptable payment status: %s payment=%s user=%s",
+            payment_status, req.razorpay_payment_id, user.id,
+        )
+        raise HTTPException(
+            status_code=400,
+            detail=f"Payment status '{payment_status}' is not acceptable.",
+        )
+
     logger.info(
-        "Razorpay payment verified (user=%s order=%s payment=%s). "
+        "Razorpay payment fully verified (user=%s order=%s payment=%s plan=%s interval=%s amount=%s). "
         "Entitlement activation pending webhook lifecycle.",
-        user.id,
-        req.razorpay_order_id,
-        req.razorpay_payment_id,
+        user.id, req.razorpay_order_id, req.razorpay_payment_id,
+        order_plan, order_interval, expected_amount,
     )
 
     # NOTE: Intentionally NO entitlement activation here.
@@ -290,3 +410,4 @@ async def verify_payment(
         status="verified",
         message="Payment verified. Your subscription will be activated shortly.",
     )
+

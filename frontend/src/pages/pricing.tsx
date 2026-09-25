@@ -25,7 +25,6 @@ import { FounderOfferCard } from '@/billing/founder-offer-card'
 import type { CheckoutOrder, PlanId } from '@/billing/types'
 import type {
   RazorpayCheckoutOptions,
-  RazorpayFailedResponse,
   RazorpaySuccessResponse,
 } from '@/types/razorpay'
 

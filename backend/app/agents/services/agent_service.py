@@ -12,6 +12,67 @@ from app.agents.models.knowledge import KnowledgeDoc
 from app.agents.schemas.agent import AgentCreate, AgentUpdate
 
 
+CORE_COPILOT_KIND = "core_copilot"
+CORE_COPILOT_NAME = "FinCo Copilot"
+CORE_COPILOT_SYSTEM_PROMPT = """You are FinCo Copilot, the built-in assistant for this FinCo-Pilot workspace.
+
+Use FinCo-Pilot tools for user-specific facts. Never invent balances, transactions, budgets, goals, Safe-to-Spend, loan values, or other financial facts. Retrieve only the minimum data needed for the current request. Treat page context as orientation and re-read live values through tools. Read authorized data proactively so the user does not have to repeat what FinCo-Pilot already knows. For changes, prepare proposals for user review. Never move money, expose secrets, bypass workspace permissions, or claim a change happened unless FinCo-Pilot confirms it. Be concise, actionable, and answer in the user's language.
+"""
+
+
+def is_core_copilot(agent: Agent) -> bool:
+    extra = agent.extra if isinstance(agent.extra, dict) else {}
+    return extra.get("kind") == CORE_COPILOT_KIND and extra.get("system_managed") is True
+
+
+def can_access_agent(agent: Agent, user_id: uuid.UUID) -> bool:
+    """Workspace agents are shared; the system core copilot is per-user."""
+    return not is_core_copilot(agent) or agent.user_id == user_id
+
+
+async def ensure_core_copilot(
+    session: AsyncSession,
+    workspace_id: uuid.UUID,
+    user_id: uuid.UUID,
+) -> Agent:
+    """Lazily create one system-managed FinCo Copilot per user/workspace."""
+    rows = list((await session.execute(
+        select(Agent)
+        .where(
+            Agent.workspace_id == workspace_id,
+            Agent.user_id == user_id,
+            Agent.is_archived.is_(False),
+        )
+        .order_by(Agent.created_at.asc())
+    )).scalars().all())
+    for row in rows:
+        if is_core_copilot(row):
+            return row
+
+    agent = Agent(
+        user_id=user_id,
+        workspace_id=workspace_id,
+        name=CORE_COPILOT_NAME,
+        description="Your context-aware FinCo-Pilot assistant",
+        system_prompt=CORE_COPILOT_SYSTEM_PROMPT,
+        icon="sparkles",
+        color="#6366F1",
+        provider=None,
+        model=None,
+        temperature=0.2,
+        max_history_messages=30,
+        top_n=6,
+        similarity_threshold=0.25,
+        auto_context=True,
+        is_default=False,
+        extra={"kind": CORE_COPILOT_KIND, "system_managed": True, "version": 1},
+    )
+    session.add(agent)
+    await session.commit()
+    await session.refresh(agent)
+    return agent
+
+
 async def list_agents(
     session: AsyncSession,
     workspace_id: uuid.UUID,
@@ -21,7 +82,12 @@ async def list_agents(
     q = select(Agent).where(Agent.workspace_id == workspace_id).order_by(Agent.created_at.desc())
     if not include_archived:
         q = q.where(Agent.is_archived.is_(False))
-    rows = list((await session.execute(q)).scalars().all())
+    rows = [
+        row
+        for row in (await session.execute(q)).scalars().all()
+        if not is_core_copilot(row)
+    ]
+    # System-managed core copilots stay out of advanced-agent management.
     # One scalar query per (conv, kb) so the agents list page can show
     # counts without N+1. Cheap on small fan-out; if agent counts grow
     # we should switch to a single GROUP BY join.
@@ -139,12 +205,12 @@ async def get_default_agent(
     )).scalar_one_or_none()
     if explicit is not None:
         return explicit
-    return (await session.execute(
+    rows = list((await session.execute(
         select(Agent)
         .where(Agent.workspace_id == workspace_id, Agent.is_archived.is_(False))
         .order_by(Agent.created_at.desc())
-        .limit(1)
-    )).scalar_one_or_none()
+    )).scalars().all())
+    return next((row for row in rows if not is_core_copilot(row)), None)
 
 
 async def delete_agent(

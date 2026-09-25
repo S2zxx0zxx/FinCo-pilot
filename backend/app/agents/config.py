@@ -42,6 +42,10 @@ class AgentSettings(BaseSettings):
     # nomic-embed-text via Matryoshka padding/truncation.
     embedding_dim: int = 1536
 
+    # Built-in FinCo Copilot is separate from Advanced Agents. This
+    # is an operational abuse/capacity ceiling, not a pricing promise.
+    core_copilot_daily_messages: int = 50
+
     # Default RAG parameters (overridable per agent in the DB row).
     default_top_n: int = 6
     default_similarity_threshold: float = 0.25
@@ -74,6 +78,8 @@ class AgentSettings(BaseSettings):
                 raise ValueError("Production agents require a unique AGENTS_MCP_JWT_SECRET of at least 32 characters")
         if not 1 <= self.mcp_external_ttl_days <= 90:
             raise ValueError("AGENTS_MCP_EXTERNAL_TTL_DAYS must be between 1 and 90")
+        if not 1 <= self.core_copilot_daily_messages <= 1000:
+            raise ValueError("AGENTS_CORE_COPILOT_DAILY_MESSAGES must be between 1 and 1000")
         return self
 
     # Same env_file pair as the main Settings: the CWD-relative ".env" for

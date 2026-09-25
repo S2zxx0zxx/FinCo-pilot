@@ -21,7 +21,8 @@ import { PlanBadge } from '@/components/plan-badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { formatInrMinor, priceFor } from '@/billing/catalog'
-import type { PlanId } from '@/billing/types'
+import { FounderOfferCard } from '@/billing/founder-offer-card'
+import type { CheckoutOrder, PlanId } from '@/billing/types'
 import type {
   RazorpayCheckoutOptions,
   RazorpayFailedResponse,
@@ -224,7 +225,7 @@ function BillingSelector({
   interval: 'monthly' | 'annual'
   onInterval: (value: 'monthly' | 'annual') => void
 }) {
-  const { catalog } = useBilling()
+  const { catalog, founderCampaign } = useBilling()
   if (plan === 'free') {
     return (
       <div className="rounded-[24px] border bg-card p-4 shadow-sm">
@@ -253,8 +254,16 @@ function BillingSelector({
 
   const monthly = priceFor(catalog, 'pro', 'monthly')
   const annual = priceFor(catalog, 'pro', 'annual')
+  const founderMonthly = founderCampaign?.live && founderCampaign.current_amount_minor != null
+    ? founderCampaign.current_amount_minor
+    : null
   const choices = [
-    { key: 'monthly' as const, label: 'Monthly', price: formatInrMinor(monthly?.amount_minor ?? 9_900), suffix: '/ month' },
+    {
+      key: 'monthly' as const,
+      label: founderMonthly != null ? 'Founder monthly' : 'Monthly',
+      price: formatInrMinor(founderMonthly ?? monthly?.amount_minor ?? 9_900),
+      suffix: founderMonthly != null ? 'first 60 days · then ₹99/month' : '/ month',
+    },
     { key: 'annual' as const, label: 'Annual', price: formatInrMinor(annual?.amount_minor ?? 99_900), suffix: '/ year' },
   ]
   return (
@@ -288,15 +297,20 @@ function BillingSelector({
 export default function PricingPage() {
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
-  const { user } = useAuth()
-  const { catalog, plan: currentPlan, isLoading: billingLoading } = useBilling()
+  const { user, token } = useAuth()
+  const {
+    catalog,
+    founderCampaign,
+    refreshFounderCampaign,
+    plan: currentPlan,
+    isLoading: billingLoading,
+  } = useBilling()
   const requestedPlan = params.get('plan')
   const explicitPlan = requestedPlan === 'free' || requestedPlan === 'pro' || requestedPlan === 'max'
     ? requestedPlan as PlanId
     : null
   const selectedPlan: PlanId = explicitPlan ?? (user && !billingLoading ? currentPlan : 'pro')
-  const [interval, setInterval] = useState<'monthly' | 'annual'>('annual')
-  const [checkoutNote, setCheckoutNote] = useState(false)
+  const [interval, setInterval] = useState<'monthly' | 'annual'>('monthly')
 
   const selectedPrice = useMemo(() => {
     if (selectedPlan === 'free') return priceFor(catalog, 'free', 'none')
@@ -305,7 +319,6 @@ export default function PricingPage() {
   }, [catalog, interval, selectedPlan])
 
   const selectPlan = (next: PlanId) => {
-    setCheckoutNote(false)
     const nextParams = new URLSearchParams(params)
     nextParams.set('plan', next)
     setParams(nextParams, { replace: true })

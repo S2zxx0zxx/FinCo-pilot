@@ -10,6 +10,7 @@ from app.agents.models.agent import Agent, AgentTool
 from app.agents.models.conversation import Conversation
 from app.agents.models.knowledge import KnowledgeDoc
 from app.agents.schemas.agent import AgentCreate, AgentUpdate
+from app.models.workspace import Workspace
 
 
 CORE_COPILOT_KIND = "core_copilot"
@@ -35,7 +36,16 @@ async def ensure_core_copilot(
     workspace_id: uuid.UUID,
     user_id: uuid.UUID,
 ) -> Agent:
-    """Lazily create one system-managed FinCo Copilot per user/workspace."""
+    """Lazily create one system-managed FinCo Copilot per user/workspace.
+
+    Lock the workspace row while checking/creating so concurrent first-open
+    requests cannot race into duplicate system agents in PostgreSQL.
+    """
+    await session.execute(
+        select(Workspace.id)
+        .where(Workspace.id == workspace_id)
+        .with_for_update()
+    )
     rows = list((await session.execute(
         select(Agent)
         .where(

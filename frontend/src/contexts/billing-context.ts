@@ -1,9 +1,10 @@
 import { createContext, useContext } from 'react'
-import type { Capability, Entitlements, Metric, PlanId, PricingCatalog, UpgradeIntent } from '@/billing/types'
+import type { Capability, Entitlements, FounderCampaignStatus, Metric, PlanId, PricingCatalog, UpgradeIntent } from '@/billing/types'
 
 export interface BillingContextValue {
   catalog: PricingCatalog
   entitlements: Entitlements | null
+  founderCampaign: FounderCampaignStatus | null
   isLoading: boolean
   plan: PlanId
   hasCapability: (capability: Capability) => boolean
@@ -11,6 +12,7 @@ export interface BillingContextValue {
   usage: (metric: Metric) => number | undefined
   requestUpgrade: (intent: UpgradeIntent) => void
   refreshEntitlements: () => Promise<unknown>
+  refreshFounderCampaign: () => Promise<unknown>
 }
 
 export const BillingContext = createContext<BillingContextValue | null>(null)

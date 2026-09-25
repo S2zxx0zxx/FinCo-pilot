@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import { useQuery } from '@tanstack/react-query'
 import '@/billing/billing.css'
 import { FALLBACK_PRICING } from '@/billing/catalog'
-import { fetchEntitlements, fetchPricingCatalog } from '@/billing/api'
+import { fetchEntitlements, fetchFounderCampaign, fetchPricingCatalog } from '@/billing/api'
 import type { Capability, Metric, UpgradeIntent } from '@/billing/types'
 import { UpgradeDialog } from '@/components/upgrade-dialog'
 import { useAuth } from '@/contexts/auth-context'
@@ -17,6 +17,14 @@ export function BillingProvider({ children }: { children: ReactNode }) {
     queryFn: fetchPricingCatalog,
     staleTime: 1000 * 60 * 60,
     retry: 1,
+  })
+
+  const founderCampaignQuery = useQuery({
+    queryKey: ['billing', 'founder-campaign'],
+    queryFn: fetchFounderCampaign,
+    staleTime: 10_000,
+    retry: 1,
+    refetchInterval: (query) => query.state.data?.live ? 10_000 : false,
   })
 
   const entitlementsQuery = useQuery({
@@ -55,6 +63,7 @@ export function BillingProvider({ children }: { children: ReactNode }) {
     () => ({
       catalog: catalogQuery.data ?? FALLBACK_PRICING,
       entitlements,
+      founderCampaign: founderCampaignQuery.data ?? null,
       isLoading: authLoading || (Boolean(token) && entitlementsQuery.isLoading),
       plan,
       hasCapability,
@@ -62,12 +71,15 @@ export function BillingProvider({ children }: { children: ReactNode }) {
       usage,
       requestUpgrade,
       refreshEntitlements: entitlementsQuery.refetch,
+      refreshFounderCampaign: founderCampaignQuery.refetch,
     }),
     [
       authLoading,
       catalogQuery.data,
       entitlements,
       entitlementsQuery.isLoading,
+      founderCampaignQuery.data,
+      founderCampaignQuery.refetch,
       entitlementsQuery.refetch,
       hasCapability,
       limit,

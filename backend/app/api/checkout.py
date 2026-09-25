@@ -18,7 +18,7 @@ import hashlib
 import hmac
 import logging
 import uuid
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -43,7 +43,12 @@ _CHECKOUT_DISABLED = {
 _UNAUTH = {401: {"description": "Authentication required"}}
 _BAD_REQUEST = {400: {"description": "Bad or unsupported request"}}
 _PROVIDER_ERROR = {502: {"description": "Upstream payment provider error"}}
-_ALL_ERRORS = {**_CHECKOUT_DISABLED, **_UNAUTH, **_BAD_REQUEST, **_PROVIDER_ERROR}
+_ALL_ERRORS: dict[int | str, dict[str, Any]] = {
+    **_CHECKOUT_DISABLED,
+    **_UNAUTH,
+    **_BAD_REQUEST,
+    **_PROVIDER_ERROR,
+}
 
 
 def _require_checkout_enabled() -> None:

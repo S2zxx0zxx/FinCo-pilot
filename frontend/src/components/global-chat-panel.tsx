@@ -78,35 +78,43 @@ export function GlobalChatPanel({ open, onOpenChange }: Props) {
   // Persisted preferences (agent + per-agent active conversation).
   const [persisted, setPersisted] = useState<PersistedState>(() => readState())
 
+  const { data: coreCopilot, isLoading: loadingCopilot } = useQuery({
+    queryKey: ['agents-copilot'],
+    queryFn: () => agents.getCopilot(),
+    enabled: open,
+    retry: 1,
+    staleTime: 1000 * 60 * 5,
+  })
   const { data: agentsList, isLoading: loadingAgents } = useQuery({
     queryKey: ['agents'],
     queryFn: () => agents.list(false),
     enabled: open,
     staleTime: 1000 * 30,
   })
-  const { data: defaultAgent } = useQuery({
-    queryKey: ['agents-default'],
-    queryFn: () => agents.getDefault(),
-    enabled: open && !persisted.agentId,
-    retry: false,
-    staleTime: 1000 * 60,
-  })
 
-  // Resolve which agent is active. Order: persisted choice → default →
-  // first in the list. The picked id always points at an agent that
-  // still exists; falls back gracefully when the persisted one was
-  // archived/deleted.
+  // Core Copilot is the stable product entry point. Advanced custom agents
+  // remain switchable for entitled users, but provider/model changes behind
+  // the core assistant never leak into this UI contract.
+  const availableAgents = useMemo(() => {
+    const out: Agent[] = []
+    if (coreCopilot) out.push(coreCopilot)
+    for (const agent of agentsList ?? []) {
+      if (!out.some((item) => item.id === agent.id)) out.push(agent)
+    }
+    return out
+  }, [coreCopilot, agentsList])
+
   const activeAgent: Agent | undefined = useMemo(() => {
-    if (!agentsList || agentsList.length === 0) return undefined
+    if (availableAgents.length === 0) return undefined
     if (persisted.agentId) {
-      const hit = agentsList.find((a) => a.id === persisted.agentId)
+      const hit = availableAgents.find((a) => a.id === persisted.agentId)
       if (hit) return hit
     }
-    if (defaultAgent && agentsList.find((a) => a.id === defaultAgent.id)) {
-      return agentsList.find((a) => a.id === defaultAgent.id)
-    }
-    return agentsList[0]
-  }, [agentsList, persisted.agentId, defaultAgent])
+    return coreCopilot ?? availableAgents[0]
+  }, [availableAgents, persisted.agentId, coreCopilot])
+
+  const loadingAnyAgent = loadingCopilot || loadingAgents
+  const coreActive = activeAgent?.extra?.kind === 'core_copilot'
 
   const conversationId = activeAgent ? persisted.conversationByAgent?.[activeAgent.id] ?? null : null
 
@@ -165,7 +173,7 @@ export function GlobalChatPanel({ open, onOpenChange }: Props) {
         <DialogPrimitive.Content
           aria-describedby={undefined}
           className={cn(
-            'fixed right-0 top-0 z-50 h-full w-full sm:w-[440px] md:w-[480px] bg-background border-l shadow-xl',
+            'fixed right-0 top-0 z-50 h-full w-full sm:w-[400px] md:w-[420px] bg-background border-l shadow-xl',
             'flex flex-col outline-none',
             'data-[state=open]:animate-in data-[state=closed]:animate-out',
             'data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right',
@@ -193,7 +201,7 @@ export function GlobalChatPanel({ open, onOpenChange }: Props) {
                     {t('agents.globalChat.history', 'Recent conversations')}
                   </span>
                 </>
-              ) : agentsList && agentsList.length > 1 ? (
+              ) : availableAgents.length > 1 ? (
                 // Styled Radix Select — matches the rest of the app and
                 // gets a proper popover with active-state styling. The
                 // trigger sheds borders to fit the slim header bar.
@@ -213,7 +221,7 @@ export function GlobalChatPanel({ open, onOpenChange }: Props) {
                     <SelectValue placeholder={t('agents.globalChat.selectAgent', 'Select agent')} />
                   </SelectTrigger>
                   <SelectContent align="start" className="max-h-[60vh]">
-                    {agentsList.map((a) => (
+                    {availableAgents.map((a) => (
                       <SelectItem key={a.id} value={a.id}>
                         <span className="inline-flex items-center gap-2">
                           <span
@@ -222,11 +230,15 @@ export function GlobalChatPanel({ open, onOpenChange }: Props) {
                             aria-hidden
                           />
                           <span>{a.name}</span>
-                          {a.is_default && (
+                          {a.extra?.kind === 'core_copilot' ? (
+                            <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                              Copilot
+                            </span>
+                          ) : a.is_default ? (
                             <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-200/70 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200">
                               {t('agents.defaultBadge', 'Default')}
                             </span>
-                          )}
+                          ) : null}
                         </span>
                       </SelectItem>
                     ))}
@@ -242,11 +254,15 @@ export function GlobalChatPanel({ open, onOpenChange }: Props) {
                   <span className="text-sm font-medium truncate">
                     {activeAgent?.name ?? t('agents.globalChat.title', 'Chat')}
                   </span>
-                  {activeAgent?.is_default && (
+                  {coreActive ? (
+                    <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary shrink-0">
+                      Copilot
+                    </span>
+                  ) : activeAgent?.is_default ? (
                     <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-200/70 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200 shrink-0">
                       {t('agents.defaultBadge', 'Default')}
                     </span>
-                  )}
+                  ) : null}
                 </div>
               )}
             </div>
@@ -279,17 +295,19 @@ export function GlobalChatPanel({ open, onOpenChange }: Props) {
               {/* Settings — jumps to /agents (the management page).
                   Closing the panel after navigation so the user lands
                   on a clean view of the agents config. */}
-              <Button
-                asChild
-                size="sm"
-                variant="ghost"
-                aria-label={t('agents.globalChat.openSettings', 'Agent settings')}
-                title={t('agents.globalChat.openSettings', 'Agent settings')}
-              >
-                <Link to="/agents" onClick={() => onOpenChange(false)}>
-                  <Settings className="h-4 w-4" />
-                </Link>
-              </Button>
+              {!coreActive && activeAgent && (
+                <Button
+                  asChild
+                  size="sm"
+                  variant="ghost"
+                  aria-label={t('agents.globalChat.openSettings', 'Agent settings')}
+                  title={t('agents.globalChat.openSettings', 'Agent settings')}
+                >
+                  <Link to="/agents" onClick={() => onOpenChange(false)}>
+                    <Settings className="h-4 w-4" />
+                  </Link>
+                </Button>
+              )}
               <DialogPrimitive.Close asChild>
                 <Button size="sm" variant="ghost" aria-label="Close">
                   <X className="h-4 w-4" />
@@ -299,23 +317,18 @@ export function GlobalChatPanel({ open, onOpenChange }: Props) {
           </header>
 
           <div className="flex-1 min-h-0 flex flex-col">
-            {loadingAgents && (
+            {loadingAnyAgent && (
               <div className="flex-1 flex items-center justify-center text-muted-foreground gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span className="text-sm">{t('common.loading', 'Loading…')}</span>
               </div>
             )}
-            {!loadingAgents && agentsList && agentsList.length === 0 && (
-              <div className="flex-1 flex flex-col items-center justify-center text-center px-6 gap-2 text-sm text-muted-foreground">
-                <span>
-                  {t(
-                    'agents.globalChat.empty',
-                    'No agent available. Create one in the Agents page to enable the global chat.',
-                  )}
-                </span>
-                <a href="/agents" className="underline text-foreground">
-                  {t('agents.globalChat.openAgents', 'Go to Agents')}
-                </a>
+            {!loadingAnyAgent && availableAgents.length === 0 && (
+              <div className="flex-1 flex items-center justify-center text-center px-6 text-xs text-muted-foreground">
+                {t(
+                  'agents.globalChat.empty',
+                  'FinCo Copilot is temporarily unavailable. Check the AI service configuration.',
+                )}
               </div>
             )}
             {activeAgent && view === 'chat' && (

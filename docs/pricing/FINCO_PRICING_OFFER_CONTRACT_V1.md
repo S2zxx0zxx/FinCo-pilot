@@ -213,6 +213,8 @@ Test and Live Razorpay keys and Plan IDs are separate configurations.
 
 An operator provisioning command defaults to refusing Live keys unless an explicit Live override is supplied.
 
+**Roadmap #4 checkout is Test Mode only.** The checkout API refuses `rzp_live_*` keys while signed webhook/subscription fulfilment is not implemented. This prevents real customers being charged before durable server-to-server entitlement reconciliation exists.
+
 No credential or provider secret is stored in source control.
 
 ## 17. Payment verification and entitlement boundary

@@ -317,6 +317,8 @@ async def test_provider_create_failure_releases_reservation(
     assert rows[0].founder_position is None
 
 
+import sys
+
 @pytest.mark.asyncio
 async def test_live_razorpay_key_is_fail_closed_until_webhook_fulfilment_exists(
     client: AsyncClient,
@@ -329,11 +331,15 @@ async def test_live_razorpay_key_is_fail_closed_until_webhook_fulfilment_exists(
     monkeypatch.setattr(settings, "razorpay_key_id", "rzp_live_synthetic_not_real")
     monkeypatch.setattr(settings, "razorpay_key_secret", SecretStr("synthetic-live-secret-not-real"))
 
-    response = await client.post(
-        "/api/checkout/create-order",
-        json={"plan": "pro", "interval": "monthly"},
-        headers=auth_headers,
-    )
+    sys.modules["razorpay"] = MagicMock()
+    try:
+        response = await client.post(
+            "/api/checkout/create-order",
+            json={"plan": "pro", "interval": "monthly"},
+            headers=auth_headers,
+        )
+    finally:
+        del sys.modules["razorpay"]
 
     assert response.status_code == 503
     assert "live payment collection" in response.json()["detail"].lower()

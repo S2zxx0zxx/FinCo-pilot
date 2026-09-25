@@ -65,6 +65,7 @@ ALLOWLIST: dict[tuple[str, str], str] = {
     ("PATCH", "/api/admin/users/{user_id}"): "superuser-gated instance administration",
     ("DELETE", "/api/admin/users/{user_id}"): "superuser-gated instance administration",
     ("PATCH", "/api/admin/settings/{key}"): "superuser-gated instance administration",
+    ("PATCH", "/api/admin/pricing/campaign"): "superuser-gated instance administration",
     # Workspace administration: uses its own, stricter owner floor via
     # `require_membership(min_role="owner")` inside the handler. Converting
     # these to the write gate would *widen* access, since editors can write.
@@ -99,6 +100,10 @@ ALLOWLIST: dict[tuple[str, str], str] = {
     # touched. Flagged here so a future rate limit or admin floor is a
     # decision rather than an oversight.
     ("POST", "/api/fx-rates/refresh"): "refreshes instance-wide FX rates, no workspace data",
+    # Checkout routes are scoped to the user's own billing state.
+    ("POST", "/api/checkout/create-order"): "the requester's own checkout reservation",
+    ("POST", "/api/checkout/verify-payment"): "the requester's own checkout reservation",
+    ("POST", "/api/checkout/cancel-reservation"): "the requester's own checkout reservation",
 }
 
 # These routes establish authentication (or end it), so requiring an existing

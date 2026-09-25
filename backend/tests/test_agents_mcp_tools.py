@@ -53,6 +53,7 @@ def test_registry_contains_v1_tools():
         "list_recurring_transactions",
         "list_assets",
         "list_goals",
+        "get_safe_to_spend",
     }
     assert expected.issubset(set(REGISTRY.keys())), (
         f"missing: {expected - set(REGISTRY.keys())}"
@@ -237,6 +238,29 @@ async def test_list_budgets_empty(session: AsyncSession, ctx: CallContext):
     handler = REGISTRY["list_budgets"].handler
     r = await handler(session=session, ctx=ctx)
     assert r == {"items": [], "total": 0}
+
+
+async def test_get_safe_to_spend_blocks_until_obligations_reviewed(
+    session: AsyncSession, ctx: CallContext, test_account
+):
+    handler = REGISTRY["get_safe_to_spend"].handler
+    result = await handler(
+        session=session,
+        ctx=ctx,
+        horizon_days=30,
+        obligations_reviewed=False,
+    )
+    for key in (
+        "currency",
+        "status",
+        "safe_to_spend",
+        "daily_allowance",
+        "blockers",
+        "assumptions",
+    ):
+        assert key in result
+    assert result["safe_to_spend"] is None
+    assert result["blockers"]
 
 
 async def test_aggregate_payee_filter(

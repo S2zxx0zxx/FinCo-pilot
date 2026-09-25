@@ -15,6 +15,7 @@ class PriceOptionRead(BaseModel):
 class PricingCatalogRead(BaseModel):
     prices: list[PriceOptionRead]
     pro_annual_saving_minor: int
+    tax_display_mode: str
 
 
 class EntitlementsRead(BaseModel):

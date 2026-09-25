@@ -161,3 +161,53 @@ def test_local_auth_disabled_requires_complete_oidc_configuration(
             local_auth_enabled=False,
             _secrets_dir=str(secrets),
         )
+
+
+
+@pytest.mark.parametrize("ttl", [0, 119, 1801, 9999])
+def test_billing_offer_reservation_ttl_is_bounded(secrets: Path, ttl: int):
+    with pytest.raises(ValidationError, match="BILLING_OFFER_RESERVATION_TTL_SECONDS"):
+        Settings(
+            billing_offer_reservation_ttl_seconds=ttl,
+            _secrets_dir=str(secrets),
+        )
+
+
+def test_invalid_tax_display_mode_is_rejected(secrets: Path):
+    with pytest.raises(ValidationError, match="BILLING_TAX_DISPLAY_MODE"):
+        Settings(
+            billing_tax_display_mode="guess",
+            _secrets_dir=str(secrets),
+        )
+
+
+def _production_settings_kwargs() -> dict:
+    return {
+        "deployment_environment": "production",
+        "secret_key": "synthetic-production-key-with-more-than-32-characters",
+        "frontend_url": "https://app.example.test",
+        "database_url": "postgresql+asyncpg://finco:synthetic@db.example.test:5432/finco",
+        "setup_enabled": False,
+        "fx_allow_unsafe_1to1_fallback": False,
+        "trusted_proxy_hops": 1,
+        "metrics_enabled": False,
+        "billing_checkout_enabled": True,
+    }
+
+
+def test_production_paid_checkout_refuses_unconfigured_tax_treatment(secrets: Path):
+    with pytest.raises(ValidationError, match="BILLING_TAX_DISPLAY_MODE"):
+        Settings(
+            **_production_settings_kwargs(),
+            billing_tax_display_mode="unconfigured",
+            _secrets_dir=str(secrets),
+        )
+
+
+def test_production_paid_checkout_accepts_explicit_tax_display_contract(secrets: Path):
+    settings = Settings(
+        **_production_settings_kwargs(),
+        billing_tax_display_mode="inclusive",
+        _secrets_dir=str(secrets),
+    )
+    assert settings.billing_tax_display_mode == "inclusive"

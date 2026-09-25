@@ -328,27 +328,33 @@ export default function PricingPage() {
     if (user && currentPlan === plan) return
     selectPlan(plan)
 
-    // Auth guard: unauthenticated users must log in first.
-    if (!user) {
-      navigate(plan === 'free' ? '/register' : `/login?next=${encodeURIComponent(`/pricing?plan=${plan}`)}`)
+    if (!user || !token) {
+      navigate(plan === 'free' ? '/register' : '/login?next=' + encodeURIComponent('/pricing?plan=' + plan))
       return
     }
 
     if (plan === 'free') return
 
+    const publicKey = import.meta.env.VITE_RAZORPAY_KEY_ID as string | undefined
+    if (!publicKey) {
+      toast.error('Payment checkout is not configured on this installation.')
+      return
+    }
     if (!window.Razorpay) {
       toast.error('Payment SDK failed to load. Please refresh the page and try again.')
       return
     }
 
     const effectiveInterval = plan === 'max' ? 'monthly' : interval
+    const authHeaders = {
+      'Content-Type': 'application/json',
+      Authorization: 'Bearer ' + token,
+    }
 
     try {
-      // Send only plan + interval — backend derives the amount from its own
-      // canonical price catalog.  Never send amount from the browser.
       const orderRes = await fetch('/api/checkout/create-order', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders,
         body: JSON.stringify({ plan, interval: effectiveInterval }),
       })
 
@@ -359,26 +365,38 @@ export default function PricingPage() {
         return
       }
 
-      const orderData = await orderRes.json() as {
-        order_id: string
-        amount: number
-        currency: string
-        plan: string
-        interval: string
+      const orderData = await orderRes.json() as CheckoutOrder
+
+      const cancelQuote = async () => {
+        try {
+          await fetch('/api/checkout/cancel-reservation', {
+            method: 'POST',
+            headers: authHeaders,
+            body: JSON.stringify({ reservation_id: orderData.reservation_id }),
+          })
+          await refreshFounderCampaign()
+        } catch {
+          // Reservation expiry remains the server-side fallback if cancellation
+          // cannot be delivered (for example, the browser went offline).
+        }
       }
 
+      const offerDescription = orderData.founder_wave != null
+        ? 'Founder Wave ' + orderData.founder_wave + ' · ' + orderData.service_period_days + ' days Pro'
+        : plan.toUpperCase() + ' · ' + orderData.service_period_days + '-day first period'
+
       const options: RazorpayCheckoutOptions = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID as string,
+        key: publicKey,
         amount: orderData.amount,
         currency: orderData.currency,
         name: 'FinCo-Pilot',
-        description: `${plan.toUpperCase()} Plan – ${effectiveInterval}`,
+        description: offerDescription,
         order_id: orderData.order_id,
         handler: async (response: RazorpaySuccessResponse) => {
           try {
             const verifyRes = await fetch('/api/checkout/verify-payment', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: authHeaders,
               body: JSON.stringify({
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_order_id: response.razorpay_order_id,
@@ -386,9 +404,12 @@ export default function PricingPage() {
               }),
             })
             if (verifyRes.ok) {
-              toast.success('Payment verified! Your subscription will be activated shortly.')
+              await refreshFounderCampaign()
+              toast.success('Payment captured and verified. Activation is pending the secure subscription lifecycle.')
             } else {
-              toast.error('Payment verification failed. Please contact support.')
+              const body = await verifyRes.json().catch(() => ({}))
+              const detail = (body as { detail?: string }).detail
+              toast.error(detail ?? 'Payment verification failed. Please contact support.')
             }
           } catch {
             toast.error('Could not verify payment. Please contact support.')
@@ -396,18 +417,18 @@ export default function PricingPage() {
         },
         modal: {
           ondismiss: () => {
-            toast.info('Checkout was cancelled.')
+            void cancelQuote()
+            toast.info('Checkout was cancelled. Your temporary price hold was released.')
           },
         },
         theme: { color: '#000000' },
       }
 
       const rzp = new window.Razorpay(options)
-      rzp.on('payment.failed', (response: RazorpayFailedResponse) => {
-        toast.error(`Payment failed: ${response.error.description}`)
+      rzp.on('payment.failed', () => {
+        toast.error('Payment failed. No paid entitlement was activated.')
       })
       rzp.open()
-
     } catch {
       toast.error('Could not connect to the payment service. Please try again.')
     }

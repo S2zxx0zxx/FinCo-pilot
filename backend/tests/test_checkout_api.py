@@ -318,6 +318,30 @@ async def test_provider_create_failure_releases_reservation(
 
 
 @pytest.mark.asyncio
+async def test_live_razorpay_key_is_fail_closed_until_webhook_fulfilment_exists(
+    client: AsyncClient,
+    auth_headers: dict,
+    monkeypatch,
+    session: AsyncSession,
+) -> None:
+    settings = get_settings()
+    monkeypatch.setattr(settings, "billing_checkout_enabled", True)
+    monkeypatch.setattr(settings, "razorpay_key_id", "rzp_live_synthetic_not_real")
+    monkeypatch.setattr(settings, "razorpay_key_secret", SecretStr("synthetic-live-secret-not-real"))
+
+    response = await client.post(
+        "/api/checkout/create-order",
+        json={"plan": "pro", "interval": "monthly"},
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 503
+    assert "live payment collection" in response.json()["detail"].lower()
+    count = len((await session.execute(select(CheckoutReservation))).scalars().all())
+    assert count == 0
+
+
+@pytest.mark.asyncio
 async def test_missing_provider_credentials_do_not_hold_capacity(
     client: AsyncClient,
     auth_headers: dict,

@@ -171,6 +171,34 @@ async def _active_reservation(
     ).scalar_one_or_none()
 
 
+async def _other_active_reservation(
+    session: AsyncSession,
+    *,
+    user_id: uuid.UUID,
+    plan: PlanId,
+    interval: BillingInterval,
+    now: datetime,
+) -> CheckoutReservation | None:
+    """Prevent parallel first-purchase quotes from minting multiple intro offers."""
+    return (
+        await session.execute(
+            select(CheckoutReservation)
+            .where(
+                CheckoutReservation.user_id == user_id,
+                CheckoutReservation.status == ReservationStatus.RESERVED.value,
+                CheckoutReservation.expires_at > now,
+                ~(
+                    (CheckoutReservation.plan == plan.value)
+                    & (CheckoutReservation.billing_interval == interval.value)
+                ),
+            )
+            .order_by(CheckoutReservation.created_at.desc())
+            .limit(1)
+            .with_for_update()
+        )
+    ).scalar_one_or_none()
+
+
 async def _founder_positions_in_use(
     session: AsyncSession, *, now: datetime
 ) -> set[int]:
@@ -313,6 +341,19 @@ async def reserve_checkout_offer(
     if existing is not None:
         return existing
 
+    other_active = await _other_active_reservation(
+        session,
+        user_id=user_id,
+        plan=plan,
+        interval=interval,
+        now=current,
+    )
+    if other_active is not None:
+        raise ValueError(
+            "Another checkout reservation is active for this account. "
+            "Finish or cancel it before choosing a different plan."
+        )
+
     has_prior = await _has_prior_paid_purchase(session, user_id)
 
     offer_code = standard_offer_code(
@@ -330,6 +371,17 @@ async def reserve_checkout_offer(
     founder_position: int | None = None
     service_starts_at: datetime | None = None
     campaign_code: str | None = None
+
+    # Any eligible first monthly purchase made before the configured public
+    # launch starts its service clock at launch, so pre-release buyers never
+    # lose promised access days while the product is not yet public.
+    if (
+        not has_prior
+        and interval is BillingInterval.MONTHLY
+        and campaign.public_launch_at is not None
+        and current < campaign.public_launch_at
+    ):
+        service_starts_at = campaign.public_launch_at
 
     founder_eligible = (
         not has_prior

@@ -18,7 +18,6 @@ from app.billing.offers import (
     FOUNDER_TOTAL_CAPACITY,
     FOUNDER_WAVES,
     CampaignState,
-    OfferCode,
     ReservationStatus,
     founder_wave_for_position,
     standard_offer_code,

@@ -45,6 +45,20 @@ def _as_utc(value: datetime | None) -> datetime | None:
     return value.astimezone(timezone.utc)
 
 
+def _stored_utc(value: datetime | None) -> datetime | None:
+    """Normalize persisted UTC timestamps across PostgreSQL and SQLite tests.
+
+    PostgreSQL preserves timezone-aware values. SQLite drops tzinfo even for
+    DateTime(timezone=True), so timestamps written by this service are treated
+    as UTC when read back without tzinfo.
+    """
+    if value is None:
+        return None
+    if value.tzinfo is None or value.utcoffset() is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
 async def _audit(
     session: AsyncSession,
     *,
@@ -94,13 +108,16 @@ def campaign_is_live(
     current = now or utcnow()
     if campaign.state != CampaignState.ACTIVE.value:
         return False
-    if campaign.public_launch_at is None:
+    launch = _stored_utc(campaign.public_launch_at)
+    starts = _stored_utc(campaign.presale_starts_at)
+    ends = _stored_utc(campaign.presale_ends_at)
+    if launch is None:
         return False
-    if current >= campaign.public_launch_at:
+    if current >= launch:
         return False
-    if campaign.presale_starts_at is not None and current < campaign.presale_starts_at:
+    if starts is not None and current < starts:
         return False
-    if campaign.presale_ends_at is not None and current >= campaign.presale_ends_at:
+    if ends is not None and current >= ends:
         return False
     return True
 
@@ -291,9 +308,9 @@ async def campaign_status(
         state=CampaignState(campaign.state),
         version=campaign.version,
         live=live and current_wave is not None,
-        presale_starts_at=campaign.presale_starts_at,
-        presale_ends_at=campaign.presale_ends_at,
-        public_launch_at=campaign.public_launch_at,
+        presale_starts_at=_stored_utc(campaign.presale_starts_at),
+        presale_ends_at=_stored_utc(campaign.presale_ends_at),
+        public_launch_at=_stored_utc(campaign.public_launch_at),
         current_wave=current_wave,
         current_amount_minor=current_amount,
         next_amount_minor=next_amount,
@@ -378,10 +395,10 @@ async def reserve_checkout_offer(
     if (
         not has_prior
         and interval is BillingInterval.MONTHLY
-        and campaign.public_launch_at is not None
-        and current < campaign.public_launch_at
+        and _stored_utc(campaign.public_launch_at) is not None
+        and current < _stored_utc(campaign.public_launch_at)  # type: ignore[operator]
     ):
-        service_starts_at = campaign.public_launch_at
+        service_starts_at = _stored_utc(campaign.public_launch_at)
 
     founder_eligible = (
         not has_prior
@@ -400,7 +417,7 @@ async def reserve_checkout_offer(
                     offer_code = wave.offer_code
                     amount_minor = wave.amount_minor
                     service_days = 60
-                    service_starts_at = campaign.public_launch_at
+                    service_starts_at = _stored_utc(campaign.public_launch_at)
                     campaign_code = campaign.code
                 break
 
@@ -523,7 +540,8 @@ async def mark_reservation_verified(
 
     if reservation.status != ReservationStatus.RESERVED.value:
         raise ValueError("Checkout reservation is no longer verifiable")
-    if reservation.expires_at <= current:
+    expires_at = _stored_utc(reservation.expires_at)
+    if expires_at is not None and expires_at <= current:
         reservation.status = ReservationStatus.EXPIRED.value
         reservation.founder_position = None
         raise ValueError("Checkout reservation expired before payment verification")
@@ -626,28 +644,32 @@ async def update_campaign(
             )
         campaign.state = new_state.value
 
+    presale_starts = _stored_utc(campaign.presale_starts_at)
+    presale_ends = _stored_utc(campaign.presale_ends_at)
+    public_launch = _stored_utc(campaign.public_launch_at)
+
     if (
-        campaign.presale_starts_at
-        and campaign.presale_ends_at
-        and campaign.presale_starts_at >= campaign.presale_ends_at
+        presale_starts
+        and presale_ends
+        and presale_starts >= presale_ends
     ):
         raise ValueError("Pre-sale start must be earlier than pre-sale end")
-    if campaign.public_launch_at is not None:
+    if public_launch is not None:
         if (
-            campaign.presale_starts_at is not None
-            and campaign.presale_starts_at >= campaign.public_launch_at
+            presale_starts is not None
+            and presale_starts >= public_launch
         ):
             raise ValueError("Pre-sale start must be before public launch")
         if (
-            campaign.presale_ends_at is not None
-            and campaign.presale_ends_at > campaign.public_launch_at
+            presale_ends is not None
+            and presale_ends > public_launch
         ):
             raise ValueError("Pre-sale end cannot be after public launch")
 
     if campaign.state == CampaignState.ACTIVE.value:
-        if campaign.public_launch_at is None:
+        if public_launch is None:
             raise ValueError("Public launch timestamp is required before activation")
-        if campaign.public_launch_at <= utcnow():
+        if public_launch <= utcnow():
             raise ValueError("Founder pre-sale cannot activate after public launch")
 
     campaign.version += 1

@@ -330,6 +330,7 @@ class AgentExecutor:
         user_message: str,
         channel: str = "web",
         page_context: Optional[dict[str, Any]] = None,
+        allow_proposals: bool = True,
     ) -> AsyncIterator[ExecutorEvent]:
         # 1. Persist the user message first so it survives crashes.
         await conversation_service.append_message(
@@ -412,7 +413,22 @@ class AgentExecutor:
             logger.exception("MCP discovery failed; running without tools")
             handles = []
         allowed = await agent_service.allowed_tool_pairs(session, agent.id)
-        tool_defs = self.mcp.to_provider_tools(handles, allowed=allowed)
+        if allowed is not None:
+            handles = [h for h in handles if (h.server, h.name) in allowed]
+        if not allow_proposals:
+            # Viewer sessions are read-only end-to-end. Advertise only
+            # explicitly tagged read tools and enforce the same set again at
+            # dispatch so a hallucinated hidden tool name cannot escalate.
+            handles = [
+                h for h in handles
+                if "read" in h.tags and not h.is_proposal and "write" not in h.tags
+            ]
+        tool_defs = self.mcp.to_provider_tools(handles)
+        callable_tool_names = {
+            name
+            for h in handles
+            for name in (h.name, f"{h.server}__{h.name}")
+        }
 
         # Resolve provider+model once per request. Monkey-patched in tests
         # via _provider_for; production prefers _provider_and_model_for.
@@ -536,7 +552,15 @@ class AgentExecutor:
                 yield ev
 
             results = await asyncio.gather(*[
-                _safe_call_tool(self.mcp, c, user_id=user_id, workspace_id=workspace_id, conversation_id=conversation_id, agent_id=agent.id)
+                _safe_call_tool(
+                    self.mcp,
+                    c,
+                    user_id=user_id,
+                    workspace_id=workspace_id,
+                    conversation_id=conversation_id,
+                    agent_id=agent.id,
+                    allowed_tool_names=callable_tool_names,
+                )
                 for c in assembled_calls
             ])
             for c, res in zip(assembled_calls, results):
@@ -609,9 +633,12 @@ async def _safe_call_tool(
     workspace_id: Optional[uuid.UUID] = None,
     conversation_id: uuid.UUID,
     agent_id: Optional[uuid.UUID] = None,
+    allowed_tool_names: Optional[set[str]] = None,
 ) -> dict[str, Any]:
     started = time.time()
     try:
+        if allowed_tool_names is not None and call.name not in allowed_tool_names:
+            raise PermissionError(f"tool not allowed in this session: {call.name}")
         return await mcp.call(
             wire_name=call.name,
             arguments=call.arguments,

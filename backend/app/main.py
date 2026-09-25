@@ -37,6 +37,7 @@ from app.api.invoices import router as invoices_router
 from app.api.oidc_auth import router as oidc_auth_router
 from app.api.passkeys import router as passkeys_router
 from app.api.payees import router as payees_router
+from app.api.pricing_admin import router as pricing_admin_router
 from app.api.public_invoices import router as public_invoices_router
 from app.api.reconciliation import router as reconciliation_router
 from app.api.recurring_transactions import router as recurring_router
@@ -220,6 +221,7 @@ app.include_router(public_invoices_router)
 app.include_router(settings_router)
 app.include_router(workspaces_router, dependencies=[Depends(workspace_guard)])
 app.include_router(admin_router)
+app.include_router(pricing_admin_router)
 app.include_router(info_router)
 
 

@@ -108,10 +108,19 @@ class Settings(BaseSettings):
     # Billing. Until a real payment provider + webhook lifecycle is configured,
     # paid checkout stays disabled rather than presenting a dead purchase flow.
     billing_checkout_enabled: bool = False
+    billing_offer_reservation_ttl_seconds: int = 600
+    # Tax display is deliberately explicit. Production paid checkout must not
+    # guess whether the displayed price is tax-inclusive or tax-exclusive.
+    billing_tax_display_mode: str = "unconfigured"  # unconfigured|inclusive|exclusive
 
     # Razorpay
     razorpay_key_id: str = ""
     razorpay_key_secret: SecretStr = SecretStr("")
+    # Provider plan IDs are environment-specific identifiers for the immutable
+    # base recurring catalog. Test and Live IDs must never be mixed.
+    razorpay_plan_pro_monthly_id: str = ""
+    razorpay_plan_pro_annual_id: str = ""
+    razorpay_plan_max_monthly_id: str = ""
 
     # OIDC
     oidc_enabled: bool = False
@@ -259,6 +268,23 @@ class Settings(BaseSettings):
             raise ValueError("Database pool timeout/recycle values must be positive")
         if self.bank_sync_lock_ttl_seconds < 60:
             raise ValueError("BANK_SYNC_LOCK_TTL_SECONDS must be at least 60 seconds")
+        if not 120 <= self.billing_offer_reservation_ttl_seconds <= 1800:
+            raise ValueError(
+                "BILLING_OFFER_RESERVATION_TTL_SECONDS must be between 120 and 1800"
+            )
+        if self.billing_tax_display_mode not in {"unconfigured", "inclusive", "exclusive"}:
+            raise ValueError(
+                "BILLING_TAX_DISPLAY_MODE must be unconfigured, inclusive, or exclusive"
+            )
+        if (
+            environment == "production"
+            and self.billing_checkout_enabled
+            and self.billing_tax_display_mode == "unconfigured"
+        ):
+            raise ValueError(
+                "Production paid checkout requires BILLING_TAX_DISPLAY_MODE to be "
+                "explicitly set to inclusive or exclusive"
+            )
 
         return self
 

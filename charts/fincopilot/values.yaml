@@ -34,6 +34,10 @@ secret:
   # OpenExchangeRates
   openexchangeratesAppId: ""
 
+  # Razorpay payment credentials. Prefer global.existingSecret in production.
+  razorpayKeyId: ""
+  razorpayKeySecret: ""
+
   # Agents (LLM)
   agentsMcpJwtSecret: "dev-mcp-secret-change-in-production"
   agentsOpenaiApiKey: ""
@@ -43,6 +47,16 @@ secret:
 # Non-sensitive configuration
 config:
   debug: "false"
+
+  # Billing / founder offer engine. Paid checkout is fail-closed by default.
+  billingCheckoutEnabled: "false"
+  billingOfferReservationTtlSeconds: "600"
+  billingTaxDisplayMode: "unconfigured"
+  # Razorpay base recurring plan IDs. Test and Live installations use
+  # different provider IDs and must be provisioned explicitly.
+  razorpayPlanProMonthlyId: ""
+  razorpayPlanProAnnualId: ""
+  razorpayPlanMaxMonthlyId: ""
   # Set false only when oidc.enabled, oidc.clientId, and oidc.discoveryUrl are configured.
   localAuthEnabled: "true"
   # Leave empty to auto-compute from global.domain (e.g. http://fincopilot.local/oauth/callback)

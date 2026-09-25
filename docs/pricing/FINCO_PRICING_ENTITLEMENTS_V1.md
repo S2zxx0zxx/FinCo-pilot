@@ -1,7 +1,8 @@
 # FinCo-Pilot Pricing & Entitlements V1 — Build Specification
 
-Status: planning / no checkout integration yet
-Branch: `feat/pricing-entitlements-v1`
+Status: implemented entitlement foundation; secure Razorpay checkout + pricing/offer engine in progress on `feat/pricing-offer-engine-v1`.
+
+> Current pricing/offer contract: [FINCO_PRICING_OFFER_CONTRACT_V1.md](./FINCO_PRICING_OFFER_CONTRACT_V1.md). This older document remains the entitlement-build specification; where pricing/payment wording differs, the newer contract is authoritative.
 
 ## 1. Locked launch pricing
 
@@ -35,7 +36,7 @@ Limits are server-authoritative. UI labels are a reflection of backend entitleme
 | Members per split group | 5 | 15 | 50 |
 | Invoices | 0 | 0 | 500/month |
 | Business workspace features | Locked | Locked | Included |
-| AI actions | 5/month | 60/month | 300/month |
+| AI actions | 0/month | 0/month | 300/month |
 | User-uploaded attachment storage | 100 MB | 1 GB | 10 GB |
 | Advanced reports | Locked | Included | Included |
 | Smart reconciliation | Locked | Included | Included |
@@ -110,15 +111,11 @@ This separates billing entitlement from the existing workspace module resolver a
 
 ## 6. Payment-provider boundary
 
-This branch builds the pricing page and entitlement foundation before checkout.
+The entitlement foundation is now separated from the Razorpay checkout/provider boundary.
 
-Until a real payment provider is integrated:
+Current #4 work may create and verify a captured checkout purchase record and founder claim, but **does not activate Pro/Max entitlements**. The production mutation path for paid subscription state remains a later signed-webhook/subscription-lifecycle milestone.
 
-- the production client cannot activate Pro/Max;
-- CTA may route to a future checkout entry point / wait state, but must not flip plan state locally;
-- test fixtures may create paid subscription states only in backend tests or explicit local-development tooling.
-
-Later checkout integration must add provider customer/subscription ids, current period timestamps, cancel-at-period-end, grace period, verified webhooks, invoice/payment history, and reconciliation jobs.
+Provider customer/subscription IDs, renewal state, cancel-at-period-end, grace/past-due, invoice/payment history, cancellation/refund execution and reconciliation remain later billing-lifecycle work. Browser callbacks never mint a paid plan.
 
 ## 7. Pricing-page UX — FinCo-native, reference-inspired, not a visual clone
 
@@ -255,7 +252,7 @@ Must all pass before this branch is considered complete:
 8. Wire sidebar/pages/settings locked states.
 9. Add tests and bypass/security cases.
 10. Run full CI and responsive/PWA review.
-11. Only after this is stable, start payment/checkout provider work on a separate branch.
+11. Keep payment/provider work isolated on its dedicated pricing/offer branch and preserve the webhook-only entitlement activation boundary.
 
 ## 14. Decisions intentionally deferred
 

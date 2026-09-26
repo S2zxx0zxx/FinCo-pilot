@@ -10,6 +10,23 @@ CREDENTIALS_DIRECTORY: list[Path] = [
     Path(p) for p in getenv("CREDENTIALS_DIRECTORY", "/run/secrets").split(":") if p
 ]
 
+# Zoho Desk OAuth returns an API origin for the account's data center. Keep the
+# accepted hosts explicit so a compromised/malformed token response cannot turn
+# the support adapter into an SSRF primitive.
+ZOHO_DESK_DATA_CENTER_HOSTS: dict[str, str] = {
+    "accounts.zoho.com": "desk.zoho.com",
+    "accounts.zoho.eu": "desk.zoho.eu",
+    "accounts.zoho.in": "desk.zoho.in",
+    "accounts.zoho.com.au": "desk.zoho.com.au",
+    "accounts.zohocloud.ca": "desk.zohocloud.ca",
+    "accounts.zoho.sa": "desk.zoho.sa",
+    "accounts.zoho.jp": "desk.zoho.jp",
+    "accounts.zoho.com.cn": "desk.zoho.com.cn",
+    "accounts.zoho.sg": "desk.zoho.sg",
+    "accounts.zoho.ae": "desk.zoho.ae",
+}
+ZOHO_DESK_API_HOSTS = frozenset(ZOHO_DESK_DATA_CENTER_HOSTS.values())
+
 
 class Settings(BaseSettings):
     # App
@@ -271,8 +288,6 @@ class Settings(BaseSettings):
             "SUPPORT_PORTAL_URL": self.support_portal_url,
             "SUPPORT_HELP_CENTER_URL": self.support_help_center_url,
             "SUPPORT_SECURITY_URL": self.support_security_url,
-            "ZOHO_DESK_ACCOUNTS_DOMAIN": self.zoho_desk_accounts_domain,
-            "ZOHO_DESK_API_DOMAIN": self.zoho_desk_api_domain,
         }
         for name, value in support_urls.items():
             if not value.strip():
@@ -282,6 +297,36 @@ class Settings(BaseSettings):
                 raise ValueError(f"{name} must be an absolute http(s) URL")
             if environment == "production" and parsed.scheme != "https":
                 raise ValueError(f"Production {name} must use https://")
+
+        # Provider endpoints are never user-facing development URLs. Require
+        # exact HTTPS Zoho origins and a matching accounts/API data center.
+        accounts_origin = urlsplit(self.zoho_desk_accounts_domain)
+        api_origin = urlsplit(self.zoho_desk_api_domain)
+        for name, parsed in (
+            ("ZOHO_DESK_ACCOUNTS_DOMAIN", accounts_origin),
+            ("ZOHO_DESK_API_DOMAIN", api_origin),
+        ):
+            if (
+                parsed.scheme != "https"
+                or not parsed.hostname
+                or parsed.username is not None
+                or parsed.password is not None
+                or parsed.port not in {None, 443}
+                or parsed.path not in {"", "/"}
+                or parsed.query
+                or parsed.fragment
+            ):
+                raise ValueError(f"{name} must be a bare https:// Zoho origin")
+
+        accounts_host = accounts_origin.hostname.lower()
+        api_host = api_origin.hostname.lower()
+        expected_api_host = ZOHO_DESK_DATA_CENTER_HOSTS.get(accounts_host)
+        if expected_api_host is None:
+            raise ValueError("ZOHO_DESK_ACCOUNTS_DOMAIN is not a supported Zoho data-center host")
+        if api_host != expected_api_host:
+            raise ValueError(
+                "ZOHO_DESK_API_DOMAIN must match the configured Zoho Accounts data center"
+            )
 
         if self.storage_provider not in {"local", "s3"}:
             raise ValueError("STORAGE_PROVIDER must be local or s3")

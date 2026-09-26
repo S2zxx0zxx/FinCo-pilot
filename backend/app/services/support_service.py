@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.billing.enums import PlanId
 from app.billing.service import get_effective_plan
-from app.core.config import get_settings
+from app.core.config import ZOHO_DESK_API_HOSTS, get_settings
 from app.core.redis import get_redis
 from app.models.user import User
 from app.schemas.support import SupportCategory, SupportTicketCreate
@@ -132,43 +132,48 @@ def support_routing(plan: PlanId, category: SupportCategory) -> SupportRouting:
 
 
 async def enforce_support_rate_limit(user_id: uuid.UUID) -> None:
+    """Bound direct ticket creation with a concurrency-safe fixed UTC-hour bucket."""
     settings = get_settings()
     redis = await get_redis()
-    key = f"rate_limit:support:{user_id}"
     now = time.time()
     window_seconds = 3600
-    window_start = now - window_seconds
+    bucket = int(now // window_seconds)
+    key = f"rate_limit:support:{user_id}:{bucket}"
 
-    pipe = redis.pipeline()
-    pipe.zremrangebyscore(key, 0, window_start)
-    pipe.zcard(key)
-    pipe.zadd(key, {f"{time.time_ns()}": now})
-    pipe.expire(key, window_seconds)
-    results = await pipe.execute()
-    previous_count = int(results[1] or 0)
+    # Redis INCR is atomic across API replicas. The bucket key changes at the
+    # hour boundary, so rejected requests cannot keep extending the user's
+    # lockout window. A small cleanup buffer is harmless and bounds storage.
+    count = int(await redis.incr(key))
+    retry_after = max(1, int(((bucket + 1) * window_seconds) - now))
+    await redis.expire(key, retry_after + 60)
 
-    if previous_count >= settings.support_rate_limit_per_hour:
+    if count > settings.support_rate_limit_per_hour:
         raise HTTPException(
             status_code=429,
             detail={
                 "code": "SUPPORT_RATE_LIMITED",
                 "message": "Too many support requests. Please use the support portal or email if the issue is urgent.",
             },
-            headers={"Retry-After": str(window_seconds)},
+            headers={"Retry-After": str(retry_after)},
         )
 
 
 def _trusted_zoho_api_domain(value: str, fallback: str) -> str:
-    """Accept only Zoho Desk HTTPS hosts returned by Zoho's token endpoint."""
+    """Accept only exact Zoho Desk data-center origins returned by OAuth."""
     candidate = value.strip() or fallback.strip()
     parsed = urlsplit(candidate)
     hostname = (parsed.hostname or "").lower()
-    allowed = (
-        hostname == "desk.zoho.com"
-        or hostname.startswith("desk.zoho.")
-        or hostname.startswith("desk.zohocloud.")
+    trusted = (
+        parsed.scheme == "https"
+        and hostname in ZOHO_DESK_API_HOSTS
+        and parsed.username is None
+        and parsed.password is None
+        and parsed.port in {None, 443}
+        and parsed.path in {"", "/"}
+        and not parsed.query
+        and not parsed.fragment
     )
-    if parsed.scheme != "https" or not allowed:
+    if not trusted:
         logger.error("Zoho returned an unexpected API domain; using configured domain")
         return fallback.rstrip("/")
     return candidate.rstrip("/")

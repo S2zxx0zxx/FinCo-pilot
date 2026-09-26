@@ -315,7 +315,21 @@ async def request_reference(request, call_next):
             request.method,
             request.url.path,
         )
-        raise
+        # Return the same opaque reference the operator sees in logs. Never
+        # serialize the exception string: provider/database errors can contain
+        # operational details that do not belong in the browser.
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": "An unexpected server error occurred.",
+                "code": "internal_server_error",
+                "request_id": reference,
+            },
+            headers={
+                "X-Request-ID": reference,
+                "Cache-Control": "no-store",
+            },
+        )
 
     response.headers["X-Request-ID"] = reference
     if response.status_code >= 500:

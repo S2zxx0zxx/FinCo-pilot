@@ -416,18 +416,17 @@ function HistoryView({ agent, history }: { agent: Agent; history: AgentMessage[]
  *  (cheaper than auto-sending — gives the user a chance to tweak). */
 function ChatEmptyState({ agent, onPick }: { agent: Agent; onPick: (text: string) => void }) {
   const { t } = useTranslation()
+  const isCoreCopilot = agent.extra?.kind === 'core_copilot'
 
-  // Resolve the LLM connector tied to this agent so the empty state
-  // can show "Connected via X" — useful trust signal: the user knows
-  // which provider/key/model is going to handle the next message.
-  // Falls back gracefully when the agent has no connection_id (uses
-  // raw provider/model fields or instance default).
+  // Custom-agent provider details are an Advanced Agents concern. The core
+  // Copilot intentionally does not call the Max-only connections endpoint
+  // and does not expose its operator routing in the everyday chat UI.
   const { data: connections } = useQuery({
     queryKey: ['agent-connections'],
     queryFn: () => agents.connections.list(),
+    enabled: !isCoreCopilot,
     staleTime: 1000 * 60,
   })
-  const isCoreCopilot = agent.extra?.kind === 'core_copilot'
   const connectorLabel = useMemo<string | null>(() => {
     if (isCoreCopilot) return null
     if (agent.connection_id) {

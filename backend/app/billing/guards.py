@@ -367,8 +367,22 @@ async def _request_targets_core_copilot(
     if request.method == "GET" and path == "/api/agents/copilot":
         return True
 
+    # Keep the exception intentionally tiny. A core-agent id in a URL must
+    # not unlock Advanced Agents sub-surfaces such as /knowledge or /tools.
+    # Only the built-in chat endpoint and its own conversation history are
+    # available without AGENTS_AUTOMATION.
     raw_agent_id = request.path_params.get("agent_id") or request.query_params.get("agent_id")
-    if raw_agent_id:
+    agent_route_allowed = (
+        request.method == "POST"
+        and path.startswith("/api/agents/")
+        and path.endswith("/chat")
+        and "/knowledge" not in path
+    ) or (
+        request.method == "GET"
+        and path == "/api/agents/conversations"
+        and request.query_params.get("agent_id") is not None
+    )
+    if raw_agent_id and agent_route_allowed:
         try:
             agent_id = uuid.UUID(str(raw_agent_id))
         except (TypeError, ValueError):
@@ -382,7 +396,12 @@ async def _request_targets_core_copilot(
         )
 
     raw_conversation_id = request.path_params.get("conversation_id")
-    if raw_conversation_id:
+    conversation_route_allowed = raw_conversation_id is not None and (
+        path == f"/api/agents/conversations/{raw_conversation_id}"
+        or path == f"/api/agents/conversations/{raw_conversation_id}/messages"
+        or path == f"/api/agents/conversations/{raw_conversation_id}/generate-title"
+    )
+    if raw_conversation_id and conversation_route_allowed:
         try:
             conversation_id = uuid.UUID(str(raw_conversation_id))
         except (TypeError, ValueError):

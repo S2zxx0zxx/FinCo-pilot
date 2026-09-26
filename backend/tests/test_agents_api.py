@@ -273,6 +273,42 @@ async def test_temperature_clamp(client: AsyncClient, auth_headers: dict):
     assert r.status_code == 422
 
 
+async def test_chat_request_validation_bounds_inputs(
+    client: AsyncClient, auth_headers: dict
+):
+    created = await client.post(
+        "/api/agents",
+        json={"name": "Validation agent"},
+        headers=auth_headers,
+    )
+    assert created.status_code == 201, created.text
+    agent_id = created.json()["id"]
+
+    blank = await client.post(
+        f"/api/agents/{agent_id}/chat",
+        json={"content": "   "},
+        headers=auth_headers,
+    )
+    assert blank.status_code == 422
+
+    huge = await client.post(
+        f"/api/agents/{agent_id}/chat",
+        json={"content": "x" * 12_001},
+        headers=auth_headers,
+    )
+    assert huge.status_code == 422
+
+    oversized_context = await client.post(
+        f"/api/agents/{agent_id}/chat",
+        json={
+            "content": "hello",
+            "page_context": {"blob": "x" * 20_001},
+        },
+        headers=auth_headers,
+    )
+    assert oversized_context.status_code == 422
+
+
 # --- Conversations & messages ---------------------------------------------
 
 async def test_conversations_empty(client: AsyncClient, auth_headers: dict):

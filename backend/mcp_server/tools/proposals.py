@@ -991,7 +991,10 @@ async def propose_create_goal(
     color: str | None = None,
     apply: bool = False,
 ) -> dict[str, Any]:
-    resolved_currency = (currency or "BRL").upper()
+    resolved_currency = (
+        currency
+        or await goal_service._get_primary_currency(session, ctx.user_id)
+    ).upper()
     resolved_deadline = parse_date(deadline) if deadline else None
     resolved_initial = float(initial_amount) if initial_amount is not None else 0.0
     preview = {

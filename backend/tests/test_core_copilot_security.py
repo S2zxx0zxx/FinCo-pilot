@@ -149,3 +149,21 @@ async def test_viewer_can_chat_with_core_but_gets_read_only_executor(
     assert "event: conversation" in response.text
     assert "event: done" in response.text
 
+@pytest.mark.asyncio
+async def test_max_user_cannot_turn_core_into_custom_knowledge_agent(
+    client, auth_headers
+):
+    core_response = await client.get(
+        "/api/agents/copilot",
+        headers=auth_headers,
+    )
+    assert core_response.status_code == 200, core_response.text
+    core_id = core_response.json()["id"]
+
+    response = await client.get(
+        f"/api/agents/{core_id}/knowledge",
+        headers=auth_headers,
+    )
+    assert response.status_code == 403
+    assert response.json()["detail"] == "system copilot knowledge is policy-managed"
+

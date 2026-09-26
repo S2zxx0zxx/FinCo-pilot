@@ -159,6 +159,9 @@ export default function RegisterPage() {
                 {t('auth.login')}
               </Link>
             </p>
+            <Link to="/support?from=%2Fregister&category=account_access" className="text-sm text-muted-foreground hover:text-primary hover:underline">
+              {t('support.helpLink')}
+            </Link>
           </CardFooter>
         </form>
       </Card>

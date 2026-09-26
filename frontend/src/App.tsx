@@ -24,6 +24,7 @@ const SetupPage = lazy(() => import('@/pages/setup'))
 const LoginPage = lazy(() => import('@/pages/login'))
 const RegisterPage = lazy(() => import('@/pages/register'))
 const PricingPage = lazy(() => import('@/pages/pricing'))
+const SupportPage = lazy(() => import('@/pages/support'))
 const LoansPage = lazy(() => import('@/pages/loans'))
 const SpendingPlanPage = lazy(() => import('@/pages/spending-plan'))
 const DashboardPage = lazy(() => import('@/pages/dashboard'))
@@ -85,6 +86,7 @@ function App() {
                         <Route path="/auth/oidc/callback" element={<OIDCCallbackPage />} />
                         <Route path="/register" element={<RegisterPage />} />
                         <Route path="/pricing" element={<PricingPage />} />
+                        <Route path="/support" element={<SupportPage />} />
                         {/* A client opening a link the sender shared. Deliberately
                             outside ProtectedRoute and outside AppLayout: the
                             recipient has no account, and the token is the whole

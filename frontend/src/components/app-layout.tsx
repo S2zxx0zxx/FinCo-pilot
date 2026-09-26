@@ -48,6 +48,7 @@ import {
   Shield,
   ShieldCheck,
   Fingerprint,
+  LifeBuoy,
 } from 'lucide-react'
 import { usePrivacyMode } from '@/hooks/use-privacy-mode'
 import { ChangePasswordDialog } from '@/components/change-password-dialog'
@@ -631,6 +632,13 @@ function UserMenu({
         >
           <HardDriveDownload size={14} />
           {t('backup.button')}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => nav('/support')}
+          className="flex items-center gap-2"
+        >
+          <LifeBuoy size={14} />
+          {t('support.helpLink')}
         </DropdownMenuItem>
         {agentsEnabled && (
           <DropdownMenuItem

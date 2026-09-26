@@ -10,6 +10,23 @@ CREDENTIALS_DIRECTORY: list[Path] = [
     Path(p) for p in getenv("CREDENTIALS_DIRECTORY", "/run/secrets").split(":") if p
 ]
 
+# Zoho Desk OAuth returns an API origin for the account's data center. Keep the
+# accepted hosts explicit so a compromised/malformed token response cannot turn
+# the support adapter into an SSRF primitive.
+ZOHO_DESK_DATA_CENTER_HOSTS: dict[str, str] = {
+    "accounts.zoho.com": "desk.zoho.com",
+    "accounts.zoho.eu": "desk.zoho.eu",
+    "accounts.zoho.in": "desk.zoho.in",
+    "accounts.zoho.com.au": "desk.zoho.com.au",
+    "accounts.zohocloud.ca": "desk.zohocloud.ca",
+    "accounts.zoho.sa": "desk.zoho.sa",
+    "accounts.zoho.jp": "desk.zoho.jp",
+    "accounts.zoho.com.cn": "desk.zoho.com.cn",
+    "accounts.zoho.sg": "desk.zoho.sg",
+    "accounts.zoho.ae": "desk.zoho.ae",
+}
+ZOHO_DESK_API_HOSTS = frozenset(ZOHO_DESK_DATA_CENTER_HOSTS.values())
+
 
 class Settings(BaseSettings):
     # App
@@ -45,6 +62,30 @@ class Settings(BaseSettings):
     smtp_from_email: str = ""
     smtp_starttls: bool = True
     smtp_use_ssl: bool = False
+
+    # Customer support / trust layer. Public contact metadata is intentionally
+    # separate from transactional SMTP: a support inbox is a human help
+    # destination, while SMTP_FROM_EMAIL is an automated sender identity.
+    support_enabled: bool = False
+    support_email: str = ""
+    support_portal_url: str = ""
+    support_help_center_url: str = ""
+    support_security_url: str = (
+        "https://github.com/S2zxx0zxx/FinCo-pilot/security/advisories/new"
+    )
+    support_provider: str = "external"  # external|zoho_desk
+    support_ticket_submission_enabled: bool = False
+    support_rate_limit_per_hour: int = 6
+
+    # Zoho Desk provider credentials. Only the backend ever receives these.
+    # Use a least-privilege OAuth client with Desk.tickets.CREATE.
+    zoho_desk_accounts_domain: str = "https://accounts.zoho.in"
+    zoho_desk_api_domain: str = "https://desk.zoho.in"
+    zoho_desk_org_id: str = ""
+    zoho_desk_department_id: str = ""
+    zoho_desk_client_id: str = ""
+    zoho_desk_client_secret: SecretStr = SecretStr("")
+    zoho_desk_refresh_token: SecretStr = SecretStr("")
 
     # Observability. Metrics are intentionally token-protected when enabled in
     # production because labels/counters are operational data, not a public API.
@@ -160,6 +201,26 @@ class Settings(BaseSettings):
     def email_delivery_available(self) -> bool:
         return bool(self.smtp_host.strip() and self.smtp_from_email.strip())
 
+    @property
+    def support_contact_available(self) -> bool:
+        return bool(
+            self.support_enabled
+            and (self.support_email.strip() or self.support_portal_url.strip())
+        )
+
+    @property
+    def support_ticket_submission_available(self) -> bool:
+        return bool(
+            self.support_contact_available
+            and self.support_ticket_submission_enabled
+            and self.support_provider == "zoho_desk"
+            and self.zoho_desk_org_id.strip()
+            and self.zoho_desk_department_id.strip()
+            and self.zoho_desk_client_id.strip()
+            and self.zoho_desk_client_secret.get_secret_value().strip()
+            and self.zoho_desk_refresh_token.get_secret_value().strip()
+        )
+
     @model_validator(mode="after")
     def validate_auth_settings(self) -> "Settings":
         environment = self.deployment_environment.strip().lower()
@@ -185,6 +246,91 @@ class Settings(BaseSettings):
             raise ValueError("SMTP_USE_SSL and SMTP_STARTTLS cannot both be true")
         if not 1 <= self.smtp_port <= 65535:
             raise ValueError("SMTP_PORT must be between 1 and 65535")
+
+        if self.support_provider not in {"external", "zoho_desk"}:
+            raise ValueError("SUPPORT_PROVIDER must be external or zoho_desk")
+        if not 1 <= self.support_rate_limit_per_hour <= 100:
+            raise ValueError("SUPPORT_RATE_LIMIT_PER_HOUR must be between 1 and 100")
+        if self.support_enabled:
+            if not (self.support_email.strip() or self.support_portal_url.strip()):
+                raise ValueError(
+                    "SUPPORT_ENABLED=true requires SUPPORT_EMAIL or SUPPORT_PORTAL_URL"
+                )
+            if self.support_email and (
+                "@" not in self.support_email
+                or any(ch.isspace() for ch in self.support_email)
+            ):
+                raise ValueError("SUPPORT_EMAIL must be a valid email address")
+        if self.support_ticket_submission_enabled:
+            if not self.support_enabled:
+                raise ValueError(
+                    "SUPPORT_TICKET_SUBMISSION_ENABLED=true requires SUPPORT_ENABLED=true"
+                )
+            if self.support_provider != "zoho_desk":
+                raise ValueError(
+                    "SUPPORT_TICKET_SUBMISSION_ENABLED=true requires "
+                    "SUPPORT_PROVIDER=zoho_desk"
+                )
+            missing_support = []
+            if not self.zoho_desk_org_id.strip():
+                missing_support.append("ZOHO_DESK_ORG_ID")
+            if not self.zoho_desk_department_id.strip():
+                missing_support.append("ZOHO_DESK_DEPARTMENT_ID")
+            if not self.zoho_desk_client_id.strip():
+                missing_support.append("ZOHO_DESK_CLIENT_ID")
+            if not self.zoho_desk_client_secret.get_secret_value().strip():
+                missing_support.append("ZOHO_DESK_CLIENT_SECRET")
+            if not self.zoho_desk_refresh_token.get_secret_value().strip():
+                missing_support.append("ZOHO_DESK_REFRESH_TOKEN")
+            if missing_support:
+                raise ValueError(
+                    "Direct support ticket submission requires: "
+                    + ", ".join(missing_support)
+                )
+
+        support_urls = {
+            "SUPPORT_PORTAL_URL": self.support_portal_url,
+            "SUPPORT_HELP_CENTER_URL": self.support_help_center_url,
+            "SUPPORT_SECURITY_URL": self.support_security_url,
+        }
+        for name, value in support_urls.items():
+            if not value.strip():
+                continue
+            parsed = urlsplit(value)
+            if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+                raise ValueError(f"{name} must be an absolute http(s) URL")
+            if environment == "production" and parsed.scheme != "https":
+                raise ValueError(f"Production {name} must use https://")
+
+        # Provider endpoints are never user-facing development URLs. Require
+        # exact HTTPS Zoho origins and a matching accounts/API data center.
+        accounts_origin = urlsplit(self.zoho_desk_accounts_domain)
+        api_origin = urlsplit(self.zoho_desk_api_domain)
+        for name, parsed in (
+            ("ZOHO_DESK_ACCOUNTS_DOMAIN", accounts_origin),
+            ("ZOHO_DESK_API_DOMAIN", api_origin),
+        ):
+            if (
+                parsed.scheme != "https"
+                or not parsed.hostname
+                or parsed.username is not None
+                or parsed.password is not None
+                or parsed.port not in {None, 443}
+                or parsed.path not in {"", "/"}
+                or parsed.query
+                or parsed.fragment
+            ):
+                raise ValueError(f"{name} must be a bare https:// Zoho origin")
+
+        accounts_host = (accounts_origin.hostname or "").lower()
+        api_host = (api_origin.hostname or "").lower()
+        expected_api_host = ZOHO_DESK_DATA_CENTER_HOSTS.get(accounts_host)
+        if expected_api_host is None:
+            raise ValueError("ZOHO_DESK_ACCOUNTS_DOMAIN is not a supported Zoho data-center host")
+        if api_host != expected_api_host:
+            raise ValueError(
+                "ZOHO_DESK_API_DOMAIN must match the configured Zoho Accounts data center"
+            )
 
         if self.storage_provider not in {"local", "s3"}:
             raise ValueError("STORAGE_PROVIDER must be local or s3")

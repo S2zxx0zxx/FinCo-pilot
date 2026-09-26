@@ -5,6 +5,7 @@ nav items, routes, etc. Lightweight — no auth required.
 """
 from fastapi import APIRouter
 
+from app.api.support import public_support_info
 from app.core.feature_flags import feature_flag
 
 router = APIRouter(prefix="/api", tags=["info"])
@@ -17,4 +18,5 @@ async def get_app_info():
             "agents": feature_flag("AGENTS_ENABLED"),
             "tesouro_direto": feature_flag("TESOURO_DIRETO_ENABLED"),
         },
+        "support": public_support_info().model_dump(),
     }

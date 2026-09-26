@@ -20,6 +20,7 @@ import { FinCoLogo } from '@/components/finco-logo'
 import { PlanBadge } from '@/components/plan-badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { buildSupportUrl, rememberRequestId } from '@/lib/support'
 import { formatInrMinor, priceFor } from '@/billing/catalog'
 import { FounderOfferCard } from '@/billing/founder-offer-card'
 import type { CheckoutOrder, PlanId } from '@/billing/types'
@@ -402,16 +403,34 @@ export default function PricingPage() {
                 razorpay_signature: response.razorpay_signature,
               }),
             })
+            const requestReference = rememberRequestId(verifyRes.headers)
             if (verifyRes.ok) {
               await refreshFounderCampaign()
               toast.success('Payment captured and verified. Activation is pending the secure subscription lifecycle.')
             } else {
               const body = await verifyRes.json().catch(() => ({}))
               const detail = (body as { detail?: string }).detail
-              toast.error(detail ?? 'Payment verification failed. Please contact support.')
+              toast.error(detail ?? 'Payment verification failed. Please contact support.', {
+                action: {
+                  label: 'Contact support',
+                  onClick: () => navigate(buildSupportUrl({
+                    from: '/pricing',
+                    category: 'billing_payment',
+                    reference: requestReference,
+                  })),
+                },
+              })
             }
           } catch {
-            toast.error('Could not verify payment. Please contact support.')
+            toast.error('Could not verify payment. Please contact support.', {
+              action: {
+                label: 'Contact support',
+                onClick: () => navigate(buildSupportUrl({
+                  from: '/pricing',
+                  category: 'billing_payment',
+                })),
+              },
+            })
           }
         },
         modal: {
@@ -425,7 +444,15 @@ export default function PricingPage() {
 
       const rzp = new window.Razorpay(options)
       rzp.on('payment.failed', () => {
-        toast.error('Payment failed. No paid entitlement was activated.')
+        toast.error('Payment failed. No paid entitlement was activated.', {
+          action: {
+            label: 'Contact support',
+            onClick: () => navigate(buildSupportUrl({
+              from: '/pricing',
+              category: 'billing_payment',
+            })),
+          },
+        })
       })
       rzp.open()
     } catch {

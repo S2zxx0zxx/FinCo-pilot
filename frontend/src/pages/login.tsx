@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/auth-context'
 import { setup, auth as authApi, admin as adminApi } from '@/lib/api'
@@ -43,6 +43,7 @@ export default function LoginPage() {
   const { t } = useTranslation()
   const { login, verify2fa, loginWithToken, token } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { resolvedTheme } = useTheme()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -68,6 +69,10 @@ export default function LoginPage() {
   const noAuthMethodConfigured = oidcConfig !== null && !localAuthEnabled && !oidcEnabled
   const showPasskeyLogin = localAuthEnabled && passkeySupported
   const showAuthDivider = localAuthEnabled && (showPasskeyLogin || oidcEnabled)
+  const requestedNext = searchParams.get('next')
+  const safeNext = requestedNext?.startsWith('/') && !requestedNext.startsWith('//') && !requestedNext.includes('://')
+    ? requestedNext
+    : '/'
 
   useEffect(() => {
     setPasskeySupported(isPasskeySupported())
@@ -140,7 +145,7 @@ export default function LoginPage() {
         if (abortController.signal.aborted) return
 
         loginWithToken(result.access_token)
-        navigate('/')
+        navigate(safeNext)
       } catch {
         // Conditional UI is an enhancement. Unsupported providers, dismissal,
         // expiry, and cancellation leave the normal login methods untouched.
@@ -164,6 +169,7 @@ export default function LoginPage() {
     navigate,
     passkeySupported,
     requires2fa,
+    safeNext,
     token,
   ])
 
@@ -181,7 +187,7 @@ export default function LoginPage() {
         setAvailable2faMethods(methods)
         setSelected2faMethod(methods.includes('passkey') ? 'passkey' : methods[0])
       } else {
-        navigate('/')
+        navigate(safeNext)
       }
     } catch (err) {
       const axiosErr = err as AxiosError
@@ -212,7 +218,7 @@ export default function LoginPage() {
       const credential = await startPasskeyAuthentication(options.options)
       const result = await authApi.verifyPasskeyAuthentication(options.challenge_id, credential)
       loginWithToken(result.access_token)
-      navigate('/')
+      navigate(safeNext)
     } catch (err) {
       const axiosErr = err as AxiosError
       if (axiosErr?.response?.status === 429) {
@@ -231,7 +237,7 @@ export default function LoginPage() {
     setIsLoading(true)
     try {
       await verify2fa(tempToken, totpCode)
-      navigate('/')
+      navigate(safeNext)
     } catch (err) {
       const axiosErr = err as AxiosError
       if (isServerUnreachable(err)) {
@@ -265,7 +271,7 @@ export default function LoginPage() {
       const credential = await startPasskeyAuthentication(options.options)
       const result = await authApi.verifyPasskeySecondFactor(tempToken, options.challenge_id, credential)
       loginWithToken(result.access_token)
-      navigate('/')
+      navigate(safeNext)
     } catch (err) {
       const axiosErr = err as AxiosError
       const domErr = err as { name?: string }
@@ -369,13 +375,18 @@ export default function LoginPage() {
                   {isPasskeyLoading ? t('common.loading') : t('auth.usePasskeySecondFactor')}
                 </Button>
               )}
-              <button
-                type="button"
-                onClick={resetSecondFactor}
-                className="text-sm text-muted-foreground hover:text-foreground"
-              >
-                {t('auth.login')}
-              </button>
+              <div className="flex items-center gap-4 text-sm">
+                <button
+                  type="button"
+                  onClick={resetSecondFactor}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  {t('auth.login')}
+                </button>
+                <Link to="/support?from=%2Flogin&category=account_access" className="text-primary hover:underline">
+                  {t('support.helpLink')}
+                </Link>
+              </div>
             </CardFooter>
           </form>
         </Card>
@@ -488,6 +499,9 @@ export default function LoginPage() {
                   </Link>
                 </p>
               )}
+              <Link to="/support?from=%2Flogin&category=account_access" className="text-sm text-muted-foreground hover:text-primary hover:underline">
+                {t('support.helpLink')}
+              </Link>
             </CardFooter>
           )}
         </form>

@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { rememberRequestId } from '@/lib/support'
 import type { NumberFormat, DateFormat } from '@/lib/format'
 import type {
   User,
@@ -112,6 +113,7 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    rememberRequestId(error.response?.headers)
     if (error.response?.status === 401) {
       localStorage.removeItem('token')
       window.location.href = '/login'
@@ -1563,9 +1565,61 @@ export const search = {
   },
 }
 
+export type SupportCategory =
+  | 'account_access'
+  | 'billing_payment'
+  | 'bank_connection'
+  | 'transactions_import'
+  | 'safe_to_spend'
+  | 'finco_copilot'
+  | 'bug_performance'
+  | 'privacy_data'
+  | 'feature_request'
+  | 'other'
+
+export interface SupportPublicInfo {
+  enabled: boolean
+  email: string | null
+  portal_url: string | null
+  help_center_url: string | null
+  security_url: string | null
+  direct_ticket_submission: boolean
+  categories: SupportCategory[]
+}
+
+export interface SupportTicketPayload {
+  category: SupportCategory
+  subject: string
+  message: string
+  page_path?: string | null
+  app_version?: string | null
+  locale?: string | null
+  error_reference?: string | null
+}
+
+export interface SupportTicketResult {
+  reference: string
+  ticket_id: string
+  ticket_number: string | null
+  support_tier: 'standard' | 'priority' | 'highest_priority' | string
+  priority: string
+}
+
+export const support = {
+  info: async (): Promise<SupportPublicInfo> => {
+    const { data } = await api.get('/support/info')
+    return data
+  },
+  createTicket: async (payload: SupportTicketPayload): Promise<SupportTicketResult> => {
+    const { data } = await api.post('/support/tickets', payload)
+    return data
+  },
+}
+
 // App-level feature flags (whether optional modules like agents are mounted)
 export interface AppInfo {
   features: { agents: boolean; tesouro_direto?: boolean }
+  support?: SupportPublicInfo
 }
 
 export const info = {

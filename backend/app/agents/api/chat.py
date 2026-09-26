@@ -56,6 +56,24 @@ async def chat(
         )
         if conv is None or conv.agent_id != agent_id:
             raise HTTPException(status_code=404, detail="conversation not found")
+
+    # Reserve usage before creating a brand-new conversation. Otherwise a
+    # caller who is already over quota could repeatedly submit no-id requests
+    # and leave unlimited empty conversation rows behind.
+    #
+    # Both quota helpers only flush; when this is a new conversation,
+    # create_conversation's commit atomically persists the reservation and row.
+    # Existing conversations commit the accepted reservation here.
+    executor = AgentExecutor()
+    if is_core:
+        await core_usage_service.consume_core_message(
+            session,
+            user_id=ctx.user_id,
+            limit=executor.settings.core_copilot_daily_messages,
+        )
+    else:
+        await consume_monthly(session, ctx.workspace, Metric.AI_ACTIONS_MONTHLY)
+
     if conv is None:
         conv = await conversation_service.create_conversation(
             session,
@@ -64,21 +82,7 @@ async def chat(
             agent_id=agent_id,
             channel=body.channel,
         )
-
-    # Advanced/custom agents retain the Max-plan AI_ACTIONS meter. The
-    # built-in Copilot is a separate first-party surface protected by an
-    # operator-configurable daily message ceiling instead of silently changing
-    # the pricing catalogue.
-    executor = AgentExecutor()
-    if is_core:
-        await core_usage_service.consume_core_message(
-            session,
-            user_id=ctx.user_id,
-            limit=executor.settings.core_copilot_daily_messages,
-        )
-        await session.commit()
     else:
-        await consume_monthly(session, ctx.workspace, Metric.AI_ACTIONS_MONTHLY)
         await session.commit()
 
     async def gen() -> AsyncIterator[bytes]:

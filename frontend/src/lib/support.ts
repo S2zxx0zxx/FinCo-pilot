@@ -16,7 +16,8 @@ const SUPPORT_CATEGORIES = new Set([
 ])
 
 type HeaderBag =
-  | { get?: (name: string) => string | null | undefined; [key: string]: unknown }
+  | { get: (name: string) => string | null | undefined }
+  | Record<string, unknown>
   | undefined
   | null
 
@@ -35,8 +36,12 @@ export function normalizeSupportReference(value: unknown): string | null {
 export function rememberRequestId(headers: HeaderBag): string | null {
   if (!headers) return null
   let raw: unknown
-  if (typeof headers.get === 'function') raw = headers.get('x-request-id')
-  else raw = headers['x-request-id'] ?? headers['X-Request-ID']
+  if ('get' in headers && typeof headers.get === 'function') {
+    raw = headers.get('x-request-id')
+  } else {
+    const values = headers as Record<string, unknown>
+    raw = values['x-request-id'] ?? values['X-Request-ID']
+  }
   const reference = normalizeRequestReference(raw)
   if (!reference) return null
   try {

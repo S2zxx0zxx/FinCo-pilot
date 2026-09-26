@@ -157,15 +157,17 @@ async def count_user_messages_since(
     *,
     workspace_id: uuid.UUID,
     user_id: uuid.UUID,
+    agent_id: uuid.UUID,
     since: datetime,
 ) -> int:
-    """Count accepted Copilot/user turns for an operational daily ceiling."""
+    """Count accepted user turns for one assistant's operational ceiling."""
     return int((await session.execute(
         select(func.count(Message.id))
         .join(Conversation, Conversation.id == Message.conversation_id)
         .where(
             Conversation.workspace_id == workspace_id,
             Conversation.user_id == user_id,
+            Conversation.agent_id == agent_id,
             Message.role == "user",
             Message.created_at >= since,
         )

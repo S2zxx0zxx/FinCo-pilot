@@ -169,6 +169,7 @@ export default function LoginPage() {
     navigate,
     passkeySupported,
     requires2fa,
+    safeNext,
     token,
   ])
 
@@ -217,7 +218,7 @@ export default function LoginPage() {
       const credential = await startPasskeyAuthentication(options.options)
       const result = await authApi.verifyPasskeyAuthentication(options.challenge_id, credential)
       loginWithToken(result.access_token)
-      navigate('/')
+      navigate(safeNext)
     } catch (err) {
       const axiosErr = err as AxiosError
       if (axiosErr?.response?.status === 429) {
@@ -236,7 +237,7 @@ export default function LoginPage() {
     setIsLoading(true)
     try {
       await verify2fa(tempToken, totpCode)
-      navigate('/')
+      navigate(safeNext)
     } catch (err) {
       const axiosErr = err as AxiosError
       if (isServerUnreachable(err)) {
@@ -270,7 +271,7 @@ export default function LoginPage() {
       const credential = await startPasskeyAuthentication(options.options)
       const result = await authApi.verifyPasskeySecondFactor(tempToken, options.challenge_id, credential)
       loginWithToken(result.access_token)
-      navigate('/')
+      navigate(safeNext)
     } catch (err) {
       const axiosErr = err as AxiosError
       const domErr = err as { name?: string }

@@ -613,10 +613,12 @@ async def test_core_copilot_exposes_only_explicit_reads_and_proposals(
     ]
     fake_mcp = _FakeMCP(tools=tools)
     captured_tool_names: list[str] = []
+    captured_max_tokens: list[int | None] = []
 
     class _Capture(_ScriptedProvider):
         async def chat_stream(self, messages, *, model, tools=None, temperature=0.4, max_tokens=None):
             captured_tool_names.extend([t.name for t in (tools or [])])
+            captured_max_tokens.append(max_tokens)
             async for chunk in super().chat_stream(
                 messages,
                 model=model,
@@ -650,6 +652,7 @@ async def test_core_copilot_exposes_only_explicit_reads_and_proposals(
     assert "fincopilot__list_accounts" in captured_tool_names
     assert "fincopilot__propose_create_budget" in captured_tool_names
     assert "fincopilot__dangerous_admin_action" not in captured_tool_names
+    assert captured_max_tokens == [executor.settings.core_copilot_max_output_tokens]
 
 
 async def test_viewer_cannot_dispatch_hidden_proposal_even_if_model_hallucinates_it(

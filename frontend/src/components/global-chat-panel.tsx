@@ -35,6 +35,7 @@ import { ChatPanel } from '@/components/agents/chat-panel'
 import { getEffectivePageChatContext } from '@/lib/page-chat-context'
 import { formatRelative } from '@/lib/relative-time'
 import { cn } from '@/lib/utils'
+import { useBilling } from '@/contexts/billing-context'
 
 interface Props {
   open: boolean
@@ -70,6 +71,8 @@ function writeState(s: PersistedState) {
 export function GlobalChatPanel({ open, onOpenChange }: Props) {
   const { t } = useTranslation()
   const qc = useQueryClient()
+  const { hasCapability, isLoading: billingLoading } = useBilling()
+  const advancedAgentsEnabled = !billingLoading && hasCapability('agents_automation')
   const [view, setView] = useState<'chat' | 'history'>('chat')
   // Bumped on every "new conversation" click + agent switch so the
   // textarea refocuses even when conversationId itself doesn't change.
@@ -88,7 +91,7 @@ export function GlobalChatPanel({ open, onOpenChange }: Props) {
   const { data: agentsList, isLoading: loadingAgents } = useQuery({
     queryKey: ['agents'],
     queryFn: () => agents.list(false),
-    enabled: open,
+    enabled: open && advancedAgentsEnabled,
     staleTime: 1000 * 30,
   })
 
@@ -113,7 +116,8 @@ export function GlobalChatPanel({ open, onOpenChange }: Props) {
     return coreCopilot ?? availableAgents[0]
   }, [availableAgents, persisted.agentId, coreCopilot])
 
-  const loadingAnyAgent = loadingCopilot || loadingAgents
+  const loadingAnyAgent =
+    loadingCopilot || (advancedAgentsEnabled && loadingAgents)
   const coreActive = activeAgent?.extra?.kind === 'core_copilot'
 
   const conversationId = activeAgent ? persisted.conversationByAgent?.[activeAgent.id] ?? null : null

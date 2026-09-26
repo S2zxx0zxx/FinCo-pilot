@@ -81,4 +81,5 @@ async def test_core_daily_quota_is_deletion_proof_and_enforced(
             session, user_id=test_user.id, limit=2
         )
     assert exc.value.status_code == 429
+    assert exc.value.headers is not None
     assert int(exc.value.headers["Retry-After"]) > 0

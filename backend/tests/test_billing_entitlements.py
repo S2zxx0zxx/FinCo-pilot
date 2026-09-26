@@ -126,6 +126,36 @@ async def test_free_account_quota_cannot_be_bypassed_via_direct_api(
 
 
 @pytest.mark.asyncio
+async def test_free_core_copilot_is_available_without_unlocking_advanced_agents(
+    client: AsyncClient,
+    auth_headers: dict,
+    session: AsyncSession,
+    test_user: User,
+):
+    await _set_plan(session, test_user, PlanId.FREE)
+
+    core = await client.get("/api/agents/copilot", headers=auth_headers)
+    assert core.status_code == 200, core.text
+    body = core.json()
+    assert body["name"] == "FinCo Copilot"
+    assert body["extra"]["kind"] == "core_copilot"
+    assert body["extra"]["system_managed"] is True
+
+    history = await client.get(
+        "/api/agents/conversations",
+        params={"agent_id": body["id"]},
+        headers=auth_headers,
+    )
+    assert history.status_code == 200, history.text
+
+    advanced = await client.get("/api/agents", headers=auth_headers)
+    assert advanced.status_code == 403
+    detail = advanced.json()["detail"]
+    assert detail["code"] == "ENTITLEMENT_REQUIRED"
+    assert detail["capability"] == "agents_automation"
+
+
+@pytest.mark.asyncio
 async def test_free_rule_mutation_is_blocked_but_read_is_available(
     client: AsyncClient,
     auth_headers: dict,

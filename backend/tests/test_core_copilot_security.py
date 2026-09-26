@@ -81,6 +81,7 @@ async def test_core_message_counter_is_user_scoped(
         session,
         workspace_id=test_workspace.id,
         user_id=test_user.id,
+        agent_id=core.id,
         since=datetime(2000, 1, 1, tzinfo=timezone.utc),
     )
     assert count >= 1

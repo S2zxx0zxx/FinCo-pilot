@@ -638,14 +638,26 @@ async def test_propose_cancel_recurring_default_mode_is_deactivate(
     assert r["target"]["description"] == "Spotify"
 
 
-async def test_propose_create_goal(session: AsyncSession, ctx: CallContext):
+async def test_propose_create_goal(
+    session: AsyncSession, ctx: CallContext, test_user
+):
+    # Regression: this used to hardcode BRL when currency was omitted. The
+    # proposal must follow the authenticated user's primary currency so an
+    # India-first account does not silently create a Brazilian-real goal.
+    test_user.preferences = {
+        **(test_user.preferences or {}),
+        "currency_display": "INR",
+    }
+    await session.commit()
+
     handler = REGISTRY["propose_create_goal"].handler
     r = await handler(
         session=session, ctx=ctx,
-        name="Viagem para o Japão", target_amount=10000, deadline="2026-12-31",
+        name="Emergency fund", target_amount=10000, deadline="2026-12-31",
     )
     assert r["kind"] == "create_goal"
     assert r["proposed"]["target_amount"] == 10000.0
+    assert r["proposed"]["currency"] == "INR"
     assert r["proposed"]["deadline"] == "2026-12-31"
     assert r["proposed"]["initial_amount"] == 0.0
 

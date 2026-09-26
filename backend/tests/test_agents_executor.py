@@ -435,8 +435,8 @@ async def test_tool_result_passed_to_llm_in_full(session, test_user, test_agent,
 
 async def test_auto_context_primer_prepended_when_enabled(session, test_user, test_agent, test_conversation, test_account):
     """Captures the system messages the provider sees and verifies the
-    primer is the first one when auto_context=True (default), with the
-    agent's own system_prompt right after."""
+    guarded prompt stack plus the privacy-minimized auto-context primer when
+    auto_context=True (default)."""
     captured: dict[str, list] = {"system": []}
 
     class _Capture(_ScriptedProvider):
@@ -473,7 +473,11 @@ async def test_auto_context_primer_prepended_when_enabled(session, test_user, te
     assert "FinCo-Pilot" in sys_msgs[1]            # identity primer mentions the product
     assert sys_msgs[2] == "You are helpful."
     assert "Context for this conversation" in sys_msgs[3]
-    assert "test@example.com" in sys_msgs[3]  # uses test_user fixture's email
+    # Always-on orientation must not leak the account email. With no explicit
+    # display name, the privacy-safe label stays generic while account names
+    # remain available for lightweight navigation context.
+    assert "test@example.com" not in sys_msgs[3]
+    assert "- Identity: the user" in sys_msgs[3]
     assert "Conta Corrente" in sys_msgs[3]    # account name from fixture
 
 

@@ -167,3 +167,19 @@ async def test_max_user_cannot_turn_core_into_custom_knowledge_agent(
     assert response.status_code == 403
     assert response.json()["detail"] == "system copilot knowledge is policy-managed"
 
+@pytest.mark.asyncio
+async def test_core_copilot_never_becomes_custom_default(
+    session: AsyncSession, test_user, test_workspace
+):
+    core = await agent_service.ensure_core_copilot(
+        session, test_workspace.id, test_user.id
+    )
+    # Defense in depth for legacy/manual DB state: even if the flag is set,
+    # the system Copilot must never leak through the custom-agent default API.
+    core.is_default = True
+    await session.commit()
+
+    assert await agent_service.get_default_agent(
+        session, test_workspace.id
+    ) is None
+

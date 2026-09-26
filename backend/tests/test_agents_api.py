@@ -234,6 +234,34 @@ async def test_multi_tenant_scoping(client: AsyncClient, auth_headers: dict, oth
     assert r.status_code == 404
 
 
+async def test_user_cannot_spoof_system_copilot_metadata(
+    client: AsyncClient, auth_headers: dict
+):
+    create = await client.post(
+        "/api/agents",
+        headers=auth_headers,
+        json={
+            "name": "Fake core",
+            "extra": {"kind": "core_copilot", "system_managed": True},
+        },
+    )
+    assert create.status_code == 422
+
+    normal = await client.post(
+        "/api/agents",
+        headers=auth_headers,
+        json={"name": "Normal agent"},
+    )
+    assert normal.status_code == 201, normal.text
+
+    update = await client.patch(
+        f"/api/agents/{normal.json()['id']}",
+        headers=auth_headers,
+        json={"extra": {"system_managed": True}},
+    )
+    assert update.status_code == 422
+
+
 async def test_create_validation_rejects_missing_name(client: AsyncClient, auth_headers: dict):
     r = await client.post("/api/agents", json={}, headers=auth_headers)
     assert r.status_code == 422

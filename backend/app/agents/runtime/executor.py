@@ -108,6 +108,12 @@ async def _provider_and_model_for(session, agent: Agent):
     """
     from app.agents.services import connection_service  # local import: cycle safety
 
+    # The built-in product Copilot is operator-routed. A user's custom/default
+    # LLM connection belongs to the Advanced Agents surface and must not
+    # silently change the provider behind the system Copilot.
+    if agent_service.is_core_copilot(agent):
+        return _provider_for(agent), _model_for(agent)
+
     conn = None
     if agent.connection_id:
         conn = await connection_service.get_connection(session, agent.connection_id, agent.user_id)

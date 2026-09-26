@@ -468,6 +468,8 @@ async def test_auto_context_primer_prepended_when_enabled(session, test_user, te
     assert len(sys_msgs) == 4, f"expected guardrail + identity + agent prompt + auto-context, got {len(sys_msgs)}"
     assert "Runtime rules" in sys_msgs[0]
     assert "propose_" in sys_msgs[0]
+    assert "obligations_reviewed=true" in sys_msgs[0]
+    assert "explicitly confirms" in sys_msgs[0]
     assert "FinCo-Pilot" in sys_msgs[1]            # identity primer mentions the product
     assert sys_msgs[2] == "You are helpful."
     assert "Context for this conversation" in sys_msgs[3]

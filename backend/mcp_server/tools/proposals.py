@@ -1057,6 +1057,7 @@ def _today():
     },
     is_proposal=True,
     tags=["propose", "rules"],
+    required_capability="rules",
 )
 async def propose_create_payee_rule(
     *,

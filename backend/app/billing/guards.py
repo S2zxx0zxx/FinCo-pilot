@@ -372,20 +372,20 @@ async def _request_targets_core_copilot(
     # Only the built-in chat endpoint and its own conversation history are
     # available without AGENTS_AUTOMATION.
     raw_agent_id = request.path_params.get("agent_id") or request.query_params.get("agent_id")
-    agent_route_allowed = (
-        request.method == "POST"
-        and path.startswith("/api/agents/")
-        and path.endswith("/chat")
-        and "/knowledge" not in path
-    ) or (
-        request.method == "GET"
-        and path == "/api/agents/conversations"
-        and request.query_params.get("agent_id") is not None
-    )
-    if raw_agent_id and agent_route_allowed:
+    if raw_agent_id:
         try:
             agent_id = uuid.UUID(str(raw_agent_id))
         except (TypeError, ValueError):
+            return False
+        agent_route_allowed = (
+            request.method == "POST"
+            and path == f"/api/agents/{agent_id}/chat"
+        ) or (
+            request.method == "GET"
+            and path == "/api/agents/conversations"
+            and request.query_params.get("agent_id") is not None
+        )
+        if not agent_route_allowed:
             return False
         agent = await session.get(Agent, agent_id)
         return bool(

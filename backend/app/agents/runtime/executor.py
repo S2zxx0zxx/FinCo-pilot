@@ -567,6 +567,11 @@ class AgentExecutor:
                     model=model,
                     tools=tool_defs or None,
                     temperature=agent.temperature,
+                    max_tokens=(
+                        self.settings.core_copilot_max_output_tokens
+                        if agent_service.is_core_copilot(agent)
+                        else None
+                    ),
                 ):
                     async for ev in _process_chunk(chunk, text_buf, open_calls):
                         yield ev

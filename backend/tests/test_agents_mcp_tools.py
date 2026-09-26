@@ -93,6 +93,37 @@ def test_recurring_proposal_frequency_schema_includes_new_values(tool_name):
 
 # --- Read tools (with real seeded data) -----------------------------------
 
+async def test_bank_connection_status_never_exposes_credentials(
+    session: AsyncSession, ctx: CallContext, test_user, test_workspace
+):
+    from app.models.bank_connection import BankConnection
+
+    row = BankConnection(
+        user_id=test_user.id,
+        workspace_id=test_workspace.id,
+        provider="test-provider",
+        external_id="provider-secret-identifier",
+        institution_name="Test Bank",
+        credentials={"access_token": "must-never-leak"},
+        settings={"private_provider_option": "must-never-leak"},
+        status="active",
+        last_sync_status="success",
+    )
+    session.add(row)
+    await session.commit()
+
+    result = await REGISTRY["list_bank_connection_status"].handler(
+        session=session, ctx=ctx
+    )
+    assert result["total"] == 1
+    item = result["items"][0]
+    assert item["institution"] == "Test Bank"
+    assert "credentials" not in item
+    assert "settings" not in item
+    assert "external_id" not in item
+    assert "must-never-leak" not in repr(item)
+
+
 async def test_list_transactions_returns_seeded_data(
     session: AsyncSession, ctx: CallContext, test_transactions
 ):

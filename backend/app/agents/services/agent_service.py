@@ -234,13 +234,17 @@ async def get_default_agent(
     """The default agent is what the global slide-over chat panel uses.
     Falls back to the most-recently-created non-archived agent so the
     panel still works for workspaces that haven't picked one yet."""
-    explicit = (await session.execute(
+    explicit_rows = list((await session.execute(
         select(Agent).where(
             Agent.workspace_id == workspace_id,
             Agent.is_default.is_(True),
             Agent.is_archived.is_(False),
         )
-    )).scalar_one_or_none()
+    )).scalars().all())
+    explicit = next(
+        (row for row in explicit_rows if not is_core_copilot(row)),
+        None,
+    )
     if explicit is not None:
         return explicit
     rows = list((await session.execute(

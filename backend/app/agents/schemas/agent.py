@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class AgentCreate(BaseModel):
@@ -25,6 +25,13 @@ class AgentCreate(BaseModel):
     similarity_threshold: float = Field(0.25, ge=0.0, le=1.0)
     extra: dict[str, Any] = Field(default_factory=dict)
     auto_context: bool = True
+
+    @field_validator("extra")
+    @classmethod
+    def reject_reserved_system_metadata(cls, value: dict[str, Any]) -> dict[str, Any]:
+        if value.get("kind") == "core_copilot" or value.get("system_managed") is True:
+            raise ValueError("core Copilot system metadata is reserved")
+        return value
     is_default: bool = False
 
 
@@ -43,6 +50,19 @@ class AgentUpdate(BaseModel):
     similarity_threshold: Optional[float] = Field(None, ge=0.0, le=1.0)
     extra: Optional[dict[str, Any]] = None
     auto_context: Optional[bool] = None
+
+    @field_validator("extra")
+    @classmethod
+    def reject_reserved_system_metadata(
+        cls,
+        value: Optional[dict[str, Any]],
+    ) -> Optional[dict[str, Any]]:
+        if value is not None and (
+            value.get("kind") == "core_copilot"
+            or value.get("system_managed") is True
+        ):
+            raise ValueError("core Copilot system metadata is reserved")
+        return value
     is_archived: Optional[bool] = None
     is_default: Optional[bool] = None
 

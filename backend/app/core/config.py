@@ -318,8 +318,8 @@ class Settings(BaseSettings):
             ):
                 raise ValueError(f"{name} must be a bare https:// Zoho origin")
 
-        accounts_host = accounts_origin.hostname.lower()
-        api_host = api_origin.hostname.lower()
+        accounts_host = (accounts_origin.hostname or "").lower()
+        api_host = (api_origin.hostname or "").lower()
         expected_api_host = ZOHO_DESK_DATA_CENTER_HOSTS.get(accounts_host)
         if expected_api_host is None:
             raise ValueError("ZOHO_DESK_ACCOUNTS_DOMAIN is not a supported Zoho data-center host")

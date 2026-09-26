@@ -35,8 +35,14 @@ def test_sensitive_content_blocks_high_confidence_secrets():
 def test_zoho_api_domain_accepts_only_exact_documented_host():
     fallback = "https://desk.zoho.in"
     assert (
+        support_service._trusted_zoho_api_domain("https://desk.zoho.in", fallback)
+        == "https://desk.zoho.in"
+    )
+    # Even another legitimate Zoho region must not override the deployment's
+    # configured data center.
+    assert (
         support_service._trusted_zoho_api_domain("https://desk.zoho.eu", fallback)
-        == "https://desk.zoho.eu"
+        == fallback
     )
     assert (
         support_service._trusted_zoho_api_domain(
@@ -88,5 +94,6 @@ async def test_support_rate_limit_is_bounded_to_hour_bucket(monkeypatch):
         await support_service.enforce_support_rate_limit(user_id)
 
     assert exc.value.status_code == 429
+    assert exc.value.headers is not None
     assert 1 <= int(exc.value.headers["Retry-After"]) <= 3600
     assert len(redis.counts) == 1

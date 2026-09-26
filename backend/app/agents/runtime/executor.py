@@ -507,6 +507,16 @@ class AgentExecutor:
                 entitled_handles.append(handle)
         handles = entitled_handles
 
+        if agent_service.is_core_copilot(agent):
+            # Fail closed for the first-party surface. A newly registered MCP
+            # tool is NOT automatically a Copilot capability: core sessions
+            # only see explicitly tagged reads or proposal-only mutations.
+            # This keeps future admin/security/payment tools out by default.
+            handles = [
+                h for h in handles
+                if "read" in h.tags or h.is_proposal
+            ]
+
         if not allow_proposals:
             # Viewer sessions are read-only end-to-end. Advertise only
             # explicitly tagged read tools and enforce the same set again at

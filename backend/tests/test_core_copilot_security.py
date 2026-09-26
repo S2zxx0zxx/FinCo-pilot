@@ -118,3 +118,34 @@ async def test_core_title_generation_is_local_and_does_not_call_provider(
     assert response.status_code == 200, response.text
     assert response.json()["title"] == "How much can I safely spend this weekend?"
 
+@pytest.mark.asyncio
+async def test_viewer_can_chat_with_core_but_gets_read_only_executor(
+    client, viewer_auth_headers
+):
+    from app.agents.runtime.executor import ExecutorEvent
+
+    core_response = await client.get(
+        "/api/agents/copilot",
+        headers=viewer_auth_headers,
+    )
+    assert core_response.status_code == 200, core_response.text
+    core_id = core_response.json()["id"]
+
+    observed: dict[str, bool] = {}
+
+    async def fake_run(self, **kwargs):
+        observed["allow_proposals"] = kwargs["allow_proposals"]
+        yield ExecutorEvent(type="done", finish_reason="stop")
+
+    with patch("app.agents.api.chat.AgentExecutor.run", new=fake_run):
+        response = await client.post(
+            f"/api/agents/{core_id}/chat",
+            headers=viewer_auth_headers,
+            json={"content": "What needs my attention?"},
+        )
+
+    assert response.status_code == 200, response.text
+    assert observed["allow_proposals"] is False
+    assert "event: conversation" in response.text
+    assert "event: done" in response.text
+

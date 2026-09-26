@@ -11,11 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.agents.schemas.conversation import ConversationRead, MessageRead
 from app.agents.services import agent_service, conversation_service
 from app.core.database import get_async_session
-from app.core.workspace_context import (
-    WorkspaceContext,
-    current_workspace,
-    current_writable_workspace,
-)
+from app.core.workspace_context import WorkspaceContext, current_workspace
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +70,7 @@ async def list_messages(
 async def rename_conversation(
     conversation_id: uuid.UUID,
     body: RenameConversationBody,
-    ctx: WorkspaceContext = Depends(current_writable_workspace),
+    ctx: WorkspaceContext = Depends(current_workspace),
     session: AsyncSession = Depends(get_async_session),
 ):
     conv = await conversation_service.update_title(
@@ -88,7 +84,7 @@ async def rename_conversation(
 @router.post("/conversations/{conversation_id}/generate-title", response_model=ConversationRead)
 async def generate_title(
     conversation_id: uuid.UUID,
-    ctx: WorkspaceContext = Depends(current_writable_workspace),
+    ctx: WorkspaceContext = Depends(current_workspace),
     session: AsyncSession = Depends(get_async_session),
 ):
     """Ask the conversation's agent's LLM to summarize the chat into a
@@ -144,7 +140,7 @@ async def generate_title(
 @router.delete("/conversations/{conversation_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_conversation(
     conversation_id: uuid.UUID,
-    ctx: WorkspaceContext = Depends(current_writable_workspace),
+    ctx: WorkspaceContext = Depends(current_workspace),
     session: AsyncSession = Depends(get_async_session),
 ):
     ok = await conversation_service.delete_conversation(

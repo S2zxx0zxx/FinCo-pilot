@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import SupportPage from './support'
+import i18n from '@/lib/i18n'
 
 const state = vi.hoisted(() => ({
   user: null as null | { id: string; email: string },
@@ -41,7 +42,8 @@ const supportInfo = {
 }
 
 describe('SupportPage', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage('en')
     vi.clearAllMocks()
     state.user = null
     state.token = null

@@ -6,7 +6,7 @@ import type { AxiosError } from 'axios'
 import { ArrowLeft, CheckCircle2, ExternalLink, LifeBuoy, Mail, Send, ShieldAlert } from 'lucide-react'
 import { support as supportApi, type SupportCategory, type SupportTicketResult } from '@/lib/api'
 import { APP_VERSION } from '@/lib/build-info'
-import { lastRequestId, normalizeRequestReference, sanitizeSupportPath } from '@/lib/support'
+import { lastRequestId, normalizeRequestReference, normalizeSupportReference, sanitizeSupportPath } from '@/lib/support'
 import { useAuth } from '@/contexts/auth-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -30,7 +30,7 @@ function providerError(error: unknown): { message: string | null; reference: str
   if (detail && typeof detail === 'object') {
     return {
       message: typeof detail.message === 'string' ? detail.message : null,
-      reference: normalizeRequestReference(detail.reference),
+      reference: normalizeSupportReference(detail.reference),
     }
   }
   return { message: null, reference: null }

@@ -111,10 +111,7 @@ api.interceptors.request.use((config) => {
 
 // Handle auth errors
 api.interceptors.response.use(
-  (response) => {
-    rememberRequestId(response.headers)
-    return response
-  },
+  (response) => response,
   (error) => {
     rememberRequestId(error.response?.headers)
     if (error.response?.status === 401) {

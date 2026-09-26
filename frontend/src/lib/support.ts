@@ -1,6 +1,7 @@
 export const SUPPORT_LAST_REQUEST_ID_KEY = 'fincopilot:last-request-id'
 
 const REQUEST_REFERENCE_RE = /^FCREQ-[A-F0-9]{12}$/
+const SUPPORT_REFERENCE_RE = /^FC-[A-F0-9]{10}$/
 const SUPPORT_CATEGORIES = new Set([
   'account_access',
   'billing_payment',
@@ -23,6 +24,12 @@ export function normalizeRequestReference(value: unknown): string | null {
   if (typeof value !== 'string') return null
   const normalized = value.trim().toUpperCase()
   return REQUEST_REFERENCE_RE.test(normalized) ? normalized : null
+}
+
+export function normalizeSupportReference(value: unknown): string | null {
+  if (typeof value !== 'string') return null
+  const normalized = value.trim().toUpperCase()
+  return SUPPORT_REFERENCE_RE.test(normalized) ? normalized : null
 }
 
 export function rememberRequestId(headers: HeaderBag): string | null {

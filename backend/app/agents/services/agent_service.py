@@ -61,8 +61,6 @@ async def ensure_core_copilot(
             continue
         extra = row.extra if isinstance(row.extra, dict) else {}
         if int(extra.get("version") or 0) < CORE_COPILOT_VERSION:
-            # System-managed fields can evolve without forcing account
-            # migration. User content is not stored on this row.
             row.name = CORE_COPILOT_NAME
             row.description = "Your context-aware FinCo-Pilot assistant"
             row.system_prompt = CORE_COPILOT_SYSTEM_PROMPT
@@ -248,3 +246,61 @@ async def get_default_agent(
     rows = list((await session.execute(
         select(Agent)
         .where(Agent.workspace_id == workspace_id, Agent.is_archived.is_(False))
+        .order_by(Agent.created_at.desc())
+    )).scalars().all())
+    return next((row for row in rows if not is_core_copilot(row)), None)
+
+
+async def delete_agent(
+    session: AsyncSession, agent_id: uuid.UUID, workspace_id: uuid.UUID
+) -> bool:
+    agent = await get_agent(session, agent_id, workspace_id)
+    if agent is None:
+        return False
+    await session.delete(agent)
+    await session.commit()
+    return True
+
+
+async def list_tools(session: AsyncSession, agent_id: uuid.UUID) -> list[AgentTool]:
+    return list((await session.execute(
+        select(AgentTool).where(AgentTool.agent_id == agent_id)
+    )).scalars().all())
+
+
+async def set_tool_enabled(
+    session: AsyncSession, agent_id: uuid.UUID, server: str, tool_name: str, enabled: bool
+) -> AgentTool:
+    existing = (await session.execute(
+        select(AgentTool).where(
+            AgentTool.agent_id == agent_id,
+            AgentTool.server == server,
+            AgentTool.tool_name == tool_name,
+        )
+    )).scalar_one_or_none()
+    if existing is None:
+        existing = AgentTool(agent_id=agent_id, server=server, tool_name=tool_name, enabled=enabled)
+        session.add(existing)
+    else:
+        existing.enabled = enabled
+    await session.commit()
+    return existing
+
+
+async def allowed_tool_pairs(session: AsyncSession, agent_id: uuid.UUID) -> Optional[set[tuple[str, str]]]:
+    """Returns the set of (server, tool_name) pairs the agent is permitted
+    to call. Returns None when no rows exist — interpreted as 'allow all'
+    so first-run agents work without setup."""
+    rows = await list_tools(session, agent_id)
+    if not rows:
+        return None
+    return {(r.server, r.tool_name) for r in rows if r.enabled}
+
+
+async def replace_tool_enablement(
+    session: AsyncSession, agent_id: uuid.UUID, items: list[tuple[str, str, bool]]
+) -> None:
+    await session.execute(delete(AgentTool).where(AgentTool.agent_id == agent_id))
+    for server, name, enabled in items:
+        session.add(AgentTool(agent_id=agent_id, server=server, tool_name=name, enabled=enabled))
+    await session.commit()

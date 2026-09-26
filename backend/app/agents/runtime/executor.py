@@ -326,22 +326,59 @@ def _build_agent_identity_primer(agent: Agent) -> str:
     return "\n".join(lines)
 
 
-def _classify_error(exc: Exception) -> tuple[str, str]:
-    # Always include the underlying exception message — without it the
-    # UI just shows "unreachable" / "auth" with no clue about the actual
-    # cause (wrong model id, expired key, missing endpoint, etc.).
+def _classify_error(
+    exc: Exception,
+    *,
+    expose_detail: bool = True,
+) -> tuple[str, str]:
+    """Map provider failures to stable, user-facing error messages.
+
+    Custom-agent owners may need the provider's detail to debug their own
+    connection. The system-managed Copilot is operator-routed, so its backend
+    exception text is not part of the user contract and must stay in logs.
+    """
     detail = str(exc).strip() or exc.__class__.__name__
     if isinstance(exc, LLMAuthError):
-        return ("auth", f"LLM provider rejected the credentials. {detail}")
+        return (
+            "auth",
+            (
+                f"LLM provider rejected the credentials. {detail}"
+                if expose_detail
+                else "FinCo Copilot could not authenticate with its AI service. Please try again later."
+            ),
+        )
     if isinstance(exc, LLMRateLimitError):
-        return ("rate_limit", f"LLM provider is rate-limiting. {detail}")
+        return (
+            "rate_limit",
+            (
+                f"LLM provider is rate-limiting. {detail}"
+                if expose_detail
+                else "FinCo Copilot is temporarily busy. Please try again shortly."
+            ),
+        )
     if isinstance(exc, LLMUnavailableError):
-        return ("unavailable", f"LLM provider error: {detail}")
+        return (
+            "unavailable",
+            (
+                f"LLM provider error: {detail}"
+                if expose_detail
+                else "FinCo Copilot's AI service is temporarily unavailable. Please try again."
+            ),
+        )
     if isinstance(exc, LLMNotSupportedError):
-        return ("not_supported", detail)
+        return (
+            "not_supported",
+            detail if expose_detail else "FinCo Copilot cannot complete this request with the current AI service.",
+        )
     if isinstance(exc, LLMError):
-        return (exc.code, detail)
-    return ("unknown", detail)
+        return (
+            exc.code,
+            detail if expose_detail else "FinCo Copilot could not complete this request. Please try again.",
+        )
+    return (
+        "unknown",
+        detail if expose_detail else "FinCo Copilot could not complete this request. Please try again.",
+    )
 
 
 class AgentExecutor:
@@ -530,13 +567,24 @@ class AgentExecutor:
                 # design, but we want the traceback (and any wrapped
                 # httpx error) in the backend logs for debugging.
                 logger.exception("LLM provider call failed (kind=%s)", type(exc).__name__)
-                code, msg = _classify_error(exc)
+                code, msg = _classify_error(
+                    exc,
+                    expose_detail=not agent_service.is_core_copilot(agent),
+                )
                 yield ExecutorEvent(type="error", error_code=code, error_message=msg)
                 yield ExecutorEvent(type="done", finish_reason="error")
                 return
             except Exception as exc:  # noqa: BLE001
                 logger.exception("provider stream failed")
-                yield ExecutorEvent(type="error", error_code="unknown", error_message=str(exc))
+                _, message = _classify_error(
+                    exc,
+                    expose_detail=not agent_service.is_core_copilot(agent),
+                )
+                yield ExecutorEvent(
+                    type="error",
+                    error_code="unknown",
+                    error_message=message,
+                )
                 yield ExecutorEvent(type="done", finish_reason="error")
                 return
 

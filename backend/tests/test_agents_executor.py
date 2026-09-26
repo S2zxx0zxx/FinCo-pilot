@@ -254,6 +254,49 @@ async def test_provider_auth_error_surfaced_as_friendly_message(
     assert done is not None and done.finish_reason == "error"
 
 
+async def test_core_copilot_redacts_operator_provider_error_detail(
+    session, test_user, test_workspace, test_conversation
+):
+    from app.agents.services.agent_service import ensure_core_copilot
+
+    core = await ensure_core_copilot(session, test_workspace.id, test_user.id)
+    test_conversation.agent_id = core.id
+    await session.commit()
+
+    class _BoomProvider(LLMProvider):
+        name = "openai_compatible"
+
+        async def chat_stream(self, *args, **kwargs):  # type: ignore[override]
+            raise LLMAuthError("secret-host.internal/v1 key=operator-secret")
+            yield  # pragma: no cover
+
+        async def embed(self, texts, *, model):
+            return []
+
+    executor = AgentExecutor(mcp=_FakeMCP(tools=[]))
+    with _patch_provider(_BoomProvider()), patch.dict(
+        "os.environ",
+        {"AGENTS_DEFAULT_MODEL": "core-model"},
+        clear=False,
+    ):
+        events = await _drain(
+            executor,
+            session=session,
+            agent=core,
+            user_id=test_user.id,
+            workspace_id=test_workspace.id,
+            conversation_id=test_conversation.id,
+            user_message="hi",
+        )
+
+    err = next((e for e in events if e.type == "error"), None)
+    assert err is not None
+    assert err.error_code == "auth"
+    assert "operator-secret" not in (err.error_message or "")
+    assert "secret-host.internal" not in (err.error_message or "")
+    assert "FinCo Copilot" in (err.error_message or "")
+
+
 async def test_no_model_configured_yields_config_error(session, test_user, test_conversation):
     """An agent without model and without AGENTS_DEFAULT_MODEL should bail
     early with a config error rather than calling the provider."""

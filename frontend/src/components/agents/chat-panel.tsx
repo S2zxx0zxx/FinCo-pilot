@@ -187,9 +187,9 @@ export function ChatPanel({ agent, conversationId, onConversationCreated, focusS
       setDraft(null)
       if (errorThisTurn) setLastError(errorThisTurn)
       // After the very first round of a brand-new conversation, ask the
-      // backend to summarize the exchange into a short title via the
-      // LLM. Fire-and-forget — the conversations list will refetch when
-      // it lands.
+      // backend to normalize/summarize the exchange into a short title.
+      // Core Copilot does this locally (no extra inference); custom agents
+      // may use their configured model. Fire-and-forget either way.
       if (!errorThisTurn && startedFresh && activeConvId) {
         agents.conversations
           .generateTitle(activeConvId)
@@ -309,6 +309,7 @@ export function ChatPanel({ agent, conversationId, onConversationCreated, focusS
             el.style.height = `${Math.min(el.scrollHeight, 200)}px`
           }}
           rows={1}
+          maxLength={12000}
           placeholder={t('agents.chat.placeholder', { name: agent.name })}
           // h-10 matches the default Button height so the input + send
           // button line up when empty. Auto-grow above lifts it as the

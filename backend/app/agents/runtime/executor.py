@@ -409,23 +409,23 @@ class AgentExecutor:
         await conversation_service.update_title_if_empty(session, conversation_id, user_message)
 
         # 2. Build the message list. Order, top to bottom:
-        #      1. Agent identity primer (who you are + FinCo-Pilot framing)
-        #      2. User-defined system_prompt (persona/specialty)
-        #      3. Runtime guardrail (non-overridable app invariants)
+        #      1. Runtime guardrail (non-overridable app invariants)
+        #      2. Agent identity primer (who you are + FinCo-Pilot framing)
+        #      3. User-defined system_prompt (persona/specialty)
         #      4. Auto-context primer (minimal user/workspace orientation)
         #      5. Page-context primer (where the user is right now)
         #      6. Conversation history, including the newly persisted user turn
+        #
+        # Runtime rules are first and are also enforced structurally below the
+        # model (tool filtering, permissions, proposal boundaries). A custom
+        # persona may shape tone/specialty but never replaces product policy.
         history = await conversation_service.list_messages(session, conversation_id, limit=agent.max_history_messages * 2 + 2)
         messages: list[ChatMessage] = []
+        messages.append(ChatMessage(role="system", content=_RUNTIME_GUARDRAIL))
         # Agent identity — name + description + FinCo-Pilot framing.
         messages.append(ChatMessage(role="system", content=_build_agent_identity_primer(agent)))
-        # Custom agents can shape persona/specialty, but app invariants are
-        # injected after this prompt and are also enforced below the model.
         if agent.system_prompt and agent.system_prompt.strip():
             messages.append(ChatMessage(role="system", content=agent.system_prompt))
-        # Keep the hard runtime rules closest to the data/context messages so
-        # a custom prompt cannot plausibly be interpreted as overriding them.
-        messages.append(ChatMessage(role="system", content=_RUNTIME_GUARDRAIL))
         # Optional context primer — user name, currency, accounts, etc.
         # Cheap orientation so the agent doesn't need to call list_accounts
         # on every "what's my balance?" question.

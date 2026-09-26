@@ -1,7 +1,5 @@
 from types import SimpleNamespace
 from typing import cast
-import uuid
-
 import pytest
 
 from app.agents.models.agent import Agent
@@ -41,10 +39,14 @@ def test_agent_model_cannot_be_replaced_by_gateway_default(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_core_copilot_uses_operator_route_not_user_default_connection(
-    monkeypatch, session
+    monkeypatch, session, test_user, test_workspace
 ):
-    """A custom Advanced-Agent connection must not silently reroute core Copilot."""
-    from app.agents.services import connection_service
+    """A custom Advanced-Agent connection must not silently reroute core Copilot.
+
+    The core marker is server-signed, so this test must exercise a real
+    system-created Copilot rather than constructing an unsigned lookalike.
+    """
+    from app.agents.services import agent_service, connection_service
 
     monkeypatch.setenv("AGENTS_DEFAULT_PROVIDER", "openai_compatible")
     monkeypatch.setenv("AGENTS_OPENAI_COMPAT_BASE_URL", "https://ai.example.test/v1")
@@ -59,22 +61,12 @@ async def test_core_copilot_uses_operator_route_not_user_default_connection(
         "get_default_connection",
         _must_not_read_user_default,
     )
-    agent = cast(
-        Agent,
-        SimpleNamespace(
-            id=uuid.uuid4(),
-            user_id=uuid.uuid4(),
-            workspace_id=uuid.uuid4(),
-            connection_id=None,
-            provider=None,
-            model=None,
-            extra={
-                "kind": "core_copilot",
-                "system_managed": True,
-                "version": 1,
-            },
-        ),
+    agent = await agent_service.ensure_core_copilot(
+        session,
+        test_workspace.id,
+        test_user.id,
     )
+    assert agent_service.is_core_copilot(agent)
 
     provider, model = await _provider_and_model_for(session, agent)
     assert isinstance(provider, OpenAICompatibleProvider)

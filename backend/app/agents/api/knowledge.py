@@ -41,8 +41,13 @@ async def list_knowledge(
     session: AsyncSession = Depends(get_async_session),
 ):
     agent = await agent_service.get_agent(session, agent_id, ctx.workspace.id)
-    if agent is None:
+    if agent is None or not agent_service.can_access_agent(agent, ctx.user_id):
         raise HTTPException(status_code=404, detail="agent not found")
+    if agent_service.is_core_copilot(agent):
+        raise HTTPException(
+            status_code=403,
+            detail="system copilot knowledge is policy-managed",
+        )
     docs = await knowledge_service.list_docs(session, agent_id)
     return {"items": [_serialize(d) for d in docs], "total": len(docs)}
 
@@ -56,8 +61,13 @@ async def upload_knowledge(
     session: AsyncSession = Depends(get_async_session),
 ):
     agent = await agent_service.get_agent(session, agent_id, ctx.workspace.id)
-    if agent is None:
+    if agent is None or not agent_service.can_access_agent(agent, ctx.user_id):
         raise HTTPException(status_code=404, detail="agent not found")
+    if agent_service.is_core_copilot(agent):
+        raise HTTPException(
+            status_code=403,
+            detail="system copilot knowledge is policy-managed",
+        )
     payload = await file.read()
     try:
         doc = await knowledge_service.upload_doc(
@@ -90,8 +100,16 @@ async def toggle_pin(
     ctx: WorkspaceContext = Depends(current_writable_workspace),
     session: AsyncSession = Depends(get_async_session),
 ):
+    agent = await agent_service.get_agent(session, agent_id, ctx.workspace.id)
+    if agent is None or not agent_service.can_access_agent(agent, ctx.user_id):
+        raise HTTPException(status_code=404, detail="agent not found")
+    if agent_service.is_core_copilot(agent):
+        raise HTTPException(
+            status_code=403,
+            detail="system copilot knowledge is policy-managed",
+        )
     doc = await knowledge_service.set_pinned(session, doc_id, ctx.user_id, pinned)
-    if doc is None:
+    if doc is None or doc.agent_id != agent_id:
         raise HTTPException(status_code=404, detail="doc not found")
     return _serialize(doc)
 
@@ -103,6 +121,17 @@ async def delete_knowledge(
     ctx: WorkspaceContext = Depends(current_writable_workspace),
     session: AsyncSession = Depends(get_async_session),
 ):
+    agent = await agent_service.get_agent(session, agent_id, ctx.workspace.id)
+    if agent is None or not agent_service.can_access_agent(agent, ctx.user_id):
+        raise HTTPException(status_code=404, detail="agent not found")
+    if agent_service.is_core_copilot(agent):
+        raise HTTPException(
+            status_code=403,
+            detail="system copilot knowledge is policy-managed",
+        )
+    docs = await knowledge_service.list_docs(session, agent_id)
+    if doc_id not in {doc.id for doc in docs}:
+        raise HTTPException(status_code=404, detail="doc not found")
     ok = await knowledge_service.delete_doc(session, doc_id, ctx.user_id)
     if not ok:
         raise HTTPException(status_code=404, detail="doc not found")

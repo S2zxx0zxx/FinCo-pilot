@@ -156,6 +156,35 @@ async def test_free_core_copilot_is_available_without_unlocking_advanced_agents(
 
 
 @pytest.mark.asyncio
+async def test_core_copilot_cannot_bypass_advanced_report_entitlement(
+    session: AsyncSession,
+    test_user: User,
+    test_workspace: Workspace,
+):
+    import mcp_server.tools  # noqa: F401
+    from app.agents.services.agent_service import ensure_core_copilot
+    from mcp_server.auth import CallContext
+    from mcp_server.registry import REGISTRY, authorize_tool
+
+    await _set_plan(session, test_user, PlanId.FREE)
+    core = await ensure_core_copilot(session, test_workspace.id, test_user.id)
+    ctx = CallContext(
+        user_id=test_user.id,
+        workspace_id=test_workspace.id,
+        agent_id=core.id,
+    )
+    with pytest.raises(HTTPException) as exc:
+        await authorize_tool(session, ctx, REGISTRY["get_net_worth"], {})
+    assert exc.value.status_code == 403
+    detail = exc.value.detail
+    assert isinstance(detail, dict)
+    assert detail["capability"] == "advanced_reports"
+
+    await _set_plan(session, test_user, PlanId.PRO)
+    await authorize_tool(session, ctx, REGISTRY["get_net_worth"], {})
+
+
+@pytest.mark.asyncio
 async def test_free_rule_mutation_is_blocked_but_read_is_available(
     client: AsyncClient,
     auth_headers: dict,

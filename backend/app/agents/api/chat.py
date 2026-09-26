@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import json
 import uuid
-from datetime import datetime, timezone
 from dataclasses import asdict
 from typing import AsyncIterator
 
@@ -19,7 +18,7 @@ from starlette.responses import StreamingResponse
 
 from app.agents.runtime.executor import AgentExecutor, ExecutorEvent
 from app.agents.schemas.conversation import SendMessageRequest
-from app.agents.services import agent_service, conversation_service
+from app.agents.services import agent_service, conversation_service, core_usage_service
 from app.billing.enums import Metric
 from app.billing.usage import consume_monthly
 from app.core.database import get_async_session
@@ -68,32 +67,17 @@ async def chat(
     # built-in Copilot is a separate first-party surface protected by an
     # operator-configurable daily message ceiling instead of silently changing
     # the pricing catalogue.
+    executor = AgentExecutor()
     if is_core:
-        settings = AgentExecutor().settings
-        now = datetime.now(timezone.utc)
-        day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        used = await conversation_service.count_user_messages_since(
+        await core_usage_service.consume_core_message(
             session,
-            workspace_id=ctx.workspace.id,
             user_id=ctx.user_id,
-            agent_id=agent.id,
-            since=day_start,
+            limit=executor.settings.core_copilot_daily_messages,
         )
-        if used >= settings.core_copilot_daily_messages:
-            retry_after = max(
-                1,
-                int((day_start.timestamp() + 86400) - now.timestamp()),
-            )
-            raise HTTPException(
-                status_code=429,
-                detail="Daily FinCo Copilot message limit reached",
-                headers={"Retry-After": str(retry_after)},
-            )
+        await session.commit()
     else:
         await consume_monthly(session, ctx.workspace, Metric.AI_ACTIONS_MONTHLY)
         await session.commit()
-
-    executor = AgentExecutor()
 
     async def gen() -> AsyncIterator[bytes]:
         yield f"event: conversation\ndata: {json.dumps({'conversation_id': str(conv.id)})}\n\n".encode()

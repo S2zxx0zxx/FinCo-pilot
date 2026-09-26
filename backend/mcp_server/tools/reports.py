@@ -35,6 +35,7 @@ def _serialize_report(r: Any) -> dict[str, Any]:
         "additionalProperties": False,
     },
     tags=["read", "reports"],
+    required_capability="advanced_reports",
 )
 async def get_net_worth(
     *,
@@ -62,6 +63,7 @@ async def get_net_worth(
         "additionalProperties": False,
     },
     tags=["read", "reports"],
+    required_capability="advanced_reports",
 )
 async def get_income_expenses(
     *,
@@ -89,6 +91,7 @@ async def get_income_expenses(
         "additionalProperties": False,
     },
     tags=["read", "reports"],
+    required_capability="advanced_reports",
 )
 async def get_cash_flow(
     *,

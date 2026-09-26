@@ -576,6 +576,80 @@ async def test_max_iterations_terminates_runaway_agent(session, test_user, test_
     assert done is not None and done.finish_reason == "max_iterations"
 
 
+async def test_core_copilot_exposes_only_explicit_reads_and_proposals(
+    session, test_user, test_workspace, test_conversation
+):
+    from app.agents.services.agent_service import ensure_core_copilot
+
+    core = await ensure_core_copilot(session, test_workspace.id, test_user.id)
+    test_conversation.agent_id = core.id
+    await session.commit()
+
+    tools = [
+        ToolHandle(
+            server="fincopilot",
+            name="list_accounts",
+            description="read",
+            parameters={"type": "object", "properties": {}},
+            tags=("read", "accounts"),
+        ),
+        ToolHandle(
+            server="fincopilot",
+            name="propose_create_budget",
+            description="proposal",
+            parameters={"type": "object", "properties": {}},
+            is_proposal=True,
+            tags=("propose", "budgets"),
+        ),
+        ToolHandle(
+            server="fincopilot",
+            name="dangerous_admin_action",
+            description="future unclassified action",
+            parameters={"type": "object", "properties": {}},
+            tags=(),
+        ),
+    ]
+    fake_mcp = _FakeMCP(tools=tools)
+    captured_tool_names: list[str] = []
+
+    class _Capture(_ScriptedProvider):
+        async def chat_stream(self, messages, *, model, tools=None, temperature=0.4, max_tokens=None):
+            captured_tool_names.extend([t.name for t in (tools or [])])
+            async for chunk in super().chat_stream(
+                messages,
+                model=model,
+                tools=tools,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            ):
+                yield chunk
+
+    provider = _Capture([[
+        ChatChunk(type="text_delta", text="ok"),
+        ChatChunk(type="finish", finish_reason="stop"),
+    ]])
+    executor = AgentExecutor(mcp=fake_mcp)
+    with _patch_provider(provider), patch.dict(
+        "os.environ",
+        {"AGENTS_DEFAULT_MODEL": "core-model"},
+        clear=False,
+    ):
+        await _drain(
+            executor,
+            session=session,
+            agent=core,
+            user_id=test_user.id,
+            workspace_id=test_workspace.id,
+            conversation_id=test_conversation.id,
+            user_message="help me",
+            allow_proposals=True,
+        )
+
+    assert "fincopilot__list_accounts" in captured_tool_names
+    assert "fincopilot__propose_create_budget" in captured_tool_names
+    assert "fincopilot__dangerous_admin_action" not in captured_tool_names
+
+
 async def test_viewer_cannot_dispatch_hidden_proposal_even_if_model_hallucinates_it(
     session, test_user, test_agent, test_conversation
 ):

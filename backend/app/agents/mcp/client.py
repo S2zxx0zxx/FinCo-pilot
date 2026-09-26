@@ -29,6 +29,7 @@ class ToolHandle:
     is_proposal: bool = False
     tags: tuple[str, ...] = ()
     required_capability: str | None = None
+    required_module: str | None = None
 
 
 @dataclass
@@ -92,6 +93,11 @@ class MCPClient:
                 required_capability=(
                     str(extras["required_capability"])
                     if extras.get("required_capability")
+                    else None
+                ),
+                required_module=(
+                    str(extras["required_module"])
+                    if extras.get("required_module")
                     else None
                 ),
             ))

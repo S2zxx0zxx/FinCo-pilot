@@ -341,6 +341,12 @@ async def create_support_ticket(
             priority=routing.provider_priority,
         )
     except SupportDeliveryError as exc:
+        logger.error(
+            "Support provider delivery unconfirmed reference=%s request_reference=%s user=%s",
+            reference,
+            request_reference,
+            user.id,
+        )
         raise HTTPException(
             status_code=502,
             detail={

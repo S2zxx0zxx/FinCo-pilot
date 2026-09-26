@@ -262,6 +262,10 @@ class Settings(BaseSettings):
             ):
                 raise ValueError("SUPPORT_EMAIL must be a valid email address")
         if self.support_ticket_submission_enabled:
+            if not self.support_enabled:
+                raise ValueError(
+                    "SUPPORT_TICKET_SUBMISSION_ENABLED=true requires SUPPORT_ENABLED=true"
+                )
             if self.support_provider != "zoho_desk":
                 raise ValueError(
                     "SUPPORT_TICKET_SUBMISSION_ENABLED=true requires "

@@ -5,6 +5,7 @@ import pytest
 from fastapi import HTTPException
 
 from app.billing.enums import PlanId
+from app.core.config import Settings
 from app.schemas.support import SupportCategory
 from app.services import support_service
 
@@ -97,3 +98,20 @@ async def test_support_rate_limit_is_bounded_to_hour_bucket(monkeypatch):
     assert exc.value.headers is not None
     assert 1 <= int(exc.value.headers["Retry-After"]) <= 3600
     assert len(redis.counts) == 1
+
+
+def test_direct_submission_requires_support_surface_enabled():
+    with pytest.raises(
+        ValueError,
+        match="SUPPORT_TICKET_SUBMISSION_ENABLED=true requires SUPPORT_ENABLED=true",
+    ):
+        Settings(
+            support_enabled=False,
+            support_ticket_submission_enabled=True,
+            support_provider="zoho_desk",
+            zoho_desk_org_id="synthetic-org",
+            zoho_desk_department_id="synthetic-department",
+            zoho_desk_client_id="synthetic-client",
+            zoho_desk_client_secret="synthetic-secret",
+            zoho_desk_refresh_token="synthetic-refresh",
+        )

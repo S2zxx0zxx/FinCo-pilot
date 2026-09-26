@@ -112,6 +112,10 @@ ALLOWLIST: dict[tuple[str, str], str] = {
     ("POST", "/api/checkout/create-order"): "the requester's own checkout reservation",
     ("POST", "/api/checkout/verify-payment"): "the requester's own checkout reservation",
     ("POST", "/api/checkout/cancel-reservation"): "the requester's own checkout reservation",
+    # Account-level escalation to an external support provider. This does not
+    # mutate workspace financial state and must remain available to authenticated
+    # read-only members who can still encounter account/product incidents.
+    ("POST", "/api/support/tickets"): "authenticated account-level support escalation; no workspace financial mutation",
 }
 
 # These routes establish authentication (or end it), so requiring an existing

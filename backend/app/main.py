@@ -315,9 +315,11 @@ async def request_reference(request, call_next):
             request.method,
             request.url.path,
         )
-        # Return the same opaque reference the operator sees in logs. Never
-        # serialize the exception string: provider/database errors can contain
-        # operational details that do not belong in the browser.
+        # Development/test must preserve native exception semantics so bugs are
+        # visible to callers and the test suite. Public production responses are
+        # sanitized while keeping the same opaque reference operators see in logs.
+        if not settings.is_production:
+            raise
         return JSONResponse(
             status_code=500,
             content={

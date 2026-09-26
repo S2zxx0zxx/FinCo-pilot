@@ -93,7 +93,7 @@ Every backend request receives a server-generated opaque reference:
 
 `FCREQ-XXXXXXXXXXXX`
 
-The response exposes it in `X-Request-ID`. Unhandled server errors return the same opaque ID in a sanitized JSON response and log the ID server-side.
+The response exposes it in `X-Request-ID`. In production, unhandled server errors return the same opaque ID in a sanitized JSON response and log the ID server-side. Development/test keeps native exception propagation for debugging and regression tests.
 
 The frontend remembers request IDs from failed API responses only. Successful background requests must not overwrite the last actionable error reference.
 
@@ -218,7 +218,7 @@ Roadmap #7 may be marked **DONE** only when every item below passes against the 
 3. Logged-out users can reach Help & Support from authentication/recovery surfaces.
 4. Logged-in users can reach Help & Support from the global user menu.
 5. Payment-verification failures can open support with the billing category and request reference.
-6. A controlled backend 5xx returns an `X-Request-ID` and the same ID appears in server logs.
+6. In production, a controlled backend 5xx returns an `X-Request-ID` and the same ID appears in server logs.
 7. A real direct test ticket reaches the intended Zoho Desk department when direct submission is enabled.
 8. The ticket contains the correct category, plan-derived support tier and safe diagnostics.
 9. A test password/token-like secret is rejected before provider delivery.

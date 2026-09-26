@@ -28,6 +28,7 @@ class ToolHandle:
     parameters: dict[str, Any]
     is_proposal: bool = False
     tags: tuple[str, ...] = ()
+    required_capability: str | None = None
 
 
 @dataclass
@@ -88,6 +89,11 @@ class MCPClient:
                 parameters=t.get("inputSchema") or {"type": "object", "properties": {}},
                 is_proposal=bool(extras.get("is_proposal", False)),
                 tags=tuple(str(tag) for tag in (extras.get("tags") or [])),
+                required_capability=(
+                    str(extras["required_capability"])
+                    if extras.get("required_capability")
+                    else None
+                ),
             ))
         return out
 

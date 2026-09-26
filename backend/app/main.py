@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import secrets
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI
@@ -46,6 +47,7 @@ from app.api.rules import router as rules_router
 from app.api.search import router as search_router
 from app.api.settings import router as settings_router
 from app.api.setup import router as setup_router
+from app.api.support import router as support_router
 from app.api.transactions import router as transactions_router
 from app.api.two_factor import router as two_factor_router
 from app.api.user_lookup import router as user_lookup_router
@@ -127,6 +129,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Request-ID"],
 )
 
 
@@ -222,6 +225,7 @@ app.include_router(settings_router)
 app.include_router(workspaces_router, dependencies=[Depends(workspace_guard)])
 app.include_router(admin_router)
 app.include_router(pricing_admin_router)
+app.include_router(support_router)
 app.include_router(info_router)
 
 
@@ -295,6 +299,34 @@ async def readiness_check():
 
 from app.core.metrics import metrics, record_request  # noqa: E402
 app.add_api_route("/metrics", metrics, methods=["GET"], include_in_schema=False)
+
+
+@app.middleware("http")
+async def request_reference(request, call_next):
+    """Give every API interaction a server-generated support correlation id."""
+    reference = "FCREQ-" + secrets.token_hex(6).upper()
+    request.state.request_id = reference
+    try:
+        response = await call_next(request)
+    except Exception:
+        logger.exception(
+            "Unhandled request failure reference=%s method=%s path=%s",
+            reference,
+            request.method,
+            request.url.path,
+        )
+        raise
+
+    response.headers["X-Request-ID"] = reference
+    if response.status_code >= 500:
+        logger.error(
+            "Request failed reference=%s method=%s path=%s status=%s",
+            reference,
+            request.method,
+            request.url.path,
+            response.status_code,
+        )
+    return response
 
 
 @app.middleware("http")

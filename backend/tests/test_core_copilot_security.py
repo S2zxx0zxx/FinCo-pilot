@@ -4,6 +4,7 @@ from unittest.mock import patch
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agents.models.agent import Agent
 from app.agents.services import agent_service, conversation_service, core_usage_service
 
 
@@ -21,6 +22,33 @@ async def test_core_copilot_is_lazy_provisioned_per_user_workspace(
     assert agent_service.is_core_copilot(first)
     assert first.provider is None
     assert first.model is None
+
+
+@pytest.mark.asyncio
+async def test_legacy_user_controlled_marker_cannot_spoof_core_copilot(
+    session: AsyncSession, test_user, test_workspace
+):
+    spoof = Agent(
+        user_id=test_user.id,
+        workspace_id=test_workspace.id,
+        name="Legacy custom agent",
+        extra={
+            "kind": "core_copilot",
+            "system_managed": True,
+            "version": 1,
+        },
+    )
+    session.add(spoof)
+    await session.commit()
+    await session.refresh(spoof)
+
+    assert not agent_service.is_core_copilot(spoof)
+
+    real_core = await agent_service.ensure_core_copilot(
+        session, test_workspace.id, test_user.id
+    )
+    assert real_core.id != spoof.id
+    assert agent_service.is_core_copilot(real_core)
 
 
 @pytest.mark.asyncio

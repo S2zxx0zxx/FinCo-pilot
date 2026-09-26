@@ -42,6 +42,10 @@ from app.agents.providers.base import (
 )
 from app.agents.providers.registry import build_provider
 from app.agents.services import agent_service, context_service, conversation_service, usage_service
+from app.billing.catalog import get_plan_spec
+from app.billing.enums import Capability, PlanId
+from app.billing.service import get_effective_plan
+from app.models.workspace import Workspace
 
 logger = logging.getLogger(__name__)
 
@@ -415,6 +419,37 @@ class AgentExecutor:
         allowed = await agent_service.allowed_tool_pairs(session, agent.id)
         if allowed is not None:
             handles = [h for h in handles if (h.server, h.name) in allowed]
+
+        # Core Copilot must obey the underlying product plan. MCP is a
+        # transport, not an entitlement bypass: e.g. Free users must not gain
+        # Pro Advanced Reports merely because the assistant can call tools.
+        workspace = await session.get(Workspace, workspace_id) if workspace_id else None
+        billing_owner_id = workspace.billing_owner_user_id if workspace is not None else None
+        plan = (
+            await get_effective_plan(session, billing_owner_id)
+            if billing_owner_id is not None
+            else PlanId.FREE
+        )
+        plan_spec = get_plan_spec(plan)
+        entitled_handles = []
+        for handle in handles:
+            if not handle.required_capability:
+                entitled_handles.append(handle)
+                continue
+            try:
+                capability = Capability(handle.required_capability)
+            except ValueError:
+                logger.error(
+                    "MCP tool %s.%s declares unknown capability %r; hiding it",
+                    handle.server,
+                    handle.name,
+                    handle.required_capability,
+                )
+                continue
+            if plan_spec.has(capability):
+                entitled_handles.append(handle)
+        handles = entitled_handles
+
         if not allow_proposals:
             # Viewer sessions are read-only end-to-end. Advertise only
             # explicitly tagged read tools and enforce the same set again at

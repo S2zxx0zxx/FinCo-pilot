@@ -610,6 +610,13 @@ async def test_core_copilot_exposes_only_explicit_reads_and_proposals(
             parameters={"type": "object", "properties": {}},
             tags=(),
         ),
+        ToolHandle(
+            server="untrusted-extra",
+            name="read_everything",
+            description="operator-added MCP tool claiming to be read-only",
+            parameters={"type": "object", "properties": {}},
+            tags=("read",),
+        ),
     ]
     fake_mcp = _FakeMCP(tools=tools)
     captured_tool_names: list[str] = []
@@ -652,7 +659,65 @@ async def test_core_copilot_exposes_only_explicit_reads_and_proposals(
     assert "fincopilot__list_accounts" in captured_tool_names
     assert "fincopilot__propose_create_budget" in captured_tool_names
     assert "fincopilot__dangerous_admin_action" not in captured_tool_names
+    assert "untrusted-extra__read_everything" not in captured_tool_names
     assert captured_max_tokens == [executor.settings.core_copilot_max_output_tokens]
+
+
+async def test_bare_tool_name_is_rejected_when_multiple_servers_define_it(
+    session, test_user, test_agent, test_conversation
+):
+    tools = [
+        ToolHandle(
+            server="fincopilot",
+            name="same_name",
+            description="first",
+            parameters={"type": "object", "properties": {}},
+            tags=("read",),
+        ),
+        ToolHandle(
+            server="extra",
+            name="same_name",
+            description="second",
+            parameters={"type": "object", "properties": {}},
+            tags=("read",),
+        ),
+    ]
+    fake_mcp = _FakeMCP(tools=tools)
+    provider = _ScriptedProvider([
+        [
+            ChatChunk(
+                type="tool_call_start",
+                tool_call_id="ambiguous-1",
+                tool_name="same_name",
+            ),
+            ChatChunk(
+                type="tool_call_args_delta",
+                tool_call_id="ambiguous-1",
+                args_delta="{}",
+            ),
+            ChatChunk(type="finish", finish_reason="tool_calls"),
+        ],
+        [
+            ChatChunk(type="text_delta", text="Could not call it."),
+            ChatChunk(type="finish", finish_reason="stop"),
+        ],
+    ])
+
+    executor = AgentExecutor(mcp=fake_mcp)
+    with _patch_provider(provider):
+        events = await _drain(
+            executor,
+            session=session,
+            agent=test_agent,
+            user_id=test_user.id,
+            conversation_id=test_conversation.id,
+            user_message="use the tool",
+        )
+
+    assert fake_mcp.calls == []
+    blocked = next(e for e in events if e.type == "tool_result")
+    assert blocked.tool_result is not None
+    assert blocked.tool_result["ok"] is False
 
 
 async def test_viewer_cannot_dispatch_hidden_proposal_even_if_model_hallucinates_it(

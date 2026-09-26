@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/auth-context'
 import { setup, auth as authApi, admin as adminApi } from '@/lib/api'
@@ -43,6 +43,7 @@ export default function LoginPage() {
   const { t } = useTranslation()
   const { login, verify2fa, loginWithToken, token } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { resolvedTheme } = useTheme()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -68,6 +69,10 @@ export default function LoginPage() {
   const noAuthMethodConfigured = oidcConfig !== null && !localAuthEnabled && !oidcEnabled
   const showPasskeyLogin = localAuthEnabled && passkeySupported
   const showAuthDivider = localAuthEnabled && (showPasskeyLogin || oidcEnabled)
+  const requestedNext = searchParams.get('next')
+  const safeNext = requestedNext?.startsWith('/') && !requestedNext.startsWith('//') && !requestedNext.includes('://')
+    ? requestedNext
+    : '/'
 
   useEffect(() => {
     setPasskeySupported(isPasskeySupported())
@@ -140,7 +145,7 @@ export default function LoginPage() {
         if (abortController.signal.aborted) return
 
         loginWithToken(result.access_token)
-        navigate('/')
+        navigate(safeNext)
       } catch {
         // Conditional UI is an enhancement. Unsupported providers, dismissal,
         // expiry, and cancellation leave the normal login methods untouched.
@@ -181,7 +186,7 @@ export default function LoginPage() {
         setAvailable2faMethods(methods)
         setSelected2faMethod(methods.includes('passkey') ? 'passkey' : methods[0])
       } else {
-        navigate('/')
+        navigate(safeNext)
       }
     } catch (err) {
       const axiosErr = err as AxiosError

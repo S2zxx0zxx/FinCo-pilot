@@ -76,6 +76,7 @@ async def chat(
             session,
             workspace_id=ctx.workspace.id,
             user_id=ctx.user_id,
+            agent_id=agent.id,
             since=day_start,
         )
         if used >= settings.core_copilot_daily_messages:

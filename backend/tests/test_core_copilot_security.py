@@ -1,4 +1,5 @@
 import uuid
+from unittest.mock import patch
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -83,3 +84,37 @@ async def test_core_daily_quota_is_deletion_proof_and_enforced(
     assert exc.value.status_code == 429
     assert exc.value.headers is not None
     assert int(exc.value.headers["Retry-After"]) > 0
+
+@pytest.mark.asyncio
+async def test_core_title_generation_is_local_and_does_not_call_provider(
+    client, auth_headers, session: AsyncSession, test_user, test_workspace
+):
+    core = await agent_service.ensure_core_copilot(
+        session, test_workspace.id, test_user.id
+    )
+    conv = await conversation_service.create_conversation(
+        session,
+        workspace_id=test_workspace.id,
+        user_id=test_user.id,
+        agent_id=core.id,
+        channel="web",
+    )
+    await conversation_service.append_message(
+        session,
+        conversation_id=conv.id,
+        role="user",
+        content="  How much   can I safely spend this weekend?  ",
+    )
+
+    with patch(
+        "app.agents.runtime.executor._provider_and_model_for",
+        side_effect=AssertionError("core title must not call provider"),
+    ):
+        response = await client.post(
+            f"/api/agents/conversations/{conv.id}/generate-title",
+            headers=auth_headers,
+        )
+
+    assert response.status_code == 200, response.text
+    assert response.json()["title"] == "How much can I safely spend this weekend?"
+

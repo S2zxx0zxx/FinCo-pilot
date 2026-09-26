@@ -11,11 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.agents.schemas.conversation import ConversationRead, MessageRead
 from app.agents.services import agent_service, conversation_service
 from app.core.database import get_async_session
-from app.core.workspace_context import (
-    WorkspaceContext,
-    current_workspace,
-    current_writable_workspace,
-)
+from app.core.workspace_context import WorkspaceContext, current_workspace
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +37,7 @@ async def list_conversations(
     session: AsyncSession = Depends(get_async_session),
 ):
     return await conversation_service.list_conversations(
-        session, ctx.workspace.id, agent_id=agent_id, limit=limit
+        session, ctx.workspace.id, ctx.user_id, agent_id=agent_id, limit=limit
     )
 
 
@@ -51,7 +47,7 @@ async def get_conversation(
     ctx: WorkspaceContext = Depends(current_workspace),
     session: AsyncSession = Depends(get_async_session),
 ):
-    conv = await conversation_service.get_conversation(session, conversation_id, ctx.workspace.id)
+    conv = await conversation_service.get_conversation(session, conversation_id, ctx.workspace.id, ctx.user_id)
     if conv is None:
         raise HTTPException(status_code=404, detail="conversation not found")
     return conv
@@ -64,7 +60,7 @@ async def list_messages(
     ctx: WorkspaceContext = Depends(current_workspace),
     session: AsyncSession = Depends(get_async_session),
 ):
-    conv = await conversation_service.get_conversation(session, conversation_id, ctx.workspace.id)
+    conv = await conversation_service.get_conversation(session, conversation_id, ctx.workspace.id, ctx.user_id)
     if conv is None:
         raise HTTPException(status_code=404, detail="conversation not found")
     return await conversation_service.list_messages(session, conversation_id, limit=limit)
@@ -74,11 +70,11 @@ async def list_messages(
 async def rename_conversation(
     conversation_id: uuid.UUID,
     body: RenameConversationBody,
-    ctx: WorkspaceContext = Depends(current_writable_workspace),
+    ctx: WorkspaceContext = Depends(current_workspace),
     session: AsyncSession = Depends(get_async_session),
 ):
     conv = await conversation_service.update_title(
-        session, conversation_id, ctx.workspace.id, body.title
+        session, conversation_id, ctx.workspace.id, ctx.user_id, body.title
     )
     if conv is None:
         raise HTTPException(status_code=404, detail="conversation not found")
@@ -88,7 +84,7 @@ async def rename_conversation(
 @router.post("/conversations/{conversation_id}/generate-title", response_model=ConversationRead)
 async def generate_title(
     conversation_id: uuid.UUID,
-    ctx: WorkspaceContext = Depends(current_writable_workspace),
+    ctx: WorkspaceContext = Depends(current_workspace),
     session: AsyncSession = Depends(get_async_session),
 ):
     """Ask the conversation's agent's LLM to summarize the chat into a
@@ -98,7 +94,7 @@ async def generate_title(
     from app.agents.providers.base import ChatMessage
     from app.agents.runtime.executor import _provider_and_model_for
 
-    conv = await conversation_service.get_conversation(session, conversation_id, ctx.workspace.id)
+    conv = await conversation_service.get_conversation(session, conversation_id, ctx.workspace.id, ctx.user_id)
     if conv is None:
         raise HTTPException(status_code=404, detail="conversation not found")
 
@@ -112,6 +108,31 @@ async def generate_title(
 
     agent = await agent_service.get_agent(session, conv.agent_id, ctx.workspace.id)
     if agent is None:
+        return conv
+
+    # The first-party Copilot is operator-routed, so a cosmetic title must
+    # never become an unmetered way to trigger paid inference. Its runtime
+    # already stores the first user turn as a provisional title; normalize
+    # that locally instead of calling the provider.
+    if agent_service.is_core_copilot(agent):
+        first_user = next(
+            (
+                m.content
+                for m in msgs
+                if m.role == "user" and m.content and m.content.strip()
+            ),
+            None,
+        )
+        if first_user:
+            candidate = " ".join(first_user.split())[:80]
+            updated = await conversation_service.update_title(
+                session,
+                conversation_id,
+                ctx.workspace.id,
+                ctx.user_id,
+                candidate,
+            )
+            return updated or conv
         return conv
 
     try:
@@ -134,7 +155,7 @@ async def generate_title(
         candidate = next((line.strip().strip('"').strip("'") for line in content.splitlines() if line.strip()), "")
         if candidate:
             conv = await conversation_service.update_title(
-                session, conversation_id, ctx.workspace.id, candidate[:80]
+                session, conversation_id, ctx.workspace.id, ctx.user_id, candidate[:80]
             )
     except Exception:  # noqa: BLE001
         logger.exception("title generation failed for conversation %s", conversation_id)
@@ -144,9 +165,11 @@ async def generate_title(
 @router.delete("/conversations/{conversation_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_conversation(
     conversation_id: uuid.UUID,
-    ctx: WorkspaceContext = Depends(current_writable_workspace),
+    ctx: WorkspaceContext = Depends(current_workspace),
     session: AsyncSession = Depends(get_async_session),
 ):
-    ok = await conversation_service.delete_conversation(session, conversation_id, ctx.workspace.id)
+    ok = await conversation_service.delete_conversation(
+        session, conversation_id, ctx.workspace.id, ctx.user_id
+    )
     if not ok:
         raise HTTPException(status_code=404, detail="conversation not found")

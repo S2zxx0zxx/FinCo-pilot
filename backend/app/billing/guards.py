@@ -13,6 +13,9 @@ from app.billing.usage import consume_monthly, enforce_limit, enforce_workspace_
 from app.core.auth import current_active_user
 from app.core.database import get_async_session
 from app.core.workspace_context import WorkspaceContext, current_workspace
+from app.agents.models.agent import Agent
+from app.agents.models.conversation import Conversation
+from app.agents.services.agent_service import is_core_copilot
 from app.models.asset import Asset
 from app.models.goal import Goal
 from app.models.group import Group
@@ -348,10 +351,85 @@ async def reconciliation_guard(
     await require_workspace_capability(session, ctx.workspace, Capability.SMART_RECONCILIATION)
 
 
+async def _request_targets_core_copilot(
+    request: Request,
+    ctx: WorkspaceContext,
+    session: AsyncSession,
+) -> bool:
+    """Resolve whether an agents-route request belongs to this user's core Copilot.
+
+    The first-party Copilot is available independently of Advanced Agents, but
+    this exception must never widen access to another member's system agent,
+    custom agents, provider connections, external MCP tokens, or knowledge
+    management.
+    """
+    path = _path(request)
+    if request.method == "GET" and path == "/api/agents/copilot":
+        return True
+
+    # Keep the exception intentionally tiny. A core-agent id in a URL must
+    # not unlock Advanced Agents sub-surfaces such as /knowledge or /tools.
+    # Only the built-in chat endpoint and its own conversation history are
+    # available without AGENTS_AUTOMATION.
+    raw_agent_id = request.path_params.get("agent_id") or request.query_params.get("agent_id")
+    if raw_agent_id:
+        try:
+            agent_id = uuid.UUID(str(raw_agent_id))
+        except (TypeError, ValueError):
+            return False
+        agent_route_allowed = (
+            request.method == "POST"
+            and path == f"/api/agents/{agent_id}/chat"
+        ) or (
+            request.method == "GET"
+            and path == "/api/agents/conversations"
+            and request.query_params.get("agent_id") is not None
+        )
+        if not agent_route_allowed:
+            return False
+        agent = await session.get(Agent, agent_id)
+        return bool(
+            agent is not None
+            and agent.workspace_id == ctx.workspace.id
+            and agent.user_id == ctx.user_id
+            and is_core_copilot(agent)
+        )
+
+    raw_conversation_id = request.path_params.get("conversation_id")
+    conversation_route_allowed = raw_conversation_id is not None and (
+        path == f"/api/agents/conversations/{raw_conversation_id}"
+        or path == f"/api/agents/conversations/{raw_conversation_id}/messages"
+        or path == f"/api/agents/conversations/{raw_conversation_id}/generate-title"
+    )
+    if raw_conversation_id and conversation_route_allowed:
+        try:
+            conversation_id = uuid.UUID(str(raw_conversation_id))
+        except (TypeError, ValueError):
+            return False
+        conv = await session.get(Conversation, conversation_id)
+        if (
+            conv is None
+            or conv.workspace_id != ctx.workspace.id
+            or conv.user_id != ctx.user_id
+        ):
+            return False
+        agent = await session.get(Agent, conv.agent_id)
+        return bool(
+            agent is not None
+            and agent.workspace_id == ctx.workspace.id
+            and agent.user_id == ctx.user_id
+            and is_core_copilot(agent)
+        )
+
+    return False
+
+
 async def agents_guard(
     request: Request,
     ctx: WorkspaceContext = Depends(current_workspace),
     session: AsyncSession = Depends(get_async_session),
 ) -> None:
-    """Max-only advanced agent guard; usage is consumed after chat validation."""
+    """Keep Advanced Agents Max-only while allowing the built-in Copilot."""
+    if await _request_targets_core_copilot(request, ctx, session):
+        return
     await require_workspace_capability(session, ctx.workspace, Capability.AGENTS_AUTOMATION)

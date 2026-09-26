@@ -1710,7 +1710,13 @@ export const agents = {
     const { data } = await api.get('/agents', { params: { include_archived: includeArchived } })
     return data
   },
-  // Default agent for the global slide-over chat panel. Returns the
+  // Built-in, system-managed assistant. Lazily provisioned per user/workspace
+  // and routed through the instance-level provider defaults (OmniRoute).
+  getCopilot: async (): Promise<Agent> => {
+    const { data } = await api.get('/agents/copilot')
+    return data
+  },
+  // Default custom agent for the advanced-agent management surface. Returns the
   // user-flagged default; falls back to the most recent agent.
   // Throws 404 if the user has no agents at all.
   getDefault: async (): Promise<Agent> => {

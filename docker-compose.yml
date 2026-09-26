@@ -68,6 +68,8 @@ x-backend-env: &backend-env
   # TTL for tokens minted from /agents/connections → "External MCP access".
   # Used by Claude Desktop, n8n, custom clients plugging into FinCo-Pilot.
   AGENTS_MCP_EXTERNAL_TTL_DAYS: ${AGENTS_MCP_EXTERNAL_TTL_DAYS:-90}
+  AGENTS_CORE_COPILOT_DAILY_MESSAGES: ${AGENTS_CORE_COPILOT_DAILY_MESSAGES:-50}
+  AGENTS_CORE_COPILOT_MAX_OUTPUT_TOKENS: ${AGENTS_CORE_COPILOT_MAX_OUTPUT_TOKENS:-1200}
   # LLM provider config — only the provider you actually use needs setting.
   AGENTS_DEFAULT_PROVIDER: ${AGENTS_DEFAULT_PROVIDER:-ollama}
   AGENTS_DEFAULT_MODEL: ${AGENTS_DEFAULT_MODEL:-}

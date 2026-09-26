@@ -95,6 +95,14 @@ ALLOWLIST: dict[tuple[str, str], str] = {
     ("PATCH", "/api/agents/connections/{conn_id}"): "the requester's own LLM credentials",
     ("DELETE", "/api/agents/connections/{conn_id}"): "the requester's own LLM credentials",
     ("POST", "/api/agents/connections/{conn_id}/test"): "probes the requester's own credential",
+    # Built-in/custom chat persists only the authenticated user's own
+    # conversation/usage metadata here. Workspace financial writes are not
+    # performed by these routes: tool execution is separately role-aware and
+    # proposal-only. Viewers must remain able to ask read-only questions.
+    ("POST", "/api/agents/{agent_id}/chat"): "persists the requester's own chat/usage metadata; financial tools are role-aware and proposal-only",
+    ("PATCH", "/api/agents/conversations/{conversation_id}"): "renames the requester's own workspace-scoped conversation",
+    ("DELETE", "/api/agents/conversations/{conversation_id}"): "deletes the requester's own workspace-scoped conversation",
+    ("POST", "/api/agents/conversations/{conversation_id}/generate-title"): "updates only the requester's own conversation title",
     # Global, not workspace data: FX rates are shared by the whole instance.
     # Any authenticated user may refresh them, and nothing per-workspace is
     # touched. Flagged here so a future rate limit or admin floor is a
@@ -120,6 +128,16 @@ WORKSPACE_READ_ROUTES = {
         "/api/transactions/import/preview", "/api/assets/import/preview",
         "/api/rules/preview", "/api/export/backup",
     )
+}
+
+# These exemptions intentionally mutate only the caller's chat metadata, but
+# they must still resolve an authenticated workspace so ownership/isolation is
+# enforced by the route/service layer.
+WORKSPACE_SCOPED_EXEMPTIONS = {
+    ("POST", "/api/agents/{agent_id}/chat"),
+    ("PATCH", "/api/agents/conversations/{conversation_id}"),
+    ("DELETE", "/api/agents/conversations/{conversation_id}"),
+    ("POST", "/api/agents/conversations/{conversation_id}/generate-title"),
 }
 
 
@@ -188,6 +206,8 @@ def test_a_mutating_route_declares_a_permission_decision(method, path):
             assert "current_user_dependency" in names, "the exemption still requires authentication"
         if (method, path) in WORKSPACE_READ_ROUTES:
             assert "current_workspace" in names, "read-only does not mean cross-workspace"
+        if (method, path) in WORKSPACE_SCOPED_EXEMPTIONS:
+            assert "current_workspace" in names, "chat metadata exemptions stay workspace-scoped"
         if path.startswith("/api/admin/"):
             assert "current_superuser" in names, "instance administration requires a superuser"
         return
@@ -204,7 +224,7 @@ def test_the_allowlist_has_no_stale_entries():
     reusing the path."""
     stale = sorted(set(ALLOWLIST) - set(ALL_MUTATING))
     assert stale == [], f"allowlist entries matching no route: {stale}"
-    assert PUBLIC_ROUTES | WORKSPACE_READ_ROUTES <= set(ALLOWLIST)
+    assert PUBLIC_ROUTES | WORKSPACE_READ_ROUTES | WORKSPACE_SCOPED_EXEMPTIONS <= set(ALLOWLIST)
 
 
 def test_nothing_allowlisted_is_already_gated():

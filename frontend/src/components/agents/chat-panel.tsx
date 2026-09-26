@@ -187,9 +187,9 @@ export function ChatPanel({ agent, conversationId, onConversationCreated, focusS
       setDraft(null)
       if (errorThisTurn) setLastError(errorThisTurn)
       // After the very first round of a brand-new conversation, ask the
-      // backend to summarize the exchange into a short title via the
-      // LLM. Fire-and-forget — the conversations list will refetch when
-      // it lands.
+      // backend to normalize/summarize the exchange into a short title.
+      // Core Copilot does this locally (no extra inference); custom agents
+      // may use their configured model. Fire-and-forget either way.
       if (!errorThisTurn && startedFresh && activeConvId) {
         agents.conversations
           .generateTitle(activeConvId)
@@ -309,6 +309,7 @@ export function ChatPanel({ agent, conversationId, onConversationCreated, focusS
             el.style.height = `${Math.min(el.scrollHeight, 200)}px`
           }}
           rows={1}
+          maxLength={12000}
           placeholder={t('agents.chat.placeholder', { name: agent.name })}
           // h-10 matches the default Button height so the input + send
           // button line up when empty. Auto-grow above lifts it as the
@@ -416,18 +417,19 @@ function HistoryView({ agent, history }: { agent: Agent; history: AgentMessage[]
  *  (cheaper than auto-sending — gives the user a chance to tweak). */
 function ChatEmptyState({ agent, onPick }: { agent: Agent; onPick: (text: string) => void }) {
   const { t } = useTranslation()
+  const isCoreCopilot = agent.extra?.kind === 'core_copilot'
 
-  // Resolve the LLM connector tied to this agent so the empty state
-  // can show "Connected via X" — useful trust signal: the user knows
-  // which provider/key/model is going to handle the next message.
-  // Falls back gracefully when the agent has no connection_id (uses
-  // raw provider/model fields or instance default).
+  // Custom-agent provider details are an Advanced Agents concern. The core
+  // Copilot intentionally does not call the Max-only connections endpoint
+  // and does not expose its operator routing in the everyday chat UI.
   const { data: connections } = useQuery({
     queryKey: ['agent-connections'],
     queryFn: () => agents.connections.list(),
+    enabled: !isCoreCopilot,
     staleTime: 1000 * 60,
   })
   const connectorLabel = useMemo<string | null>(() => {
+    if (isCoreCopilot) return null
     if (agent.connection_id) {
       const conn = connections?.find((c) => c.id === agent.connection_id)
       if (conn) {
@@ -439,7 +441,7 @@ function ChatEmptyState({ agent, onPick }: { agent: Agent; onPick: (text: string
       return agent.model ? `${agent.provider} · ${agent.model}` : agent.provider
     }
     return null
-  }, [agent.connection_id, agent.provider, agent.model, connections])
+  }, [agent.connection_id, agent.provider, agent.model, connections, isCoreCopilot])
 
   // Pull the localized prompt pool. Each locale ships ~10 short tips.
   const allPrompts = useMemo<string[]>(() => {
@@ -452,6 +454,13 @@ function ChatEmptyState({ agent, onPick }: { agent: Agent; onPick: (text: string
   // the render pure, so the chips stay put instead of swapping themselves
   // out on an unrelated re-render.
   const picks = useMemo(() => {
+    if (isCoreCopilot) {
+      return [
+        'How much can I safely spend right now?',
+        'What needs my attention today?',
+        'Explain this page and tell me what matters.',
+      ]
+    }
     if (allPrompts.length === 0) return []
     let hash = 0
     for (let i = 0; i < agent.id.length; i++) {
@@ -461,15 +470,15 @@ function ChatEmptyState({ agent, onPick }: { agent: Agent; onPick: (text: string
     return Array.from({ length: Math.min(3, allPrompts.length) }, (_, i) =>
       allPrompts[(start + i) % allPrompts.length],
     )
-  }, [allPrompts, agent.id])
+  }, [allPrompts, agent.id, isCoreCopilot])
 
   return (
-    <div className="flex flex-col items-center justify-center text-center gap-5 py-12 min-h-[65vh]">
+    <div className="flex flex-col items-center justify-center text-center gap-4 py-8 min-h-[58vh]">
       {/* Brand mark — uses the primary indigo so it reads as FinCo-Pilot, not
           as the agent's accent color. Transparent background. */}
-      <FinCoLogo size={56} className="text-primary opacity-90" />
+      <FinCoLogo size={44} className="text-primary opacity-90" />
       <div className="space-y-1 px-6">
-        <div className="text-base font-semibold">{agent.name}</div>
+        <div className="text-sm font-semibold">{agent.name}</div>
         {agent.description && (
           <p className="text-xs text-muted-foreground line-clamp-2">{agent.description}</p>
         )}
@@ -490,7 +499,7 @@ function ChatEmptyState({ agent, onPick }: { agent: Agent; onPick: (text: string
                 key={p}
                 type="button"
                 onClick={() => onPick(p)}
-                className="text-left text-sm px-3 py-2 rounded-md border border-border bg-background/40 hover:bg-muted transition-colors"
+                className="text-left text-xs px-3 py-2 rounded-lg border border-border bg-background/40 hover:bg-muted transition-colors"
               >
                 {p}
               </button>

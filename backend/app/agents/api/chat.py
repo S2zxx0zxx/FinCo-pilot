@@ -8,6 +8,7 @@ with summaries when results land.
 from __future__ import annotations
 
 import json
+import logging
 import uuid
 from dataclasses import asdict
 from typing import AsyncIterator
@@ -18,13 +19,14 @@ from starlette.responses import StreamingResponse
 
 from app.agents.runtime.executor import AgentExecutor, ExecutorEvent
 from app.agents.schemas.conversation import SendMessageRequest
-from app.agents.services import agent_service, conversation_service
+from app.agents.services import agent_service, conversation_service, core_usage_service
 from app.billing.enums import Metric
 from app.billing.usage import consume_monthly
 from app.core.database import get_async_session
-from app.core.workspace_context import WorkspaceContext, current_writable_workspace
+from app.core.workspace_context import WorkspaceContext, current_workspace
 
 router = APIRouter(prefix="/api/agents", tags=["agents"])
+logger = logging.getLogger(__name__)
 
 
 def _format_event(event: ExecutorEvent) -> bytes:
@@ -36,25 +38,42 @@ def _format_event(event: ExecutorEvent) -> bytes:
 async def chat(
     agent_id: uuid.UUID,
     body: SendMessageRequest,
-    # Write-gated for what the agent can do on the caller's behalf, not for
-    # the conversation row it persists. The tool set reachable from here
-    # includes `propose_create_transaction` and its siblings, which write —
-    # so a read-only member chatting could create financial data the HTTP
-    # API would have refused them.
-    ctx: WorkspaceContext = Depends(current_writable_workspace),
+    # Read access is enough to chat. The executor removes proposal/write
+    # tools for viewers; editors/owners may receive proposal cards, but those
+    # still need explicit confirmation before app data changes.
+    ctx: WorkspaceContext = Depends(current_workspace),
     session: AsyncSession = Depends(get_async_session),
 ):
     agent = await agent_service.get_agent(session, agent_id, ctx.workspace.id)
-    if agent is None:
+    if agent is None or not agent_service.can_access_agent(agent, ctx.user_id):
         raise HTTPException(status_code=404, detail="agent not found")
+    is_core = agent_service.is_core_copilot(agent)
 
     conv = None
     if body.conversation_id:
         conv = await conversation_service.get_conversation(
-            session, body.conversation_id, ctx.workspace.id
+            session, body.conversation_id, ctx.workspace.id, ctx.user_id
         )
         if conv is None or conv.agent_id != agent_id:
             raise HTTPException(status_code=404, detail="conversation not found")
+
+    # Reserve usage before creating a brand-new conversation. Otherwise a
+    # caller who is already over quota could repeatedly submit no-id requests
+    # and leave unlimited empty conversation rows behind.
+    #
+    # Both quota helpers only flush; when this is a new conversation,
+    # create_conversation's commit atomically persists the reservation and row.
+    # Existing conversations commit the accepted reservation here.
+    executor = AgentExecutor()
+    if is_core:
+        await core_usage_service.consume_core_message(
+            session,
+            user_id=ctx.user_id,
+            limit=executor.settings.core_copilot_daily_messages,
+        )
+    else:
+        await consume_monthly(session, ctx.workspace, Metric.AI_ACTIONS_MONTHLY)
+
     if conv is None:
         conv = await conversation_service.create_conversation(
             session,
@@ -63,15 +82,8 @@ async def chat(
             agent_id=agent_id,
             channel=body.channel,
         )
-
-    # Meter only a request that passed workspace/agent/conversation validation.
-    # Streaming begins after the endpoint returns, so persist the accepted action
-    # here rather than relying on a later generator commit that may never happen
-    # if the client disconnects immediately.
-    await consume_monthly(session, ctx.workspace, Metric.AI_ACTIONS_MONTHLY)
-    await session.commit()
-
-    executor = AgentExecutor()
+    else:
+        await session.commit()
 
     async def gen() -> AsyncIterator[bytes]:
         yield f"event: conversation\ndata: {json.dumps({'conversation_id': str(conv.id)})}\n\n".encode()
@@ -85,10 +97,17 @@ async def chat(
                 user_message=body.content,
                 channel=body.channel,
                 page_context=body.page_context,
+                allow_proposals=ctx.can_write,
             ):
                 yield _format_event(ev)
         except Exception as exc:  # noqa: BLE001
-            yield f"event: error\ndata: {json.dumps({'error_code': 'unknown', 'error_message': str(exc)})}\n\n".encode()
+            logger.exception("agent chat stream failed")
+            message = (
+                "FinCo Copilot could not complete this request. Please try again."
+                if is_core
+                else str(exc)
+            )
+            yield f"event: error\ndata: {json.dumps({'error_code': 'unknown', 'error_message': message})}\n\n".encode()
 
     return StreamingResponse(gen(), media_type="text/event-stream", headers={
         "Cache-Control": "no-cache",

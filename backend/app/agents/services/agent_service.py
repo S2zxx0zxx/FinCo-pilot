@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import hmac
 import uuid
 from typing import Optional
 
@@ -10,6 +12,155 @@ from app.agents.models.agent import Agent, AgentTool
 from app.agents.models.conversation import Conversation
 from app.agents.models.knowledge import KnowledgeDoc
 from app.agents.schemas.agent import AgentCreate, AgentUpdate
+from app.core.config import get_settings
+from app.models.workspace import Workspace
+
+
+CORE_COPILOT_KIND = "core_copilot"
+CORE_COPILOT_VERSION = 1
+CORE_COPILOT_NAME = "FinCo Copilot"
+CORE_COPILOT_SYSTEM_PROMPT = """You are FinCo Copilot, the built-in assistant for this FinCo-Pilot workspace.
+
+Use FinCo-Pilot tools for user-specific facts. Never invent balances, transactions, budgets, goals, Safe-to-Spend, loan values, or other financial facts. Retrieve only the minimum data needed for the current request. Treat page context as orientation and re-read live values through tools. Read authorized data proactively so the user does not have to repeat what FinCo-Pilot already knows. For changes, prepare proposals for user review. Never move money, expose secrets, bypass workspace permissions, or claim a change happened unless FinCo-Pilot confirms it. Be concise, actionable, and answer in the user's language.
+"""
+
+
+def _core_signature(
+    *,
+    agent_id: uuid.UUID,
+    workspace_id: uuid.UUID,
+    user_id: uuid.UUID,
+    version: int,
+) -> str:
+    """Server-authenticate the JSON marker without adding a schema migration.
+
+    Agent.extra was historically user-controlled, so marker strings alone
+    are not a safe privilege boundary. Bind the system marker to stable row
+    identifiers with the application's server secret.
+    """
+    secret = get_settings().secret_key.get_secret_value().encode("utf-8")
+    payload = (
+        f"finco-core-copilot:{version}:{agent_id}:{workspace_id}:{user_id}"
+    ).encode("utf-8")
+    return hmac.new(secret, payload, hashlib.sha256).hexdigest()
+
+
+def is_core_copilot(agent: Agent) -> bool:
+    extra = agent.extra if isinstance(agent.extra, dict) else {}
+    if extra.get("kind") != CORE_COPILOT_KIND or extra.get("system_managed") is not True:
+        return False
+    try:
+        version = int(extra.get("version") or 0)
+    except (TypeError, ValueError):
+        return False
+    signature = extra.get("server_signature")
+    if not isinstance(signature, str) or not signature:
+        return False
+    expected = _core_signature(
+        agent_id=agent.id,
+        workspace_id=agent.workspace_id,
+        user_id=agent.user_id,
+        version=version,
+    )
+    return hmac.compare_digest(signature, expected)
+
+
+def can_access_agent(agent: Agent, user_id: uuid.UUID) -> bool:
+    """Workspace agents are shared; the system core copilot is per-user."""
+    return not is_core_copilot(agent) or agent.user_id == user_id
+
+
+async def ensure_core_copilot(
+    session: AsyncSession,
+    workspace_id: uuid.UUID,
+    user_id: uuid.UUID,
+) -> Agent:
+    """Lazily create one system-managed FinCo Copilot per user/workspace.
+
+    Lock the workspace row while checking/creating so concurrent first-open
+    requests cannot race into duplicate system agents in PostgreSQL.
+    """
+    await session.execute(
+        select(Workspace.id)
+        .where(Workspace.id == workspace_id)
+        .with_for_update()
+    )
+    rows = list((await session.execute(
+        select(Agent)
+        .where(
+            Agent.workspace_id == workspace_id,
+            Agent.user_id == user_id,
+            Agent.is_archived.is_(False),
+        )
+        .order_by(Agent.created_at.asc())
+    )).scalars().all())
+    for row in rows:
+        if not is_core_copilot(row):
+            continue
+        extra = row.extra if isinstance(row.extra, dict) else {}
+        if int(extra.get("version") or 0) < CORE_COPILOT_VERSION:
+            row.name = CORE_COPILOT_NAME
+            row.description = "Your context-aware FinCo-Pilot assistant"
+            row.system_prompt = CORE_COPILOT_SYSTEM_PROMPT
+            row.icon = "sparkles"
+            row.color = "#6366F1"
+            row.provider = None
+            row.model = None
+            row.temperature = 0.2
+            row.max_history_messages = 30
+            row.top_n = 6
+            row.similarity_threshold = 0.25
+            row.auto_context = True
+            row.extra = {
+                **extra,
+                "kind": CORE_COPILOT_KIND,
+                "system_managed": True,
+                "version": CORE_COPILOT_VERSION,
+                "server_signature": _core_signature(
+                    agent_id=row.id,
+                    workspace_id=row.workspace_id,
+                    user_id=row.user_id,
+                    version=CORE_COPILOT_VERSION,
+                ),
+            }
+            await session.commit()
+            await session.refresh(row)
+        return row
+
+    agent_id = uuid.uuid4()
+    agent = Agent(
+        id=agent_id,
+        user_id=user_id,
+        workspace_id=workspace_id,
+        name=CORE_COPILOT_NAME,
+        description="Your context-aware FinCo-Pilot assistant",
+        system_prompt=CORE_COPILOT_SYSTEM_PROMPT,
+        icon="sparkles",
+        color="#6366F1",
+        provider=None,
+        model=None,
+        temperature=0.2,
+        max_history_messages=30,
+        top_n=6,
+        similarity_threshold=0.25,
+        auto_context=True,
+        is_default=False,
+        extra={
+            "kind": CORE_COPILOT_KIND,
+            "system_managed": True,
+            "version": CORE_COPILOT_VERSION,
+            "server_signature": _core_signature(
+                agent_id=agent_id,
+                workspace_id=workspace_id,
+                user_id=user_id,
+                version=CORE_COPILOT_VERSION,
+            ),
+        },
+    )
+    session.add(agent)
+    await session.commit()
+    await session.refresh(agent)
+    return agent
 
 
 async def list_agents(
@@ -21,7 +172,12 @@ async def list_agents(
     q = select(Agent).where(Agent.workspace_id == workspace_id).order_by(Agent.created_at.desc())
     if not include_archived:
         q = q.where(Agent.is_archived.is_(False))
-    rows = list((await session.execute(q)).scalars().all())
+    rows = [
+        row
+        for row in (await session.execute(q)).scalars().all()
+        if not is_core_copilot(row)
+    ]
+    # System-managed core copilots stay out of advanced-agent management.
     # One scalar query per (conv, kb) so the agents list page can show
     # counts without N+1. Cheap on small fan-out; if agent counts grow
     # we should switch to a single GROUP BY join.
@@ -130,21 +286,25 @@ async def get_default_agent(
     """The default agent is what the global slide-over chat panel uses.
     Falls back to the most-recently-created non-archived agent so the
     panel still works for workspaces that haven't picked one yet."""
-    explicit = (await session.execute(
+    explicit_rows = list((await session.execute(
         select(Agent).where(
             Agent.workspace_id == workspace_id,
             Agent.is_default.is_(True),
             Agent.is_archived.is_(False),
         )
-    )).scalar_one_or_none()
+    )).scalars().all())
+    explicit = next(
+        (row for row in explicit_rows if not is_core_copilot(row)),
+        None,
+    )
     if explicit is not None:
         return explicit
-    return (await session.execute(
+    rows = list((await session.execute(
         select(Agent)
         .where(Agent.workspace_id == workspace_id, Agent.is_archived.is_(False))
         .order_by(Agent.created_at.desc())
-        .limit(1)
-    )).scalar_one_or_none()
+    )).scalars().all())
+    return next((row for row in rows if not is_core_copilot(row)), None)
 
 
 async def delete_agent(

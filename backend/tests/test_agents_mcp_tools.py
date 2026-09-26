@@ -53,6 +53,11 @@ def test_registry_contains_v1_tools():
         "list_recurring_transactions",
         "list_assets",
         "list_goals",
+        "get_safe_to_spend",
+        "list_loans",
+        "list_bank_connection_status",
+        "list_rules",
+        "list_collections",
     }
     assert expected.issubset(set(REGISTRY.keys())), (
         f"missing: {expected - set(REGISTRY.keys())}"
@@ -87,6 +92,37 @@ def test_recurring_proposal_frequency_schema_includes_new_values(tool_name):
 
 
 # --- Read tools (with real seeded data) -----------------------------------
+
+async def test_bank_connection_status_never_exposes_credentials(
+    session: AsyncSession, ctx: CallContext, test_user, test_workspace
+):
+    from app.models.bank_connection import BankConnection
+
+    row = BankConnection(
+        user_id=test_user.id,
+        workspace_id=test_workspace.id,
+        provider="test-provider",
+        external_id="provider-secret-identifier",
+        institution_name="Test Bank",
+        credentials={"access_token": "must-never-leak"},
+        settings={"private_provider_option": "must-never-leak"},
+        status="active",
+        last_sync_status="success",
+    )
+    session.add(row)
+    await session.commit()
+
+    result = await REGISTRY["list_bank_connection_status"].handler(
+        session=session, ctx=ctx
+    )
+    assert result["total"] == 1
+    item = result["items"][0]
+    assert item["institution"] == "Test Bank"
+    assert "credentials" not in item
+    assert "settings" not in item
+    assert "external_id" not in item
+    assert "must-never-leak" not in repr(item)
+
 
 async def test_list_transactions_returns_seeded_data(
     session: AsyncSession, ctx: CallContext, test_transactions
@@ -237,6 +273,29 @@ async def test_list_budgets_empty(session: AsyncSession, ctx: CallContext):
     handler = REGISTRY["list_budgets"].handler
     r = await handler(session=session, ctx=ctx)
     assert r == {"items": [], "total": 0}
+
+
+async def test_get_safe_to_spend_blocks_until_obligations_reviewed(
+    session: AsyncSession, ctx: CallContext, test_account
+):
+    handler = REGISTRY["get_safe_to_spend"].handler
+    result = await handler(
+        session=session,
+        ctx=ctx,
+        horizon_days=30,
+        obligations_reviewed=False,
+    )
+    for key in (
+        "currency",
+        "status",
+        "safe_to_spend",
+        "daily_allowance",
+        "blockers",
+        "assumptions",
+    ):
+        assert key in result
+    assert result["safe_to_spend"] is None
+    assert result["blockers"]
 
 
 async def test_aggregate_payee_filter(
@@ -579,14 +638,26 @@ async def test_propose_cancel_recurring_default_mode_is_deactivate(
     assert r["target"]["description"] == "Spotify"
 
 
-async def test_propose_create_goal(session: AsyncSession, ctx: CallContext):
+async def test_propose_create_goal(
+    session: AsyncSession, ctx: CallContext, test_user
+):
+    # Regression: this used to hardcode BRL when currency was omitted. The
+    # proposal must follow the authenticated user's primary currency so an
+    # India-first account does not silently create a Brazilian-real goal.
+    test_user.preferences = {
+        **(test_user.preferences or {}),
+        "currency_display": "INR",
+    }
+    await session.commit()
+
     handler = REGISTRY["propose_create_goal"].handler
     r = await handler(
         session=session, ctx=ctx,
-        name="Viagem para o Japão", target_amount=10000, deadline="2026-12-31",
+        name="Emergency fund", target_amount=10000, deadline="2026-12-31",
     )
     assert r["kind"] == "create_goal"
     assert r["proposed"]["target_amount"] == 10000.0
+    assert r["proposed"]["currency"] == "INR"
     assert r["proposed"]["deadline"] == "2026-12-31"
     assert r["proposed"]["initial_amount"] == 0.0
 

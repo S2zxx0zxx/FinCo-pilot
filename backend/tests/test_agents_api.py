@@ -234,6 +234,34 @@ async def test_multi_tenant_scoping(client: AsyncClient, auth_headers: dict, oth
     assert r.status_code == 404
 
 
+async def test_user_cannot_spoof_system_copilot_metadata(
+    client: AsyncClient, auth_headers: dict
+):
+    create = await client.post(
+        "/api/agents",
+        headers=auth_headers,
+        json={
+            "name": "Fake core",
+            "extra": {"kind": "core_copilot", "system_managed": True},
+        },
+    )
+    assert create.status_code == 422
+
+    normal = await client.post(
+        "/api/agents",
+        headers=auth_headers,
+        json={"name": "Normal agent"},
+    )
+    assert normal.status_code == 201, normal.text
+
+    update = await client.patch(
+        f"/api/agents/{normal.json()['id']}",
+        headers=auth_headers,
+        json={"extra": {"system_managed": True}},
+    )
+    assert update.status_code == 422
+
+
 async def test_create_validation_rejects_missing_name(client: AsyncClient, auth_headers: dict):
     r = await client.post("/api/agents", json={}, headers=auth_headers)
     assert r.status_code == 422
@@ -243,6 +271,42 @@ async def test_temperature_clamp(client: AsyncClient, auth_headers: dict):
     # Pydantic schema enforces 0..2
     r = await client.post("/api/agents", json={"name": "x", "temperature": 5.0}, headers=auth_headers)
     assert r.status_code == 422
+
+
+async def test_chat_request_validation_bounds_inputs(
+    client: AsyncClient, auth_headers: dict
+):
+    created = await client.post(
+        "/api/agents",
+        json={"name": "Validation agent"},
+        headers=auth_headers,
+    )
+    assert created.status_code == 201, created.text
+    agent_id = created.json()["id"]
+
+    blank = await client.post(
+        f"/api/agents/{agent_id}/chat",
+        json={"content": "   "},
+        headers=auth_headers,
+    )
+    assert blank.status_code == 422
+
+    huge = await client.post(
+        f"/api/agents/{agent_id}/chat",
+        json={"content": "x" * 12_001},
+        headers=auth_headers,
+    )
+    assert huge.status_code == 422
+
+    oversized_context = await client.post(
+        f"/api/agents/{agent_id}/chat",
+        json={
+            "content": "hello",
+            "page_context": {"blob": "x" * 20_001},
+        },
+        headers=auth_headers,
+    )
+    assert oversized_context.status_code == 422
 
 
 # --- Conversations & messages ---------------------------------------------

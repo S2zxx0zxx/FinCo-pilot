@@ -29,16 +29,10 @@ def _fmt_amount(value: Optional[float | Decimal], currency: str) -> str:
 
 
 def _user_label(user: User) -> str:
+    """Return only an explicit display name; never send account email by default."""
     prefs = getattr(user, "preferences", None) or {}
     name = (prefs.get("name") or prefs.get("display_name") or "").strip()
-    email = (user.email or "").strip()
-    if name and email:
-        return f"{name} ({email})"
-    if name:
-        return name
-    if "@" in email:
-        return f"{email.split('@', 0)[0]} ({email})" if False else email
-    return email or "the user"
+    return name or "the user"
 
 
 async def build_context_primer(
@@ -84,23 +78,18 @@ async def build_context_primer(
             name = row.get("name") or "?"
             kind = row.get("type") or "account"
             currency = row.get("currency") or primary_currency
-            balance = row.get("balance")
-            balance_str = _fmt_amount(balance, currency) if balance is not None else ""
-            account_id = row.get("id")
-            piece = f"- {name} ({kind}"
-            if balance_str:
-                piece += f", {balance_str}"
-            piece += ")"
-            if account_id:
-                piece += f" — id: {account_id}"
-            lines.append(piece)
+            # Orientation intentionally excludes balances, ids, and provider
+            # payloads. The model can fetch live values only when the request
+            # actually needs them, reducing sensitive-data exposure and tokens.
+            lines.append(f"- {name} ({kind}, {currency})")
         lines.append("")
 
     lines.append(
         "Use the available tools (list_transactions, get_dashboard_snapshot, "
         "aggregate, etc.) for precise current data. The summary above is "
         "orientation only — never quote balances from this primer; query the "
-        "tools instead."
+        "tools instead. Sensitive values are intentionally omitted from this "
+        "always-on primer and should be fetched only when needed."
     )
     lines.append("")
     lines.append("Tool-use rules:")

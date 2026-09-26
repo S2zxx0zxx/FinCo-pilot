@@ -27,6 +27,12 @@ class ToolSpec:
     # frontend asks the user to confirm before applying. Drives UI hints.
     is_proposal: bool = False
     tags: list[str] = field(default_factory=list)
+    # Optional product entitlement required by the underlying data/service.
+    # This is separate from the global Advanced Agents capability: the core
+    # Copilot may run without AGENTS_AUTOMATION, but it must never bypass a
+    # feature entitlement such as Advanced Reports.
+    required_capability: str | None = None
+    required_module: str | None = None
 
 
 REGISTRY: dict[str, ToolSpec] = {}
@@ -39,6 +45,8 @@ def tool(
     parameters: dict[str, Any],
     is_proposal: bool = False,
     tags: list[str] | None = None,
+    required_capability: str | None = None,
+    required_module: str | None = None,
 ) -> Callable[[ToolHandler], ToolHandler]:
     """Decorator. The handler must be an async function with signature
     `async def handler(session: AsyncSession, ctx: CallContext, **kwargs)`.
@@ -53,6 +61,8 @@ def tool(
             handler=fn,
             is_proposal=is_proposal,
             tags=list(tags or []),
+            required_capability=required_capability,
+            required_module=required_module,
         )
         return fn
     return deco
@@ -65,7 +75,12 @@ def list_tools() -> list[dict[str, Any]]:
             "name": s.name,
             "description": s.description,
             "inputSchema": s.parameters,
-            "_fincopilot": {"is_proposal": s.is_proposal, "tags": s.tags},
+            "_fincopilot": {
+                "is_proposal": s.is_proposal,
+                "tags": s.tags,
+                "required_capability": s.required_capability,
+                "required_module": s.required_module,
+            },
         }
         for s in REGISTRY.values()
     ]
@@ -112,7 +127,49 @@ async def authorize_tool(session, ctx, spec, arguments):
         x_workspace_id=str(ctx.workspace_id) if ctx.workspace_id else None,
         user=user, session=session,
     )
-    await require_workspace_capability(session, resolved.workspace, Capability.AGENTS_AUTOMATION)
+    # Advanced/custom agents remain a Max capability. The built-in core
+    # Copilot is a separate first-party surface: internal calls from the
+    # caller's own system-managed Copilot may use FinCo tools without
+    # granting external MCP or custom-agent entitlement.
+    core_internal = False
+    if not ctx.external and ctx.agent_id is not None:
+        from app.agents.models.agent import Agent
+        from app.agents.services.agent_service import is_core_copilot
+
+        agent = await session.get(Agent, ctx.agent_id)
+        core_internal = bool(
+            agent is not None
+            and agent.user_id == user.id
+            and agent.workspace_id == resolved.id
+            and is_core_copilot(agent)
+        )
+    if not core_internal:
+        await require_workspace_capability(
+            session, resolved.workspace, Capability.AGENTS_AUTOMATION
+        )
+
+    # Module visibility is also a server-side boundary for Copilot tools.
+    # A business-only module must not become reachable merely through chat.
+    if spec.required_module:
+        from app.services.module_service import resolve_modules
+
+        if spec.required_module not in resolve_modules(resolved.workspace):
+            raise HTTPException(404, "Module not available in this workspace")
+
+    # A core Copilot exception applies only to the AI surface itself. Tools
+    # backed by separately paid product capabilities keep those entitlements.
+    if spec.required_capability:
+        try:
+            required_capability = Capability(spec.required_capability)
+        except ValueError as exc:
+            raise RuntimeError(
+                f"tool {spec.name!r} declares unknown capability "
+                f"{spec.required_capability!r}"
+            ) from exc
+        await require_workspace_capability(
+            session, resolved.workspace, required_capability
+        )
+
     writing = spec.is_proposal and arguments.get("apply") is True and ctx.external
     if ctx.external:
         row = await session.get(ExternalMCPToken, ctx.token_id) if ctx.token_id else None

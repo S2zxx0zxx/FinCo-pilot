@@ -254,6 +254,49 @@ async def test_provider_auth_error_surfaced_as_friendly_message(
     assert done is not None and done.finish_reason == "error"
 
 
+async def test_core_copilot_redacts_operator_provider_error_detail(
+    session, test_user, test_workspace, test_conversation
+):
+    from app.agents.services.agent_service import ensure_core_copilot
+
+    core = await ensure_core_copilot(session, test_workspace.id, test_user.id)
+    test_conversation.agent_id = core.id
+    await session.commit()
+
+    class _BoomProvider(LLMProvider):
+        name = "openai_compatible"
+
+        async def chat_stream(self, *args, **kwargs):  # type: ignore[override]
+            raise LLMAuthError("secret-host.internal/v1 key=operator-secret")
+            yield  # pragma: no cover
+
+        async def embed(self, texts, *, model):
+            return []
+
+    executor = AgentExecutor(mcp=_FakeMCP(tools=[]))
+    with _patch_provider(_BoomProvider()), patch.dict(
+        "os.environ",
+        {"AGENTS_DEFAULT_MODEL": "core-model"},
+        clear=False,
+    ):
+        events = await _drain(
+            executor,
+            session=session,
+            agent=core,
+            user_id=test_user.id,
+            workspace_id=test_workspace.id,
+            conversation_id=test_conversation.id,
+            user_message="hi",
+        )
+
+    err = next((e for e in events if e.type == "error"), None)
+    assert err is not None
+    assert err.error_code == "auth"
+    assert "operator-secret" not in (err.error_message or "")
+    assert "secret-host.internal" not in (err.error_message or "")
+    assert "FinCo Copilot" in (err.error_message or "")
+
+
 async def test_no_model_configured_yields_config_error(session, test_user, test_conversation):
     """An agent without model and without AGENTS_DEFAULT_MODEL should bail
     early with a config error rather than calling the provider."""
@@ -392,8 +435,8 @@ async def test_tool_result_passed_to_llm_in_full(session, test_user, test_agent,
 
 async def test_auto_context_primer_prepended_when_enabled(session, test_user, test_agent, test_conversation, test_account):
     """Captures the system messages the provider sees and verifies the
-    primer is the first one when auto_context=True (default), with the
-    agent's own system_prompt right after."""
+    guarded prompt stack plus the privacy-minimized auto-context primer when
+    auto_context=True (default)."""
     captured: dict[str, list] = {"system": []}
 
     class _Capture(_ScriptedProvider):
@@ -425,10 +468,16 @@ async def test_auto_context_primer_prepended_when_enabled(session, test_user, te
     assert len(sys_msgs) == 4, f"expected guardrail + identity + agent prompt + auto-context, got {len(sys_msgs)}"
     assert "Runtime rules" in sys_msgs[0]
     assert "propose_" in sys_msgs[0]
+    assert "obligations_reviewed=true" in sys_msgs[0]
+    assert "explicitly confirms" in sys_msgs[0]
     assert "FinCo-Pilot" in sys_msgs[1]            # identity primer mentions the product
     assert sys_msgs[2] == "You are helpful."
     assert "Context for this conversation" in sys_msgs[3]
-    assert "test@example.com" in sys_msgs[3]  # uses test_user fixture's email
+    # Always-on orientation must not leak the account email. With no explicit
+    # display name, the privacy-safe label stays generic while account names
+    # remain available for lightweight navigation context.
+    assert "test@example.com" not in sys_msgs[3]
+    assert "- Identity: the user" in sys_msgs[3]
     assert "Conta Corrente" in sys_msgs[3]    # account name from fixture
 
 
@@ -531,3 +580,204 @@ async def test_max_iterations_terminates_runaway_agent(session, test_user, test_
     done = next((e for e in events if e.type == "done"), None)
     assert err is not None and err.error_code == "max_iterations"
     assert done is not None and done.finish_reason == "max_iterations"
+
+
+async def test_core_copilot_exposes_only_explicit_reads_and_proposals(
+    session, test_user, test_workspace, test_conversation
+):
+    from app.agents.services.agent_service import ensure_core_copilot
+
+    core = await ensure_core_copilot(session, test_workspace.id, test_user.id)
+    test_conversation.agent_id = core.id
+    await session.commit()
+
+    tools = [
+        ToolHandle(
+            server="fincopilot",
+            name="list_accounts",
+            description="read",
+            parameters={"type": "object", "properties": {}},
+            tags=("read", "accounts"),
+        ),
+        ToolHandle(
+            server="fincopilot",
+            name="propose_create_budget",
+            description="proposal",
+            parameters={"type": "object", "properties": {}},
+            is_proposal=True,
+            tags=("propose", "budgets"),
+        ),
+        ToolHandle(
+            server="fincopilot",
+            name="dangerous_admin_action",
+            description="future unclassified action",
+            parameters={"type": "object", "properties": {}},
+            tags=(),
+        ),
+        ToolHandle(
+            server="untrusted-extra",
+            name="read_everything",
+            description="operator-added MCP tool claiming to be read-only",
+            parameters={"type": "object", "properties": {}},
+            tags=("read",),
+        ),
+    ]
+    fake_mcp = _FakeMCP(tools=tools)
+    captured_tool_names: list[str] = []
+    captured_max_tokens: list[int | None] = []
+
+    class _Capture(_ScriptedProvider):
+        async def chat_stream(self, messages, *, model, tools=None, temperature=0.4, max_tokens=None):
+            captured_tool_names.extend([t.name for t in (tools or [])])
+            captured_max_tokens.append(max_tokens)
+            async for chunk in super().chat_stream(
+                messages,
+                model=model,
+                tools=tools,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            ):
+                yield chunk
+
+    provider = _Capture([[
+        ChatChunk(type="text_delta", text="ok"),
+        ChatChunk(type="finish", finish_reason="stop"),
+    ]])
+    executor = AgentExecutor(mcp=fake_mcp)
+    with _patch_provider(provider), patch.dict(
+        "os.environ",
+        {"AGENTS_DEFAULT_MODEL": "core-model"},
+        clear=False,
+    ):
+        await _drain(
+            executor,
+            session=session,
+            agent=core,
+            user_id=test_user.id,
+            workspace_id=test_workspace.id,
+            conversation_id=test_conversation.id,
+            user_message="help me",
+            allow_proposals=True,
+        )
+
+    assert "fincopilot__list_accounts" in captured_tool_names
+    assert "fincopilot__propose_create_budget" in captured_tool_names
+    assert "fincopilot__dangerous_admin_action" not in captured_tool_names
+    assert "untrusted-extra__read_everything" not in captured_tool_names
+    assert captured_max_tokens == [executor.settings.core_copilot_max_output_tokens]
+
+
+async def test_bare_tool_name_is_rejected_when_multiple_servers_define_it(
+    session, test_user, test_agent, test_conversation
+):
+    tools = [
+        ToolHandle(
+            server="fincopilot",
+            name="same_name",
+            description="first",
+            parameters={"type": "object", "properties": {}},
+            tags=("read",),
+        ),
+        ToolHandle(
+            server="extra",
+            name="same_name",
+            description="second",
+            parameters={"type": "object", "properties": {}},
+            tags=("read",),
+        ),
+    ]
+    fake_mcp = _FakeMCP(tools=tools)
+    provider = _ScriptedProvider([
+        [
+            ChatChunk(
+                type="tool_call_start",
+                tool_call_id="ambiguous-1",
+                tool_name="same_name",
+            ),
+            ChatChunk(
+                type="tool_call_args_delta",
+                tool_call_id="ambiguous-1",
+                args_delta="{}",
+            ),
+            ChatChunk(type="finish", finish_reason="tool_calls"),
+        ],
+        [
+            ChatChunk(type="text_delta", text="Could not call it."),
+            ChatChunk(type="finish", finish_reason="stop"),
+        ],
+    ])
+
+    executor = AgentExecutor(mcp=fake_mcp)
+    with _patch_provider(provider):
+        events = await _drain(
+            executor,
+            session=session,
+            agent=test_agent,
+            user_id=test_user.id,
+            conversation_id=test_conversation.id,
+            user_message="use the tool",
+        )
+
+    assert fake_mcp.calls == []
+    blocked = next(e for e in events if e.type == "tool_result")
+    assert blocked.tool_result is not None
+    assert blocked.tool_result["ok"] is False
+
+
+async def test_viewer_cannot_dispatch_hidden_proposal_even_if_model_hallucinates_it(
+    session, test_user, test_agent, test_conversation
+):
+    tools = [
+        ToolHandle(
+            server="fincopilot",
+            name="list_accounts",
+            description="read",
+            parameters={"type": "object", "properties": {}},
+            tags=("read", "accounts"),
+        ),
+        ToolHandle(
+            server="fincopilot",
+            name="propose_create_budget",
+            description="proposal",
+            parameters={"type": "object", "properties": {}},
+            is_proposal=True,
+            tags=("propose", "budgets"),
+        ),
+    ]
+    fake_mcp = _FakeMCP(tools=tools)
+    provider = _ScriptedProvider([
+        [
+            ChatChunk(
+                type="tool_call_start",
+                tool_call_id="forbidden-1",
+                tool_name="fincopilot__propose_create_budget",
+            ),
+            ChatChunk(
+                type="tool_call_args_delta",
+                tool_call_id="forbidden-1",
+                args_delta="{}",
+            ),
+            ChatChunk(type="finish", finish_reason="tool_calls"),
+        ],
+        [
+            ChatChunk(type="text_delta", text="I cannot make that change here."),
+            ChatChunk(type="finish", finish_reason="stop"),
+        ],
+    ])
+
+    executor = AgentExecutor(mcp=fake_mcp)
+    with _patch_provider(provider):
+        events = await _drain(
+            executor,
+            session=session,
+            agent=test_agent,
+            user_id=test_user.id,
+            conversation_id=test_conversation.id,
+            user_message="change my budget",
+            allow_proposals=False,
+        )
+
+    assert fake_mcp.calls == []
+    blocked = next(e for e in events if e.type == "tool_result")
+    assert blocked.tool_result is not None
+    assert blocked.tool_result["ok"] is False

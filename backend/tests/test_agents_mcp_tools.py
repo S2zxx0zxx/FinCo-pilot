@@ -54,6 +54,10 @@ def test_registry_contains_v1_tools():
         "list_assets",
         "list_goals",
         "get_safe_to_spend",
+        "list_loans",
+        "list_bank_connection_status",
+        "list_rules",
+        "list_collections",
     }
     assert expected.issubset(set(REGISTRY.keys())), (
         f"missing: {expected - set(REGISTRY.keys())}"

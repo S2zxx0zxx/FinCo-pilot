@@ -8,6 +8,7 @@ with summaries when results land.
 from __future__ import annotations
 
 import json
+import logging
 import uuid
 from dataclasses import asdict
 from typing import AsyncIterator
@@ -25,6 +26,7 @@ from app.core.database import get_async_session
 from app.core.workspace_context import WorkspaceContext, current_workspace
 
 router = APIRouter(prefix="/api/agents", tags=["agents"])
+logger = logging.getLogger(__name__)
 
 
 def _format_event(event: ExecutorEvent) -> bytes:
@@ -95,7 +97,13 @@ async def chat(
             ):
                 yield _format_event(ev)
         except Exception as exc:  # noqa: BLE001
-            yield f"event: error\ndata: {json.dumps({'error_code': 'unknown', 'error_message': str(exc)})}\n\n".encode()
+            logger.exception("agent chat stream failed")
+            message = (
+                "FinCo Copilot could not complete this request. Please try again."
+                if is_core
+                else str(exc)
+            )
+            yield f"event: error\ndata: {json.dumps({'error_code': 'unknown', 'error_message': message})}\n\n".encode()
 
     return StreamingResponse(gen(), media_type="text/event-stream", headers={
         "Cache-Control": "no-cache",

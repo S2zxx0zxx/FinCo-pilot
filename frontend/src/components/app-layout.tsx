@@ -235,7 +235,7 @@ export function AppLayout() {
           >
             {isDark ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-           <UserMenu
+          <UserMenu
             userInitial={userInitial}
             logout={logout}
             onChangePassword={() => setChangePasswordOpen(true)}
@@ -291,7 +291,7 @@ export function AppLayout() {
               >
                 {privacyMode ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
-               <button
+              <button
                 onClick={toggleTheme}
                 className="text-sidebar-muted hover:text-sidebar-foreground transition-colors p-1 rounded-md hover:bg-sidebar-accent"
                 title={
@@ -513,8 +513,7 @@ export function AppLayout() {
       )}
       <BackupDialog open={backupOpen} onClose={() => setBackupOpen(false)} />
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
-      {/* One compact, persistent Copilot entry point on every page. The
-          floating position keeps it reachable without competing with nav. */}
+      {/* One compact, persistent Copilot entry point on every page. */}
       {chatAvailable && !chatOpen && (
         <button
           type="button"
@@ -530,7 +529,10 @@ export function AppLayout() {
           aria-label={t('agents.globalChat.openHint', 'Open FinCo Copilot')}
         >
           <Sparkles size={18} aria-hidden />
-          <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-emerald-400 ring-2 ring-primary" aria-hidden />
+          <span
+            className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-emerald-400 ring-2 ring-primary"
+            aria-hidden
+          />
         </button>
       )}
       {chatAvailable && <GlobalChatPanel open={chatOpen} onOpenChange={setChatOpen} />}
@@ -782,3 +784,22 @@ function UserMenu({
                 onClick={() => i18n.changeLanguage('ja')}
                 className="flex items-center gap-2"
               >
+                <span className="flex-1">日本語</span>
+                {currentLang === 'ja' && (
+                  <Check size={13} className="text-primary" />
+                )}
+              </DropdownMenuItem>
+            </DropdownMenuSubContent>
+          </DropdownMenuPortal>
+        </DropdownMenuSub>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={logout}
+          className="text-rose-600 focus:text-rose-600"
+        >
+          {t('auth.logout')}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}

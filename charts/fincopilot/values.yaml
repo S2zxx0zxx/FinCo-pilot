@@ -44,9 +44,28 @@ secret:
   agentsAnthropicApiKey: ""
   agentsOpenaiCompatApiKey: ""
 
+  # Zoho Desk direct-ticket OAuth secrets. Prefer global.existingSecret in production.
+  zohoDeskClientSecret: ""
+  zohoDeskRefreshToken: ""
+
 # Non-sensitive configuration
 config:
   debug: "false"
+
+  # Customer support / trust layer. Disabled until a real inbox/portal exists.
+  supportEnabled: "false"
+  supportEmail: ""
+  supportPortalUrl: ""
+  supportHelpCenterUrl: ""
+  supportSecurityUrl: "https://github.com/S2zxx0zxx/FinCo-pilot/security/advisories/new"
+  supportProvider: "external"
+  supportTicketSubmissionEnabled: "false"
+  supportRateLimitPerHour: "6"
+  zohoDeskAccountsDomain: "https://accounts.zoho.in"
+  zohoDeskApiDomain: "https://desk.zoho.in"
+  zohoDeskOrgId: ""
+  zohoDeskDepartmentId: ""
+  zohoDeskClientId: ""
 
   # Billing / founder offer engine. Paid checkout is fail-closed by default.
   billingCheckoutEnabled: "false"

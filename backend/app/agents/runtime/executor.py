@@ -511,13 +511,14 @@ class AgentExecutor:
         handles = entitled_handles
 
         if agent_service.is_core_copilot(agent):
-            # Fail closed for the first-party surface. A newly registered MCP
-            # tool is NOT automatically a Copilot capability: core sessions
-            # only see explicitly tagged reads or proposal-only mutations.
-            # This keeps future admin/security/payment tools out by default.
+            # Fail closed for the first-party surface. Core Copilot trusts only
+            # FinCo-Pilot's built-in MCP server; operator/user-added MCP servers
+            # are not part of the finance control plane even if they claim
+            # "read" tags. A newly registered built-in tool is also hidden
+            # unless it is explicitly a read or a proposal.
             handles = [
                 h for h in handles
-                if "read" in h.tags or h.is_proposal
+                if h.server == "fincopilot" and ("read" in h.tags or h.is_proposal)
             ]
 
         if not allow_proposals:
@@ -529,11 +530,21 @@ class AgentExecutor:
                 if "read" in h.tags and not h.is_proposal and "write" not in h.tags
             ]
         tool_defs = self.mcp.to_provider_tools(handles)
-        callable_tool_names = {
-            name
-            for h in handles
-            for name in (h.name, f"{h.server}__{h.name}")
-        }
+
+        # Canonicalize every allowed call to its exact discovered server. Some
+        # models occasionally drop our server namespace and emit a bare tool
+        # name; accept that alias only when it is unambiguous. This prevents a
+        # hidden/extra MCP server with the same bare tool name from being called
+        # through MCPRegistry's fallback resolver.
+        callable_tool_names: dict[str, str] = {}
+        bare_candidates: dict[str, list[str]] = {}
+        for handle in handles:
+            canonical = f"{handle.server}__{handle.name}"
+            callable_tool_names[canonical] = canonical
+            bare_candidates.setdefault(handle.name, []).append(canonical)
+        for bare_name, candidates in bare_candidates.items():
+            if len(candidates) == 1:
+                callable_tool_names[bare_name] = candidates[0]
 
         # Resolve provider+model once per request. Monkey-patched in tests
         # via _provider_for; production prefers _provider_and_model_for.
@@ -754,14 +765,17 @@ async def _safe_call_tool(
     workspace_id: Optional[uuid.UUID] = None,
     conversation_id: uuid.UUID,
     agent_id: Optional[uuid.UUID] = None,
-    allowed_tool_names: Optional[set[str]] = None,
+    allowed_tool_names: Optional[dict[str, str]] = None,
 ) -> dict[str, Any]:
     started = time.time()
     try:
-        if allowed_tool_names is not None and call.name not in allowed_tool_names:
-            raise PermissionError(f"tool not allowed in this session: {call.name}")
+        wire_name = call.name
+        if allowed_tool_names is not None:
+            wire_name = allowed_tool_names.get(call.name, "")
+            if not wire_name:
+                raise PermissionError(f"tool not allowed in this session: {call.name}")
         return await mcp.call(
-            wire_name=call.name,
+            wire_name=wire_name,
             arguments=call.arguments,
             user_id=user_id,
             workspace_id=workspace_id,

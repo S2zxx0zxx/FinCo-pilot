@@ -110,6 +110,31 @@ async def generate_title(
     if agent is None:
         return conv
 
+    # The first-party Copilot is operator-routed, so a cosmetic title must
+    # never become an unmetered way to trigger paid inference. Its runtime
+    # already stores the first user turn as a provisional title; normalize
+    # that locally instead of calling the provider.
+    if agent_service.is_core_copilot(agent):
+        first_user = next(
+            (
+                m.content
+                for m in msgs
+                if m.role == "user" and m.content and m.content.strip()
+            ),
+            None,
+        )
+        if first_user:
+            candidate = " ".join(first_user.split())[:80]
+            updated = await conversation_service.update_title(
+                session,
+                conversation_id,
+                ctx.workspace.id,
+                ctx.user_id,
+                candidate,
+            )
+            return updated or conv
+        return conv
+
     try:
         provider, model = await _provider_and_model_for(session, agent)
         if not model:

@@ -1,4 +1,5 @@
 import logging
+from html import escape
 import re
 import secrets
 import time
@@ -162,10 +163,12 @@ def _trusted_zoho_api_domain(value: str, fallback: str) -> str:
     """Accept only exact Zoho Desk data-center origins returned by OAuth."""
     candidate = value.strip() or fallback.strip()
     parsed = urlsplit(candidate)
+    fallback_host = (urlsplit(fallback).hostname or "").lower()
     hostname = (parsed.hostname or "").lower()
     trusted = (
         parsed.scheme == "https"
         and hostname in ZOHO_DESK_API_HOSTS
+        and hostname == fallback_host
         and parsed.username is None
         and parsed.password is None
         and parsed.port in {None, 443}
@@ -228,7 +231,10 @@ class ZohoDeskClient:
                     json={
                         "departmentId": settings.zoho_desk_department_id,
                         "subject": subject,
-                        "description": description,
+                        # Zoho ticket descriptions are HTML-capable. Escape all
+                        # requester-controlled text before preserving line breaks
+                        # so a support ticket cannot inject markup into an agent UI.
+                        "description": escape(description).replace("\n", "<br>"),
                         "email": requester_email,
                         "channel": "Web",
                         "priority": priority,

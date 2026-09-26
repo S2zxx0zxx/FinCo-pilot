@@ -369,13 +369,18 @@ export default function LoginPage() {
                   {isPasskeyLoading ? t('common.loading') : t('auth.usePasskeySecondFactor')}
                 </Button>
               )}
-              <button
-                type="button"
-                onClick={resetSecondFactor}
-                className="text-sm text-muted-foreground hover:text-foreground"
-              >
-                {t('auth.login')}
-              </button>
+              <div className="flex items-center gap-4 text-sm">
+                <button
+                  type="button"
+                  onClick={resetSecondFactor}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  {t('auth.login')}
+                </button>
+                <Link to="/support?from=%2Flogin&category=account_access" className="text-primary hover:underline">
+                  {t('support.helpLink')}
+                </Link>
+              </div>
             </CardFooter>
           </form>
         </Card>
@@ -488,6 +493,9 @@ export default function LoginPage() {
                   </Link>
                 </p>
               )}
+              <Link to="/support?from=%2Flogin&category=account_access" className="text-sm text-muted-foreground hover:text-primary hover:underline">
+                {t('support.helpLink')}
+              </Link>
             </CardFooter>
           )}
         </form>

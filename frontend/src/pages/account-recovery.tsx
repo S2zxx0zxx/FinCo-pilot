@@ -66,6 +66,7 @@ export default function AccountRecovery({ mode }: { mode: Mode }) {
         <Link to="/login">{tr("Back to sign in")}</Link>
         {mode === 'reset' && <Link to="/forgot-password">{tr("Request a new reset link")}</Link>}
         {mode === 'verify' && <Link to="/request-verification">{tr("Request a new verification link")}</Link>}
+        <Link to={`/support?from=${encodeURIComponent(window.location.pathname)}&category=account_access`}>{tr("Contact support")}</Link>
       </nav>
     </section>
   </main>

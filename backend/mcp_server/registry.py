@@ -27,6 +27,11 @@ class ToolSpec:
     # frontend asks the user to confirm before applying. Drives UI hints.
     is_proposal: bool = False
     tags: list[str] = field(default_factory=list)
+    # Optional product entitlement required by the underlying data/service.
+    # This is separate from the global Advanced Agents capability: the core
+    # Copilot may run without AGENTS_AUTOMATION, but it must never bypass a
+    # feature entitlement such as Advanced Reports.
+    required_capability: str | None = None
 
 
 REGISTRY: dict[str, ToolSpec] = {}
@@ -39,6 +44,7 @@ def tool(
     parameters: dict[str, Any],
     is_proposal: bool = False,
     tags: list[str] | None = None,
+    required_capability: str | None = None,
 ) -> Callable[[ToolHandler], ToolHandler]:
     """Decorator. The handler must be an async function with signature
     `async def handler(session: AsyncSession, ctx: CallContext, **kwargs)`.
@@ -53,6 +59,7 @@ def tool(
             handler=fn,
             is_proposal=is_proposal,
             tags=list(tags or []),
+            required_capability=required_capability,
         )
         return fn
     return deco
@@ -65,7 +72,11 @@ def list_tools() -> list[dict[str, Any]]:
             "name": s.name,
             "description": s.description,
             "inputSchema": s.parameters,
-            "_fincopilot": {"is_proposal": s.is_proposal, "tags": s.tags},
+            "_fincopilot": {
+                "is_proposal": s.is_proposal,
+                "tags": s.tags,
+                "required_capability": s.required_capability,
+            },
         }
         for s in REGISTRY.values()
     ]
@@ -131,6 +142,20 @@ async def authorize_tool(session, ctx, spec, arguments):
     if not core_internal:
         await require_workspace_capability(
             session, resolved.workspace, Capability.AGENTS_AUTOMATION
+        )
+
+    # A core Copilot exception applies only to the AI surface itself. Tools
+    # backed by separately paid product capabilities keep those entitlements.
+    if spec.required_capability:
+        try:
+            required_capability = Capability(spec.required_capability)
+        except ValueError as exc:
+            raise RuntimeError(
+                f"tool {spec.name!r} declares unknown capability "
+                f"{spec.required_capability!r}"
+            ) from exc
+        await require_workspace_capability(
+            session, resolved.workspace, required_capability
         )
 
     writing = spec.is_proposal and arguments.get("apply") is True and ctx.external

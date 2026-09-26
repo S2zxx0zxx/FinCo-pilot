@@ -531,3 +531,62 @@ async def test_max_iterations_terminates_runaway_agent(session, test_user, test_
     done = next((e for e in events if e.type == "done"), None)
     assert err is not None and err.error_code == "max_iterations"
     assert done is not None and done.finish_reason == "max_iterations"
+
+
+async def test_viewer_cannot_dispatch_hidden_proposal_even_if_model_hallucinates_it(
+    session, test_user, test_agent, test_conversation
+):
+    tools = [
+        ToolHandle(
+            server="fincopilot",
+            name="list_accounts",
+            description="read",
+            parameters={"type": "object", "properties": {}},
+            tags=("read", "accounts"),
+        ),
+        ToolHandle(
+            server="fincopilot",
+            name="propose_create_budget",
+            description="proposal",
+            parameters={"type": "object", "properties": {}},
+            is_proposal=True,
+            tags=("propose", "budgets"),
+        ),
+    ]
+    fake_mcp = _FakeMCP(tools=tools)
+    provider = _ScriptedProvider([
+        [
+            ChatChunk(
+                type="tool_call_start",
+                tool_call_id="forbidden-1",
+                tool_name="fincopilot__propose_create_budget",
+            ),
+            ChatChunk(
+                type="tool_call_args_delta",
+                tool_call_id="forbidden-1",
+                args_delta="{}",
+            ),
+            ChatChunk(type="finish", finish_reason="tool_calls"),
+        ],
+        [
+            ChatChunk(type="text_delta", text="I cannot make that change here."),
+            ChatChunk(type="finish", finish_reason="stop"),
+        ],
+    ])
+
+    executor = AgentExecutor(mcp=fake_mcp)
+    with _patch_provider(provider):
+        events = await _drain(
+            executor,
+            session=session,
+            agent=test_agent,
+            user_id=test_user.id,
+            conversation_id=test_conversation.id,
+            user_message="change my budget",
+            allow_proposals=False,
+        )
+
+    assert fake_mcp.calls == []
+    blocked = next(e for e in events if e.type == "tool_result")
+    assert blocked.tool_result is not None
+    assert blocked.tool_result["ok"] is False

@@ -32,6 +32,7 @@ class ToolSpec:
     # Copilot may run without AGENTS_AUTOMATION, but it must never bypass a
     # feature entitlement such as Advanced Reports.
     required_capability: str | None = None
+    required_module: str | None = None
 
 
 REGISTRY: dict[str, ToolSpec] = {}
@@ -45,6 +46,7 @@ def tool(
     is_proposal: bool = False,
     tags: list[str] | None = None,
     required_capability: str | None = None,
+    required_module: str | None = None,
 ) -> Callable[[ToolHandler], ToolHandler]:
     """Decorator. The handler must be an async function with signature
     `async def handler(session: AsyncSession, ctx: CallContext, **kwargs)`.
@@ -60,6 +62,7 @@ def tool(
             is_proposal=is_proposal,
             tags=list(tags or []),
             required_capability=required_capability,
+            required_module=required_module,
         )
         return fn
     return deco
@@ -76,6 +79,7 @@ def list_tools() -> list[dict[str, Any]]:
                 "is_proposal": s.is_proposal,
                 "tags": s.tags,
                 "required_capability": s.required_capability,
+                "required_module": s.required_module,
             },
         }
         for s in REGISTRY.values()
@@ -143,6 +147,14 @@ async def authorize_tool(session, ctx, spec, arguments):
         await require_workspace_capability(
             session, resolved.workspace, Capability.AGENTS_AUTOMATION
         )
+
+    # Module visibility is also a server-side boundary for Copilot tools.
+    # A business-only module must not become reachable merely through chat.
+    if spec.required_module:
+        from app.services.module_service import resolve_modules
+
+        if spec.required_module not in resolve_modules(resolved.workspace):
+            raise HTTPException(404, "Module not available in this workspace")
 
     # A core Copilot exception applies only to the AI surface itself. Tools
     # backed by separately paid product capabilities keep those entitlements.

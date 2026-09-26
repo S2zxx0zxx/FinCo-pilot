@@ -163,6 +163,11 @@ A tool call must satisfy all applicable layers:
 7. tool-specific risk/proposal rules;
 8. quota/operational capacity limits.
 
+The core Copilot may call only FinCo-Pilot's built-in MCP server. Operator- or
+user-added MCP servers remain Advanced Agents integrations and are not trusted
+as part of the first-party finance control plane merely because they advertise
+"read" metadata.
+
 The built-in core Copilot is a separate first-party surface and therefore does
 not require the Max-only `agents_automation` capability. That exception does
 **not** grant the Copilot paid capabilities underneath a tool. For example,

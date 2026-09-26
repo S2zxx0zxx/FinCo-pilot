@@ -154,6 +154,20 @@ async def test_free_core_copilot_is_available_without_unlocking_advanced_agents(
     assert detail["code"] == "ENTITLEMENT_REQUIRED"
     assert detail["capability"] == "agents_automation"
 
+    # Supplying the core id must not turn unrelated Advanced Agents routes
+    # into free surfaces. Knowledge management and tool configuration remain
+    # part of the Max-only custom-agent product.
+    knowledge = await client.get(
+        f"/api/agents/{body['id']}/knowledge",
+        headers=auth_headers,
+    )
+    assert knowledge.status_code == 403
+    tools = await client.get(
+        f"/api/agents/{body['id']}/tools",
+        headers=auth_headers,
+    )
+    assert tools.status_code == 403
+
 
 @pytest.mark.asyncio
 async def test_core_copilot_cannot_bypass_advanced_report_entitlement(

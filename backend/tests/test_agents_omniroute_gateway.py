@@ -1,5 +1,6 @@
 from types import SimpleNamespace
 from typing import cast
+
 import pytest
 
 from app.agents.models.agent import Agent

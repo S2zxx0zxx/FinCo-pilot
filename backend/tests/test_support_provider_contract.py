@@ -2,14 +2,17 @@ import json
 import logging
 import uuid
 from types import SimpleNamespace
+from typing import cast
 from urllib.parse import parse_qs
 
 import httpx
 import pytest
 from fastapi import HTTPException
 from pydantic import SecretStr, ValidationError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.billing.enums import PlanId
+from app.models.user import User
 from app.schemas.support import SupportCategory, SupportTicketCreate
 from app.services import support_service
 
@@ -161,7 +164,7 @@ async def test_zoho_missing_provider_ticket_id_fails_closed(monkeypatch):
 @pytest.mark.asyncio
 async def test_create_support_ticket_uses_server_plan_and_safe_diagnostics(monkeypatch):
     user_id = uuid.uuid4()
-    user = SimpleNamespace(id=user_id, email="person@example.test")
+    user = cast(User, SimpleNamespace(id=user_id, email="person@example.test"))
     observed: dict[str, object] = {}
 
     async def no_rate_limit(_user_id):
@@ -196,7 +199,7 @@ async def test_create_support_ticket_uses_server_plan_and_safe_diagnostics(monke
         error_reference="FCREQ-A1B2C3D4E5F6",
     )
     result = await support_service.create_support_ticket(
-        session=object(),
+        session=cast(AsyncSession, object()),
         user=user,
         ticket=ticket,
         request_reference="FCREQ-111122223333",
@@ -221,7 +224,7 @@ async def test_create_support_ticket_uses_server_plan_and_safe_diagnostics(monke
 
 @pytest.mark.asyncio
 async def test_sensitive_diagnostics_are_rejected_before_rate_limit(monkeypatch):
-    user = SimpleNamespace(id=uuid.uuid4(), email="person@example.test")
+    user = cast(User, SimpleNamespace(id=uuid.uuid4(), email="person@example.test"))
     reached_rate_limit = False
 
     async def should_not_run(_user_id):

@@ -71,9 +71,9 @@ async def test_direct_support_submission_uses_server_result(
     )
 
     assert response.status_code == 201
+    assert "provider-ticket-id" not in response.text
     assert response.json() == {
         "reference": "FC-ABC123",
-        "ticket_id": "provider-ticket-id",
         "ticket_number": "10042",
         "support_tier": "priority",
         "priority": "Medium",

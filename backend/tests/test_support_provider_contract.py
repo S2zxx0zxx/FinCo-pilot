@@ -246,7 +246,7 @@ async def test_sensitive_diagnostics_are_rejected_before_rate_limit(monkeypatch)
 
     with pytest.raises(HTTPException) as exc:
         await support_service.create_support_ticket(
-            session=object(),
+            session=cast(AsyncSession, object()),
             user=user,
             ticket=ticket,
             request_reference="FCREQ-111122223333",
@@ -259,7 +259,7 @@ async def test_sensitive_diagnostics_are_rejected_before_rate_limit(monkeypatch)
 
 @pytest.mark.asyncio
 async def test_provider_failure_maps_to_single_safe_502_without_retry(monkeypatch):
-    user = SimpleNamespace(id=uuid.uuid4(), email="person@example.test")
+    user = cast(User, SimpleNamespace(id=uuid.uuid4(), email="person@example.test"))
     calls = 0
 
     async def no_rate_limit(_user_id):
@@ -292,7 +292,7 @@ async def test_provider_failure_maps_to_single_safe_502_without_retry(monkeypatc
 
     with pytest.raises(HTTPException) as exc:
         await support_service.create_support_ticket(
-            session=object(),
+            session=cast(AsyncSession, object()),
             user=user,
             ticket=ticket,
             request_reference="FCREQ-111122223333",

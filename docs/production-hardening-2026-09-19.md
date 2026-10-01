@@ -182,3 +182,48 @@ The public launch still requires these concrete operator inputs:
 Provide names and non-secret configuration in the task; configure credentials in the host's
 secret manager. Without these inputs the real provider integrations, legal copy and live
 acceptance tests cannot be completed. GitHub authorization alone does not supply them.
+
+## October 1 — Roadmap #9 data-retention contract
+
+Roadmap #8 operator/business identity was verified merged on main before this work began
+(PR #15, main `b87d7cb30f8b2f1ef2ea47918ee22c94bdcd71e6`; post-merge CI #184 green).
+Roadmap #9 therefore starts from that exact main state on
+`feat/data-retention-policy-v1`.
+
+The retention audit covers PostgreSQL user/workspace/finance/billing/security/AI models,
+Redis ephemeral state, transaction/invoice object storage, agent knowledge files,
+user-generated exports, support/Zoho, application/request logs, production backups,
+bank-provider data and known processor boundaries. The canonical contract is
+`docs/trust/FINCO_DATA_RETENTION_V1.md`; machine-readable invariants are in
+`backend/app/core/retention.py`.
+
+Important current-state findings are intentionally **not** marked fixed by policy work:
+- the legacy admin user-delete path is incomplete for the current workspace/agents/billing model;
+- that path can delete transaction-attachment DB rows without deleting corresponding blobs;
+- workspaces are archived, not hard-deleted;
+- file cleanup is partly best-effort and has no durable orphan reconciler;
+- production log sink/residency/expiry and backup expiry are not yet externally proven;
+- third-party deletion/revocation must be verified per processor.
+
+The engineering contract uses a 365-day security/request-log baseline, a 30-day maximum
+normal backup window, 365 days after support-ticket closure, 30 days after abandoned
+checkout expiry and purpose-bound retention for primary finance/workspace content.
+These are operator engineering decisions except where the contract explicitly identifies
+a legal or provider anchor.
+
+Legal/provider review for this checkpoint:
+- CERT-In's April 2022 direction is treated conservatively as the current 180-day ICT-log
+  reference and India-residency anchor; exact operator classification still requires legal review.
+- DPDP Rules 6 and 8 are recorded as scheduled future requirements, not as already-operative
+  October 2026 law: the notified 18-month commencement places them in May 2027.
+- Razorpay's published India terms are recorded as a six-month invoice/charge-slip provider
+  requirement when that contract applies.
+- RBI Card-on-File restrictions are a storage prohibition, not a general retention period:
+  FinCo-Pilot must not persist full card PAN/CVV.
+- Zoho Desk's documented 60-day Recycle Bin delay is recorded as processor-side deletion lag.
+
+This checkpoint establishes the retention contract only. Personal deletion, shared-workspace
+deletion, processor inventory, production secret management, backup/restore, published
+privacy/terms and deletion E2E remain their own roadmap items. CI evidence must be added
+after the branch workflow completes; this section does not claim production enforcement.
+

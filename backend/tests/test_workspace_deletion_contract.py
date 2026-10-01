@@ -13,19 +13,34 @@ from app.core.workspace_deletion import (
 )
 
 
-def ready_facts(**overrides):
-    values = {
-        "workspace_id": "ws-1",
-        "kind": "business",
-        "requester_role": "owner",
-        "member_count": 1,
-        "owner_count": 1,
-        "is_archived": True,
-        "billing_owner_present": True,
-        "requester_is_billing_owner": True,
-    }
-    values.update(overrides)
-    return SharedWorkspaceDeletionFacts(**values)
+def ready_facts(
+    *,
+    kind: str = "business",
+    requester_role: str | None = "owner",
+    member_count: int = 1,
+    owner_count: int = 1,
+    is_archived: bool = True,
+    billing_owner_present: bool = True,
+    requester_is_billing_owner: bool = True,
+    has_external_manager: bool = False,
+    external_manager_is_requester: bool = False,
+    requester_last_accessible_workspace: bool = False,
+    verified_legal_hold: bool = False,
+) -> SharedWorkspaceDeletionFacts:
+    return SharedWorkspaceDeletionFacts(
+        workspace_id="ws-1",
+        kind=kind,
+        requester_role=requester_role,
+        member_count=member_count,
+        owner_count=owner_count,
+        is_archived=is_archived,
+        billing_owner_present=billing_owner_present,
+        requester_is_billing_owner=requester_is_billing_owner,
+        has_external_manager=has_external_manager,
+        external_manager_is_requester=external_manager_is_requester,
+        requester_last_accessible_workspace=requester_last_accessible_workspace,
+        verified_legal_hold=verified_legal_hold,
+    )
 
 
 def test_clean_archived_sole_owner_workspace_can_become_ready():

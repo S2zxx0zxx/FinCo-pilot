@@ -21,6 +21,16 @@ This document is the canonical retention contract for FinCo-Pilot. It is not gen
 
 ## 2. Current legal/provider anchors — separated from operator decisions
 
+### Current purpose-limitation anchor: IT SPDI Rules, 2011
+
+The Information Technology (Reasonable Security Practices and Procedures and Sensitive Personal Data or Information) Rules, 2011, Rule 5(4), says that covered holders of sensitive personal data or information must not retain it longer than required for the lawful purpose for which it may be used, unless another law requires retention. Financial information is within the SPDI framework. The 2011 clarification describes Rules 5 and 6 as applying to covered body corporates/persons in India, subject to the contractual-service distinctions in that clarification.
+
+For FinCo-Pilot V1 this is treated as a **current purpose-limitation anchor**, not as a made-up fixed-year period: active financial data is purpose-bound and longer exceptions need a documented law/provider/hold basis. Exact applicability to the present individual/solo-operator structure should be confirmed as part of legal review.
+
+Official sources:
+- https://meity.gov.in/sites/upload_files/dit/files/GSR313E_10511%281%29.pdf
+- https://www.meity.gov.in/writereaddata/files/PressNote_25811.pdf
+
 ### Current cybersecurity anchor: CERT-In
 
 CERT-In's 28 April 2022 Directions require covered service providers, intermediaries, data centres, body corporates and government organisations to enable logs of ICT systems and retain them securely for a rolling **180 days**, with those logs maintained within India. FinCo-Pilot's exact legal classification should be confirmed before public production; this contract nevertheless adopts a **365-day India-resident security-log engineering baseline** so launch architecture does not depend on a narrower interpretation.

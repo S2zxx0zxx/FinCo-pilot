@@ -203,9 +203,14 @@ The behavior contract uses these lifecycle states:
 
 `requested -> blocked | ready -> executing -> external_retry -> primary_data_deleted -> backup_expiry_pending -> complete`
 
+A request may also transition to `cancelled` from `requested`, `blocked` or
+`ready`. Cancellation is no longer offered after `executing` begins because
+provider revocation/data deletion may already have started.
+
 Important semantics:
 
 - `blocked`: user action is required; destructive deletion has not started.
+- `cancelled`: pre-execution request was withdrawn; no destructive work runs.
 - `external_retry`: one or more provider/object/processor operations failed or
   are uncertain; never report complete.
 - `primary_data_deleted`: live primary application data is gone, but the

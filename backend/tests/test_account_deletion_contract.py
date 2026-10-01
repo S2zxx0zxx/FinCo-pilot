@@ -4,10 +4,12 @@ from app.core.account_deletion import (
     DELETION_EXECUTION_ORDER,
     AccountDeletionAction,
     AccountDeletionBlocker,
+    AccountDeletionState,
     WorkspaceDeletionFacts,
     WorkspaceExitAction,
     WorkspaceExitMode,
     build_personal_account_deletion_plan,
+    can_transition_account_deletion,
     classify_workspace_exit,
 )
 
@@ -177,6 +179,34 @@ def test_execution_order_revokes_access_before_primary_delete_and_waits_for_back
         AccountDeletionAction.DELETE_PRIMARY_DATABASE_ROWS
     )
     assert DELETION_EXECUTION_ORDER[-1] is AccountDeletionAction.WAIT_FOR_BACKUP_EXPIRY
+
+
+def test_deletion_can_be_cancelled_only_before_execution_begins():
+    assert can_transition_account_deletion(
+        AccountDeletionState.REQUESTED, AccountDeletionState.CANCELLED
+    )
+    assert can_transition_account_deletion(
+        AccountDeletionState.BLOCKED, AccountDeletionState.CANCELLED
+    )
+    assert can_transition_account_deletion(
+        AccountDeletionState.READY, AccountDeletionState.CANCELLED
+    )
+    assert not can_transition_account_deletion(
+        AccountDeletionState.EXECUTING, AccountDeletionState.CANCELLED
+    )
+
+
+def test_deletion_cannot_skip_from_primary_delete_to_complete():
+    assert not can_transition_account_deletion(
+        AccountDeletionState.PRIMARY_DATA_DELETED, AccountDeletionState.COMPLETE
+    )
+    assert can_transition_account_deletion(
+        AccountDeletionState.PRIMARY_DATA_DELETED,
+        AccountDeletionState.BACKUP_EXPIRY_PENDING,
+    )
+    assert can_transition_account_deletion(
+        AccountDeletionState.BACKUP_EXPIRY_PENDING, AccountDeletionState.COMPLETE
+    )
 
 
 @pytest.mark.parametrize(

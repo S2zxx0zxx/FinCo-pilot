@@ -79,7 +79,8 @@ These are FinCo-Pilot operator/engineering decisions unless described above as a
 | Closed support tickets | 365 days after closure, then provider deletion |
 | Abandoned/expired checkout reservation | 30 days after terminal expiry/abandonment |
 | Successful payment/subscription evidence | 365 days after the payment/service relationship ends, unless a documented longer hold applies |
-| Pricing/security/MCP approval evidence | rolling or terminal-state + 365 days; minimise actor/content fields when no longer required |
+| Pricing/security/MCP minimal approval evidence | rolling or terminal-state + 365 days; minimise actor/content fields when no longer required |
+| Exact MCP approval argument payloads | 30 days after terminal state, then redact/remove while preserving only minimal approval evidence |
 | AI usage telemetry | rolling 365 days |
 | Active primary finance/workspace data | while purpose/account/workspace remains active; user/workspace deletion contract controls end-of-life |
 | AI conversations | until user deletes the conversation or parent account/workspace reaches deletion |
@@ -120,7 +121,7 @@ The executable constants and category registry live in `backend/app/core/retenti
 | AI knowledge raw files/chunks/embeddings | knowledge upload | local agent-knowledge volume + PostgreSQL chunks/pgvector | RAG | user/agent/workspace | doc row deletion then best-effort filesystem delete; no orphan reconciler | document/agent/workspace lifecycle | delete raw file + chunks + embeddings; orphan sweep <=24h | narrowly scoped legal hold | max 30d | embedding/LLM provider depending configuration |
 | AI usage telemetry | AI runtime | PostgreSQL `llm_usage` | quota/cost/latency operations | user + agent | user FK cascade; no age purge | rolling 365d | purge or anonymise actor ids after window | billing/security hold | max 30d | upstream LLM may hold own logs |
 | External MCP tokens | MCP issuance | PostgreSQL token metadata; bearer token itself not stored | external integration auth | user + workspace | revoke/delete endpoints exist; token metadata/approvals persist by lifecycle | expiry/revocation + 365d evidence | never store bearer token; detach/purge metadata after evidence window | incident hold | max 30d | external MCP client/server |
-| MCP approvals/tool arguments | MCP mutations | PostgreSQL `mcp_approvals` | exact human-approved mutation/replay protection | user + workspace | terminal states/expiry exist; pruning is partial/on-submit | terminal state + 365d evidence; minimise exact content when policy/law allows | purge/anonymise after evidence window | incident/legal hold | max 30d | none |
+| MCP approvals/tool arguments | MCP mutations | PostgreSQL `mcp_approvals` | exact human-approved mutation/replay protection | user + workspace | terminal states/expiry exist; pruning is partial/on-submit and exact arguments share the row | exact argument payload: terminal state + 30d; minimal decision/evidence: up to 365d | redact/null exact arguments after 30d while retaining only non-sensitive decision/result evidence needed for the 365d window | incident/legal hold must be scoped to the necessary evidence | max 30d | none |
 | Production DB/object backups | infrastructure | database/object backup service | disaster recovery | system | actual production backup/restore is roadmap #25; not yet acceptance-tested | rolling max 30d | encryption + automatic expiry; restore must reapply deletion tombstones | explicit legal hold backup copy only, separately controlled | 30d | hosting/backup provider |
 
 ## 5. Current deletion gaps discovered during #9
@@ -137,6 +138,7 @@ These are facts from the current repository and must remain visible until later 
 8. **Bank credential disconnect must prove upstream revocation.** Local row deletion alone is not enough for OAuth/consent providers.
 9. **AI knowledge raw-file deletion is best-effort.** SQL deletion can succeed before filesystem deletion, requiring an orphan sweeper/reconciler later.
 10. **No legal-hold registry exists.** Later deletion work must not invent one ad hoc; it must be a narrow auditable mechanism tied to this policy.
+11. **MCP approval arguments and evidence currently share one row.** The V1 contract now gives exact tool arguments a 30-day terminal-state window but keeps minimal approval/security evidence for up to 365 days. Later lifecycle work must redact/null the argument payload without destroying the narrower replay/security evidence.
 
 ## 6. Deletion state machine required by later roadmap items
 

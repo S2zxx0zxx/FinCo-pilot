@@ -29,6 +29,45 @@ class AccountDeletionState(str, Enum):
     PRIMARY_DATA_DELETED = "primary_data_deleted"
     BACKUP_EXPIRY_PENDING = "backup_expiry_pending"
     COMPLETE = "complete"
+    CANCELLED = "cancelled"
+
+
+ALLOWED_STATE_TRANSITIONS: dict[
+    AccountDeletionState, tuple[AccountDeletionState, ...]
+] = {
+    AccountDeletionState.REQUESTED: (
+        AccountDeletionState.BLOCKED,
+        AccountDeletionState.READY,
+        AccountDeletionState.CANCELLED,
+    ),
+    AccountDeletionState.BLOCKED: (
+        AccountDeletionState.READY,
+        AccountDeletionState.CANCELLED,
+    ),
+    AccountDeletionState.READY: (
+        AccountDeletionState.EXECUTING,
+        AccountDeletionState.CANCELLED,
+    ),
+    AccountDeletionState.EXECUTING: (
+        AccountDeletionState.EXTERNAL_RETRY,
+        AccountDeletionState.PRIMARY_DATA_DELETED,
+    ),
+    AccountDeletionState.EXTERNAL_RETRY: (AccountDeletionState.EXECUTING,),
+    AccountDeletionState.PRIMARY_DATA_DELETED: (
+        AccountDeletionState.BACKUP_EXPIRY_PENDING,
+    ),
+    AccountDeletionState.BACKUP_EXPIRY_PENDING: (AccountDeletionState.COMPLETE,),
+    AccountDeletionState.COMPLETE: (),
+    AccountDeletionState.CANCELLED: (),
+}
+
+
+def can_transition_account_deletion(
+    current: AccountDeletionState, target: AccountDeletionState
+) -> bool:
+    """Return whether the canonical lifecycle permits this state change."""
+
+    return target in ALLOWED_STATE_TRANSITIONS[current]
 
 
 class AccountDeletionBlocker(str, Enum):

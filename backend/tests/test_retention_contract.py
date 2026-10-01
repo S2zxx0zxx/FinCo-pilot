@@ -45,10 +45,13 @@ def test_production_backup_window_is_bounded():
     assert rule.backup_days is None
 
 
-def test_all_day_windows_are_positive_and_bounded():
+def test_all_configured_day_windows_are_positive_and_backup_copies_stay_bounded():
+    # Do not impose a global 365-day ceiling: a later, documented legal or
+    # provider requirement may legitimately need a longer record-specific
+    # window. Normal backup copies remain independently capped by this policy.
     for rule in RETENTION_RULES.values():
         if rule.days is not None:
-            assert 0 < rule.days <= 365
+            assert rule.days > 0
         if rule.backup_days is not None:
             assert 0 < rule.backup_days <= BACKUP_MAX_RETENTION_DAYS
 

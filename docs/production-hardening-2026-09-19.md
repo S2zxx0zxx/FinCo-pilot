@@ -207,12 +207,15 @@ Important current-state findings are intentionally **not** marked fixed by polic
 
 The engineering contract uses a 365-day security/request-log baseline, a 30-day maximum
 normal backup window, 365 days after support-ticket closure, 30 days after abandoned
-checkout expiry and purpose-bound retention for primary finance/workspace content.
+checkout expiry, a 30-day terminal-state window for exact MCP approval arguments,
+365 days for minimal approval/security evidence, and purpose-bound retention for primary
+finance/workspace content.
 These are operator engineering decisions except where the contract explicitly identifies
 a legal or provider anchor.
 
 Legal/provider review for this checkpoint:
-- The current IT SPDI Rules 2011 purpose-limitation rule is recorded as a present-day retention anchor where applicable; it does not create an invented fixed-year period.
+- The current IT SPDI Rules 2011 purpose-limitation rule is recorded as a present-day
+  retention anchor where applicable; it does not create an invented fixed-year period.
 - CERT-In's April 2022 direction is treated conservatively as the current 180-day ICT-log
   reference and India-residency anchor; exact operator classification still requires legal review.
 - DPDP Rules 6 and 8 are recorded as scheduled future requirements, not as already-operative

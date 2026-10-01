@@ -28,6 +28,7 @@ CLOSED_SUPPORT_TICKET_RETENTION_DAYS = 365
 ABANDONED_CHECKOUT_RETENTION_DAYS = 30
 AI_USAGE_RETENTION_DAYS = 365
 SECURITY_APPROVAL_EVIDENCE_RETENTION_DAYS = 365
+MCP_APPROVAL_ARGUMENT_RETENTION_DAYS = 30
 
 # Legal/provider reference points.  These are anchors for policy validation,
 # not a claim that every rule applies to every FinCo-Pilot deployment.
@@ -157,12 +158,25 @@ RETENTION_RULES: dict[str, RetentionRule] = {
         days=SECURITY_LOG_RETENTION_DAYS,
         notes="Keep the event evidence; minimise or detach actor identifiers when no longer required.",
     ),
-    "mcp_tokens_and_approvals": RetentionRule(
-        key="mcp_tokens_and_approvals",
+    "mcp_token_and_approval_evidence": RetentionRule(
+        key="mcp_token_and_approval_evidence",
         mode=RetentionMode.AFTER_TRIGGER_DAYS,
         deletion=DeletionMode.ANONYMIZE_OR_HARD_DELETE,
         days=SECURITY_APPROVAL_EVIDENCE_RETENTION_DAYS,
-        notes="Trigger is token expiry/revocation or approval terminal state.",
+        notes=(
+            "Keep minimal token/approval decision evidence after expiry, revocation, or "
+            "terminal state. Bearer tokens and exact tool arguments are not evidence fields."
+        ),
+    ),
+    "mcp_approval_argument_payloads": RetentionRule(
+        key="mcp_approval_argument_payloads",
+        mode=RetentionMode.AFTER_TRIGGER_DAYS,
+        deletion=DeletionMode.ANONYMIZE_OR_HARD_DELETE,
+        days=MCP_APPROVAL_ARGUMENT_RETENTION_DAYS,
+        notes=(
+            "Exact approved tool arguments are higher-sensitivity payloads. After the short "
+            "window, redact or remove them while preserving only the minimal approval evidence."
+        ),
     ),
     "ai_conversation_content": RetentionRule(
         key="ai_conversation_content",

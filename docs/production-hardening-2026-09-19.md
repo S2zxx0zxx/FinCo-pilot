@@ -273,3 +273,40 @@ upstream bank/provider revocation and does not resolve shared-workspace ownershi
 Roadmap #10 is a behavior/engineering-contract gate. Roadmap #29 remains the production
 implementation/test gate, and roadmap #11/#30 remain authoritative for shared-workspace
 hard-deletion behavior.
+
+
+## October 2 — Roadmap #11 shared-workspace deletion policy contract
+
+Roadmap #10 personal account deletion behavior was verified merged and post-merge green on
+`main` at `7fc58331cb2b348a621739545523db0bd4419714` before this work began.
+
+Canonical contract:
+`docs/trust/FINCO_SHARED_WORKSPACE_DELETION_V1.md`
+
+Machine-readable preflight:
+`backend/app/core/workspace_deletion.py`
+
+Regression coverage:
+`backend/tests/test_workspace_deletion_contract.py`
+
+The repository still has no workspace hard-delete endpoint. Existing
+`POST /api/workspaces/{workspace_id}/archive` remains a non-destructive archive operation
+and must not be reinterpreted as deletion.
+
+V1 hard-delete policy is deliberately strict: the requester must be an actual owner member,
+the workspace must already be archived, the requester must be the sole remaining member and
+owner, any other external manager must be detached, billing ownership must be resolved to the
+requester, and the request cannot delete the requester's last accessible workspace. A virtual
+manager alone is not destructive authority. A concrete verified legal hold fails closed.
+
+Workspace deletion does not cancel or alter the user's global subscription. Payment/security/
+support evidence continues under the narrower #9 retention windows.
+
+The future #30 workflow must freeze writes, capture a bounded non-secret deletion manifest,
+cancel pending invitations, revoke provider access, delete workspace-owned object/knowledge
+bytes while storage keys remain available, then delete primary SQL rows, reconcile processor
+copies, write a minimal deletion tombstone and wait for bounded backup expiry. Partial external
+failure remains visible/retriable and cannot be reported as complete.
+
+Roadmap #11 establishes policy only. Durable deletion jobs, provider calls, object reconciliation,
+SQL hard-delete implementation and production E2E remain roadmap #30.

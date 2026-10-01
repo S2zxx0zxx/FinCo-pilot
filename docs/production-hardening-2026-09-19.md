@@ -233,3 +233,43 @@ deletion, processor inventory, production secret management, backup/restore, pub
 privacy/terms and deletion E2E remain their own roadmap items. CI evidence must be added
 after the branch workflow completes; this section does not claim production enforcement.
 
+
+
+## October 2 — Roadmap #10 personal account deletion behavior contract
+
+Roadmap #9 was verified merged on `main` at
+`b0878929348122188a836bcc0f120ced5ff95803` before this work began. Roadmap #10
+therefore defines deletion behavior without redoing the retention audit.
+
+Canonical contract:
+`docs/trust/FINCO_PERSONAL_ACCOUNT_DELETION_V1.md`
+
+Machine-readable preflight:
+`backend/app/core/account_deletion.py`
+
+Regression coverage:
+`backend/tests/test_account_deletion_contract.py`
+
+The contract deliberately does **not** expose or wire a destructive self-service deletion
+endpoint yet. Runtime implementation, durable jobs, provider revocation calls, object cleanup,
+processor deletion and E2E acceptance remain roadmap #29.
+
+The preflight is fail-closed. A workspace is implicitly deleted with a user account only when
+it is a genuinely private personal workspace: the user is sole member/owner and there is no
+external manager. Every other workspace is preserved. Sole-owner shared workspaces and shared
+workspace billing ownership block destructive account deletion until ownership/billing is
+deliberately resolved. Creator/manager references are detached or anonymised without
+destroying the shared ledger.
+
+The canonical execution order invalidates authentication and revokes personal provider access
+before primary database deletion, then deletes object/vector copies, handles processor copies,
+writes only a minimal deletion tombstone and waits for the bounded backup-expiry condition.
+Provider/object failures remain retryable and may not be reported as complete.
+
+The legacy admin `delete_user()` path remains explicitly unsuitable for self-service account
+deletion because it predates newer domains, can orphan attachment bytes, does not prove
+upstream bank/provider revocation and does not resolve shared-workspace ownership/billing.
+
+Roadmap #10 is a behavior/engineering-contract gate. Roadmap #29 remains the production
+implementation/test gate, and roadmap #11/#30 remain authoritative for shared-workspace
+hard-deletion behavior.

@@ -36,6 +36,7 @@ CERT_IN_ICT_LOG_REFERENCE_DAYS = 180
 DPDP_FUTURE_LOG_REFERENCE_DAYS = 365
 RAZORPAY_INVOICE_REFERENCE_MONTHS = 6
 ZOHO_DESK_RECYCLE_BIN_DAYS = 60
+ZOHO_DESK_BACKUP_AFTER_TRASH_DAYS = 90
 
 
 class RetentionMode(str, Enum):
@@ -131,7 +132,7 @@ RETENTION_RULES: dict[str, RetentionRule] = {
         backup_days=None,
         notes=(
             "Retain for the configured period after closure, then delete through the helpdesk "
-            "provider. Provider recycle-bin delay is tracked separately."
+            "provider. Provider recycle-bin and backup deletion tails are tracked separately."
         ),
     ),
     "successful_payment_and_subscription_evidence": RetentionRule(

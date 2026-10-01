@@ -63,9 +63,13 @@ Official source: https://www.rbi.org.in/scripts/NotificationUser.aspx?Id=12345
 
 ### Zoho Desk provider behavior
 
-Zoho Desk documents that deleted records remain in its Recycle Bin for **60 days** before automatic permanent deletion. FinCo-Pilot's operator-selected support policy is 365 days after ticket closure, then provider deletion; the provider recycle-bin interval is an additional processor-side deletion lag and must be represented truthfully.
+Zoho Desk documents that ordinary deleted records remain in its Recycle Bin for **60 days** before automatic permanent deletion, while an authorised administrator can permanently delete a record from the Recycle Bin earlier. Zoho's current data-retention table separately states that Service Data (Module Data) deleted from the UI has a **90-day backup-server tail after Trash deletion**; a record permanently deleted from the Recycle Bin is scheduled for active-database deletion within 24 hours and still has the documented 90-day backup tail.
 
-Provider source: https://help.zoho.com/portal/en/kb/desk/data-administration/recycle-bin/articles/using-the-recycle-bin
+FinCo-Pilot's operator-selected support policy is 365 days after ticket closure. At that trigger, the runbook should delete the ticket and permanently clear it from the Recycle Bin as soon as the provider/admin flow permits rather than deliberately waiting another 60 days. The remaining provider backup tail is processor-managed and must be disclosed/verified under roadmap #12. Zoho's separate provider audit-log retention is also a processor-inventory item, not FinCo-Pilot ticket-content retention.
+
+Provider sources:
+- https://help.zoho.com/portal/en/kb/desk/data-administration/recycle-bin/articles/using-the-recycle-bin
+- https://help.zoho.com/portal/en/kb/desk/user-management-and-security/data-security/articles/data-retention
 
 ## 3. Canonical windows
 
@@ -76,7 +80,7 @@ These are FinCo-Pilot operator/engineering decisions unless described above as a
 | Security/request/access logs | rolling 365 days |
 | Production backups | rolling maximum 30 days |
 | Unreferenced object/file sweep | within 24 hours after a deletion lifecycle marks the blob orphaned |
-| Closed support tickets | 365 days after closure, then provider deletion |
+| Closed support tickets | 365 days after closure, then provider deletion + prompt permanent Recycle Bin purge where permitted; current Zoho docs list a 90-day backup tail after Trash deletion |
 | Abandoned/expired checkout reservation | 30 days after terminal expiry/abandonment |
 | Successful payment/subscription evidence | 365 days after the payment/service relationship ends, unless a documented longer hold applies |
 | Pricing/security/MCP minimal approval evidence | rolling or terminal-state + 365 days; minimise actor/content fields when no longer required |
@@ -110,7 +114,7 @@ The executable constants and category registry live in `backend/app/core/retenti
 | Checkout reservations | pricing/checkout | PostgreSQL `checkout_reservations` | reserve offer position/order flow | user | expiration state exists; automatic purge is not implemented | 30d after terminal expiry/abandonment | hard-delete unsuccessful terminal reservation after audit evidence separation | fraud/security dispute hold | max 30d | Razorpay when live |
 | Successful payments/subscriptions/founder evidence | verified payment lifecycle | PostgreSQL subscription/founder/reservation fields; provider | entitlement, billing evidence | user | paid lifecycle is not yet fully live; user FK cascades currently exist | active relationship + 365d after end; provider contract may require minimum 6 months for invoices/charge slips | minimise identifiers; delete/anonymise after window/holds | chargeback, tax, legal hold | max 30d | Razorpay |
 | Pricing audit events | pricing admin/offer engine | PostgreSQL `pricing_audit_events` | campaign integrity/audit | operational | append-only; actor FK can SET NULL; no purge job | rolling 365d | detach/anonymise actor where possible then purge after window | security/legal hold | max 30d | none |
-| Support tickets | authenticated support form/email/portal | Zoho Desk; app logs contain references, not ticket body | customer support/security escalation | personal user + support case | provider owns ticket; app does not persist local ticket body | 365d after closure, then delete in Zoho | provider delete; account for Zoho 60d recycle bin | unresolved dispute/security/legal hold | provider-managed | Zoho Desk |
+| Support tickets | authenticated support form/email/portal | Zoho Desk; app logs contain references, not ticket body | customer support/security escalation | personal user + support case | provider owns ticket; app does not persist local ticket body | 365d after closure, then provider deletion | delete ticket and permanently purge Recycle Bin promptly where permitted; current Zoho docs still list a 90d backup-server tail after Trash deletion | unresolved dispute/security/legal hold | provider-managed: current Zoho service-data backup tail is 90d after Trash delete | Zoho Desk |
 | Request IDs & application/security logs | API/middleware/process | deployment log sink/stdout | debugging, security response, support correlation | operational; may reference user/request | logging exists but production sink/TTL/residency not yet proven | rolling 365d engineering baseline | automatic log-store expiry; redact secrets/body; access-restrict | active incident/legal hold | not in app DB backups | hosting/logging provider |
 | Redis rate limits | login/register/reset/support | Redis | abuse prevention | IP/user bucket | explicit expiry 60s–1h + buffer | existing TTL only | TTL expiry | none | none | Redis host |
 | OAuth state | bank connection redirect | Redis `oauth_state:*` | bind callback to user/workspace/provider | user/workspace | GETDEL one-shot; 10 min TTL | 10 min maximum | consume once or TTL | none | none | Redis host |

@@ -1616,10 +1616,28 @@ export const support = {
   },
 }
 
+// Public operator metadata returned by /api/info. This deliberately contains
+// no registration secrets, private addresses, tax IDs, or payment credentials.
+export interface OperatorIdentity {
+  brand_name: string
+  entity_type:
+    | 'individual'
+    | 'sole_proprietorship'
+    | 'partnership'
+    | 'llp'
+    | 'private_limited'
+    | 'public_limited'
+    | 'other_registered_entity'
+  country_code: string
+  legal_name: string | null
+  contact_email: string | null
+}
+
 // App-level feature flags (whether optional modules like agents are mounted)
 export interface AppInfo {
   features: { agents: boolean; tesouro_direto?: boolean }
   support?: SupportPublicInfo
+  operator?: OperatorIdentity | null
 }
 
 export const info = {

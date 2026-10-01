@@ -28,11 +28,33 @@ ZOHO_DESK_DATA_CENTER_HOSTS: dict[str, str] = {
 ZOHO_DESK_API_HOSTS = frozenset(ZOHO_DESK_DATA_CENTER_HOSTS.values())
 
 
+OPERATOR_ENTITY_TYPES = frozenset({
+    "individual",
+    "sole_proprietorship",
+    "partnership",
+    "llp",
+    "private_limited",
+    "public_limited",
+    "other_registered_entity",
+})
+
+
 class Settings(BaseSettings):
     # App
     app_name: str = "FinCo-Pilot"
     debug: bool = False
     deployment_environment: str = "development"  # development|test|staging|production
+
+    # Public operator/business identity. This is intentionally separate from
+    # workspace issuer details: it describes who operates the FinCo-Pilot
+    # service itself, not a user's own business.
+    operator_identity_enabled: bool = True
+    operator_brand_name: str = "FinCo-Pilot"
+    operator_entity_type: str = "individual"
+    operator_country_code: str = "IN"
+    # Optional for an individual launch. Set only when the operator explicitly
+    # wants a legal name published in public app metadata/policies.
+    operator_legal_name: str = ""
 
     # One-time bootstrap endpoint.
     setup_enabled: bool = True
@@ -246,6 +268,31 @@ class Settings(BaseSettings):
             raise ValueError("SMTP_USE_SSL and SMTP_STARTTLS cannot both be true")
         if not 1 <= self.smtp_port <= 65535:
             raise ValueError("SMTP_PORT must be between 1 and 65535")
+
+        operator_type = self.operator_entity_type.strip().lower()
+        if operator_type not in OPERATOR_ENTITY_TYPES:
+            raise ValueError(
+                "OPERATOR_ENTITY_TYPE must be one of: "
+                + ", ".join(sorted(OPERATOR_ENTITY_TYPES))
+            )
+        if self.operator_identity_enabled:
+            if not self.operator_brand_name.strip():
+                raise ValueError(
+                    "OPERATOR_IDENTITY_ENABLED=true requires OPERATOR_BRAND_NAME"
+                )
+            country = self.operator_country_code.strip().upper()
+            if len(country) != 2 or not country.isalpha():
+                raise ValueError(
+                    "OPERATOR_COUNTRY_CODE must be a two-letter country code"
+                )
+            if operator_type != "individual" and not self.operator_legal_name.strip():
+                raise ValueError(
+                    "A non-individual OPERATOR_ENTITY_TYPE requires OPERATOR_LEGAL_NAME"
+                )
+        if len(self.operator_brand_name) > 120:
+            raise ValueError("OPERATOR_BRAND_NAME must be at most 120 characters")
+        if len(self.operator_legal_name) > 255:
+            raise ValueError("OPERATOR_LEGAL_NAME must be at most 255 characters")
 
         if self.support_provider not in {"external", "zoho_desk"}:
             raise ValueError("SUPPORT_PROVIDER must be external or zoho_desk")

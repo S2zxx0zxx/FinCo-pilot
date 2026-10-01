@@ -52,6 +52,15 @@ secret:
 config:
   debug: "false"
 
+  # Public operator/business identity. These are non-secret descriptors of who
+  # operates this FinCo-Pilot deployment; do not use them to imply incorporation
+  # or registration that has not actually occurred.
+  operatorIdentityEnabled: "true"
+  operatorBrandName: "FinCo-Pilot"
+  operatorEntityType: "individual"
+  operatorCountryCode: "IN"
+  operatorLegalName: ""
+
   # Customer support / trust layer. Disabled until a real inbox/portal exists.
   supportEnabled: "false"
   supportEmail: ""

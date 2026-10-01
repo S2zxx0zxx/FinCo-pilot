@@ -224,7 +224,9 @@ Legal/provider review for this checkpoint:
   requirement when that contract applies.
 - RBI Card-on-File restrictions are a storage prohibition, not a general retention period:
   FinCo-Pilot must not persist full card PAN/CVV.
-- Zoho Desk's documented 60-day Recycle Bin delay is recorded as processor-side deletion lag.
+- Zoho Desk's current documentation records a 60-day default Recycle Bin window, supports
+  earlier permanent deletion by an authorised admin, and lists a 90-day service-data backup
+  tail after Trash deletion. That residual processor retention is tracked for roadmap #12.
 
 This checkpoint establishes the retention contract only. Personal deletion, shared-workspace
 deletion, processor inventory, production secret management, backup/restore, published

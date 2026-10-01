@@ -212,6 +212,7 @@ These are operator engineering decisions except where the contract explicitly id
 a legal or provider anchor.
 
 Legal/provider review for this checkpoint:
+- The current IT SPDI Rules 2011 purpose-limitation rule is recorded as a present-day retention anchor where applicable; it does not create an invented fixed-year period.
 - CERT-In's April 2022 direction is treated conservatively as the current 180-day ICT-log
   reference and India-residency anchor; exact operator classification still requires legal review.
 - DPDP Rules 6 and 8 are recorded as scheduled future requirements, not as already-operative

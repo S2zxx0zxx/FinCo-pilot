@@ -1,4 +1,5 @@
 from app.core.processor_inventory import (
+    INVENTORY_ID,
     THIRD_PARTY_BOUNDARIES,
     BoundaryStatus,
     DeletionExpectation,
@@ -93,3 +94,16 @@ def test_unknown_boundary_fails_closed():
         assert "Unknown third-party boundary" in str(exc)
     else:
         raise AssertionError("Unknown external recipients must not inherit approval")
+
+
+def test_inventory_contract_id_and_reference_boundaries_are_explicit():
+    assert INVENTORY_ID == "FINCO_THIRD_PARTY_PROCESSOR_INVENTORY_V1"
+
+    for key in ("open_exchange_rates", "yahoo_finance", "tesouro_direto"):
+        boundary = get_third_party_boundary(key)
+        assert boundary.status is BoundaryStatus.NO_PERSONAL_DATA_BY_DESIGN
+        assert boundary.sends_personal_data is False
+
+    security = get_third_party_boundary("github_private_vulnerability_reporting")
+    assert security.status is BoundaryStatus.USER_DIRECTED
+    assert security.sends_financial_data is False

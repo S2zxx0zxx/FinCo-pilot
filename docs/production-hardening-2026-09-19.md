@@ -380,3 +380,49 @@ Roadmap #13 can close its engineering gate only after the PR-head CI is fully gr
 diff is verified secret-free. Live provisioning of the selected host/secret manager and
 provider-specific smoke tests remain deployment/provider acceptance work; CI does not prove
 that external production credentials have been provisioned.
+
+
+## October 2 — Roadmap #14 production PostgreSQL
+
+Roadmap #13 production secret management was verified merged on `main` at
+`f5723dbd080194a10c193666ba3c4827145cee3a` before #14 began.
+
+Canonical runtime:
+`backend/app/core/database_runtime.py`
+
+Operator/acceptance contract:
+`docs/trust/FINCO_PRODUCTION_POSTGRESQL_V1.md`
+
+Safe acceptance probe:
+`backend/scripts/verify_production_postgres.py`
+
+Neon Postgres is the selected, release-gated zero-cost provider for roadmap #14, while the
+runtime remains provider-neutral. Production is external-managed-PostgreSQL first. The
+application requires PostgreSQL 15+,
+pgvector, explicit encrypted transport, bounded API pooling and finite connect/command/
+statement/idle-transaction timeouts. Managed-provider libpq TLS query parameters are removed
+before the URL reaches asyncpg; FinCo-Pilot applies one explicit TLS policy through the driver.
+
+FastAPI uses the bounded canonical engine pool. Short-lived Celery/agent task engines and
+Alembic use `NullPool`, preventing each task process from multiplying the managed provider's
+connection budget. Online Alembic migrations take a PostgreSQL session advisory lock so two
+deploy processes cannot mutate the schema concurrently.
+
+Production Compose keeps the bundled pgvector container only behind the explicit
+`bundled-db` profile and otherwise consumes the secret-managed external `DATABASE_URL`.
+Production Helm fails closed if bundled PostgreSQL remains enabled, the external-database gate
+is disabled, or encrypted DB transport is not configured.
+
+The acceptance probe is deliberately credential-safe. It checks PostgreSQL version,
+read/write primary status, active TLS where required, pgvector availability/installation,
+exact Alembic head and a rolled-back temporary-table read/write round-trip without printing
+the database URL, role, password or application data. CI runs the same probe only against the
+explicitly opted-in disposable `finco_ci` PostgreSQL database.
+
+Roadmap #14 engineering closure requires PR-head CI to be fully green and the final diff to
+remain secret-free. Operational closure additionally requires the real managed PostgreSQL
+project/endpoint to be selected, its `DATABASE_URL` installed through roadmap #13 secret
+storage, migrations applied and the safe acceptance probe passed against that project.
+
+Provider history/PITR is not counted as disaster-recovery proof. Roadmap #25 still requires an
+actual isolated backup/restore rehearsal and integrity verification.

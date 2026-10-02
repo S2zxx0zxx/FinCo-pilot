@@ -66,6 +66,24 @@ config:
   deploymentEnvironment: "development"
   debug: "false"
 
+  # PostgreSQL runtime. Development chart defaults remain local-friendly.
+  # Production rendering requires postgresql.enabled=false,
+  # databaseExternalRequired=true and encrypted DB transport.
+  databaseExternalRequired: "false"
+  dbSslMode: "prefer"
+  dbSslCaFile: ""
+  dbPoolMode: "queue"
+  dbPoolSize: "5"
+  dbMaxOverflow: "5"
+  dbPoolTimeoutSeconds: "15"
+  dbPoolRecycleSeconds: "900"
+  dbConnectTimeoutSeconds: "10"
+  dbCommandTimeoutSeconds: "30"
+  dbStatementTimeoutMs: "30000"
+  dbIdleTransactionTimeoutMs: "30000"
+  dbPreparedStatementCacheSize: "100"
+  dbApplicationName: "fincopilot"
+
   # Public operator/business identity. These are non-secret descriptors of who
   # operates this FinCo-Pilot deployment; do not use them to imply incorporation
   # or registration that has not actually occurred.
@@ -270,7 +288,8 @@ httpRoute:
   #   namespace: gateway-system
   # Path matches will route /api to backend and / to frontend.
 
-# Simple StatefulSet for PostgreSQL
+# Development/local fallback PostgreSQL. Production must disable this and
+# supply DATABASE_URL through global.existingSecret.
 postgresql:
   enabled: true
   image:

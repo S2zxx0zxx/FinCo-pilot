@@ -56,12 +56,20 @@ SimpleFIN is a protocol/ecosystem boundary, not one universal vendor. The actual
 
 No locally configured model/provider becomes production-approved merely because it exists in an OmniRoute dashboard.
 
+### Selected managed PostgreSQL boundary
+
+- **Neon Postgres** is selected for the zero-cost roadmap #14 production database path.
+- The selection remains release-gated until the actual project/region is provisioned, the
+  direct provider endpoint is stored only through roadmap #13 secret management, migrations
+  pass and the credential-safe production PostgreSQL acceptance probe succeeds.
+- Neon provider history/PITR is not treated as proof of FinCo-Pilot disaster recovery;
+  roadmap #25 still requires an isolated restore rehearsal.
+
 ### Infrastructure boundaries still unresolved
 
 The inventory intentionally leaves these unresolved until their roadmap items select the real vendor:
 
 - production hosting / reverse proxy / log sink;
-- managed PostgreSQL, if used;
 - managed Redis, if used;
 - S3-compatible object storage;
 - transactional SMTP;

@@ -23,10 +23,15 @@ def test_inventory_is_self_keyed_and_documents_every_boundary():
 def test_selected_processors_are_release_gated_not_silently_approved():
     assert get_third_party_boundary("zoho_desk").status is BoundaryStatus.SELECTED_RELEASE_GATED
     assert get_third_party_boundary("razorpay").status is BoundaryStatus.SELECTED_RELEASE_GATED
+    assert (
+        get_third_party_boundary("managed_postgresql").status
+        is BoundaryStatus.SELECTED_RELEASE_GATED
+    )
 
     unresolved = {item.key for item in unresolved_operator_boundaries()}
     assert "zoho_desk" in unresolved
     assert "razorpay" in unresolved
+    assert "managed_postgresql" in unresolved
 
 
 def test_core_ai_upstream_is_unresolved_and_high_sensitivity():
@@ -67,13 +72,22 @@ def test_unselected_infrastructure_remains_unresolved():
         "smtp_provider",
         "object_storage_provider",
         "hosting_logging_provider",
-        "managed_postgresql",
         "managed_redis",
         "oidc_provider",
     ):
         boundary = get_third_party_boundary(key)
         assert boundary.status is BoundaryStatus.UNRESOLVED
         assert boundary.legal_role is LegalRoleStatus.CONTRACT_REVIEW_REQUIRED
+
+
+def test_selected_postgresql_boundary_stays_release_gated():
+    boundary = get_third_party_boundary("managed_postgresql")
+    assert boundary.service == "Neon Postgres"
+    assert boundary.status is BoundaryStatus.SELECTED_RELEASE_GATED
+    assert boundary.sends_personal_data is True
+    assert boundary.sends_financial_data is True
+    assert 14 in boundary.roadmap_gates
+    assert 25 in boundary.roadmap_gates
 
 
 def test_open_exchange_rates_receives_no_product_personal_data_by_design():

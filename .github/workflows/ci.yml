@@ -15,6 +15,18 @@ jobs:
       - name: Reject tracked credentials and unsafe production injection
         run: python3 backend/scripts/check_secret_hygiene.py
 
+      - name: Validate production Compose without resolving secrets
+        env:
+          FINCOPILOT_VERSION: ci
+          FRONTEND_URL: https://fincopilot.example
+          FINCOPILOT_SECRETS_DIR: /tmp/fincopilot-ci-secrets
+        run: |
+          set -euo pipefail
+          mkdir -p "$FINCOPILOT_SECRETS_DIR"
+          printf '%s' 'synthetic-ci-password' > "$FINCOPILOT_SECRETS_DIR/postgres_password"
+          docker compose -f docker-compose.prod.yml config --quiet
+          rm -rf "$FINCOPILOT_SECRETS_DIR"
+
   backend-tests:
     name: Backend Tests
     runs-on: ubuntu-latest
@@ -114,6 +126,9 @@ jobs:
         working-directory: backend
     env:
       DATABASE_URL: postgresql+asyncpg://finco_ci:synthetic-ci-password@localhost:5432/finco_ci
+      DATABASE_EXTERNAL_REQUIRED: "false"
+      DB_SSL_MODE: disable
+      DB_POOL_MODE: queue
       SECRET_KEY: synthetic-ci-only-signing-key-not-for-deployment
       DEPLOYMENT_ENVIRONMENT: development
       AGENTS_ENABLED: "false"
@@ -136,6 +151,10 @@ jobs:
           alembic downgrade 093
           alembic upgrade head
           alembic current
+      - name: Verify production PostgreSQL runtime contract
+        env:
+          FINCO_DISPOSABLE_DB_TEST: "yes"
+        run: python -m scripts.verify_production_postgres --ci
       - name: Verify concurrent founder pricing boundary on PostgreSQL
         env:
           FINCO_DISPOSABLE_DB_TEST: "yes"
@@ -238,12 +257,44 @@ jobs:
           fi
           grep -q "global.existingSecret" /tmp/production-secret-gate.log
 
+      - name: Verify production rejects bundled PostgreSQL
+        if: steps.helm-changes.outputs.run_helm == 'true'
+        run: |
+          set -euo pipefail
+          if helm template fincopilot-prod charts/fincopilot \
+            --set config.deploymentEnvironment=production \
+            --set global.existingSecret=synthetic-ci-existing-secret \
+            >/tmp/should-not-render-bundled-db.yaml 2>/tmp/production-db-gate.log; then
+            echo "Production unexpectedly rendered with bundled PostgreSQL enabled" >&2
+            exit 1
+          fi
+          grep -q "external PostgreSQL" /tmp/production-db-gate.log
+
+      - name: Verify production rejects insecure external PostgreSQL
+        if: steps.helm-changes.outputs.run_helm == 'true'
+        run: |
+          set -euo pipefail
+          if helm template fincopilot-prod charts/fincopilot \
+            --set config.deploymentEnvironment=production \
+            --set global.existingSecret=synthetic-ci-existing-secret \
+            --set postgresql.enabled=false \
+            --set config.databaseExternalRequired=true \
+            --set config.dbSslMode=disable \
+            >/tmp/should-not-render-insecure-db.yaml 2>/tmp/production-db-tls-gate.log; then
+            echo "Production unexpectedly rendered with unencrypted PostgreSQL" >&2
+            exit 1
+          fi
+          grep -q "encrypted PostgreSQL transport" /tmp/production-db-tls-gate.log
+
       - name: Lint production contract with external Secret
         if: steps.helm-changes.outputs.run_helm == 'true'
         run: |
           helm lint charts/fincopilot \
             --set config.deploymentEnvironment=production \
-            --set global.existingSecret=synthetic-ci-existing-secret
+            --set global.existingSecret=synthetic-ci-existing-secret \
+            --set postgresql.enabled=false \
+            --set config.databaseExternalRequired=true \
+            --set config.dbSslMode=verify-full
 
       - name: Validate Helm Chart with Kubeconform
         if: steps.helm-changes.outputs.run_helm == 'true'
@@ -255,4 +306,7 @@ jobs:
           helm template fincopilot-prod charts/fincopilot \
             --set config.deploymentEnvironment=production \
             --set global.existingSecret=synthetic-ci-existing-secret \
+            --set postgresql.enabled=false \
+            --set config.databaseExternalRequired=true \
+            --set config.dbSslMode=verify-full \
             | kubeconform -summary -strict

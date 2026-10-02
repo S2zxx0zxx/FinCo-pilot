@@ -71,6 +71,26 @@ prefer a supported external secret store/CSI integration when available.
 The full inventory, file/key names, rotation effects and compromise procedure
 are in `docs/trust/FINCO_PRODUCTION_SECRET_MANAGEMENT_V1.md`.
 
+### Production PostgreSQL
+
+Production deliberately does not use the chart's bundled PostgreSQL. Configure:
+
+```yaml
+global:
+  existingSecret: fincopilot-production-secrets
+config:
+  deploymentEnvironment: production
+  databaseExternalRequired: "true"
+  dbSslMode: "verify-full"
+postgresql:
+  enabled: false
+```
+
+The existing Secret must contain `DATABASE_URL`. Use PostgreSQL 15+ with
+pgvector available. The complete pooling, TLS, migration and safe acceptance
+contract is documented in
+`docs/trust/FINCO_PRODUCTION_POSTGRESQL_V1.md`.
+
 ## Uninstalling the Chart
 
 To uninstall/delete the `fincopilot` deployment:

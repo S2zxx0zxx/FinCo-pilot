@@ -65,7 +65,6 @@ describe('SupportPage', () => {
     state.token = 'browser-token-that-must-never-be-in-payload'
     state.createTicket.mockResolvedValue({
       reference: 'FC-ABC123',
-      ticket_id: 'ticket-id',
       ticket_number: '10042',
       support_tier: 'priority',
       priority: 'Medium',

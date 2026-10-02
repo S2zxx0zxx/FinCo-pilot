@@ -117,10 +117,11 @@ secret files, so do not configure the same credential in two places.
 | `AGENTS_OPENAI_COMPAT_API_KEY` | `agents_openai_compat_api_key` | authenticated OmniRoute/OpenAI-compatible route | provider revoke/replace |
 | `AGENTS_EMBEDDING_OPENAI_API_KEY` | `agents_embedding_openai_api_key` | remote embeddings | provider revoke/replace |
 
-`REDIS_URL` is also classified as a sensitive connection string when it
-contains authentication or points to a managed external Redis. The current
-passwordless internal Compose URL remains configuration until roadmap #15 adds
-the final production Redis topology/authentication contract.
+`REDIS_URL` is a canonical production secret under roadmap #15. Production
+requires an authenticated external Redis target over TLS, so the full URL is
+always secret material. Compose reads it from `/run/secrets/redis_url`; Helm
+reads `REDIS_URL` from the operator-managed existing Secret. See
+[`FINCO_PRODUCTION_REDIS_WORKERS_V1.md`](./FINCO_PRODUCTION_REDIS_WORKERS_V1.md).
 
 The machine-readable inventory is authoritative if this table ever drifts.
 
@@ -195,6 +196,21 @@ coordinated operation. Restart API, workers, beat, migration/MCP consumers and
 verify migrations/read/write health before deleting the old credential path.
 
 Roadmap #14 owns the final production PostgreSQL host/backup acceptance.
+
+### Redis credential / endpoint
+
+Treat a Redis credential or managed endpoint rotation as a coordinated runtime
+change because API rate limits/state, distributed locks, Celery broker and
+Celery result metadata share the target.
+
+1. Provision the replacement authenticated TLS endpoint/credential.
+2. Write the new `redis_url` secret without printing it.
+3. Restart API, workers, Beat and MCP consumers in a controlled window.
+4. Run the Redis-only probe, then the live worker round-trip probe.
+5. Confirm exactly one Beat scheduler is healthy.
+6. Revoke the old Redis credential/endpoint after the replacement passes.
+7. Do not copy queued/result keys between providers as if Redis were durable
+   financial storage; PostgreSQL remains the financial source of truth.
 
 ### OmniRoute / Core Copilot credential
 

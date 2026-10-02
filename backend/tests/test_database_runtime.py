@@ -48,7 +48,10 @@ def test_verify_full_builds_hostname_verifying_ssl_context():
 
 
 def test_short_lived_worker_engine_uses_null_pool():
-    engine = create_database_engine(_settings(db_ssl_mode="disable"), short_lived=True)
+    engine = create_database_engine(
+        _settings(db_ssl_mode="disable", database_external_required=False),
+        short_lived=True,
+    )
     try:
         assert isinstance(engine.sync_engine.pool, NullPool)
     finally:
@@ -72,3 +75,11 @@ def test_external_database_gate_requires_tls():
 def test_database_runtime_rejects_unknown_pool_mode():
     with pytest.raises(ValueError, match="DB_POOL_MODE"):
         _settings(db_pool_mode="mystery")
+
+
+def test_null_pool_mode_is_explicitly_supported():
+    engine = create_database_engine(_settings(db_pool_mode="null"))
+    try:
+        assert isinstance(engine.sync_engine.pool, NullPool)
+    finally:
+        engine.sync_engine.dispose()

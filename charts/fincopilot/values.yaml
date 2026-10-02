@@ -19,6 +19,9 @@ secret:
   # If postgresql.enabled is true, the internal database will be deployed.
   # If postgresql.enabled is false, you must provide your external database URL here or in existingSecret.
   databaseUrl: 'postgresql+asyncpg://postgres:postgres@{{ include "fincopilot.fullname" . }}-postgresql:5432/fincopilot'
+  # Development-only bundled Redis URL. Production injects REDIS_URL from
+  # global.existingSecret and never renders it from committed values.
+  redisUrl: 'redis://{{ include "fincopilot.fullname" . }}-redis-master:6379/0'
 
   # Pluggy
   pluggyClientId: ""

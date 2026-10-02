@@ -18,7 +18,7 @@ from enum import Enum
 
 
 POLICY_ID = "FINCO_DATA_RETENTION_V1"
-POLICY_VERSION = "2026-10-02"
+POLICY_VERSION = "2026-10-01"
 
 # Operator-selected engineering windows.
 SECURITY_LOG_RETENTION_DAYS = 365
@@ -34,7 +34,7 @@ MCP_APPROVAL_ARGUMENT_RETENTION_DAYS = 30
 # not a claim that every rule applies to every FinCo-Pilot deployment.
 CERT_IN_ICT_LOG_REFERENCE_DAYS = 180
 DPDP_FUTURE_LOG_REFERENCE_DAYS = 365
-RAZORPAY_TRANSACTION_RECORD_REFERENCE_YEARS = 10\nRAZORPAY_DEVICE_INVOICE_REFERENCE_MONTHS = 6
+RAZORPAY_INVOICE_REFERENCE_MONTHS = 6
 ZOHO_DESK_RECYCLE_BIN_DAYS = 60
 ZOHO_DESK_BACKUP_AFTER_TRASH_DAYS = 90
 
@@ -143,18 +143,6 @@ RETENTION_RULES: dict[str, RetentionRule] = {
         notes=(
             "Minimum internal evidence window after the service/payment relationship ends; "
             "longer retention requires a documented legal, tax, dispute, or legal-hold reason."
-        ),
-    ),
-    "razorpay_transaction_order_records": RetentionRule(
-        key="razorpay_transaction_order_records",
-        mode=RetentionMode.AFTER_TRIGGER_YEARS,
-        deletion=DeletionMode.ANONYMIZE_OR_HARD_DELETE,
-        years=RAZORPAY_TRANSACTION_RECORD_REFERENCE_YEARS,
-        notes=(
-            "Current Razorpay Payments merchant terms require transaction/order records "
-            "to be retained for 10 calendar years from the relevant order date when that "
-            "contract applies. Retain only the minimum record set required by contract/law; "
-            "never use this exception to preserve card PAN/CVV or unrelated product data."
         ),
     ),
     "abandoned_checkout_reservations": RetentionRule(

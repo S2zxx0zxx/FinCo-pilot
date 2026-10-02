@@ -13,7 +13,8 @@ global:
 
 # If existingSecret is NOT set, this secret will be created with the values below
 secret:
-  # MUST change in production
+  # Development-only defaults. Production is fail-closed unless
+  # global.existingSecret references an operator-managed Kubernetes Secret.
   secretKey: "dev-secret-change-in-production"
   # If postgresql.enabled is true, the internal database will be deployed.
   # If postgresql.enabled is false, you must provide your external database URL here or in existingSecret.
@@ -34,6 +35,15 @@ secret:
   # OpenExchangeRates
   openexchangeratesAppId: ""
 
+  # Bootstrap / SMTP / metrics
+  setupToken: ""
+  smtpPassword: ""
+  metricsToken: ""
+
+  # S3-compatible storage credentials
+  storageS3AccessKey: ""
+  storageS3SecretKey: ""
+
   # Razorpay payment credentials. Prefer global.existingSecret in production.
   razorpayKeyId: ""
   razorpayKeySecret: ""
@@ -43,6 +53,7 @@ secret:
   agentsOpenaiApiKey: ""
   agentsAnthropicApiKey: ""
   agentsOpenaiCompatApiKey: ""
+  agentsEmbeddingOpenaiApiKey: ""
 
   # Zoho Desk direct-ticket OAuth secrets. Prefer global.existingSecret in production.
   zohoDeskClientSecret: ""
@@ -50,6 +61,9 @@ secret:
 
 # Non-sensitive configuration
 config:
+  # Leave development for chart smoke/lint. Set production only together with
+  # global.existingSecret; templates deliberately fail otherwise.
+  deploymentEnvironment: "development"
   debug: "false"
 
   # Public operator/business identity. These are non-secret descriptors of who
@@ -131,6 +145,7 @@ config:
   agentsOllamaBaseUrl: "http://ollama:11434"
   agentsOpenaiCompatBaseUrl: ""
   agentsEmbeddingProvider: "native"
+  agentsEmbeddingOpenaiBaseUrl: "https://api.openai.com/v1"
   agentsEmbeddingModel: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
 # Backend configuration

@@ -100,12 +100,18 @@ x-backend-env: &backend-env
   CELERY_VISIBILITY_TIMEOUT_SECONDS: ${CELERY_VISIBILITY_TIMEOUT_SECONDS:-3600}
   CELERY_WORKER_PREFETCH_MULTIPLIER: ${CELERY_WORKER_PREFETCH_MULTIPLIER:-1}
   BANK_SYNC_LOCK_TTL_SECONDS: ${BANK_SYNC_LOCK_TTL_SECONDS:-300}
-  STORAGE_PROVIDER: ${STORAGE_PROVIDER:-local}
+  # Roadmap #16: production attachment bytes live in private Cloudflare R2.
+  # Access/secret keys are file-delivered through /run/secrets.
+  STORAGE_PROVIDER: ${STORAGE_PROVIDER:-s3}
   STORAGE_LOCAL_PATH: /app/data/attachments
-  REQUIRE_OBJECT_STORAGE: ${REQUIRE_OBJECT_STORAGE:-false}
-  STORAGE_S3_BUCKET: ${STORAGE_S3_BUCKET:-}
-  STORAGE_S3_REGION: ${STORAGE_S3_REGION:-}
-  STORAGE_S3_ENDPOINT_URL: ${STORAGE_S3_ENDPOINT_URL:-}
+  REQUIRE_OBJECT_STORAGE: ${REQUIRE_OBJECT_STORAGE:-true}
+  STORAGE_S3_VENDOR: ${STORAGE_S3_VENDOR:-cloudflare_r2}
+  STORAGE_S3_BUCKET: ${STORAGE_S3_BUCKET:?STORAGE_S3_BUCKET must name the private production bucket}
+  STORAGE_S3_REGION: ${STORAGE_S3_REGION:-auto}
+  STORAGE_S3_ENDPOINT_URL: ${STORAGE_S3_ENDPOINT_URL:?STORAGE_S3_ENDPOINT_URL must be the private S3 API origin}
+  STORAGE_S3_PREFIX: ${STORAGE_S3_PREFIX:-fincopilot-prod}
+  STORAGE_S3_REQUEST_TIMEOUT_SECONDS: ${STORAGE_S3_REQUEST_TIMEOUT_SECONDS:-30}
+  STORAGE_S3_PRESIGN_TTL_SECONDS: ${STORAGE_S3_PRESIGN_TTL_SECONDS:-300}
   AGENTS_EXTERNAL_MCP_URL: ${AGENTS_EXTERNAL_MCP_URL:-}
   AGENTS_KNOWLEDGE_STORAGE_PATH: /app/data/agent_knowledge
   AGENTS_ENABLED: ${AGENTS_ENABLED:-false}
@@ -129,7 +135,6 @@ x-backend-base: &backend-base
     - "host.docker.internal:host-gateway"
   volumes:
     - ${FINCOPILOT_SECRETS_DIR:?FINCOPILOT_SECRETS_DIR must point to a host-only secret directory}:/run/secrets:ro
-    - attachments:/app/data/attachments
     - agent_knowledge:/app/data/agent_knowledge
     - agent_embedding_models:/app/data/embedding_models
   restart: unless-stopped
@@ -176,6 +181,7 @@ services:
       sh -c "alembic upgrade head &&
       python -m scripts.verify_production_postgres &&
       python -m scripts.verify_production_redis --redis-only &&
+      python -m scripts.verify_production_object_storage &&
       uvicorn app.main:app --host 0.0.0.0 --port 8000"
     # Loopback-only diagnostics. Public traffic must reach the backend through
     # the bundled frontend/reverse proxy so trusted-proxy rate limiting cannot
@@ -246,6 +252,5 @@ secrets:
 volumes:
   pgdata:
   redis_data:
-  attachments:
   agent_knowledge:
   agent_embedding_models:

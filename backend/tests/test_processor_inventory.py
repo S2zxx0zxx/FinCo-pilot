@@ -70,7 +70,6 @@ def test_user_directed_recipients_are_not_core_operator_routes():
 def test_unselected_infrastructure_remains_unresolved():
     for key in (
         "smtp_provider",
-        "object_storage_provider",
         "hosting_logging_provider",
         "managed_redis",
         "oidc_provider",
@@ -78,6 +77,17 @@ def test_unselected_infrastructure_remains_unresolved():
         boundary = get_third_party_boundary(key)
         assert boundary.status is BoundaryStatus.UNRESOLVED
         assert boundary.legal_role is LegalRoleStatus.CONTRACT_REVIEW_REQUIRED
+
+
+def test_selected_object_storage_boundary_stays_release_gated():
+    boundary = get_third_party_boundary("object_storage_provider")
+    assert boundary.service == "Cloudflare R2"
+    assert boundary.status is BoundaryStatus.SELECTED_RELEASE_GATED
+    assert boundary.sends_personal_data is True
+    assert boundary.sends_financial_data is True
+    assert boundary.deletion is DeletionExpectation.OPERATOR_INFRA_LIFECYCLE
+    assert 16 in boundary.roadmap_gates
+    assert 25 in boundary.roadmap_gates
 
 
 def test_selected_postgresql_boundary_stays_release_gated():

@@ -65,13 +65,20 @@ No locally configured model/provider becomes production-approved merely because 
 - Neon provider history/PITR is not treated as proof of FinCo-Pilot disaster recovery;
   roadmap #25 still requires an isolated restore rehearsal.
 
+### Selected object-storage boundary
+
+- **Cloudflare R2** is selected for the zero-cost roadmap #16 production object-storage path.
+- The bucket remains private and FinCo-Pilot uses R2's S3-compatible API with bucket-scoped Object Read & Write credentials.
+- Selection remains release-gated until the operator-owned bucket, exact endpoint/jurisdiction, secret-managed credentials and the credential-safe upload/read/delete acceptance probe pass.
+- R2 location hints/jurisdictions are not treated as an India-residency guarantee.
+- Roadmap #25 still owns isolated backup/restore proof; selecting R2 does not close disaster recovery.
+
 ### Infrastructure boundaries still unresolved
 
 The inventory intentionally leaves these unresolved until their roadmap items select the real vendor:
 
 - production hosting / reverse proxy / log sink;
 - managed Redis, if used;
-- S3-compatible object storage;
 - transactional SMTP;
 - optional OIDC provider.
 

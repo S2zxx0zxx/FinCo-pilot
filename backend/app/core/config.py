@@ -172,12 +172,19 @@ class Settings(BaseSettings):
     storage_max_attachments_per_transaction: int = 10
     storage_max_attachments_per_invoice: int = 20
 
-    # S3-compatible Storage
+    # S3-compatible object storage. Production #16 selects Cloudflare R2,
+    # while the runtime remains compatible with AWS S3 / private S3 endpoints.
+    storage_s3_vendor: str = "generic"  # generic|cloudflare_r2|aws_s3
     storage_s3_bucket: str = ""
     storage_s3_region: str = ""
     storage_s3_access_key: SecretStr = SecretStr("")
     storage_s3_secret_key: SecretStr = SecretStr("")
     storage_s3_endpoint_url: str = ""
+    # Logical namespace inside the bucket. Treat as immutable after first
+    # production upload; changing it would make existing objects unreachable.
+    storage_s3_prefix: str = "fincopilot"
+    storage_s3_request_timeout_seconds: int = 30
+    storage_s3_presign_ttl_seconds: int = 300
 
     # Registration
     registration_enabled: bool = True
@@ -407,6 +414,48 @@ class Settings(BaseSettings):
 
         if self.storage_provider not in {"local", "s3"}:
             raise ValueError("STORAGE_PROVIDER must be local or s3")
+        if self.storage_s3_vendor not in {"generic", "cloudflare_r2", "aws_s3"}:
+            raise ValueError(
+                "STORAGE_S3_VENDOR must be generic, cloudflare_r2, or aws_s3"
+            )
+        if not 1 <= self.storage_s3_request_timeout_seconds <= 120:
+            raise ValueError(
+                "STORAGE_S3_REQUEST_TIMEOUT_SECONDS must be between 1 and 120"
+            )
+        if not 60 <= self.storage_s3_presign_ttl_seconds <= 900:
+            raise ValueError(
+                "STORAGE_S3_PRESIGN_TTL_SECONDS must be between 60 and 900"
+            )
+
+        storage_prefix = self.storage_s3_prefix.strip().strip("/")
+        if (
+            len(storage_prefix) > 128
+            or storage_prefix == ".."
+            or storage_prefix.startswith("../")
+            or "/../" in f"/{storage_prefix}/"
+        ):
+            raise ValueError("STORAGE_S3_PREFIX must be a safe object-key prefix")
+
+        storage_endpoint = self.storage_s3_endpoint_url.strip()
+        storage_endpoint_parts = urlsplit(storage_endpoint) if storage_endpoint else None
+        if storage_endpoint_parts is not None:
+            if (
+                storage_endpoint_parts.scheme not in {"http", "https"}
+                or not storage_endpoint_parts.hostname
+                or storage_endpoint_parts.username is not None
+                or storage_endpoint_parts.password is not None
+                or storage_endpoint_parts.query
+                or storage_endpoint_parts.fragment
+                or storage_endpoint_parts.path not in {"", "/"}
+            ):
+                raise ValueError(
+                    "STORAGE_S3_ENDPOINT_URL must be a bare http(s) object-storage origin"
+                )
+            if environment == "production" and storage_endpoint_parts.scheme != "https":
+                raise ValueError(
+                    "Production STORAGE_S3_ENDPOINT_URL must use https://"
+                )
+
         if self.storage_provider == "s3":
             missing_storage = []
             if not self.storage_s3_bucket.strip():
@@ -421,6 +470,19 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "STORAGE_PROVIDER=s3 requires: " + ", ".join(missing_storage)
                 )
+
+            if self.storage_s3_vendor == "cloudflare_r2":
+                if storage_endpoint_parts is None:
+                    raise ValueError(
+                        "STORAGE_S3_VENDOR=cloudflare_r2 requires STORAGE_S3_ENDPOINT_URL"
+                    )
+                endpoint_host = (storage_endpoint_parts.hostname or "").lower()
+                if not endpoint_host.endswith(".r2.cloudflarestorage.com"):
+                    raise ValueError(
+                        "Cloudflare R2 endpoint must end with .r2.cloudflarestorage.com"
+                    )
+                if self.storage_s3_region.strip().lower() != "auto":
+                    raise ValueError("Cloudflare R2 requires STORAGE_S3_REGION=auto")
 
         if environment == "production":
             secret = self.secret_key.get_secret_value().strip()
@@ -476,9 +538,13 @@ class Settings(BaseSettings):
                     "Production METRICS_ENABLED=true requires a high-entropy METRICS_TOKEN"
                 )
 
-            if self.require_object_storage and self.storage_provider != "s3":
+            if not self.require_object_storage:
                 raise ValueError(
-                    "Production REQUIRE_OBJECT_STORAGE=true requires STORAGE_PROVIDER=s3"
+                    "Production requires REQUIRE_OBJECT_STORAGE=true"
+                )
+            if self.storage_provider != "s3":
+                raise ValueError(
+                    "Production requires STORAGE_PROVIDER=s3"
                 )
 
         db_url = urlsplit(self.database_url)

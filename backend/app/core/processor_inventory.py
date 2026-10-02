@@ -304,8 +304,8 @@ THIRD_PARTY_BOUNDARIES: dict[str, ThirdPartyBoundary] = {
     ),
     "object_storage_provider": ThirdPartyBoundary(
         key="object_storage_provider",
-        service="S3-compatible object storage provider",
-        status=BoundaryStatus.UNRESOLVED,
+        service="Cloudflare R2",
+        status=BoundaryStatus.SELECTED_RELEASE_GATED,
         purpose="transaction attachments, invoice/logo objects, and other production file bytes",
         data_classes=("uploaded_files", "document_metadata"),
         sends_personal_data=True,
@@ -314,9 +314,17 @@ THIRD_PARTY_BOUNDARIES: dict[str, ThirdPartyBoundary] = {
         legal_role=LegalRoleStatus.CONTRACT_REVIEW_REQUIRED,
         deletion=DeletionExpectation.OPERATOR_INFRA_LIFECYCLE,
         roadmap_gates=(12, 16, 25, 29, 30),
+        public_docs=(
+            "https://developers.cloudflare.com/r2/api/s3/",
+            "https://developers.cloudflare.com/r2/reference/data-security/",
+            "https://developers.cloudflare.com/r2/reference/data-location/",
+        ),
         notes=(
-            "Provider is not selected. Object deletion and backup/versioning semantics "
-            "require live acceptance."
+            "Selected for the zero-cost roadmap #16 path through R2's private S3-compatible "
+            "API. Production remains release-gated until the operator-owned bucket, scoped "
+            "Object Read & Write credentials, endpoint/region, upload-read-delete acceptance "
+            "probe and provider/data-location review are verified. R2 location hints are not "
+            "an India-residency guarantee, and roadmap #25 still owns isolated restore proof."
         ),
     ),
     "hosting_logging_provider": ThirdPartyBoundary(

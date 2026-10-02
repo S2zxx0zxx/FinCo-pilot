@@ -20,6 +20,8 @@ jobs:
           FINCOPILOT_VERSION: ci
           FRONTEND_URL: https://fincopilot.example
           FINCOPILOT_SECRETS_DIR: /tmp/fincopilot-ci-secrets
+          STORAGE_S3_BUCKET: synthetic-ci-private
+          STORAGE_S3_ENDPOINT_URL: https://abc123.r2.cloudflarestorage.com
         run: |
           set -euo pipefail
           mkdir -p "$FINCOPILOT_SECRETS_DIR"
@@ -421,6 +423,27 @@ jobs:
           fi
           grep -q "redisAuthRequired=true" /tmp/production-redis-auth-gate.log
 
+      - name: Verify production rejects local object storage
+        if: steps.helm-changes.outputs.run_helm == 'true'
+        run: |
+          set -euo pipefail
+          if helm template fincopilot-prod charts/fincopilot \
+            --set config.deploymentEnvironment=production \
+            --set global.existingSecret=synthetic-ci-existing-secret \
+            --set postgresql.enabled=false \
+            --set config.databaseExternalRequired=true \
+            --set config.dbSslMode=verify-full \
+            --set redis.enabled=false \
+            --set config.redisExternalRequired=true \
+            --set config.redisTlsRequired=true \
+            --set config.redisAuthRequired=true \
+            --set config.storageProvider=local \
+            >/tmp/should-not-render-local-storage.yaml 2>/tmp/production-storage-gate.log; then
+            echo "Production unexpectedly rendered with local object storage" >&2
+            exit 1
+          fi
+          grep -q "external S3-compatible object storage" /tmp/production-storage-gate.log
+
       - name: Lint production contract with external Secret
         if: steps.helm-changes.outputs.run_helm == 'true'
         run: |
@@ -433,7 +456,13 @@ jobs:
             --set redis.enabled=false \
             --set config.redisExternalRequired=true \
             --set config.redisTlsRequired=true \
-            --set config.redisAuthRequired=true
+            --set config.redisAuthRequired=true \
+            --set config.storageProvider=s3 \
+            --set config.requireObjectStorage=true \
+            --set config.storageS3Vendor=cloudflare_r2 \
+            --set config.storageS3Bucket=synthetic-ci-private \
+            --set config.storageS3Region=auto \
+            --set config.storageS3EndpointUrl=https://abc123.r2.cloudflarestorage.com
 
       - name: Validate Helm Chart with Kubeconform
         if: steps.helm-changes.outputs.run_helm == 'true'
@@ -452,4 +481,10 @@ jobs:
             --set config.redisExternalRequired=true \
             --set config.redisTlsRequired=true \
             --set config.redisAuthRequired=true \
+            --set config.storageProvider=s3 \
+            --set config.requireObjectStorage=true \
+            --set config.storageS3Vendor=cloudflare_r2 \
+            --set config.storageS3Bucket=synthetic-ci-private \
+            --set config.storageS3Region=auto \
+            --set config.storageS3EndpointUrl=https://abc123.r2.cloudflarestorage.com \
             | kubeconform -summary -strict

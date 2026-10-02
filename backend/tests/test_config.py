@@ -192,6 +192,14 @@ def _production_settings_kwargs() -> dict:
         "trusted_proxy_hops": 1,
         "metrics_enabled": False,
         "billing_checkout_enabled": True,
+        "require_object_storage": True,
+        "storage_provider": "s3",
+        "storage_s3_vendor": "cloudflare_r2",
+        "storage_s3_bucket": "synthetic-private-bucket",
+        "storage_s3_region": "auto",
+        "storage_s3_access_key": "synthetic-access-key",
+        "storage_s3_secret_key": "synthetic-secret-key",
+        "storage_s3_endpoint_url": "https://abc123.r2.cloudflarestorage.com",
     }
 
 
@@ -233,3 +241,36 @@ def test_agent_secret_fields_read_from_prefixed_secret_files(secrets: Path, monk
     assert settings.embedding_openai_api_key.get_secret_value() == "embedding-secret"
     assert "operator-route-secret" not in repr(settings)
     assert "embedding-secret" not in repr(settings)
+
+
+def test_production_requires_object_storage_gate(secrets: Path):
+    kwargs = _production_settings_kwargs()
+    kwargs["require_object_storage"] = False
+    with pytest.raises(ValidationError, match="REQUIRE_OBJECT_STORAGE=true"):
+        Settings(
+            **kwargs,
+            billing_tax_display_mode="inclusive",
+            _secrets_dir=str(secrets),
+        )
+
+
+def test_production_requires_s3_provider(secrets: Path):
+    kwargs = _production_settings_kwargs()
+    kwargs["storage_provider"] = "local"
+    with pytest.raises(ValidationError, match="STORAGE_PROVIDER=s3"):
+        Settings(
+            **kwargs,
+            billing_tax_display_mode="inclusive",
+            _secrets_dir=str(secrets),
+        )
+
+
+def test_production_rejects_insecure_storage_endpoint(secrets: Path):
+    kwargs = _production_settings_kwargs()
+    kwargs["storage_s3_endpoint_url"] = "http://abc123.r2.cloudflarestorage.com"
+    with pytest.raises(ValidationError, match="must use https://"):
+        Settings(
+            **kwargs,
+            billing_tax_display_mode="inclusive",
+            _secrets_dir=str(secrets),
+        )

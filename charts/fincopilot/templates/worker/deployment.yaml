@@ -64,7 +64,7 @@ spec:
             timeoutSeconds: 10
             failureThreshold: 3
           volumeMounts:
-            {{- if .Values.persistence.attachments.enabled }}
+            {{- if and .Values.persistence.attachments.enabled (eq (lower (toString .Values.config.storageProvider)) "local") }}
             - name: attachments
               mountPath: /app/data/attachments
             {{- end }}
@@ -81,7 +81,7 @@ spec:
             {{- toYaml .Values.celeryWorker.resources | nindent 12 }}
           {{- end }}
       volumes:
-        {{- if .Values.persistence.attachments.enabled }}
+        {{- if and .Values.persistence.attachments.enabled (eq (lower (toString .Values.config.storageProvider)) "local") }}
         - name: attachments
           persistentVolumeClaim:
             claimName: {{ include "fincopilot.fullname" . }}-attachments

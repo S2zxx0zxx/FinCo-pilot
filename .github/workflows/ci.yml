@@ -216,8 +216,8 @@ jobs:
           trap 'kill -TERM "$worker_pid" 2>/dev/null || true; wait "$worker_pid" 2>/dev/null || true' EXIT
 
           ready=false
-          for _ in $(seq 1 30); do
-            if celery -A app.worker inspect ping               -d "ci@$(hostname)" --timeout=1 2>/dev/null | grep -q pong; then
+          for _ in $(seq 1 45); do
+            if celery -A app.worker inspect ping --timeout=1 2>/dev/null | grep -q pong; then
               ready=true
               break
             fi

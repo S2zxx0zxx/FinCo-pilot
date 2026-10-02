@@ -5,7 +5,7 @@
 **Version:** 2026-10-02  
 **Status:** engineering inventory contract; actual production activation remains deployment/provider specific.
 
-This document is the human-readable companion to `docs/trust/processor_inventory.v1.json`. It records every repository-known external service that may receive FinCo-Pilot data or production request metadata. It is deliberately stricter than a marketing subprocessor list: unresolved hosting, AI and operator-selected vendors remain visible until the exact production provider is known.
+This document is the human-readable companion to the canonical machine-readable registry in `backend/app/core/processor_inventory.py`. It records every repository-known external service that may receive FinCo-Pilot data or production request metadata. It is deliberately stricter than a marketing subprocessor list: unresolved hosting, AI and operator-selected vendors remain visible until the exact production provider is known.
 
 This inventory does **not** claim that every listed service is currently active, nor does it decide the legal processor/controller classification of a provider. Those conclusions depend on the actual deployment, contract, purpose and jurisdiction. It exists so FinCo-Pilot cannot silently introduce a provider and later discover that its retention/deletion/privacy posture was never reviewed.
 
@@ -48,7 +48,7 @@ This inventory does **not** claim that every listed service is currently active,
 | `hosting_provider` | Production hosting/network provider TBD | Production infrastructure | Traffic, logs and hosted app data depending on architecture | **Unresolved high-risk gate** until #1/#2 |
 | `github_private_vulnerability_reporting` | GitHub PVR | Security reports | Reporter/contact and technical vulnerability details | Conditional, separate from normal support |
 
-The JSON registry is authoritative for machine validation; this table is the readable operational summary.
+The Python registry is authoritative for machine validation; this table is the readable operational summary.
 
 ## 4. High-risk provider contracts
 
@@ -166,14 +166,14 @@ Secrets stay in deployment secret storage and must never be copied into that rec
 
 A PR that introduces a new outbound service capable of receiving user/operational data must also:
 
-1. add/update the JSON inventory;
+1. add/update `backend/app/core/processor_inventory.py`;
 2. document data categories and activation condition;
 3. set the correct sensitivity/classification;
 4. state provider deletion/retention review requirements;
 5. keep secrets out of source;
 6. update retention/deletion behavior if a persistent provider copy is introduced.
 
-The contract test under `backend/tests/test_processor_inventory_contract.py` guards the current known provider set and required inventory fields. It is intentionally not a legal-compliance oracle; it is an engineering drift detector.
+The contract tests under `backend/tests/test_processor_inventory.py` guard the current known provider set, fail-closed lookup behavior and high-risk boundary classifications. It is intentionally not a legal-compliance oracle; it is an engineering drift detector.
 
 ## 9. Roadmap #12 closure criteria
 
@@ -184,7 +184,7 @@ Roadmap #12 is engineering-complete when:
 - high-risk providers are distinguished from reference-data vendors;
 - every entry has activation condition, data categories, sensitivity, deletion review and retention linkage;
 - secrets are excluded;
-- machine-readable validation is in CI;
+- the canonical machine-readable Python registry is validated in CI;
 - the hardening report records the processor inventory as defined.
 
 This does **not** close hosting (#1/#2), SMTP (#17), object storage (#16), AI production acceptance (#6/#49/#50), payment lifecycle (#31–39), privacy policy (#27) or executable deletion (#29/#30).

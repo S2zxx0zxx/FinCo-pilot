@@ -5,9 +5,7 @@
 **Version:** 2026-10-01  
 **Status:** engineering policy contract; runtime purge/deletion workflows are intentionally deferred to roadmap #10, #11, #25, #29 and #30.
 
-This document is the canonical retention contract for FinCo-Pilot. It is not generic privacy copy and it is not a claim that every deletion path is already implemented. It maps the stores that exist in the repository today, states the intended lifecycle for each category, and records the gaps later roadmap items must close.
-
-Roadmap #12 maintains the canonical external-service/processor register in `backend/app/core/processor_inventory.py` with the human-readable contract in `FINCO_THIRD_PARTY_PROCESSOR_INVENTORY_V1.md`. Any provider-side copy governed by that inventory must satisfy this retention contract before production activation.
+This document is the canonical retention contract for FinCo-Pilot. It is not generic privacy copy and it is not a claim that every deletion path is already implemented. It maps the stores that exist in the repository today, states the intended lifecycle for each category, and records the gaps later roadmap items must close.\n\nRoadmap #12 maintains the canonical external-service/data-recipient register in `backend/app/core/processor_inventory.py`; see `FINCO_THIRD_PARTY_PROCESSOR_INVENTORY_V1.md`. Provider-side copies must be reconciled with this retention contract before production activation.
 
 ## 1. Policy principles
 
@@ -53,7 +51,7 @@ Official sources:
 
 ### Razorpay contractual anchor
 
-The currently published Razorpay Payments merchant terms include a broader general obligation requiring transaction/order-related records to be retained for **10 calendar years from the relevant order date**. A separate device-specific India clause also mentions a six-month minimum for invoices/charge slips. For FinCo-Pilot's selected Razorpay payment path, the 10-year merchant-record clause is the conservative contractual anchor unless Razorpay provides a written service-specific exception. This is a provider-contract requirement, not a general Indian statutory retention rule for all FinCo-Pilot data.
+The currently published Razorpay terms state that, for India, the merchant must retain invoices/charge slips for a minimum **six months**. This is a provider-contract requirement when that Razorpay PA contract applies; it is not generalized into an Indian statutory retention rule for all FinCo-Pilot data.
 
 Official/provider source: https://razorpay.com/terms/
 
@@ -84,7 +82,7 @@ These are FinCo-Pilot operator/engineering decisions unless described above as a
 | Unreferenced object/file sweep | within 24 hours after a deletion lifecycle marks the blob orphaned |
 | Closed support tickets | 365 days after closure, then provider deletion + prompt permanent Recycle Bin purge where permitted; current Zoho docs list a 90-day backup tail after Trash deletion |
 | Abandoned/expired checkout reservation | 30 days after terminal expiry/abandonment |
-| Successful payment/subscription evidence | 365 days after the payment/service relationship ends for ordinary internal evidence; Razorpay transaction/order records that fall under the current merchant contract use 10 calendar years from the relevant order date |
+| Successful payment/subscription evidence | 365 days after the payment/service relationship ends, unless a documented longer hold applies |
 | Pricing/security/MCP minimal approval evidence | rolling or terminal-state + 365 days; minimise actor/content fields when no longer required |
 | Exact MCP approval argument payloads | 30 days after terminal state, then redact/remove while preserving only minimal approval evidence |
 | AI usage telemetry | rolling 365 days |
@@ -114,7 +112,7 @@ The executable constants and category registry live in `backend/app/core/retenti
 | Bank provider credentials & consent state | connection/OAuth | PostgreSQL `bank_connections.credentials/settings`; Redis OAuth state | bank access/sync | user + workspace | local row delete exists in some paths; upstream revocation is not a proven universal invariant | only while connection active; OAuth state 10 min | revoke provider consent/token first, then erase local credential | provider/legal incident hold only; never copy secret to audit | max 30d for DB; Redis none | Pluggy / Enable Banking / SimpleFIN / future AA |
 | Bank-synced financial data | bank provider | PostgreSQL accounts, transactions, institutions, card bills, raw provider metadata | ledger and Safe-to-Spend inputs | workspace | tied to financial entity deletion/cascades | active purpose | delete workspace/account rows and raw provider payloads when lifecycle ends | documented legal hold | max 30d | bank-data provider |
 | Checkout reservations | pricing/checkout | PostgreSQL `checkout_reservations` | reserve offer position/order flow | user | expiration state exists; automatic purge is not implemented | 30d after terminal expiry/abandonment | hard-delete unsuccessful terminal reservation after audit evidence separation | fraud/security dispute hold | max 30d | Razorpay when live |
-| Successful payments/subscriptions/founder evidence | verified payment lifecycle | PostgreSQL subscription/founder/reservation fields; provider | entitlement, billing evidence | user | paid lifecycle is not yet fully live; user FK cascades currently exist | active relationship + 365d after end for ordinary internal evidence; Razorpay transaction/order records covered by current merchant terms retain 10 calendar years from relevant order date | minimise identifiers; delete/anonymise after window/holds | chargeback, tax, legal hold | max 30d | Razorpay |
+| Successful payments/subscriptions/founder evidence | verified payment lifecycle | PostgreSQL subscription/founder/reservation fields; provider | entitlement, billing evidence | user | paid lifecycle is not yet fully live; user FK cascades currently exist | active relationship + 365d after end; provider contract may require minimum 6 months for invoices/charge slips | minimise identifiers; delete/anonymise after window/holds | chargeback, tax, legal hold | max 30d | Razorpay |
 | Pricing audit events | pricing admin/offer engine | PostgreSQL `pricing_audit_events` | campaign integrity/audit | operational | append-only; actor FK can SET NULL; no purge job | rolling 365d | detach/anonymise actor where possible then purge after window | security/legal hold | max 30d | none |
 | Support tickets | authenticated support form/email/portal | Zoho Desk; app logs contain references, not ticket body | customer support/security escalation | personal user + support case | provider owns ticket; app does not persist local ticket body | 365d after closure, then provider deletion | delete ticket and permanently purge Recycle Bin promptly where permitted; current Zoho docs still list a 90d backup-server tail after Trash deletion | unresolved dispute/security/legal hold | provider-managed: current Zoho service-data backup tail is 90d after Trash delete | Zoho Desk |
 | Request IDs & application/security logs | API/middleware/process | deployment log sink/stdout | debugging, security response, support correlation | operational; may reference user/request | logging exists but production sink/TTL/residency not yet proven | rolling 365d engineering baseline | automatic log-store expiry; redact secrets/body; access-restrict | active incident/legal hold | not in app DB backups | hosting/logging provider |

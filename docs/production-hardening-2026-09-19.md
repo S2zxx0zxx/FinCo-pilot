@@ -426,3 +426,28 @@ storage, migrations applied and the safe acceptance probe passed against that pr
 
 Provider history/PITR is not counted as disaster-recovery proof. Roadmap #25 still requires an
 actual isolated backup/restore rehearsal and integrity verification.
+
+
+## October 2 — Roadmap #15 production Redis / workers
+
+Production Redis and background-worker engineering now has an explicit
+fail-closed contract. Redis connection construction is centralized with bounded
+pool/timeouts, optional CA support and target validation. Production requires an
+external authenticated TLS target; `REDIS_URL` is delivered through the #13
+secret store rather than production Compose environment interpolation.
+
+Celery now retries broker startup, uses low prefetch, expires result metadata,
+bounds visibility timeout and exposes a side-effect-free broker/worker/result
+acceptance task. Production Compose and Helm add worker health checks, graceful
+shutdown and process recycling. Beat is explicitly a singleton scheduler; the
+Kubernetes deployment uses `Recreate` and no longer mounts task data volumes.
+
+A credential-safe acceptance script performs Redis ping/write/read/TTL/delete
+and can require a live worker round-trip. CI runs a disposable Redis 8 service,
+a real worker smoke and a real Beat startup smoke. Production Helm refuses
+bundled Redis, non-TLS Redis or unauthenticated Redis.
+
+This is the #15 engineering/runtime contract. A real production Redis account
+is not claimed until the operator provisions an authenticated `rediss://`
+target in secret storage and runs the same acceptance probe against the deployed
+API/worker while confirming exactly one Beat instance is healthy.

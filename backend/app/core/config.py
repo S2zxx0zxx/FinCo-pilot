@@ -6,6 +6,8 @@ from urllib.parse import urlsplit
 from pydantic import SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.core.redis_runtime import validate_redis_target
+
 CREDENTIALS_DIRECTORY: list[Path] = [
     Path(p) for p in getenv("CREDENTIALS_DIRECTORY", "/run/secrets:/app/secrets").split(":") if p
 ]
@@ -213,8 +215,20 @@ class Settings(BaseSettings):
     oidc_admin_roles: str = ""
     oidc_workspace_role_map: str = ""
 
-    # Celery / Redis
+    # Celery / Redis. Production templates require an external authenticated
+    # TLS target supplied through secret storage; development remains local-friendly.
     redis_url: str = "redis://localhost:6379/0"
+    redis_external_required: bool = False
+    redis_tls_required: bool = False
+    redis_auth_required: bool = False
+    redis_ssl_ca_file: str = ""
+    redis_max_connections: int = 50
+    redis_socket_connect_timeout_seconds: int = 5
+    redis_socket_timeout_seconds: int = 5
+    redis_health_check_interval_seconds: int = 30
+    celery_result_expires_seconds: int = 86_400
+    celery_visibility_timeout_seconds: int = 3_600
+    celery_worker_prefetch_multiplier: int = 1
     bank_sync_lock_ttl_seconds: int = 300
 
     # Reverse proxy
@@ -491,6 +505,36 @@ class Settings(BaseSettings):
                     "DATABASE_EXTERNAL_REQUIRED=true requires DB_SSL_MODE=require, "
                     "verify-ca, or verify-full"
                 )
+
+        validate_redis_target(
+            self.redis_url,
+            external_required=self.redis_external_required,
+            tls_required=self.redis_tls_required,
+            auth_required=self.redis_auth_required,
+        )
+        if not 1 <= self.redis_max_connections <= 10_000:
+            raise ValueError("REDIS_MAX_CONNECTIONS must be between 1 and 10000")
+        if (
+            self.redis_socket_connect_timeout_seconds < 1
+            or self.redis_socket_timeout_seconds < 1
+        ):
+            raise ValueError("Redis socket connect/read timeouts must be positive")
+        if not 0 <= self.redis_health_check_interval_seconds <= 3_600:
+            raise ValueError(
+                "REDIS_HEALTH_CHECK_INTERVAL_SECONDS must be between 0 and 3600"
+            )
+        if not 60 <= self.celery_result_expires_seconds <= 604_800:
+            raise ValueError(
+                "CELERY_RESULT_EXPIRES_SECONDS must be between 60 and 604800"
+            )
+        if not 60 <= self.celery_visibility_timeout_seconds <= 86_400:
+            raise ValueError(
+                "CELERY_VISIBILITY_TIMEOUT_SECONDS must be between 60 and 86400"
+            )
+        if not 1 <= self.celery_worker_prefetch_multiplier <= 16:
+            raise ValueError(
+                "CELERY_WORKER_PREFETCH_MULTIPLIER must be between 1 and 16"
+            )
 
         if self.db_pool_size < 1 or self.db_max_overflow < 0:
             raise ValueError("Database pool sizes must be non-negative and DB_POOL_SIZE must be >= 1")

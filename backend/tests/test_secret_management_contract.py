@@ -56,7 +56,7 @@ def test_plaintext_prod_compose_guard_covers_unconditional_secrets():
     assert "DATABASE_URL" in forbidden
     assert "ZOHO_DESK_REFRESH_TOKEN" in forbidden
     assert "AGENTS_OPENAI_COMPAT_API_KEY" in forbidden
-    assert "REDIS_URL" not in forbidden
+    assert "REDIS_URL" in forbidden
 
 
 def test_unknown_secret_fails_closed():

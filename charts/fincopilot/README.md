@@ -100,3 +100,16 @@ helm uninstall fincopilot
 ```
 
 This command removes all the Kubernetes components associated with the chart and deletes the release. Note that Persistent Volume Claims (PVCs) created by the chart might not be deleted automatically to prevent accidental data loss.
+
+
+### Production Redis
+
+The bundled Redis StatefulSet is development-only. Production rendering requires
+`redis.enabled=false`, `config.redisExternalRequired=true`,
+`config.redisTlsRequired=true` and `config.redisAuthRequired=true`.
+Place the authenticated `rediss://` value in the operator-managed Secret under
+the key `REDIS_URL`; do not put it in `values.yaml`.
+
+Celery worker readiness/liveness probes use the real broker. Beat is a
+single-replica `Recreate` deployment with a PID probe so rollouts do not run
+two schedulers at once.

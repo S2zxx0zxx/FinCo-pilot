@@ -87,7 +87,18 @@ x-backend-env: &backend-env
   REQUIRE_FX_PROVIDER: "true"
   TESOURO_DIRETO_ENABLED: ${TESOURO_DIRETO_ENABLED:-true}
   TRUSTED_PROXY_HOPS: ${TRUSTED_PROXY_HOPS:-1}
-  REDIS_URL: redis://redis:6379/0
+  # REDIS_URL is secret-file delivered as /run/secrets/redis_url.
+  REDIS_EXTERNAL_REQUIRED: ${REDIS_EXTERNAL_REQUIRED:-true}
+  REDIS_TLS_REQUIRED: ${REDIS_TLS_REQUIRED:-true}
+  REDIS_AUTH_REQUIRED: ${REDIS_AUTH_REQUIRED:-true}
+  REDIS_SSL_CA_FILE: ${REDIS_SSL_CA_FILE:-}
+  REDIS_MAX_CONNECTIONS: ${REDIS_MAX_CONNECTIONS:-50}
+  REDIS_SOCKET_CONNECT_TIMEOUT_SECONDS: ${REDIS_SOCKET_CONNECT_TIMEOUT_SECONDS:-5}
+  REDIS_SOCKET_TIMEOUT_SECONDS: ${REDIS_SOCKET_TIMEOUT_SECONDS:-5}
+  REDIS_HEALTH_CHECK_INTERVAL_SECONDS: ${REDIS_HEALTH_CHECK_INTERVAL_SECONDS:-30}
+  CELERY_RESULT_EXPIRES_SECONDS: ${CELERY_RESULT_EXPIRES_SECONDS:-86400}
+  CELERY_VISIBILITY_TIMEOUT_SECONDS: ${CELERY_VISIBILITY_TIMEOUT_SECONDS:-3600}
+  CELERY_WORKER_PREFETCH_MULTIPLIER: ${CELERY_WORKER_PREFETCH_MULTIPLIER:-1}
   BANK_SYNC_LOCK_TTL_SECONDS: ${BANK_SYNC_LOCK_TTL_SECONDS:-300}
   STORAGE_PROVIDER: ${STORAGE_PROVIDER:-local}
   STORAGE_LOCAL_PATH: /app/data/attachments
@@ -116,8 +127,6 @@ x-backend-base: &backend-base
   environment: *backend-env
   extra_hosts:
     - "host.docker.internal:host-gateway"
-  depends_on:
-    redis: { condition: service_healthy }
   volumes:
     - ${FINCOPILOT_SECRETS_DIR:?FINCOPILOT_SECRETS_DIR must point to a host-only secret directory}:/run/secrets:ro
     - attachments:/app/data/attachments
@@ -127,13 +136,19 @@ x-backend-base: &backend-base
 
 services:
   redis:
+    # Explicit local/self-hosted fallback only. The production default is an
+    # external secret-managed rediss:// target and does not start this service.
+    profiles: ["bundled-redis"]
     image: docker.io/library/redis:8-alpine
     restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
       timeout: 3s
-      retries: 5
+      retries: 12
 
   db:
     # Explicit fallback only. Production defaults to an external managed
@@ -160,6 +175,7 @@ services:
     command: >-
       sh -c "alembic upgrade head &&
       python -m scripts.verify_production_postgres &&
+      python -m scripts.verify_production_redis --redis-only &&
       uvicorn app.main:app --host 0.0.0.0 --port 8000"
     # Loopback-only diagnostics. Public traffic must reach the backend through
     # the bundled frontend/reverse proxy so trusted-proxy rate limiting cannot
@@ -181,11 +197,40 @@ services:
 
   celery-worker:
     <<: *backend-base
-    command: celery -A app.worker worker --loglevel=info --concurrency=${CELERY_CONCURRENCY:-4}
+    command: >-
+      celery -A app.worker worker
+      --loglevel=info
+      --hostname=worker@%h
+      --concurrency=${CELERY_CONCURRENCY:-4}
+      --max-tasks-per-child=${CELERY_MAX_TASKS_PER_CHILD:-200}
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          celery -A app.worker inspect ping
+          -d "celery@$HOSTNAME" --timeout=5 2>/dev/null | grep -q pong
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    stop_grace_period: 90s
 
   celery-beat:
     <<: *backend-base
-    command: celery -A app.worker beat --loglevel=info
+    command: >-
+      celery -A app.worker beat
+      --loglevel=info
+      --pidfile=/tmp/celerybeat.pid
+      --schedule=/tmp/celerybeat-schedule
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'test -s /tmp/celerybeat.pid && kill -0 $(cat /tmp/celerybeat.pid)'
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    stop_grace_period: 30s
 
   mcp-server:
     <<: *backend-base
@@ -200,6 +245,7 @@ secrets:
 
 volumes:
   pgdata:
+  redis_data:
   attachments:
   agent_knowledge:
   agent_embedding_models:

@@ -7,9 +7,7 @@ metadata:
     {{- include "fincopilot.labels" . | nindent 4 }}
     app.kubernetes.io/component: celery-worker
 spec:
-  {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.celeryWorker.replicaCount }}
-  {{- end }}
   selector:
     matchLabels:
       {{- include "fincopilot.selectorLabels" . | nindent 6 }}
@@ -22,6 +20,7 @@ spec:
         {{- include "fincopilot.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: celery-worker
     spec:
+      terminationGracePeriodSeconds: {{ .Values.celeryWorker.terminationGracePeriodSeconds }}
       containers:
         - name: celery-worker
           image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
@@ -32,7 +31,9 @@ spec:
             - app.worker
             - worker
             - --loglevel=info
-            - --concurrency=2
+            - --hostname=worker@%h
+            - --concurrency={{ .Values.celeryWorker.concurrency }}
+            - --max-tasks-per-child={{ .Values.celeryWorker.maxTasksPerChild }}
           envFrom:
             - configMapRef:
                 name: {{ include "fincopilot.fullname" . }}-config
@@ -42,6 +43,26 @@ spec:
                 {{- else }}
                 name: {{ include "fincopilot.fullname" . }}-secrets
                 {{- end }}
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - 'celery -A app.worker inspect ping -d "worker@$HOSTNAME" --timeout=5 2>/dev/null | grep -q pong'
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - 'celery -A app.worker inspect ping -d "worker@$HOSTNAME" --timeout=5 2>/dev/null | grep -q pong'
+            initialDelaySeconds: 20
+            periodSeconds: 60
+            timeoutSeconds: 10
+            failureThreshold: 3
           volumeMounts:
             {{- if .Values.persistence.attachments.enabled }}
             - name: attachments

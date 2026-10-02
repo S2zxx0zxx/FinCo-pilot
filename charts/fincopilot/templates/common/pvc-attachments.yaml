@@ -1,4 +1,4 @@
-{{- if .Values.persistence.attachments.enabled }}
+{{- if and .Values.persistence.attachments.enabled (eq (lower (toString .Values.config.storageProvider)) "local") }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:

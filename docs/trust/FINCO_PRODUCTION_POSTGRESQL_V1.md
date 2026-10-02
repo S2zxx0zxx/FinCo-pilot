@@ -7,9 +7,9 @@ Contract ID: `FINCO_PRODUCTION_POSTGRESQL_V1`
 ## 1. Production topology
 
 FinCo-Pilot production defaults to an **external managed PostgreSQL 15+**
-service with pgvector available. Neon is compatible with this contract and is
-the preferred zero-cost bootstrap provider, but the runtime remains
-provider-neutral.
+service with pgvector available. **Neon Postgres is the selected roadmap #14
+zero-cost provider**, while the runtime remains provider-neutral so the
+deployment is not locked to one vendor.
 
 Development may keep the bundled `pgvector/pgvector:pg16` container. The
 production Compose database container is behind the explicit
@@ -107,9 +107,11 @@ The output contains only a sanitized host/database target and acceptance
 metadata. It never prints `DATABASE_URL`, passwords, roles, user rows, or
 financial data.
 
-## 6. Neon bootstrap profile
+## 6. Selected provider — Neon Postgres
 
-For a zero-cost early production database, create a dedicated Neon project in
+Neon Postgres is selected but remains release-gated until a real operator-owned
+project passes this contract. For the zero-cost early production database,
+create a dedicated Neon project in
 an appropriate region, use its **direct** PostgreSQL endpoint initially, and
 keep pgvector enabled through the existing Alembic migration.
 

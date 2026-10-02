@@ -1,3 +1,4 @@
+from typing import Any
 from urllib.parse import parse_qs, urlsplit
 
 import httpx
@@ -80,8 +81,8 @@ class _MemoryAsyncClient:
         return self._response("DELETE", url, 204 if existed else 404)
 
 
-def _r2_settings(**overrides) -> Settings:
-    values = {
+def _r2_settings(**overrides: Any) -> Settings:
+    values: dict[str, Any] = {
         "storage_provider": "s3",
         "storage_s3_vendor": "cloudflare_r2",
         "storage_s3_bucket": "finco-ci-private",

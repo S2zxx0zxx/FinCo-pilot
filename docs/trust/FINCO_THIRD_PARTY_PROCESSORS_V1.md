@@ -78,6 +78,9 @@ that classification from marketing pages. Every external personal-data boundary 
 | `managed_redis` | managed Redis if chosen | unresolved | yes | normally no raw finance | Redis credential | TTL/operator lifecycle | #15, #25, #26 |
 | `oidc_provider` | optional federated identity provider | unresolved | yes | no | OIDC client secret may exist | unresolved | #12, #27 |
 | `open_exchange_rates` | Open Exchange Rates | no product personal data by design | no | no | app ID only | N/A for product user data | #18 |
+| `yahoo_finance` | Yahoo Finance via yfinance | no product personal data by design | no | no | none | N/A for product user data | #12, #27 |
+| `tesouro_direto` | Tesouro Direto public reference source | no product personal data by design | no | no | none | N/A for product user data | #12, #27 |
+| `github_private_vulnerability_reporting` | GitHub Private Vulnerability Reporting | user-directed security reporting | yes, reporter supplied | no by design | no product secret should be requested | user-directed provider lifecycle | #7, #12, #27 |
 
 The registry contains the exact machine-readable fields and is authoritative if this
 table ever becomes stale.
@@ -363,6 +366,29 @@ Provider privacy source:
 If future code sends user-specific data, this classification must be re-reviewed.
 
 ### Public market/reference sources
+
+Yahoo Finance via `yfinance` and the Tesouro Direto public source are used for public
+market/reference lookups. Current code should keep those requests limited to symbols,
+public bond/reference identifiers and ordinary network metadata; it must not attach user
+IDs, account IDs, portfolio quantities or transaction history.
+
+Ticker/symbol queries can still reveal investment interests at the transport/provider
+layer, so these services remain inventoried even though current product design sends no
+primary personal-finance record.
+
+Any future code that adds user, portfolio or transaction context must reclassify the
+boundary before deployment.
+
+### GitHub Private Vulnerability Reporting
+
+The support architecture keeps security vulnerability reporting separate from normal
+customer support and may direct a reporter to GitHub Private Vulnerability Reporting.
+This is a user-directed security-reporting boundary, not a normal FinCo-Pilot support
+processor. Reporters may provide contact and technical reproduction details voluntarily;
+the product must not ask them for unnecessary financial records, passwords, tokens or
+other secrets.
+
+### Public market/reference rule
 
 Any public market/reference feed that receives only a generic public-data request should
 not be mislabeled as a personal-data processor. Network metadata still exists at the

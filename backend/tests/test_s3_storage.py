@@ -58,16 +58,20 @@ class _MemoryAsyncClient:
         if entry is None:
             return self._response("HEAD", url, 404)
         data, stored_headers = entry
+        response_headers = {
+            "content-length": str(len(data)),
+            "content-type": stored_headers.get(
+                "content-type", "application/octet-stream"
+            ),
+        }
+        checksum = stored_headers.get("x-amz-meta-fincopilot-sha256")
+        if checksum is not None:
+            response_headers["x-amz-meta-fincopilot-sha256"] = checksum
         return self._response(
             "HEAD",
             url,
             200,
-            headers={
-                "content-length": str(len(data)),
-                "content-type": stored_headers.get(
-                    "content-type", "application/octet-stream"
-                ),
-            },
+            headers=response_headers,
         )
 
     async def delete(self, url: str, headers: dict[str, str]):
@@ -145,6 +149,23 @@ async def test_download_rejects_checksum_mismatch(monkeypatch):
 
     with pytest.raises(StorageIntegrityError, match="checksum"):
         await provider.download("workspace/file.pdf")
+
+
+@pytest.mark.asyncio
+async def test_acceptance_head_rejects_missing_integrity_metadata(monkeypatch):
+    settings = _r2_settings()
+    monkeypatch.setattr("app.providers.s3_storage.get_settings", lambda: settings)
+    monkeypatch.setattr("app.providers.s3_storage.httpx.AsyncClient", _MemoryAsyncClient)
+
+    provider = S3StorageProvider()
+    await provider.upload("workspace/file.pdf", b"expected", "application/pdf")
+
+    url, (data, headers) = next(iter(_MemoryAsyncClient.objects.items()))
+    headers.pop("x-amz-meta-fincopilot-sha256", None)
+    _MemoryAsyncClient.objects[url] = (data, headers)
+
+    with pytest.raises(StorageIntegrityError, match="integrity metadata"):
+        await provider.verify_exists("workspace/file.pdf")
 
 
 def test_presigned_url_honors_bounded_ttl(monkeypatch):

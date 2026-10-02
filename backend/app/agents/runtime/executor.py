@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import os
 import time
 import uuid
 from dataclasses import dataclass
@@ -77,25 +76,26 @@ def _provider_for(agent: Agent):
     seam to inject a scripted provider. Production goes through
     `_provider_and_model_for` which prefers user-managed connections.
     """
-    name = agent.provider or os.getenv("AGENTS_DEFAULT_PROVIDER", "ollama")
+    settings = get_agent_settings()
+    name = agent.provider or settings.default_provider
     api_key = ""
     base_url = None
     if name == "openai":
-        api_key = os.getenv("AGENTS_OPENAI_API_KEY", "")
+        api_key = settings.openai_api_key.get_secret_value()
     elif name == "anthropic":
-        api_key = os.getenv("AGENTS_ANTHROPIC_API_KEY", "")
+        api_key = settings.anthropic_api_key.get_secret_value()
     elif name == "ollama":
-        base_url = os.getenv("AGENTS_OLLAMA_BASE_URL", "http://ollama:11434")
+        base_url = settings.ollama_base_url
     elif name == "openai_compatible":
-        api_key = os.getenv("AGENTS_OPENAI_COMPAT_API_KEY", "")
-        base_url = os.getenv("AGENTS_OPENAI_COMPAT_BASE_URL")
+        api_key = settings.openai_compat_api_key.get_secret_value()
+        base_url = settings.openai_compat_base_url or None
     return build_provider(name, api_key=api_key, base_url=base_url, model=agent.model)
 
 
 def _model_for(agent: Agent) -> str:
     if agent.model:
         return agent.model
-    return os.getenv("AGENTS_DEFAULT_MODEL", "")
+    return get_agent_settings().default_model
 
 
 async def _provider_and_model_for(session, agent: Agent):
@@ -122,7 +122,7 @@ async def _provider_and_model_for(session, agent: Agent):
 
     if conn is not None:
         provider = connection_service.build_provider_for_connection(conn)
-        model = agent.model or conn.default_model or os.getenv("AGENTS_DEFAULT_MODEL", "")
+        model = agent.model or conn.default_model or get_agent_settings().default_model
         return provider, model
 
     return _provider_for(agent), _model_for(agent)

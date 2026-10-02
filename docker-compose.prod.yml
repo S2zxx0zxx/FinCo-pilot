@@ -200,6 +200,7 @@ services:
     command: >-
       celery -A app.worker worker
       --loglevel=info
+      --hostname=worker@%h
       --concurrency=${CELERY_CONCURRENCY:-4}
       --max-tasks-per-child=${CELERY_MAX_TASKS_PER_CHILD:-200}
     healthcheck:

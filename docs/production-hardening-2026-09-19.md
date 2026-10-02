@@ -32,7 +32,7 @@ Branch: `fix/production-hardening-2026-09-19`.
 | F21 — metrics | Token-protected `/metrics`, bounded method/status labels and per-process uptime/request totals. Multiworker aggregation, alert rules, tracing and on-call routing remain operator work. |
 | F22 — app fallback | Global React render error boundary and useful unknown-route screen. Existing page/network errors remain separate. |
 | F23 — 2FA recovery | Ten cryptographically random one-use recovery codes; only hashes stored. Reissue requires password and current TOTP. Codes shown once. A consumed code cannot log in again. A lost authenticator can be replaced by disabling it with the password and a different unused recovery code, then enrolling a new device. All old recovery codes are invalidated. Second-factor mutations are serialized under a user row lock. |
-| F24 — policies/support/exit | **Partial.** Support & Trust Layer V1 plus roadmap #8 operator identity, #9 retention, #10 personal-account deletion behavior, #11 shared-workspace deletion policy, and #12 third-party processor inventory are now defined as engineering contracts. Provider activation remains deployment-specific: unresolved hosting/SMTP/object-storage/AI vendors must be named and accepted before production, and provider-side deletion/live smoke tests remain required where applicable. Privacy/Terms publication and executable deletion workflows remain open. A real direct Zoho Desk app-to-provider smoke test is still required to close roadmap #7 operationally. Do not publish invented legal promises or cascade-delete collaborators' financial data. |
+| F24 — policies/support/exit | **Partial.** Support & Trust Layer V1 plus roadmap #8 operator identity, #9 retention, #10 personal-account deletion behavior, #11 shared-workspace deletion policy, and #12 third-party processor/data-recipient inventory are defined as engineering contracts. Unresolved production vendors (hosting, SMTP, object storage, managed infrastructure, external AI) remain explicit release gates. Privacy/Terms publication and executable deletion/provider reconciliation remain open. A real direct Zoho Desk app-to-provider smoke test is still required to close roadmap #7 operationally. |
 | F25 — PWA | Existing shell/offline behavior retained. No offline financial editing/sync guarantee. Device installation, update and reconnect still require browser acceptance. |
 | F26 — safe-to-spend | New workspace-scoped conservative calculation and dashboard entry. Reserves full card debt, upcoming/pending debits, recurring projections and user-entered buffers/obligations. Blocks headline on incomplete review, stale/unconfirmed provider refresh, unsupported account types or missing recent FX. See limits below. |
 | F27 — loans/EMI | **Partial implementation verified.** Workspace loan plans, fixed-rate monthly amortization, manual paid-installment counts, optimistic concurrency, backup export and safe-to-spend reserves are implemented. Bank reconciliation, variable rates, fees, partial payments and principal prepayments remain open. |
@@ -65,7 +65,7 @@ Set secrets in the deployment secret manager / environment, **not in source cont
 | International banks | Credentials and redirect URLs for whichever existing supported connectors will actually be offered. Each needs connect, refresh, expired consent, retry, disconnect and duplicate-sync acceptance tests. |
 | India | Actual approved AA/FIU partner and sandbox/production access. A generic bank API key alone does not establish this integration. |
 | Billing | Merchant account/provider, recurring-payment enablement, exact monthly/annual plans, webhook secret, tax/refund/cancellation policy and test acceptance cases. |
-| Customer trust | Operator identity, retention and deletion-policy contracts, and the processor inventory are defined. Before production, resolve every TBD provider slot (hosting, SMTP, object storage, external AI) with the actual service/region/retention/deletion/contract facts; publish privacy/terms under #27/#28. Real operator-owned support and live provider acceptance remain operational requirements. |
+| Customer trust | Operator/company details, privacy/terms, **real operator-owned support address/portal**, retention and user/shared-workspace deletion rules. The support code path alone does not satisfy the operational contact requirement. |
 
 ## Deployment and rollback
 
@@ -220,10 +220,8 @@ Legal/provider review for this checkpoint:
   reference and India-residency anchor; exact operator classification still requires legal review.
 - DPDP Rules 6 and 8 are recorded as scheduled future requirements, not as already-operative
   October 2026 law: the notified 18-month commencement places them in May 2027.
-- Razorpay's current Payments merchant terms are now recorded with the broader 10-calendar-year
-  transaction/order-record obligation from the relevant order date when that contract applies.
-  A narrower device-specific India clause still mentions a six-month invoice/charge-slip minimum.
-  This provider-contract correction supersedes the older six-month-only checkpoint.
+- Razorpay's published India terms are recorded as a six-month invoice/charge-slip provider
+  requirement when that contract applies.
 - RBI Card-on-File restrictions are a storage prohibition, not a general retention period:
   FinCo-Pilot must not persist full card PAN/CVV.
 - Zoho Desk's current documentation records a 60-day default Recycle Bin window, supports
@@ -314,54 +312,33 @@ Roadmap #11 establishes policy only. Durable deletion jobs, provider calls, obje
 SQL hard-delete implementation and production E2E remain roadmap #30.
 
 
-## October 2 — Roadmap #12 third-party processor / data-recipient inventory
+## October 2 — Roadmap #12 third-party processor/data-recipient inventory
 
-Roadmap #11 shared-workspace deletion policy was verified merged on `main` at
+Roadmap #11 was verified merged on `main` at
 `a9c4f000e278aab9924c05130a3b18fcbc57eae2` before #12 began.
 
-Canonical inventory:
-`docs/trust/FINCO_THIRD_PARTY_PROCESSORS_V1.md`
-
-Machine-readable registry:
+Canonical machine-readable registry:
 `backend/app/core/processor_inventory.py`
+
+Human-readable contract:
+`docs/trust/FINCO_THIRD_PARTY_PROCESSOR_INVENTORY_V1.md`
 
 Regression coverage:
 `backend/tests/test_processor_inventory.py`
 
-The inventory deliberately does not guess that every vendor is legally a processor.
-External boundaries are classified technically and keep `contract_review_required`
-until the exact DPA/terms/service role is reviewed.
+The registry is deliberately legally neutral: it records technical data boundaries and
+release gates rather than guessing that every external service has the same legal role.
+Unknown provider keys fail closed. Selected services such as Zoho Desk and Razorpay remain
+release-gated until their live provider acceptance is complete.
 
-Selected but still release-gated:
-- Zoho Desk for customer support;
-- Razorpay Payments for checkout/subscriptions/billing.
+Core Copilot keeps operator-hosted OmniRoute separate from the unresolved external upstream
+model/search provider. User-configured Advanced Agent LLM endpoints and external MCP servers
+remain explicit user-directed boundaries and cannot silently become the Core route.
 
-Optional existing bank-data boundaries remain separately release-gated:
-- Pluggy;
-- Enable Banking;
-- SimpleFIN / the concrete selected SimpleFIN server.
+Hosting/logging, managed PostgreSQL/Redis, object storage, SMTP and optional OIDC remain
+unresolved until their roadmap items name the actual provider and verify region, retention,
+deletion, access and contract facts. Public reference-data services are separately classified
+and must be re-reviewed if future code starts sending user-specific data.
 
-Operator Core Copilot AI upstream remains **unresolved**. Operator-hosted OmniRoute is an
-internal routing boundary only; a model/search provider behind it is a separate external
-recipient and cannot become production-approved merely because it is configured locally.
-User-configured Advanced-Agent LLM endpoints and external MCP servers remain explicit
-user-directed boundaries and must never silently replace the Core Copilot route.
-
-Infrastructure provider names remain unresolved rather than fabricated: hosting/logging,
-managed PostgreSQL, managed Redis, object storage, SMTP and optional OIDC. Their later
-roadmap items must resolve the actual vendor, region, deletion/backup semantics and contract.
-
-A current-provider review found that Razorpay Payments merchant terms include a general
-10-calendar-year transaction/order-record retention obligation. The #9 machine-readable
-retention registry was therefore corrected with a separate
-`razorpay_transaction_order_records` calendar-year rule. This does not extend 10-year
-retention to unrelated FinCo-Pilot data and does not permit local PAN/CVV storage.
-
-Open Exchange Rates is recorded as an external service that receives no product personal
-or financial data by current application design: only the app credential, requested
-currency symbols and ordinary network metadata. Any future user-specific query payload
-would force re-review.
-
-#12 is an inventory/engineering gate only. It does not prove provider DPA execution,
-live provider deletion, production hosting/log residency, chosen SMTP/object-storage
-vendors, or published Privacy Policy. Those remain their later roadmap acceptance gates.
+#12 is an engineering inventory gate. It does not itself prove production DPA execution,
+provider-side deletion, production residency, or published Privacy/Terms text.

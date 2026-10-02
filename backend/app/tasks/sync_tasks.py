@@ -3,12 +3,12 @@ import logging
 import uuid
 from datetime import datetime, timedelta, timezone
 
-import redis.asyncio as redis_lib
 from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.config import get_settings
 from app.core.database_runtime import create_database_engine
+from app.core.redis_runtime import create_async_redis_client
 from app.models.bank_connection import BankConnection
 from app.providers import get_provider
 from app.providers.base import (
@@ -128,7 +128,15 @@ async def _sync_one_celery(
     user_uuid = uuid.UUID(user_id)
     lock_key = f"bank-sync:{connection_id}"
     lock_token = uuid.uuid4().hex
-    redis_client = redis_lib.from_url(settings.redis_url, decode_responses=True)
+    redis_client = create_async_redis_client(
+        settings.redis_url,
+        max_connections=settings.redis_max_connections,
+        socket_connect_timeout_seconds=settings.redis_socket_connect_timeout_seconds,
+        socket_timeout_seconds=settings.redis_socket_timeout_seconds,
+        health_check_interval_seconds=settings.redis_health_check_interval_seconds,
+        ssl_ca_file=settings.redis_ssl_ca_file,
+        client_name="fincopilot-bank-sync-worker",
+    )
 
     acquired = await redis_client.set(
         lock_key,

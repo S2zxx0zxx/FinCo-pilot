@@ -166,6 +166,87 @@ jobs:
           FINCO_DISPOSABLE_DB_TEST: "yes"
         run: python -m scripts.verify_mcp_approval_postgres
 
+  redis-worker-smoke:
+    name: Redis + Worker Smoke
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 12
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      REDIS_URL: redis://localhost:6379/0
+      REDIS_EXTERNAL_REQUIRED: "false"
+      REDIS_TLS_REQUIRED: "false"
+      REDIS_AUTH_REQUIRED: "false"
+      REDIS_MAX_CONNECTIONS: "10"
+      REDIS_SOCKET_CONNECT_TIMEOUT_SECONDS: "3"
+      REDIS_SOCKET_TIMEOUT_SECONDS: "3"
+      REDIS_HEALTH_CHECK_INTERVAL_SECONDS: "5"
+      CELERY_RESULT_EXPIRES_SECONDS: "600"
+      CELERY_VISIBILITY_TIMEOUT_SECONDS: "300"
+      CELERY_WORKER_PREFETCH_MULTIPLIER: "1"
+      SECRET_KEY: synthetic-ci-only-signing-key-not-for-deployment
+      DEPLOYMENT_ENVIRONMENT: development
+      AGENTS_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version-file: backend/.python-version
+      - name: Install locked runtime dependencies
+        run: |
+          pip install -q uv==0.12.10
+          uv export --frozen --no-emit-project -o /tmp/finco-runtime.txt
+          pip install --require-hashes -r /tmp/finco-runtime.txt
+          pip install --no-deps -e .
+      - name: Verify Redis runtime round-trip
+        run: python -m scripts.verify_production_redis --ci --redis-only
+      - name: Verify live Celery worker broker/result round-trip
+        run: |
+          set -euo pipefail
+          celery -A app.worker worker             --loglevel=warning             --concurrency=1             --hostname='ci@%h'             --without-gossip --without-mingle --without-heartbeat             >/tmp/finco-worker.log 2>&1 &
+          worker_pid=$!
+          trap 'kill -TERM "$worker_pid" 2>/dev/null || true; wait "$worker_pid" 2>/dev/null || true' EXIT
+
+          ready=false
+          for _ in $(seq 1 30); do
+            if celery -A app.worker inspect ping               -d "ci@$(hostname)" --timeout=1 2>/dev/null | grep -q pong; then
+              ready=true
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" != true ]; then
+            echo "Celery worker did not become ready" >&2
+            cat /tmp/finco-worker.log >&2
+            exit 1
+          fi
+
+          python -m scripts.verify_production_redis --ci --require-worker
+      - name: Verify Celery Beat starts as a singleton scheduler
+        run: |
+          set -euo pipefail
+          rm -f /tmp/finco-beat.pid /tmp/finco-beat-schedule*
+          celery -A app.worker beat             --loglevel=warning             --pidfile=/tmp/finco-beat.pid             --schedule=/tmp/finco-beat-schedule             >/tmp/finco-beat.log 2>&1 &
+          beat_pid=$!
+          trap 'kill -TERM "$beat_pid" 2>/dev/null || true; wait "$beat_pid" 2>/dev/null || true' EXIT
+          for _ in $(seq 1 15); do
+            if [ -s /tmp/finco-beat.pid ] && kill -0 "$beat_pid" 2>/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Celery Beat did not become healthy" >&2
+          cat /tmp/finco-beat.log >&2
+          exit 1
+
   migration-chain:
     name: Migration Chain
     runs-on: ubuntu-latest
@@ -286,6 +367,62 @@ jobs:
           fi
           grep -q "encrypted PostgreSQL transport" /tmp/production-db-tls-gate.log
 
+      - name: Verify production rejects bundled Redis
+        if: steps.helm-changes.outputs.run_helm == 'true'
+        run: |
+          set -euo pipefail
+          if helm template fincopilot-prod charts/fincopilot \
+            --set config.deploymentEnvironment=production \
+            --set global.existingSecret=synthetic-ci-existing-secret \
+            --set postgresql.enabled=false \
+            --set config.databaseExternalRequired=true \
+            --set config.dbSslMode=verify-full \
+            >/tmp/should-not-render-bundled-redis.yaml 2>/tmp/production-redis-gate.log; then
+            echo "Production unexpectedly rendered with bundled Redis enabled" >&2
+            exit 1
+          fi
+          grep -q "external Redis" /tmp/production-redis-gate.log
+
+      - name: Verify production rejects non-TLS Redis contract
+        if: steps.helm-changes.outputs.run_helm == 'true'
+        run: |
+          set -euo pipefail
+          if helm template fincopilot-prod charts/fincopilot \
+            --set config.deploymentEnvironment=production \
+            --set global.existingSecret=synthetic-ci-existing-secret \
+            --set postgresql.enabled=false \
+            --set config.databaseExternalRequired=true \
+            --set config.dbSslMode=verify-full \
+            --set redis.enabled=false \
+            --set config.redisExternalRequired=true \
+            --set config.redisTlsRequired=false \
+            --set config.redisAuthRequired=true \
+            >/tmp/should-not-render-insecure-redis.yaml 2>/tmp/production-redis-tls-gate.log; then
+            echo "Production unexpectedly rendered without Redis TLS" >&2
+            exit 1
+          fi
+          grep -q "redisTlsRequired=true" /tmp/production-redis-tls-gate.log
+
+      - name: Verify production rejects unauthenticated Redis contract
+        if: steps.helm-changes.outputs.run_helm == 'true'
+        run: |
+          set -euo pipefail
+          if helm template fincopilot-prod charts/fincopilot \
+            --set config.deploymentEnvironment=production \
+            --set global.existingSecret=synthetic-ci-existing-secret \
+            --set postgresql.enabled=false \
+            --set config.databaseExternalRequired=true \
+            --set config.dbSslMode=verify-full \
+            --set redis.enabled=false \
+            --set config.redisExternalRequired=true \
+            --set config.redisTlsRequired=true \
+            --set config.redisAuthRequired=false \
+            >/tmp/should-not-render-unauth-redis.yaml 2>/tmp/production-redis-auth-gate.log; then
+            echo "Production unexpectedly rendered without Redis authentication" >&2
+            exit 1
+          fi
+          grep -q "redisAuthRequired=true" /tmp/production-redis-auth-gate.log
+
       - name: Lint production contract with external Secret
         if: steps.helm-changes.outputs.run_helm == 'true'
         run: |
@@ -294,7 +431,11 @@ jobs:
             --set global.existingSecret=synthetic-ci-existing-secret \
             --set postgresql.enabled=false \
             --set config.databaseExternalRequired=true \
-            --set config.dbSslMode=verify-full
+            --set config.dbSslMode=verify-full \
+            --set redis.enabled=false \
+            --set config.redisExternalRequired=true \
+            --set config.redisTlsRequired=true \
+            --set config.redisAuthRequired=true
 
       - name: Validate Helm Chart with Kubeconform
         if: steps.helm-changes.outputs.run_helm == 'true'
@@ -309,4 +450,8 @@ jobs:
             --set postgresql.enabled=false \
             --set config.databaseExternalRequired=true \
             --set config.dbSslMode=verify-full \
+            --set redis.enabled=false \
+            --set config.redisExternalRequired=true \
+            --set config.redisTlsRequired=true \
+            --set config.redisAuthRequired=true \
             | kubeconform -summary -strict

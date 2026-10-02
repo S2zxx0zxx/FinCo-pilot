@@ -11,6 +11,11 @@ from app.providers.storage import StorageProvider, StoredFile
 
 _ALGORITHM = "AWS4-HMAC-SHA256"
 _SERVICE = "s3"
+_INTEGRITY_HEADER = "x-amz-meta-fincopilot-sha256"
+
+
+class StorageIntegrityError(RuntimeError):
+    """Stored bytes did not match FinCopilot upload-time integrity metadata."""
 
 
 def _sha256_hex(value: bytes) -> str:
@@ -36,15 +41,15 @@ def _canonical_uri(path: str) -> str:
 
 
 class S3StorageProvider(StorageProvider):
-    """S3-compatible attachment storage using the repo's existing HTTP stack.
+    """Private S3-compatible object storage with explicit SigV4.
 
-    This implementation deliberately avoids adding an AWS SDK dependency, so
-    the frozen ``uv.lock`` remains deterministic. Requests use AWS Signature V4
-    and work with AWS S3 plus path-style S3-compatible endpoints such as R2 or
-    MinIO when ``STORAGE_S3_ENDPOINT_URL`` is configured.
+    Roadmap #16 selects Cloudflare R2 for the zero-cost production path, while
+    this adapter intentionally stays S3-compatible so an operator can migrate
+    to AWS S3 or another private S3 endpoint without changing attachment rows.
 
-    Production deployments should use a bucket with server-side encryption,
-    versioning and lifecycle/retention configured at the storage-provider level.
+    Stored database keys are logical keys. STORAGE_S3_PREFIX is applied only at
+    the provider boundary, which keeps one bucket safely namespaced while
+    avoiding provider-specific identifiers in application records.
     """
 
     @property
@@ -67,22 +72,38 @@ class S3StorageProvider(StorageProvider):
     @staticmethod
     def _validate_key(storage_key: str) -> str:
         key = storage_key.strip().lstrip("/")
-        if not key or key == ".." or key.startswith("../") or "/../" in f"/{key}/":
+        if (
+            not key
+            or key == ".."
+            or key.startswith("../")
+            or "/../" in f"/{key}/"
+            or "\\..\\" in f"\\{key}\\"
+        ):
             raise ValueError("Invalid storage key")
         return key
 
     @classmethod
-    def _object_url(cls, key: str) -> str:
+    def _qualified_key(cls, storage_key: str) -> str:
+        key = cls._validate_key(storage_key)
+        prefix = cls._settings().storage_s3_prefix.strip().strip("/")
+        return f"{prefix}/{key}" if prefix else key
+
+    @classmethod
+    def _object_url(cls, qualified_key: str) -> str:
         settings = cls._settings()
         bucket = settings.storage_s3_bucket.strip()
         endpoint = settings.storage_s3_endpoint_url.strip().rstrip("/")
-        encoded_key = _canonical_uri("/" + key).lstrip("/")
+        encoded_key = _canonical_uri("/" + qualified_key).lstrip("/")
         if endpoint:
-            # Path-style is the most interoperable shape for R2/MinIO/custom
-            # S3 endpoints and avoids relying on wildcard bucket DNS.
+            # R2 and many private S3-compatible endpoints use path-style bucket
+            # addressing. Config validation requires a bare origin so a crafted
+            # endpoint cannot smuggle path/query material into the signature.
             return f"{endpoint}/{quote(bucket, safe='-_.~')}/{encoded_key}"
         region = settings.storage_s3_region.strip()
-        return f"https://{quote(bucket, safe='-_.~')}.s3.{region}.amazonaws.com/{encoded_key}"
+        return (
+            f"https://{quote(bucket, safe='-_.~')}.s3.{region}.amazonaws.com/"
+            f"{encoded_key}"
+        )
 
     @classmethod
     def _signing_key(cls, date_stamp: str) -> bytes:
@@ -129,7 +150,9 @@ class S3StorageProvider(StorageProvider):
                 payload_hash,
             ]
         )
-        scope = f"{date_stamp}/{settings.storage_s3_region.strip()}/{_SERVICE}/aws4_request"
+        scope = (
+            f"{date_stamp}/{settings.storage_s3_region.strip()}/{_SERVICE}/aws4_request"
+        )
         string_to_sign = "\n".join(
             [
                 _ALGORITHM,
@@ -146,61 +169,129 @@ class S3StorageProvider(StorageProvider):
 
         result = {k: v for k, v in headers.items() if k != "host"}
         result["Authorization"] = (
-            f"{_ALGORITHM} Credential={settings.storage_s3_access_key.get_secret_value().strip()}/{scope}, "
+            f"{_ALGORITHM} Credential="
+            f"{settings.storage_s3_access_key.get_secret_value().strip()}/{scope}, "
             f"SignedHeaders={signed_names}, Signature={signature}"
         )
         return result
 
-    async def upload(self, storage_key: str, data: bytes, content_type: str) -> StoredFile:
-        key = self._validate_key(storage_key)
-        url = self._object_url(key)
+    @classmethod
+    def _timeout(cls) -> httpx.Timeout:
+        seconds = float(cls._settings().storage_s3_request_timeout_seconds)
+        return httpx.Timeout(seconds, connect=min(seconds, 10.0))
+
+    async def upload(
+        self, storage_key: str, data: bytes, content_type: str
+    ) -> StoredFile:
+        logical_key = self._validate_key(storage_key)
+        qualified_key = self._qualified_key(logical_key)
+        url = self._object_url(qualified_key)
+        checksum = _sha256_hex(data)
         headers = self._signed_headers(
             "PUT",
             url,
             data,
-            {"content-type": content_type},
+            {
+                "content-type": content_type,
+                _INTEGRITY_HEADER: checksum,
+            },
         )
-        headers["Content-Type"] = content_type
-        async with httpx.AsyncClient(timeout=60.0) as client:
+        async with httpx.AsyncClient(
+            timeout=self._timeout(), follow_redirects=False
+        ) as client:
             response = await client.put(url, content=data, headers=headers)
         response.raise_for_status()
-        return StoredFile(storage_key=key, size=len(data), content_type=content_type)
+        return StoredFile(
+            storage_key=logical_key,
+            size=len(data),
+            content_type=content_type,
+        )
 
     async def download(self, storage_key: str) -> bytes:
-        key = self._validate_key(storage_key)
-        url = self._object_url(key)
+        logical_key = self._validate_key(storage_key)
+        url = self._object_url(self._qualified_key(logical_key))
         headers = self._signed_headers("GET", url, b"")
-        async with httpx.AsyncClient(timeout=60.0) as client:
+        async with httpx.AsyncClient(
+            timeout=self._timeout(), follow_redirects=False
+        ) as client:
             response = await client.get(url, headers=headers)
         if response.status_code == 404:
-            raise FileNotFoundError(f"File not found: {key}")
+            raise FileNotFoundError(f"File not found: {logical_key}")
         response.raise_for_status()
+
+        max_bytes = self._settings().storage_max_file_size_mb * 1024 * 1024
+        if len(response.content) > max_bytes:
+            raise StorageIntegrityError(
+                "Stored object exceeds the configured maximum size"
+            )
+
+        expected_checksum = response.headers.get(_INTEGRITY_HEADER)
+        if expected_checksum:
+            expected_checksum = expected_checksum.strip().lower()
+            actual_checksum = _sha256_hex(response.content)
+            if not hmac.compare_digest(expected_checksum, actual_checksum):
+                raise StorageIntegrityError(
+                    "Stored object checksum verification failed"
+                )
         return response.content
 
     async def delete(self, storage_key: str) -> None:
-        key = self._validate_key(storage_key)
-        url = self._object_url(key)
+        logical_key = self._validate_key(storage_key)
+        url = self._object_url(self._qualified_key(logical_key))
         headers = self._signed_headers("DELETE", url, b"")
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        async with httpx.AsyncClient(
+            timeout=self._timeout(), follow_redirects=False
+        ) as client:
             response = await client.delete(url, headers=headers)
         if response.status_code not in {200, 204, 404}:
             response.raise_for_status()
 
+    async def verify_exists(self, storage_key: str) -> StoredFile:
+        """HEAD an object without returning bytes; used by acceptance probes."""
+        logical_key = self._validate_key(storage_key)
+        url = self._object_url(self._qualified_key(logical_key))
+        headers = self._signed_headers("HEAD", url, b"")
+        async with httpx.AsyncClient(
+            timeout=self._timeout(), follow_redirects=False
+        ) as client:
+            response = await client.head(url, headers=headers)
+        if response.status_code == 404:
+            raise FileNotFoundError(f"File not found: {logical_key}")
+        response.raise_for_status()
+
+        try:
+            size = int(response.headers.get("content-length", "0"))
+        except ValueError as exc:
+            raise StorageIntegrityError(
+                "Storage returned an invalid Content-Length"
+            ) from exc
+        return StoredFile(
+            storage_key=logical_key,
+            size=size,
+            content_type=response.headers.get(
+                "content-type", "application/octet-stream"
+            ),
+        )
+
     def get_url(self, storage_key: str) -> str | None:
-        key = self._validate_key(storage_key)
+        logical_key = self._validate_key(storage_key)
         settings = self._settings()
-        url = self._object_url(key)
+        url = self._object_url(self._qualified_key(logical_key))
         parsed = urlsplit(url)
         now = datetime.now(timezone.utc)
         amz_date = now.strftime("%Y%m%dT%H%M%SZ")
         date_stamp = now.strftime("%Y%m%d")
-        scope = f"{date_stamp}/{settings.storage_s3_region.strip()}/{_SERVICE}/aws4_request"
-        credential = f"{settings.storage_s3_access_key.get_secret_value().strip()}/{scope}"
+        scope = (
+            f"{date_stamp}/{settings.storage_s3_region.strip()}/{_SERVICE}/aws4_request"
+        )
+        credential = (
+            f"{settings.storage_s3_access_key.get_secret_value().strip()}/{scope}"
+        )
         params = list(parse_qsl(parsed.query, keep_blank_values=True)) + [
             ("X-Amz-Algorithm", _ALGORITHM),
             ("X-Amz-Credential", credential),
             ("X-Amz-Date", amz_date),
-            ("X-Amz-Expires", "300"),
+            ("X-Amz-Expires", str(settings.storage_s3_presign_ttl_seconds)),
             ("X-Amz-SignedHeaders", "host"),
         ]
         canonical_qs = _canonical_query(params)
@@ -229,4 +320,6 @@ class S3StorageProvider(StorageProvider):
             hashlib.sha256,
         ).hexdigest()
         final_query = canonical_qs + "&X-Amz-Signature=" + signature
-        return urlunsplit((parsed.scheme, parsed.netloc, parsed.path, final_query, ""))
+        return urlunsplit(
+            (parsed.scheme, parsed.netloc, parsed.path, final_query, "")
+        )

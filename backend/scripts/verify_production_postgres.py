@@ -107,6 +107,9 @@ async def _run(ci_mode: bool) -> None:
                     "Production database migration head does not match the application release"
                 )
 
+            # SELECT statements above autobegin a transaction. End that
+            # read-only transaction before opening the isolated write probe.
+            await connection.rollback()
             transaction = await connection.begin()
             try:
                 await connection.execute(

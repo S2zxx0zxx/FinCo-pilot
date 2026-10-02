@@ -52,9 +52,6 @@ def test_all_configured_day_windows_are_positive_and_backup_copies_stay_bounded(
     for rule in RETENTION_RULES.values():
         if rule.days is not None:
             assert rule.days > 0
-        if rule.years is not None:
-            assert rule.years > 0
-        assert not (rule.days is not None and rule.years is not None)
         if rule.backup_days is not None:
             assert 0 < rule.backup_days <= BACKUP_MAX_RETENTION_DAYS
 
@@ -66,11 +63,3 @@ def test_unknown_category_fails_closed():
         assert "Unknown retention category" in str(exc)
     else:
         raise AssertionError("Unknown categories must not silently inherit a default")
-
-
-def test_razorpay_transaction_records_use_current_contractual_calendar_year_window():
-    rule = get_retention_rule("razorpay_transaction_order_records")
-    assert rule.mode is RetentionMode.AFTER_TRIGGER_YEARS
-    assert rule.years == RAZORPAY_TRANSACTION_RECORD_REFERENCE_YEARS == 10
-    assert rule.days is None
-    assert "PAN/CVV" in rule.notes

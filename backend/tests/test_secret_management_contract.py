@@ -44,6 +44,7 @@ def test_provider_credentials_require_revoke_and_replace_rotation():
     for name in (
         "RAZORPAY_KEY_SECRET", "ZOHO_DESK_CLIENT_SECRET", "ZOHO_DESK_REFRESH_TOKEN",
         "PLUGGY_CLIENT_SECRET", "OIDC_CLIENT_SECRET", "AGENTS_OPENAI_COMPAT_API_KEY",
+        "STORAGE_S3_ACCESS_KEY", "STORAGE_S3_SECRET_KEY",
     ):
         item = get_production_secret(name)
         assert item.provider_managed is True
@@ -56,6 +57,8 @@ def test_plaintext_prod_compose_guard_covers_unconditional_secrets():
     assert "DATABASE_URL" in forbidden
     assert "ZOHO_DESK_REFRESH_TOKEN" in forbidden
     assert "AGENTS_OPENAI_COMPAT_API_KEY" in forbidden
+    assert "STORAGE_S3_ACCESS_KEY" in forbidden
+    assert "STORAGE_S3_SECRET_KEY" in forbidden
     assert "REDIS_URL" in forbidden
 
 

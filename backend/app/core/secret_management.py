@@ -155,10 +155,13 @@ PRODUCTION_SECRETS: dict[str, ProductionSecret] = {
     "REDIS_URL": ProductionSecret(
         "REDIS_URL", "redis_url", SecretKind.CONNECTION_STRING,
         ("backend", "celery-worker", "celery-beat", "mcp-server"),
-        "Redis uses authentication or an external managed endpoint",
+        "every production deployment",
         RotationImpact.COORDINATED_INFRA_CHANGE, False,
-        forbid_plaintext_prod_compose=False,
-        notes="The current self-hosted passwordless internal URL may stay config-only until roadmap #15; authenticated URLs are secrets.",
+        notes=(
+            "Roadmap #15 treats the full Redis URL as secret because production "
+            "requires an authenticated external target; rotate endpoint credentials "
+            "and restart all Redis/Celery consumers together."
+        ),
     ),
 }
 

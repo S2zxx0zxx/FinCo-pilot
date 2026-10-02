@@ -5,9 +5,10 @@ from datetime import datetime, timedelta, timezone
 
 import redis.asyncio as redis_lib
 from sqlalchemy import and_, or_, select
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.config import get_settings
+from app.core.database_runtime import create_database_engine
 from app.models.bank_connection import BankConnection
 from app.providers import get_provider
 from app.providers.base import (
@@ -26,14 +27,7 @@ STALE_THRESHOLD = timedelta(hours=4)
 def _make_session_maker():
     """Create a fresh engine+session for the Celery worker event loop."""
     settings = get_settings()
-    engine = create_async_engine(
-        settings.database_url,
-        pool_pre_ping=True,
-        pool_size=settings.db_pool_size,
-        max_overflow=settings.db_max_overflow,
-        pool_timeout=settings.db_pool_timeout_seconds,
-        pool_recycle=settings.db_pool_recycle_seconds,
-    )
+    engine = create_database_engine(settings, short_lived=True)
     return engine, async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 

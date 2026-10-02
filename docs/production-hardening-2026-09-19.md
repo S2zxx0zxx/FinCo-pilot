@@ -396,7 +396,9 @@ Operator/acceptance contract:
 Safe acceptance probe:
 `backend/scripts/verify_production_postgres.py`
 
-Production is external-managed-PostgreSQL first. The application requires PostgreSQL 15+,
+Neon Postgres is the selected, release-gated zero-cost provider for roadmap #14, while the
+runtime remains provider-neutral. Production is external-managed-PostgreSQL first. The
+application requires PostgreSQL 15+,
 pgvector, explicit encrypted transport, bounded API pooling and finite connect/command/
 statement/idle-transaction timeouts. Managed-provider libpq TLS query parameters are removed
 before the URL reaches asyncpg; FinCo-Pilot applies one explicit TLS policy through the driver.

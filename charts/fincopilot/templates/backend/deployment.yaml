@@ -58,7 +58,7 @@ spec:
                 name: {{ include "fincopilot.fullname" . }}-secrets
                 {{- end }}
           volumeMounts:
-            {{- if .Values.persistence.attachments.enabled }}
+            {{- if and .Values.persistence.attachments.enabled (eq (lower (toString .Values.config.storageProvider)) "local") }}
             - name: attachments
               mountPath: /app/data/attachments
             {{- end }}
@@ -75,7 +75,7 @@ spec:
             {{- toYaml .Values.backend.resources | nindent 12 }}
           {{- end }}
       volumes:
-        {{- if .Values.persistence.attachments.enabled }}
+        {{- if and .Values.persistence.attachments.enabled (eq (lower (toString .Values.config.storageProvider)) "local") }}
         - name: attachments
           persistentVolumeClaim:
             claimName: {{ include "fincopilot.fullname" . }}-attachments

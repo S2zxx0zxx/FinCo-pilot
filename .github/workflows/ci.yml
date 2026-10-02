@@ -7,6 +7,14 @@ on:
     branches: [main]
 
 jobs:
+  secret-hygiene:
+    name: Secret Hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Reject tracked credentials and unsafe production injection
+        run: python3 backend/scripts/check_secret_hygiene.py
+
   backend-tests:
     name: Backend Tests
     runs-on: ubuntu-latest
@@ -218,6 +226,25 @@ jobs:
         if: steps.helm-changes.outputs.run_helm == 'true'
         run: helm lint charts/fincopilot
 
+      - name: Verify production requires an external Secret
+        if: steps.helm-changes.outputs.run_helm == 'true'
+        run: |
+          set -euo pipefail
+          if helm template fincopilot-prod charts/fincopilot \
+            --set config.deploymentEnvironment=production \
+            >/tmp/should-not-render.yaml 2>/tmp/production-secret-gate.log; then
+            echo "Production unexpectedly rendered without global.existingSecret" >&2
+            exit 1
+          fi
+          grep -q "global.existingSecret" /tmp/production-secret-gate.log
+
+      - name: Lint production contract with external Secret
+        if: steps.helm-changes.outputs.run_helm == 'true'
+        run: |
+          helm lint charts/fincopilot \
+            --set config.deploymentEnvironment=production \
+            --set global.existingSecret=synthetic-ci-existing-secret
+
       - name: Validate Helm Chart with Kubeconform
         if: steps.helm-changes.outputs.run_helm == 'true'
         run: |
@@ -225,3 +252,7 @@ jobs:
           sudo mv kubeconform /usr/local/bin/
 
           helm template fincopilot-test charts/fincopilot | kubeconform -summary -strict
+          helm template fincopilot-prod charts/fincopilot \
+            --set config.deploymentEnvironment=production \
+            --set global.existingSecret=synthetic-ci-existing-secret \
+            | kubeconform -summary -strict

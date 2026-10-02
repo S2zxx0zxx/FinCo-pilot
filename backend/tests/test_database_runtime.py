@@ -13,13 +13,16 @@ from app.core.database_runtime import (
 
 
 def _settings(**overrides):
-    return Settings(
-        database_url="postgresql://finco:secret@db.example.com:5432/fincopilot"
-        "?sslmode=require&channel_binding=require",
-        db_ssl_mode="verify-full",
-        database_external_required=True,
-        **overrides,
-    )
+    values = {
+        "database_url": (
+            "postgresql://finco:secret@db.example.com:5432/fincopilot"
+            "?sslmode=require&channel_binding=require"
+        ),
+        "db_ssl_mode": "verify-full",
+        "database_external_required": True,
+    }
+    values.update(overrides)
+    return Settings(**values)
 
 
 def test_managed_provider_url_is_normalized_for_asyncpg_without_leaking_password():

@@ -220,8 +220,10 @@ Legal/provider review for this checkpoint:
   reference and India-residency anchor; exact operator classification still requires legal review.
 - DPDP Rules 6 and 8 are recorded as scheduled future requirements, not as already-operative
   October 2026 law: the notified 18-month commencement places them in May 2027.
-- Razorpay's published India terms are recorded as a six-month invoice/charge-slip provider
-  requirement when that contract applies.
+- Razorpay's current Payments merchant terms are now recorded with the broader 10-calendar-year
+  transaction/order-record obligation from the relevant order date when that contract applies.
+  A narrower device-specific India clause still mentions a six-month invoice/charge-slip minimum.
+  This provider-contract correction supersedes the older six-month-only checkpoint.
 - RBI Card-on-File restrictions are a storage prohibition, not a general retention period:
   FinCo-Pilot must not persist full card PAN/CVV.
 - Zoho Desk's current documentation records a 60-day default Recycle Bin window, supports
@@ -310,3 +312,56 @@ failure remains visible/retriable and cannot be reported as complete.
 
 Roadmap #11 establishes policy only. Durable deletion jobs, provider calls, object reconciliation,
 SQL hard-delete implementation and production E2E remain roadmap #30.
+
+
+## October 2 — Roadmap #12 third-party processor / data-recipient inventory
+
+Roadmap #11 shared-workspace deletion policy was verified merged on `main` at
+`a9c4f000e278aab9924c05130a3b18fcbc57eae2` before #12 began.
+
+Canonical inventory:
+`docs/trust/FINCO_THIRD_PARTY_PROCESSORS_V1.md`
+
+Machine-readable registry:
+`backend/app/core/processor_inventory.py`
+
+Regression coverage:
+`backend/tests/test_processor_inventory.py`
+
+The inventory deliberately does not guess that every vendor is legally a processor.
+External boundaries are classified technically and keep `contract_review_required`
+until the exact DPA/terms/service role is reviewed.
+
+Selected but still release-gated:
+- Zoho Desk for customer support;
+- Razorpay Payments for checkout/subscriptions/billing.
+
+Optional existing bank-data boundaries remain separately release-gated:
+- Pluggy;
+- Enable Banking;
+- SimpleFIN / the concrete selected SimpleFIN server.
+
+Operator Core Copilot AI upstream remains **unresolved**. Operator-hosted OmniRoute is an
+internal routing boundary only; a model/search provider behind it is a separate external
+recipient and cannot become production-approved merely because it is configured locally.
+User-configured Advanced-Agent LLM endpoints and external MCP servers remain explicit
+user-directed boundaries and must never silently replace the Core Copilot route.
+
+Infrastructure provider names remain unresolved rather than fabricated: hosting/logging,
+managed PostgreSQL, managed Redis, object storage, SMTP and optional OIDC. Their later
+roadmap items must resolve the actual vendor, region, deletion/backup semantics and contract.
+
+A current-provider review found that Razorpay Payments merchant terms include a general
+10-calendar-year transaction/order-record retention obligation. The #9 machine-readable
+retention registry was therefore corrected with a separate
+`razorpay_transaction_order_records` calendar-year rule. This does not extend 10-year
+retention to unrelated FinCo-Pilot data and does not permit local PAN/CVV storage.
+
+Open Exchange Rates is recorded as an external service that receives no product personal
+or financial data by current application design: only the app credential, requested
+currency symbols and ordinary network metadata. Any future user-specific query payload
+would force re-review.
+
+#12 is an inventory/engineering gate only. It does not prove provider DPA execution,
+live provider deletion, production hosting/log residency, chosen SMTP/object-storage
+vendors, or published Privacy Policy. Those remain their later roadmap acceptance gates.

@@ -7,7 +7,7 @@
 
 This document is the canonical retention contract for FinCo-Pilot. It is not generic privacy copy and it is not a claim that every deletion path is already implemented. It maps the stores that exist in the repository today, states the intended lifecycle for each category, and records the gaps later roadmap items must close.
 
-Roadmap #12 maintains the canonical external-service/processor register in `docs/trust/processor_inventory.v1.json` with the human-readable contract in `FINCO_THIRD_PARTY_PROCESSOR_INVENTORY_V1.md`. Any provider-side copy governed by that inventory must satisfy this retention contract before production activation.
+Roadmap #12 maintains the canonical external-service/processor register in `backend/app/core/processor_inventory.py` with the human-readable contract in `FINCO_THIRD_PARTY_PROCESSOR_INVENTORY_V1.md`. Any provider-side copy governed by that inventory must satisfy this retention contract before production activation.
 
 ## 1. Policy principles
 

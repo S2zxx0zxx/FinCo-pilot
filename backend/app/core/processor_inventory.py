@@ -92,8 +92,8 @@ THIRD_PARTY_BOUNDARIES: dict[str, ThirdPartyBoundary] = {
         deletion=DeletionExpectation.PROVIDER_DELETE,
         roadmap_gates=(7, 12, 27, 29),
         public_docs=(
-            "https://help.zoho.com/portal/en/kb/desk/user-management-and-security/data-security/articles/data-retention",
-            "https://help.zoho.com/portal/en/kb/desk/data-administration/recycle-bin/articles/using-the-recycle-bin",
+            "https://help.zoho.com/portal/en/kb/desk/user-management-and-security/"\n            "data-security/articles/data-retention",
+            "https://help.zoho.com/portal/en/kb/desk/data-administration/recycle-bin/"\n            "articles/using-the-recycle-bin",
         ),
         notes=(
             "Selected support system. Direct FinCo-Pilot-to-Zoho acceptance and replacement "
@@ -105,7 +105,7 @@ THIRD_PARTY_BOUNDARIES: dict[str, ThirdPartyBoundary] = {
         key="razorpay",
         service="Razorpay Payments",
         status=BoundaryStatus.SELECTED_RELEASE_GATED,
-        purpose="payment order, checkout, payment verification, subscriptions, refunds, and billing evidence",
+        purpose=(\n            "payment order, checkout, payment verification, subscriptions, refunds, "\n            "and billing evidence"\n        ),
         data_classes=(
             "customer_contact",
             "order_and_payment_identifiers",
@@ -310,7 +310,7 @@ THIRD_PARTY_BOUNDARIES: dict[str, ThirdPartyBoundary] = {
         legal_role=LegalRoleStatus.CONTRACT_REVIEW_REQUIRED,
         deletion=DeletionExpectation.OPERATOR_INFRA_LIFECYCLE,
         roadmap_gates=(12, 16, 25, 29, 30),
-        notes="Provider is not selected. Object deletion and backup/versioning semantics require live acceptance.",
+        notes=(\n            "Provider is not selected. Object deletion and backup/versioning semantics "\n            "require live acceptance."\n        ),
     ),
     "hosting_logging_provider": ThirdPartyBoundary(
         key="hosting_logging_provider",
@@ -341,7 +341,7 @@ THIRD_PARTY_BOUNDARIES: dict[str, ThirdPartyBoundary] = {
         legal_role=LegalRoleStatus.CONTRACT_REVIEW_REQUIRED,
         deletion=DeletionExpectation.OPERATOR_INFRA_LIFECYCLE,
         roadmap_gates=(12, 14, 25, 26),
-        notes="Not a third party when self-hosted; vendor remains unresolved if a managed database is selected.",
+        notes=(\n            "Not a third party when self-hosted; vendor remains unresolved if a managed "\n            "database is selected."\n        ),
     ),
     "managed_redis": ThirdPartyBoundary(
         key="managed_redis",
@@ -355,7 +355,7 @@ THIRD_PARTY_BOUNDARIES: dict[str, ThirdPartyBoundary] = {
         legal_role=LegalRoleStatus.CONTRACT_REVIEW_REQUIRED,
         deletion=DeletionExpectation.OPERATOR_INFRA_LIFECYCLE,
         roadmap_gates=(12, 15, 25, 26),
-        notes="Not a third party when self-hosted; ephemeral state must retain explicit TTLs and stay out of backups.",
+        notes=(\n            "Not a third party when self-hosted; ephemeral state must retain explicit TTLs "\n            "and stay out of backups."\n        ),
     ),
     "oidc_provider": ThirdPartyBoundary(
         key="oidc_provider",
@@ -369,7 +369,7 @@ THIRD_PARTY_BOUNDARIES: dict[str, ThirdPartyBoundary] = {
         legal_role=LegalRoleStatus.CONTRACT_REVIEW_REQUIRED,
         deletion=DeletionExpectation.UNRESOLVED,
         roadmap_gates=(12, 27),
-        notes="No production OIDC provider is selected; local authentication can operate without this boundary.",
+        notes=(\n            "No production OIDC provider is selected; local authentication can operate "\n            "without this boundary."\n        ),
     ),
     "open_exchange_rates": ThirdPartyBoundary(
         key="open_exchange_rates",

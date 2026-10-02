@@ -160,7 +160,19 @@ config:
   celeryVisibilityTimeoutSeconds: "3600"
   celeryWorkerPrefetchMultiplier: "1"
 
+  # Object storage. Development remains local-friendly; production Helm
+  # validation requires the selected private Cloudflare R2 contract.
+  storageProvider: "local"
+  requireObjectStorage: "false"
   storageLocalPath: "/app/data/attachments"
+  storageS3Vendor: "generic"
+  storageS3Bucket: ""
+  storageS3Region: ""
+  storageS3EndpointUrl: ""
+  storageS3Prefix: "fincopilot"
+  storageS3RequestTimeoutSeconds: "30"
+  storageS3PresignTtlSeconds: "300"
+
   agentsKnowledgeStoragePath: "/app/data/agent_knowledge"
 
   # Agents feature

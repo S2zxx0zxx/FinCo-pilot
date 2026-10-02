@@ -1,3 +1,4 @@
+import logging
 import re
 import uuid
 
@@ -8,6 +9,9 @@ from app.core.config import get_settings
 from app.models.transaction import Transaction
 from app.models.transaction_attachment import TransactionAttachment
 from app.providers import get_storage_provider
+
+
+logger = logging.getLogger(__name__)
 
 
 def sanitize_filename(filename: str) -> str:
@@ -96,7 +100,21 @@ async def upload_attachment(
         size=stored.size,
     )
     session.add(attachment)
-    await session.commit()
+    try:
+        await session.commit()
+    except Exception:
+        # The object was written before the relational row. If the database
+        # commit fails, remove the just-written object so retries do not leave
+        # an unreachable blob. Failure to clean up is logged without the key;
+        # roadmap #29/#30 still own durable deletion/reconciliation jobs.
+        await session.rollback()
+        try:
+            await storage.delete(stored.storage_key)
+        except Exception:
+            logger.exception(
+                "Failed to remove transaction attachment after database commit failure"
+            )
+        raise
     await session.refresh(attachment)
     return attachment
 

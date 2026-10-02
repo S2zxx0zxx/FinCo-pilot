@@ -426,10 +426,6 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "Production DATABASE_URL cannot use the shipped default credentials/localhost"
                 )
-            if self.database_external_required and self.db_ssl_mode == "require":
-                # Allowed for providers that document it, but verify-full is the
-                # production template default because it validates CA + hostname.
-                pass
 
             if self.setup_enabled and not self.setup_token.get_secret_value().strip():
                 raise ValueError(

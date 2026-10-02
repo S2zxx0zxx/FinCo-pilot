@@ -1,3 +1,7 @@
+from pydantic import SecretStr
+
+from app.agents.config import AgentSettings
+from app.core.config import Settings
 from app.core.secret_management import (
     INVENTORY_ID,
     PRODUCTION_SECRETS,
@@ -62,3 +66,14 @@ def test_unknown_secret_fails_closed():
         assert "Unknown production secret" in str(exc)
     else:
         raise AssertionError("Unknown secret names must not silently inherit a policy")
+
+
+
+def test_every_typed_runtime_secret_is_in_the_canonical_inventory():
+    for field_name, field in Settings.model_fields.items():
+        if field.annotation is SecretStr:
+            assert field_name.upper() in PRODUCTION_SECRETS, field_name
+
+    for field_name, field in AgentSettings.model_fields.items():
+        if field.annotation is SecretStr:
+            assert f"AGENTS_{field_name.upper()}" in PRODUCTION_SECRETS, field_name

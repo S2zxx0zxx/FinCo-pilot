@@ -5,7 +5,7 @@
 **Version:** 2026-10-01  
 **Status:** engineering policy contract; runtime purge/deletion workflows are intentionally deferred to roadmap #10, #11, #25, #29 and #30.
 
-This document is the canonical retention contract for FinCo-Pilot. It is not generic privacy copy and it is not a claim that every deletion path is already implemented. It maps the stores that exist in the repository today, states the intended lifecycle for each category, and records the gaps later roadmap items must close.
+This document is the canonical retention contract for FinCo-Pilot. It is not generic privacy copy and it is not a claim that every deletion path is already implemented. It maps the stores that exist in the repository today, states the intended lifecycle for each category, and records the gaps later roadmap items must close.\n\nRoadmap #12 maintains the canonical external-service/data-recipient register in `backend/app/core/processor_inventory.py`; see `FINCO_THIRD_PARTY_PROCESSOR_INVENTORY_V1.md`. Provider-side copies must be reconciled with this retention contract before production activation.
 
 ## 1. Policy principles
 

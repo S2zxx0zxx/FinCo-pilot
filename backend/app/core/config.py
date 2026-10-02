@@ -538,9 +538,13 @@ class Settings(BaseSettings):
                     "Production METRICS_ENABLED=true requires a high-entropy METRICS_TOKEN"
                 )
 
-            if self.require_object_storage and self.storage_provider != "s3":
+            if not self.require_object_storage:
                 raise ValueError(
-                    "Production REQUIRE_OBJECT_STORAGE=true requires STORAGE_PROVIDER=s3"
+                    "Production requires REQUIRE_OBJECT_STORAGE=true"
+                )
+            if self.storage_provider != "s3":
+                raise ValueError(
+                    "Production requires STORAGE_PROVIDER=s3"
                 )
 
         db_url = urlsplit(self.database_url)

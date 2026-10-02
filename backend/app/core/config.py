@@ -62,10 +62,22 @@ class Settings(BaseSettings):
 
     # Database
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/fincopilot"
+    # Roadmap #14 production PostgreSQL runtime. Development may use the bundled
+    # local database; production deployment templates require an external target.
+    database_external_required: bool = False
+    db_ssl_mode: str = "prefer"  # disable|prefer|require|verify-ca|verify-full
+    db_ssl_ca_file: str = ""
+    db_pool_mode: str = "queue"  # queue|null
     db_pool_size: int = 10
     db_max_overflow: int = 20
     db_pool_timeout_seconds: int = 30
     db_pool_recycle_seconds: int = 1800
+    db_connect_timeout_seconds: int = 10
+    db_command_timeout_seconds: int = 30
+    db_statement_timeout_ms: int = 30_000
+    db_idle_transaction_timeout_ms: int = 30_000
+    db_prepared_statement_cache_size: int = 100
+    db_application_name: str = "fincopilot"
 
     # Auth
     secret_key: SecretStr = SecretStr("change-me-in-production")
@@ -414,6 +426,10 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "Production DATABASE_URL cannot use the shipped default credentials/localhost"
                 )
+            if self.database_external_required and self.db_ssl_mode == "require":
+                # Allowed for providers that document it, but verify-full is the
+                # production template default because it validates CA + hostname.
+                pass
 
             if self.setup_enabled and not self.setup_token.get_secret_value().strip():
                 raise ValueError(
@@ -455,10 +471,43 @@ class Settings(BaseSettings):
                     "Production REQUIRE_OBJECT_STORAGE=true requires STORAGE_PROVIDER=s3"
                 )
 
+        db_url = urlsplit(self.database_url)
+        if db_url.scheme not in {"postgresql", "postgresql+asyncpg"}:
+            raise ValueError("DATABASE_URL must use PostgreSQL with the asyncpg runtime")
+        if not db_url.hostname or not db_url.path.strip("/"):
+            raise ValueError("DATABASE_URL must include a PostgreSQL host and database name")
+        if self.db_ssl_mode not in {"disable", "prefer", "require", "verify-ca", "verify-full"}:
+            raise ValueError(
+                "DB_SSL_MODE must be disable, prefer, require, verify-ca, or verify-full"
+            )
+        if self.db_pool_mode not in {"queue", "null"}:
+            raise ValueError("DB_POOL_MODE must be queue or null")
+        if self.database_external_required:
+            local_database_hosts = {
+                "localhost", "127.0.0.1", "::1", "db", "postgres", "postgresql"
+            }
+            if (db_url.hostname or "").lower() in local_database_hosts:
+                raise ValueError(
+                    "DATABASE_EXTERNAL_REQUIRED=true requires an external PostgreSQL host"
+                )
+            if self.db_ssl_mode not in {"require", "verify-ca", "verify-full"}:
+                raise ValueError(
+                    "DATABASE_EXTERNAL_REQUIRED=true requires DB_SSL_MODE=require, "
+                    "verify-ca, or verify-full"
+                )
+
         if self.db_pool_size < 1 or self.db_max_overflow < 0:
             raise ValueError("Database pool sizes must be non-negative and DB_POOL_SIZE must be >= 1")
         if self.db_pool_timeout_seconds < 1 or self.db_pool_recycle_seconds < 1:
             raise ValueError("Database pool timeout/recycle values must be positive")
+        if self.db_connect_timeout_seconds < 1 or self.db_command_timeout_seconds < 1:
+            raise ValueError("Database connect/command timeouts must be positive")
+        if self.db_statement_timeout_ms < 1000 or self.db_idle_transaction_timeout_ms < 1000:
+            raise ValueError("Database statement/idle transaction timeouts must be at least 1000 ms")
+        if not 0 <= self.db_prepared_statement_cache_size <= 10_000:
+            raise ValueError("DB_PREPARED_STATEMENT_CACHE_SIZE must be between 0 and 10000")
+        if not self.db_application_name.strip() or len(self.db_application_name) > 63:
+            raise ValueError("DB_APPLICATION_NAME must be 1-63 characters")
         if self.bank_sync_lock_ttl_seconds < 60:
             raise ValueError("BANK_SYNC_LOCK_TTL_SECONDS must be at least 60 seconds")
         if not 120 <= self.billing_offer_reservation_ttl_seconds <= 1800:

@@ -4,10 +4,11 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from sqlalchemy import select, or_
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.worker import celery_app
 from app.core.config import get_settings
+from app.core.database_runtime import create_database_engine
 from app.models.transaction import Transaction
 from app.models.recurring_transaction import RecurringTransaction
 from app.models.asset import Asset
@@ -18,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 def _make_session_maker():
     settings = get_settings()
-    engine = create_async_engine(settings.database_url)
+    engine = create_database_engine(settings, short_lived=True)
     return engine, async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 

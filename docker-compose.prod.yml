@@ -244,6 +244,7 @@ secrets:
 
 volumes:
   pgdata:
+  redis_data:
   attachments:
   agent_knowledge:
   agent_embedding_models:

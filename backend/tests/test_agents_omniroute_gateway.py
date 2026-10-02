@@ -3,6 +3,7 @@ from typing import cast
 
 import pytest
 
+from app.agents.config import get_agent_settings
 from app.agents.models.agent import Agent
 
 from app.agents.providers.openai_compatible import OpenAICompatibleProvider
@@ -21,6 +22,7 @@ def test_omniroute_gateway_env_uses_openai_compatible_transport(monkeypatch):
     monkeypatch.setenv("AGENTS_OPENAI_COMPAT_API_KEY", "omniroute-test-key")
     monkeypatch.setenv("AGENTS_DEFAULT_MODEL", "fincopilot-free-smart")
 
+    get_agent_settings.cache_clear()
     agent = cast(Agent, SimpleNamespace(provider=None, model=None))
     provider = _provider_for(agent)
 
@@ -33,6 +35,7 @@ def test_omniroute_gateway_env_uses_openai_compatible_transport(monkeypatch):
 def test_agent_model_cannot_be_replaced_by_gateway_default(monkeypatch):
     """An explicit per-agent model stays authoritative over the env default."""
     monkeypatch.setenv("AGENTS_DEFAULT_MODEL", "fincopilot-free-smart")
+    get_agent_settings.cache_clear()
     agent = cast(Agent, SimpleNamespace(provider="openai_compatible", model="fincopilot-free-smart"))
 
     assert _model_for(agent) == "fincopilot-free-smart"
@@ -53,6 +56,8 @@ async def test_core_copilot_uses_operator_route_not_user_default_connection(
     monkeypatch.setenv("AGENTS_OPENAI_COMPAT_BASE_URL", "https://ai.example.test/v1")
     monkeypatch.setenv("AGENTS_OPENAI_COMPAT_API_KEY", "omniroute-test-key")
     monkeypatch.setenv("AGENTS_DEFAULT_MODEL", "fincopilot-free-smart")
+
+    get_agent_settings.cache_clear()
 
     async def _must_not_read_user_default(*args, **kwargs):
         raise AssertionError("core Copilot must not resolve a user default LLM connection")

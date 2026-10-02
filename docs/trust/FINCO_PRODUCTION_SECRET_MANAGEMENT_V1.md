@@ -123,6 +123,17 @@ always secret material. Compose reads it from `/run/secrets/redis_url`; Helm
 reads `REDIS_URL` from the operator-managed existing Secret. See
 [`FINCO_PRODUCTION_REDIS_WORKERS_V1.md`](./FINCO_PRODUCTION_REDIS_WORKERS_V1.md).
 
+Cloudflare R2 is the selected roadmap #16 object-storage provider. Its S3
+Access Key ID and Secret Access Key remain provider credentials even though the
+first value is named "access key". Production Compose reads them from
+`/run/secrets/storage_s3_access_key` and
+`/run/secrets/storage_s3_secret_key`; Kubernetes reads the uppercase names
+from the operator-managed existing Secret. Rotate both as one provider
+credential set and run
+`python -m scripts.verify_production_object_storage` before revoking the old
+set. See
+[`FINCO_PRODUCTION_OBJECT_STORAGE_V1.md`](./FINCO_PRODUCTION_OBJECT_STORAGE_V1.md).
+
 The machine-readable inventory is authoritative if this table ever drifts.
 
 ## 4. Source precedence and why production Compose changed

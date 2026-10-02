@@ -32,7 +32,7 @@ Branch: `fix/production-hardening-2026-09-19`.
 | F21 — metrics | Token-protected `/metrics`, bounded method/status labels and per-process uptime/request totals. Multiworker aggregation, alert rules, tracing and on-call routing remain operator work. |
 | F22 — app fallback | Global React render error boundary and useful unknown-route screen. Existing page/network errors remain separate. |
 | F23 — 2FA recovery | Ten cryptographically random one-use recovery codes; only hashes stored. Reissue requires password and current TOTP. Codes shown once. A consumed code cannot log in again. A lost authenticator can be replaced by disabling it with the password and a different unused recovery code, then enrolling a new device. All old recovery codes are invalidated. Second-factor mutations are serialized under a user row lock. |
-| F24 — policies/support/exit | **Partial.** The Support & Trust Layer V1 provides public support discovery, authenticated structured ticket submission, safe request correlation, severity-first routing, security-reporting separation, provider-secret isolation, and Docker/Helm configuration. Roadmap #8 operator/business identity is now defined through a canonical backend/deployment contract: FinCo-Pilot brand, individual operator, India, with no incorporation claim and no legal name published unless deliberately configured. Privacy/retention/processor details, Terms, and shared-workspace deletion policy remain open. A real direct Zoho Desk app-to-provider smoke test is still required to close roadmap #7 operationally. Do not publish invented legal promises or cascade-delete collaborators' financial data. |
+| F24 — policies/support/exit | **Partial.** Support & Trust Layer V1 plus roadmap #8 operator identity, #9 retention, #10 personal-account deletion behavior, #11 shared-workspace deletion policy, and #12 third-party processor/data-recipient inventory are defined as engineering contracts. Unresolved production vendors (hosting, SMTP, object storage, managed infrastructure, external AI) remain explicit release gates. Privacy/Terms publication and executable deletion/provider reconciliation remain open. A real direct Zoho Desk app-to-provider smoke test is still required to close roadmap #7 operationally. |
 | F25 — PWA | Existing shell/offline behavior retained. No offline financial editing/sync guarantee. Device installation, update and reconnect still require browser acceptance. |
 | F26 — safe-to-spend | New workspace-scoped conservative calculation and dashboard entry. Reserves full card debt, upcoming/pending debits, recurring projections and user-entered buffers/obligations. Blocks headline on incomplete review, stale/unconfirmed provider refresh, unsupported account types or missing recent FX. See limits below. |
 | F27 — loans/EMI | **Partial implementation verified.** Workspace loan plans, fixed-rate monthly amortization, manual paid-installment counts, optimistic concurrency, backup export and safe-to-spend reserves are implemented. Bank reconciliation, variable rates, fees, partial payments and principal prepayments remain open. |
@@ -310,3 +310,35 @@ failure remains visible/retriable and cannot be reported as complete.
 
 Roadmap #11 establishes policy only. Durable deletion jobs, provider calls, object reconciliation,
 SQL hard-delete implementation and production E2E remain roadmap #30.
+
+
+## October 2 — Roadmap #12 third-party processor/data-recipient inventory
+
+Roadmap #11 was verified merged on `main` at
+`a9c4f000e278aab9924c05130a3b18fcbc57eae2` before #12 began.
+
+Canonical machine-readable registry:
+`backend/app/core/processor_inventory.py`
+
+Human-readable contract:
+`docs/trust/FINCO_THIRD_PARTY_PROCESSOR_INVENTORY_V1.md`
+
+Regression coverage:
+`backend/tests/test_processor_inventory.py`
+
+The registry is deliberately legally neutral: it records technical data boundaries and
+release gates rather than guessing that every external service has the same legal role.
+Unknown provider keys fail closed. Selected services such as Zoho Desk and Razorpay remain
+release-gated until their live provider acceptance is complete.
+
+Core Copilot keeps operator-hosted OmniRoute separate from the unresolved external upstream
+model/search provider. User-configured Advanced Agent LLM endpoints and external MCP servers
+remain explicit user-directed boundaries and cannot silently become the Core route.
+
+Hosting/logging, managed PostgreSQL/Redis, object storage, SMTP and optional OIDC remain
+unresolved until their roadmap items name the actual provider and verify region, retention,
+deletion, access and contract facts. Public reference-data services are separately classified
+and must be re-reviewed if future code starts sending user-specific data.
+
+#12 is an engineering inventory gate. It does not itself prove production DPA execution,
+provider-side deletion, production residency, or published Privacy/Terms text.

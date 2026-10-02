@@ -1,3 +1,6 @@
+{{- $localAttachments := and .Values.persistence.attachments.enabled (eq (lower (toString .Values.config.storageProvider)) "local") -}}
+{{- $agentKnowledge := and (eq (.Values.config.agentsEnabled | toString) "true") .Values.persistence.agentKnowledge.enabled -}}
+{{- $agentEmbeddings := and (eq (.Values.config.agentsEnabled | toString) "true") .Values.persistence.agentEmbeddingModels.enabled -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -57,36 +60,40 @@ spec:
                 {{- else }}
                 name: {{ include "fincopilot.fullname" . }}-secrets
                 {{- end }}
+          {{- if or $localAttachments $agentKnowledge $agentEmbeddings }}
           volumeMounts:
-            {{- if and .Values.persistence.attachments.enabled (eq (lower (toString .Values.config.storageProvider)) "local") }}
+            {{- if $localAttachments }}
             - name: attachments
               mountPath: /app/data/attachments
             {{- end }}
-            {{- if and (eq (.Values.config.agentsEnabled | toString) "true") .Values.persistence.agentKnowledge.enabled }}
+            {{- if $agentKnowledge }}
             - name: agent-knowledge
               mountPath: /app/data/agent_knowledge
             {{- end }}
-            {{- if and (eq (.Values.config.agentsEnabled | toString) "true") .Values.persistence.agentEmbeddingModels.enabled }}
+            {{- if $agentEmbeddings }}
             - name: agent-embedding-models
               mountPath: /app/data/embedding_models
             {{- end }}
+          {{- end }}
           {{- if .Values.backend.resources }}
           resources:
             {{- toYaml .Values.backend.resources | nindent 12 }}
           {{- end }}
+      {{- if or $localAttachments $agentKnowledge $agentEmbeddings }}
       volumes:
-        {{- if and .Values.persistence.attachments.enabled (eq (lower (toString .Values.config.storageProvider)) "local") }}
+        {{- if $localAttachments }}
         - name: attachments
           persistentVolumeClaim:
             claimName: {{ include "fincopilot.fullname" . }}-attachments
         {{- end }}
-        {{- if and (eq (.Values.config.agentsEnabled | toString) "true") .Values.persistence.agentKnowledge.enabled }}
+        {{- if $agentKnowledge }}
         - name: agent-knowledge
           persistentVolumeClaim:
             claimName: {{ include "fincopilot.fullname" . }}-agent-knowledge
         {{- end }}
-        {{- if and (eq (.Values.config.agentsEnabled | toString) "true") .Values.persistence.agentEmbeddingModels.enabled }}
+        {{- if $agentEmbeddings }}
         - name: agent-embedding-models
           persistentVolumeClaim:
             claimName: {{ include "fincopilot.fullname" . }}-agent-embedding-models
         {{- end }}
+      {{- end }}

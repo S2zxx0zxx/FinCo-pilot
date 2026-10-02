@@ -61,3 +61,13 @@ def test_external_tls_authenticated_target_passes():
         auth_required=True,
     )
     assert target.hostname == "redis.example.test"
+
+
+def test_username_only_url_does_not_satisfy_auth_gate():
+    with pytest.raises(ValueError, match="authenticated"):
+        validate_redis_target(
+            "rediss://default@redis.example.test:6380/0",
+            external_required=True,
+            tls_required=True,
+            auth_required=True,
+        )

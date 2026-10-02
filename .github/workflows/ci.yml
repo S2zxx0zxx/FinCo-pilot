@@ -215,21 +215,19 @@ jobs:
           worker_pid=$!
           trap 'kill -TERM "$worker_pid" 2>/dev/null || true; wait "$worker_pid" 2>/dev/null || true' EXIT
 
-          ready=false
-          for _ in $(seq 1 45); do
-            if celery -A app.worker inspect ping --timeout=1 2>/dev/null | grep -q pong; then
-              ready=true
-              break
-            fi
-            sleep 1
-          done
-          if [ "$ready" != true ]; then
-            echo "Celery worker did not become ready" >&2
+          # The acceptance task itself is the readiness proof: broker publish,
+          # worker execution and result-backend retrieval must all succeed.
+          sleep 5
+          if ! kill -0 "$worker_pid" 2>/dev/null; then
+            echo "Celery worker exited before acceptance" >&2
             cat /tmp/finco-worker.log >&2
             exit 1
           fi
-
-          python -m scripts.verify_production_redis --ci --require-worker
+          if ! python -m scripts.verify_production_redis --ci --require-worker; then
+            echo "Celery end-to-end acceptance failed" >&2
+            cat /tmp/finco-worker.log >&2
+            exit 1
+          fi
       - name: Verify Celery Beat starts as a singleton scheduler
         run: |
           set -euo pipefail

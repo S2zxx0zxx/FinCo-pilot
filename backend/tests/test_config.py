@@ -214,13 +214,18 @@ def test_production_paid_checkout_accepts_explicit_tax_display_contract(secrets:
 
 
 
-def test_agent_secret_fields_read_from_prefixed_secret_files(secrets: Path):
+def test_agent_secret_fields_read_from_prefixed_secret_files(secrets: Path, monkeypatch):
     from app.agents.config import AgentSettings
 
     write(secrets, "agents_mcp_jwt_secret", "m" * 40)
     write(secrets, "agents_openai_compat_api_key", "operator-route-secret")
     write(secrets, "agents_embedding_openai_api_key", "embedding-secret")
 
+    # Environment variables intentionally outrank file secrets. Remove the
+    # synthetic suite-wide MCP value so this test exercises the file source.
+    monkeypatch.delenv("AGENTS_MCP_JWT_SECRET", raising=False)
+    monkeypatch.delenv("AGENTS_OPENAI_COMPAT_API_KEY", raising=False)
+    monkeypatch.delenv("AGENTS_EMBEDDING_OPENAI_API_KEY", raising=False)
     settings = AgentSettings(_env_file=None, _secrets_dir=str(secrets))
 
     assert settings.mcp_jwt_secret.get_secret_value() == "m" * 40

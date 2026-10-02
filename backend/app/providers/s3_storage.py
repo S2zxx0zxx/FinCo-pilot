@@ -265,6 +265,13 @@ class S3StorageProvider(StorageProvider):
             raise StorageIntegrityError(
                 "Storage returned an invalid Content-Length"
             ) from exc
+
+        checksum = response.headers.get(_INTEGRITY_HEADER, "").strip().lower()
+        if len(checksum) != 64 or any(ch not in "0123456789abcdef" for ch in checksum):
+            raise StorageIntegrityError(
+                "Stored acceptance object is missing valid integrity metadata"
+            )
+
         return StoredFile(
             storage_key=logical_key,
             size=size,

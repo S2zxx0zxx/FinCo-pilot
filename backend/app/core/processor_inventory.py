@@ -338,8 +338,8 @@ THIRD_PARTY_BOUNDARIES: dict[str, ThirdPartyBoundary] = {
     ),
     "managed_postgresql": ThirdPartyBoundary(
         key="managed_postgresql",
-        service="External PostgreSQL provider if managed hosting is chosen",
-        status=BoundaryStatus.UNRESOLVED,
+        service="Neon Postgres",
+        status=BoundaryStatus.SELECTED_RELEASE_GATED,
         purpose="primary relational database hosting",
         data_classes=("all_primary_application_records",),
         sends_personal_data=True,
@@ -348,9 +348,15 @@ THIRD_PARTY_BOUNDARIES: dict[str, ThirdPartyBoundary] = {
         legal_role=LegalRoleStatus.CONTRACT_REVIEW_REQUIRED,
         deletion=DeletionExpectation.OPERATOR_INFRA_LIFECYCLE,
         roadmap_gates=(12, 14, 25, 26),
+        public_docs=(
+            "https://neon.com/security",
+            "https://neon.com/docs/security/security-overview",
+        ),
         notes=(
-            "Not a third party when self-hosted; vendor remains unresolved if a managed "
-            "database is selected."
+            "Selected for the zero-cost roadmap #14 production PostgreSQL path. "
+            "The actual Neon project, region, direct endpoint, secret-managed DATABASE_URL, "
+            "migration run and live acceptance probe remain release gates. Provider history "
+            "or PITR does not replace roadmap #25's isolated restore rehearsal."
         ),
     ),
     "managed_redis": ThirdPartyBoundary(

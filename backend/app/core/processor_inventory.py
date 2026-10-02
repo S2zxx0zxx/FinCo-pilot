@@ -125,8 +125,8 @@ THIRD_PARTY_BOUNDARIES: dict[str, ThirdPartyBoundary] = {
         ),
         notes=(
             "Selected payment provider. FinCo-Pilot must not persist full PAN/CVV/CVC. "
-            "Current merchant terms contain a 10-calendar-year transaction-record obligation; "
-            "the retention registry must preserve that provider-contract exception."
+            "Production activation still requires current merchant-contract, retention, "
+            "refund/cancellation, tax/accounting and provider-deletion review."
         ),
     ),
     "pluggy": ThirdPartyBoundary(
@@ -153,10 +153,9 @@ THIRD_PARTY_BOUNDARIES: dict[str, ThirdPartyBoundary] = {
             "https://docs.pluggy.ai/en",
         ),
         notes=(
-            "Optional existing connector, not an Indian AA/FIU substitute. Public Pluggy legal "
-            "material describes high-sensitivity financial data and an approximately 15-day "
-            "deletion process subject to legal/regulatory exceptions; production still needs "
-            "contract/DPA and live revoke/delete acceptance."
+            "Optional existing connector, not an Indian AA/FIU substitute. Production use "
+            "requires current contract/privacy/retention review plus live revoke/delete "
+            "acceptance against the actual provider account."
         ),
     ),
     "enable_banking": ThirdPartyBoundary(
@@ -370,6 +369,58 @@ THIRD_PARTY_BOUNDARIES: dict[str, ThirdPartyBoundary] = {
         deletion=DeletionExpectation.UNRESOLVED,
         roadmap_gates=(12, 27),
         notes=(\n            "No production OIDC provider is selected; local authentication can operate "\n            "without this boundary."\n        ),
+    ),
+    "yahoo_finance": ThirdPartyBoundary(
+        key="yahoo_finance",
+        service="Yahoo Finance via yfinance",
+        status=BoundaryStatus.NO_PERSONAL_DATA_BY_DESIGN,
+        purpose="market symbol search and reference-price lookup",
+        data_classes=("ticker_or_symbol_query", "network_metadata"),
+        sends_personal_data=False,
+        sends_financial_data=False,
+        sends_secrets_or_credentials=False,
+        legal_role=LegalRoleStatus.NOT_A_PERSONAL_DATA_RECIPIENT_BY_DESIGN,
+        deletion=DeletionExpectation.NOT_APPLICABLE,
+        roadmap_gates=(12, 27),
+        notes=(
+            "Application requests market symbols/reference prices rather than user identity, "
+            "account IDs, portfolio quantities or transaction records. Symbol queries can still "
+            "reveal investment interests, so provider terms/privacy must remain under review."
+        ),
+    ),
+    "tesouro_direto": ThirdPartyBoundary(
+        key="tesouro_direto",
+        service="Tesouro Direto public market-data source",
+        status=BoundaryStatus.NO_PERSONAL_DATA_BY_DESIGN,
+        purpose="Brazilian Treasury bond reference-price lookup",
+        data_classes=("public_bond_reference_query", "network_metadata"),
+        sends_personal_data=False,
+        sends_financial_data=False,
+        sends_secrets_or_credentials=False,
+        legal_role=LegalRoleStatus.NOT_A_PERSONAL_DATA_RECIPIENT_BY_DESIGN,
+        deletion=DeletionExpectation.NOT_APPLICABLE,
+        roadmap_gates=(12, 27),
+        notes=(
+            "Keep requests limited to public reference data. If future code sends user, "
+            "portfolio or transaction context, this boundary must be reclassified first."
+        ),
+    ),
+    "github_private_vulnerability_reporting": ThirdPartyBoundary(
+        key="github_private_vulnerability_reporting",
+        service="GitHub Private Vulnerability Reporting",
+        status=BoundaryStatus.USER_DIRECTED,
+        purpose="receive security vulnerability reports separately from customer support",
+        data_classes=("reporter_identity", "security_report_content", "technical_reproduction_details"),
+        sends_personal_data=True,
+        sends_financial_data=False,
+        sends_secrets_or_credentials=False,
+        legal_role=LegalRoleStatus.CONTRACT_REVIEW_REQUIRED,
+        deletion=DeletionExpectation.USER_DIRECTED_PROVIDER,
+        roadmap_gates=(7, 12, 27),
+        notes=(
+            "Security reporting is separate from the customer-support queue. Reporters must "
+            "not be asked for unnecessary user financial records or authentication secrets."
+        ),
     ),
     "open_exchange_rates": ThirdPartyBoundary(
         key="open_exchange_rates",

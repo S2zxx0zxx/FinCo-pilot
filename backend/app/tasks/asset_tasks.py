@@ -4,10 +4,11 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.worker import celery_app
 from app.core.config import get_settings
+from app.core.database_runtime import create_database_engine
 from app.models.asset import Asset
 from app.models.asset_value import AssetValue
 from app.services.asset_service import refresh_all_market_prices
@@ -18,7 +19,7 @@ logger = logging.getLogger(__name__)
 def _make_session_maker():
     """Create a fresh engine+session for the Celery worker event loop."""
     settings = get_settings()
-    engine = create_async_engine(settings.database_url)
+    engine = create_database_engine(settings, short_lived=True)
     return engine, async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 

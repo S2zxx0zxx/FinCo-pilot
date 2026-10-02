@@ -15,6 +15,18 @@ jobs:
       - name: Reject tracked credentials and unsafe production injection
         run: python3 backend/scripts/check_secret_hygiene.py
 
+      - name: Validate production Compose without resolving secrets
+        env:
+          FINCOPILOT_VERSION: ci
+          FRONTEND_URL: https://fincopilot.example
+          FINCOPILOT_SECRETS_DIR: /tmp/fincopilot-ci-secrets
+        run: |
+          set -euo pipefail
+          mkdir -p "$FINCOPILOT_SECRETS_DIR"
+          printf '%s' 'synthetic-ci-password' > "$FINCOPILOT_SECRETS_DIR/postgres_password"
+          docker compose -f docker-compose.prod.yml config --quiet
+          rm -rf "$FINCOPILOT_SECRETS_DIR"
+
   backend-tests:
     name: Backend Tests
     runs-on: ubuntu-latest

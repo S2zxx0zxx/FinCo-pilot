@@ -142,12 +142,20 @@ config:
   fxSyncMode: "on_demand"
   tesouroDiretoEnabled: "true"
 
-  # Redis configuration
-  # If redis.enabled is true, the internal redis will be deployed.
-  # If redis.enabled is false, you must provide your external Redis URL here.
-  redisUrl: 'redis://{{ include "fincopilot.fullname" . }}-redis-master:6379/0'
-  celeryBrokerUrl: 'redis://{{ include "fincopilot.fullname" . }}-redis-master:6379/0'
-  celeryResultBackend: 'redis://{{ include "fincopilot.fullname" . }}-redis-master:6379/0'
+  # Redis/Celery runtime. REDIS_URL itself is secret material and lives in
+  # secret.redisUrl for development or global.existingSecret in production.
+  # Production requires redis.enabled=false plus external/TLS/auth gates.
+  redisExternalRequired: "false"
+  redisTlsRequired: "false"
+  redisAuthRequired: "false"
+  redisSslCaFile: ""
+  redisMaxConnections: "50"
+  redisSocketConnectTimeoutSeconds: "5"
+  redisSocketTimeoutSeconds: "5"
+  redisHealthCheckIntervalSeconds: "30"
+  celeryResultExpiresSeconds: "86400"
+  celeryVisibilityTimeoutSeconds: "3600"
+  celeryWorkerPrefetchMultiplier: "1"
 
   storageLocalPath: "/app/data/attachments"
   agentsKnowledgeStoragePath: "/app/data/agent_knowledge"
@@ -207,6 +215,9 @@ frontend:
 celeryWorker:
   enabled: true
   replicaCount: 1
+  concurrency: 2
+  maxTasksPerChild: 200
+  terminationGracePeriodSeconds: 90
   image:
     pullPolicy: IfNotPresent
   resources:
@@ -220,6 +231,7 @@ celeryWorker:
 # Celery Beat configuration
 celeryBeat:
   enabled: true
+  terminationGracePeriodSeconds: 30
   image:
     pullPolicy: IfNotPresent
   resources:
@@ -298,7 +310,8 @@ postgresql:
     pullPolicy: IfNotPresent
   resources: {}
 
-# Simple StatefulSet for Redis
+# Development/local fallback Redis. Production must disable this and inject
+# REDIS_URL through global.existingSecret.
 redis:
   enabled: true
   image:

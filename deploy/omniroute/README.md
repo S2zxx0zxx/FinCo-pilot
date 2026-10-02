@@ -182,6 +182,12 @@ AGENTS_OPENAI_COMPAT_BASE_URL=https://ai.example.com/v1
 AGENTS_OPENAI_COMPAT_API_KEY=<dedicated FinCo key>
 ```
 
+For production Compose, the API key value is not stored in the project `.env`.
+Place it in the operator secret store/file
+`agents_openai_compat_api_key`; FinCo-Pilot mounts that as `/run/secrets`.
+Rotating this dedicated inference credential must not reset OmniRoute persistence
+or regenerate unrelated provider/admin credentials.
+
 Keep embeddings on FinCo's native local provider initially:
 
 ```env

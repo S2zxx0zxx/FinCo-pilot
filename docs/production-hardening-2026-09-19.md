@@ -342,3 +342,41 @@ and must be re-reviewed if future code starts sending user-specific data.
 
 #12 is an engineering inventory gate. It does not itself prove production DPA execution,
 provider-side deletion, production residency, or published Privacy/Terms text.
+
+
+## October 2 — Roadmap #13 production secret management
+
+Roadmap #12 was verified merged on `main` at
+`37492e6886a88b1dd170edcb11cf1876e464c4cd` before #13 began.
+
+Canonical machine-readable registry:
+`backend/app/core/secret_management.py`
+
+Operator/rotation runbook:
+`docs/trust/FINCO_PRODUCTION_SECRET_MANAGEMENT_V1.md`
+
+Current-tree CI guard:
+`backend/scripts/check_secret_hygiene.py`
+
+The implementation removes canonical secret values from production Compose environment
+interpolation and mounts an operator-controlled directory read-only at `/run/secrets`.
+The bundled PostgreSQL container uses `POSTGRES_PASSWORD_FILE`. Main and Agent Settings
+share Pydantic file-secret sources; AI provider/API credentials no longer bypass typed
+settings with direct `os.getenv` reads. MCP and remote-embedding credentials are represented
+as `SecretStr` and unwrapped only at the cryptographic/provider boundary.
+
+Kubernetes production now fails Helm rendering unless `global.existingSecret` names an
+operator-managed Secret. Development chart defaults remain development-only. Production
+operators must additionally enable Secret encryption at rest, restrict RBAC and keep real
+Secret manifests/values outside Git.
+
+The canonical rotation contract distinguishes application-session invalidation
+(`SECRET_KEY`), MCP-token invalidation (`AGENTS_MCP_JWT_SECRET`), coordinated database
+credential changes and provider revoke/replace flows. A provider credential previously
+exposed in chat/screenshot must be replaced at the provider; deleting a screenshot or local
+file is not remediation.
+
+Roadmap #13 can close its engineering gate only after the PR-head CI is fully green and the
+diff is verified secret-free. Live provisioning of the selected host/secret manager and
+provider-specific smoke tests remain deployment/provider acceptance work; CI does not prove
+that external production credentials have been provisioned.

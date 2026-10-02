@@ -104,6 +104,16 @@ TestSessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_com
 # UUID comparisons.
 
 
+@pytest.fixture(autouse=True)
+def reset_agent_settings_cache_between_tests():
+    """Prevent one test's temporary AGENTS_* environment from leaking via LRU cache."""
+    from app.agents.config import get_agent_settings
+
+    get_agent_settings.cache_clear()
+    yield
+    get_agent_settings.cache_clear()
+
+
 @pytest_asyncio.fixture(scope="session", loop_scope="session", autouse=True)
 async def setup_database():
     """Create all tables once for the test session."""

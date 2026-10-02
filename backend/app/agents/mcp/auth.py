@@ -51,4 +51,4 @@ def mint_token(
         payload["jti"] = str(token_id)
     if external:
         payload["ext"] = True
-    return jwt.encode(payload, s.mcp_jwt_secret, algorithm=JWT_ALGO)
+    return jwt.encode(payload, s.mcp_jwt_secret.get_secret_value(), algorithm=JWT_ALGO)

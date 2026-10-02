@@ -45,14 +45,31 @@ For a full list of available environment variables and API keys, please refer to
 
 ### Secrets Management (Production)
 
-For production deployments, we highly recommend managing your secrets securely by passing an existing Kubernetes `Secret` rather than putting plain text keys in your `values.yaml`:
+Production is fail-closed: set `config.deploymentEnvironment=production` **and**
+reference an operator-managed Kubernetes Secret. The chart will refuse to render
+production while `global.existingSecret` is empty.
 
 ```yaml
 global:
-  existingSecret: "my-fincopilot-secrets"
+  existingSecret: "fincopilot-production-secrets"
+config:
+  deploymentEnvironment: "production"
 ```
 
-The secret must contain the corresponding keys (e.g., `secretKey`, `databaseUrl`, `agentsOpenaiApiKey`).
+Because workloads consume the Secret with `envFrom`, an externally-created
+Secret uses the actual uppercase application environment names, for example
+`SECRET_KEY`, `DATABASE_URL`, `SMTP_PASSWORD`,
+`AGENTS_MCP_JWT_SECRET`, and `AGENTS_OPENAI_COMPAT_API_KEY`. Do **not** use
+the camelCase `values.yaml` field names in an external Secret.
+
+Do not commit a Secret manifest containing real values, a decrypted secrets
+file, or a `--set secret.*=<value>` command. Provision the Secret out-of-band
+from your deployment secret manager. On the cluster, enable Kubernetes Secret
+encryption at rest, restrict `get/list/watch` with least-privilege RBAC, and
+prefer a supported external secret store/CSI integration when available.
+
+The full inventory, file/key names, rotation effects and compromise procedure
+are in `docs/trust/FINCO_PRODUCTION_SECRET_MANAGEMENT_V1.md`.
 
 ## Uninstalling the Chart
 

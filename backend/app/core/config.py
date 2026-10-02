@@ -7,7 +7,7 @@ from pydantic import SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 CREDENTIALS_DIRECTORY: list[Path] = [
-    Path(p) for p in getenv("CREDENTIALS_DIRECTORY", "/run/secrets").split(":") if p
+    Path(p) for p in getenv("CREDENTIALS_DIRECTORY", "/run/secrets:/app/secrets").split(":") if p
 ]
 
 # Zoho Desk OAuth returns an API origin for the account's data center. Keep the

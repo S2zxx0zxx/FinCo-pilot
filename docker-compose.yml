@@ -8,6 +8,7 @@ x-podman:
   in_pod: false
 
 x-backend-env: &backend-env
+  CREDENTIALS_DIRECTORY: ${CREDENTIALS_DIRECTORY:-/run/secrets:/app/secrets}
   DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@db:5432/fincopilot}
   SECRET_KEY: ${SECRET_KEY:-dev-secret-change-in-production}
   DEBUG: ${DEBUG:-true}
@@ -102,6 +103,8 @@ x-backend-env: &backend-env
   # bundled multilingual model — zero external setup. Override with
   # ollama/openai/openai_compatible for better quality.
   AGENTS_EMBEDDING_PROVIDER: ${AGENTS_EMBEDDING_PROVIDER:-native}
+  AGENTS_EMBEDDING_OPENAI_BASE_URL: ${AGENTS_EMBEDDING_OPENAI_BASE_URL:-https://api.openai.com/v1}
+  AGENTS_EMBEDDING_OPENAI_API_KEY: ${AGENTS_EMBEDDING_OPENAI_API_KEY:-}
   AGENTS_EMBEDDING_MODEL: ${AGENTS_EMBEDDING_MODEL:-sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2}
 
 x-backend-base: &backend-base

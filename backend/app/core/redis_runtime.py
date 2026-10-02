@@ -59,10 +59,7 @@ def parse_redis_target(url: str) -> RedisTarget:
     if database < 0:
         raise ValueError("REDIS_URL database index must be non-negative")
 
-    authenticated = bool(
-        (parsed.password and unquote(parsed.password).strip())
-        or (parsed.username and unquote(parsed.username).strip())
-    )
+    authenticated = bool(parsed.password and unquote(parsed.password).strip())
 
     return RedisTarget(
         scheme=parsed.scheme,

@@ -135,7 +135,6 @@ x-backend-base: &backend-base
     - "host.docker.internal:host-gateway"
   volumes:
     - ${FINCOPILOT_SECRETS_DIR:?FINCOPILOT_SECRETS_DIR must point to a host-only secret directory}:/run/secrets:ro
-    - attachments:/app/data/attachments
     - agent_knowledge:/app/data/agent_knowledge
     - agent_embedding_models:/app/data/embedding_models
   restart: unless-stopped
@@ -253,6 +252,5 @@ secrets:
 volumes:
   pgdata:
   redis_data:
-  attachments:
   agent_knowledge:
   agent_embedding_models:

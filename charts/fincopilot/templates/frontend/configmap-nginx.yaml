@@ -7,6 +7,13 @@ metadata:
     app.kubernetes.io/component: frontend
 data:
   default.conf.template: |
+    # Preserve the original HTTPS scheme from a trusted edge/ingress proxy.
+    # Unknown values fall back to the pod-local Nginx scheme.
+    map $http_x_forwarded_proto $finco_forwarded_proto {
+        default $scheme;
+        https https;
+    }
+
     server {
         listen 8080;
         root /usr/share/nginx/html;
@@ -26,7 +33,7 @@ data:
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Proto $finco_forwarded_proto;
         }
 
         # Never cache index.html so new deployments are always picked up immediately

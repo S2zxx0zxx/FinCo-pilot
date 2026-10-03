@@ -159,6 +159,10 @@ jobs:
         env:
           FINCO_DISPOSABLE_DB_TEST: "yes"
         run: python -m scripts.verify_production_postgres --ci
+      - name: Verify concurrent first-admin bootstrap on PostgreSQL
+        env:
+          FINCO_DISPOSABLE_DB_TEST: "yes"
+        run: python -m scripts.verify_admin_bootstrap_postgres
       - name: Verify concurrent founder pricing boundary on PostgreSQL
         env:
           FINCO_DISPOSABLE_DB_TEST: "yes"

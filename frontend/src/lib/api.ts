@@ -182,7 +182,7 @@ export const workspaces = {
 
 // Setup
 export const setup = {
-  status: async (): Promise<{ has_users: boolean; setup_available?: boolean }> => {
+  status: async (): Promise<{ has_users: boolean; setup_available?: boolean; minimum_password_length?: number }> => {
     const { data } = await api.get('/setup/status')
     return data
   },

@@ -495,3 +495,12 @@ for independent data keys, safe key migration, dependency startup gates,
 streaming/SigV4 fixes, support filtering, worker/result-backend limits and
 production refusal of legacy account deletion. External acceptance gates and
 future retention-aware deletion execution remain explicit.
+
+
+## Roadmap #17 production SMTP engineering
+
+See [the SMTP contract and acceptance checklist](trust/FINCO_PRODUCTION_SMTP_V1.md).
+Production local authentication now requires authenticated certificate-verified TLS SMTP,
+submission capacity/timeouts are bounded, errors are sanitized, and the safe probe separates
+connection acceptance from actual inbox delivery. Live provider/sender/domain acceptance
+and roadmap #23/#24 real-email E2E remain explicit operator gates.

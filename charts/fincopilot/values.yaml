@@ -126,6 +126,17 @@ config:
   razorpayPlanMaxMonthlyId: ""
   # Set false only when oidc.enabled, oidc.clientId, and oidc.discoveryUrl are configured.
   localAuthEnabled: "true"
+  # #17: set delivery required in production; supply SMTP_PASSWORD via existingSecret.
+  emailDeliveryRequired: "false"
+  smtpHost: ""
+  smtpPort: "587"
+  smtpUsername: ""
+  smtpFromEmail: ""
+  smtpStarttls: "true"
+  smtpUseSsl: "false"
+  smtpSslCaFile: ""
+  smtpTimeoutSeconds: "10"
+  smtpMaxConcurrentSends: "4"
   # Leave empty to auto-compute from global.domain (e.g. http://fincopilot.local/oauth/callback)
   pluggyOauthRedirectUri: ""
   enableBankingApiUrl: "https://api.enablebanking.com"

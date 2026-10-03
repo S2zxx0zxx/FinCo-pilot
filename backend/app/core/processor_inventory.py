@@ -293,14 +293,17 @@ THIRD_PARTY_BOUNDARIES: dict[str, ThirdPartyBoundary] = {
         service="Transactional SMTP/email provider",
         status=BoundaryStatus.UNRESOLVED,
         purpose="verification, password reset, security and transactional email delivery",
-        data_classes=("email_address", "transactional_message", "delivery_metadata"),
+        data_classes=("email_address", "transactional_message", "short_lived_authentication_link", "delivery_metadata"),
         sends_personal_data=True,
         sends_financial_data=False,
-        sends_secrets_or_credentials=False,
+        sends_secrets_or_credentials=True,
         legal_role=LegalRoleStatus.CONTRACT_REVIEW_REQUIRED,
         deletion=DeletionExpectation.UNRESOLVED,
         roadmap_gates=(12, 17, 23, 24, 27),
-        notes="No production SMTP vendor is selected yet; do not publish a vendor name before #17.",
+        notes=("Brevo is the researched #17 zero-cost recommendation, not an activated/approved "
+               "production processor. SMTP receives short-lived reset/verification links, not "
+               "SMTP credentials or financial records. Retention/residency/deletion and live "
+               "delivery remain acceptance gates; see FINCO_PRODUCTION_SMTP_V1.md."),
     ),
     "object_storage_provider": ThirdPartyBoundary(
         key="object_storage_provider",

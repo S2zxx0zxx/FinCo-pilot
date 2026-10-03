@@ -131,9 +131,10 @@ from HTTP mocks, local SQLite or green GitHub CI.
 - [x] CI Redis concurrency acceptance checks 100 competing requests produce
   exactly 24 reservations, duplicate denial and key TTLs.
 - [x] Local backend suite: 4,199 passed, 7 skipped, 91.32% coverage (Python 3.12.14).
-  Final focused suite: 148 passed; Ruff and complete backend `ty check .` passed.
-  One additional worker-client lifecycle regression was added after full-suite
-  collection and is covered by the final focused suite; PR CI verifies the
-  complete final tree.
+  Final focused suite: 149 passed; Ruff and complete backend `ty check .` passed.
+  Worker-client lifecycle and DB precision-boundary regressions were added
+  after full-suite collection and are covered by the final focused suite; PR CI
+  verifies the complete final tree. The precision-boundary test first reproduced
+  the issue, then passed after validation was tightened.
 - [ ] PR CI green; reviewed commit merged to main.
 - [ ] Live acceptance gates above supplied with real provider/deployment evidence.

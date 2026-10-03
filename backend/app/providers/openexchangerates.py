@@ -69,6 +69,9 @@ class OpenExchangeRatesProvider(FxRateProvider):
                 # Match Numeric(20,10); reject values that round to zero.
                 if not rate.is_finite() or rate < Decimal("0.0000000001") or rate >= Decimal("10000000000"):
                     raise ValueError
+                stored_rate = rate.quantize(Decimal("0.0000000001"))
+                if stored_rate <= 0 or stored_rate >= Decimal("10000000000"):
+                    raise ValueError
                 if code == "USD" and rate != 1:
                     raise ValueError
                 rates[code] = rate

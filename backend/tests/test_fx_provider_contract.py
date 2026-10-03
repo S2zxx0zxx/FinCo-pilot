@@ -16,7 +16,7 @@ async def fetch(payload, status=200, historical=None):
         assert request.headers['authorization'] == 'Token secret-sentinel'
         assert 'app_id' not in request.url.params
         assert 'symbols' not in request.url.params
-        return httpx.Response(status, text=json.dumps(payload), request=request)
+        return httpx.Response(status, text=payload if isinstance(payload, str) else json.dumps(payload), request=request)
     transport = httpx.MockTransport(handler)
     with patch('app.providers.openexchangerates.get_settings') as settings, patch(
         'app.providers.openexchangerates.httpx.AsyncClient',
@@ -109,3 +109,11 @@ async def test_budget_client_closed_after_each_worker_invocation():
         assert await _reserve_provider_request(date(2025, 1, 2))
     assert factory.call_count == 2
     assert client.__aexit__.await_count == 2
+
+
+@pytest.mark.asyncio
+async def test_rate_that_rounds_past_database_precision_is_rejected():
+    timestamp = int(datetime.now(timezone.utc).timestamp())
+    body = '{"base":"USD","timestamp":' + str(timestamp) + ',"rates":{"INR":9999999999.99999999999}}'
+    with pytest.raises(FxProviderError):
+        await fetch(body)

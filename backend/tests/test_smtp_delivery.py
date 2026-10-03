@@ -156,8 +156,11 @@ async def test_real_tls_auth_and_single_recipient_submission(monkeypatch, relay,
     assert message['Auto-Submitted'] == 'auto-generated'
     assert message['To'] == 'person@example.com'
     assert message.is_multipart()
-    assert 'synthetic%26token' in message.get_body(preferencelist=('plain',)).get_content()
-    assert 'synthetic%26token' in message.get_body(preferencelist=('html',)).get_content()
+    plain = message.get_body(preferencelist=('plain',))
+    html = message.get_body(preferencelist=('html',))
+    assert plain is not None and html is not None
+    assert 'synthetic%26token' in plain.get_content()
+    assert 'synthetic%26token' in html.get_content()
 
 
 async def test_untrusted_certificate_refuses_auth_and_data(monkeypatch, relay):

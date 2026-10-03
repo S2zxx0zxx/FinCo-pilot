@@ -141,7 +141,7 @@ Engineering:
 - [x] Implement fail-closed TLS/auth/config, bounded sends, safe failures and metadata.
 - [x] Add a safe no-send/default and explicit-send acceptance probe.
 - [x] Add real local TLS SMTP regressions and deployment/secret contract tests.
-- [ ] Record final test/CI evidence and merge the verified branch.
+- [x] Record local verification; [PR #29](https://github.com/S2zxx0zxx/FinCo-pilot/pull/29) is authoritative for final CI and merge status.
 
 Live acceptance (not claimed complete):
 - [ ] Provider account activated; actual sender/domain authenticated.
@@ -155,3 +155,17 @@ Live acceptance (not claimed complete):
 Next numbered point remains #18 FX after #17 engineering closure. #17 live acceptance
 must stay visible until credentials and real evidence are available. No external account,
 DNS record or email send is claimed merely because CI is green.
+
+## Verification checkpoint
+
+Local Python 3.12.14 locked-environment full regression: **4,155 passed, 7 skipped**,
+**91.39% coverage**. The skipped reporting cases require PostgreSQL `to_char()` and
+are not claimed passed. Three additional probe/inventory regressions were then added;
+the focused SMTP/config/auth/security/inventory group passed **111 tests**.
+CI's initial test-file type check identified two nullable MIME-body assertions; these
+were corrected and the whole-backend type check and Ruff passed. The same focused
+group is re-run after that correction.
+
+Final PR-head CI, deployment validation and merge evidence are recorded in PR #29.
+No real provider/inbox acceptance occurred in the local SMTP fixture: its certificates,
+server, credentials and mailbox are isolated test data.

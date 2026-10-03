@@ -24,7 +24,7 @@ Branch: `fix/production-hardening-2026-09-19`.
 | F13 — accounts | Supported type, three-letter currency, nonblank name, nonnegative credit terms and valid billing days checked at the API boundary. Existing wallet/investment types preserved. |
 | F14 — invalid dates | Account summary/history date query parameters are parsed as dates, yielding 422 instead of 500. |
 | F15 — dependencies | Frontend lockfile updated within declared ranges; npm audit reports zero known advisories at verification time. This is not a guarantee against future disclosures. |
-| F16 — storage | **Roadmap #16 engineering implementation in progress on dedicated branch.** Cloudflare R2 is selected/release-gated; production is fail-closed to S3-compatible object storage, attachment bytes use private object storage, a credential-safe write/HEAD/read/delete acceptance probe exists, and Docker/Helm parity is being verified. A real operator-owned R2 bucket/probe and roadmap #25 isolated restore remain external gates. |
+| F16 — storage | **Roadmap #16 engineering implementation merged; production acceptance remains gated.** Cloudflare R2 is selected/release-gated; production is fail-closed to S3-compatible object storage, attachment bytes use private object storage, a credential-safe write/HEAD/read/delete acceptance probe exists, and Docker/Helm parity is covered by CI. A real operator-owned R2 bucket/probe and roadmap #25 isolated restore remain external gates. |
 | F17 — live AI | **Unverified external gate.** Choose actual provider/model, configure the existing connection mechanism, run streamed responses, tool approval/denial, document retrieval and failure recovery on the deployed host. No workflow green tick is treated as inference proof. |
 | F18 — catalogue | Free/Pro AI action allowances set to zero to match the existing Max-only agent capability. This does not add a separate basic AI assistant. |
 | F19 — external writes | Registered external tokens default read-only. Explicit write scope, live authorization and strict JSON boolean `apply` are required; OpenAI snippet also requests client-side approval. Every external write now queues an exact, ten-minute approval in Agent Connections. A logged-in user must approve it in the app; the server rechecks token, membership, capability and quota. Durable single-use claims prevent replay; uncertain execution is marked for review and never automatically retried. |
@@ -487,3 +487,11 @@ R2 bucket, bucket-scoped Object Read & Write credentials stored through roadmap
 `python -m scripts.verify_production_object_storage` run, and one authenticated
 FinCo-Pilot upload/download/delete smoke. Roadmap #25 still owns an isolated
 backup/restore rehearsal.
+
+## Roadmap #1–#16 revision
+
+See [the revision findings and rollout runbook](trust/FINCO_REVISION_1_16_V1.md)
+for independent data keys, safe key migration, dependency startup gates,
+streaming/SigV4 fixes, support filtering, worker/result-backend limits and
+production refusal of legacy account deletion. External acceptance gates and
+future retention-aware deletion execution remain explicit.

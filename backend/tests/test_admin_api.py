@@ -13,6 +13,23 @@ from app.core.auth import get_jwt_strategy
 pytestmark = pytest.mark.asyncio
 
 
+@pytest.mark.parametrize("route, status_code", [("/api/admin/users", 400), ("/api/users", 409)])
+async def test_all_production_user_deletion_routes_preserve_data(
+    client, admin_auth_headers, test_user, monkeypatch, route, status_code,
+):
+    from types import SimpleNamespace
+    def production():
+        return SimpleNamespace(is_production=True)
+    monkeypatch.setattr("app.core.auth.get_settings", production)
+    monkeypatch.setattr("app.services.admin_service.get_settings", production)
+    user_id = test_user.id
+    response = await client.delete(f"{route}/{user_id}", headers=admin_auth_headers)
+    assert response.status_code == status_code
+    preserved = await client.get(f"/api/users/{user_id}", headers=admin_auth_headers)
+    assert preserved.status_code == 200
+    assert preserved.json()["id"] == str(user_id)
+
+
 class TestAdminUserCRUD:
     """Test admin user CRUD operations."""
 

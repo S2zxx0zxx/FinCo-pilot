@@ -1,4 +1,5 @@
 from functools import lru_cache
+import json
 from os import getenv
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -83,6 +84,9 @@ class Settings(BaseSettings):
 
     # Auth
     secret_key: SecretStr = SecretStr("change-me-in-production")
+    credential_encryption_key: SecretStr = SecretStr("")
+    core_copilot_signing_key: SecretStr = SecretStr("")
+    legacy_data_keys: SecretStr = SecretStr("")
     local_auth_enabled: bool = True
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 60 * 24
@@ -248,6 +252,23 @@ class Settings(BaseSettings):
     def is_production(self) -> bool:
         return self.deployment_environment.strip().lower() == "production"
 
+    def legacy_keys_for(self, purpose: str) -> tuple[str, ...]:
+        raw = self.legacy_data_keys.get_secret_value().strip()
+        if not raw:
+            return ()
+        try:
+            rings = json.loads(raw)
+        except ValueError:
+            raise ValueError("LEGACY_DATA_KEYS must be a JSON object with credentials and copilot arrays") from None
+        if not isinstance(rings, dict) or set(rings) - {"credentials", "copilot"}:
+            raise ValueError("LEGACY_DATA_KEYS contains an unknown key purpose")
+        for keys in rings.values():
+            if (not isinstance(keys, list) or len(keys) > 8
+                    or any(not isinstance(key, str) or not key.strip() or len(key) > 1024 for key in keys)):
+                raise ValueError("LEGACY_DATA_KEYS permits at most eight bounded keys per purpose")
+        # Compatibility keys must match the original cryptographic bytes exactly.
+        return tuple(dict.fromkeys(rings.get(purpose, [])))
+
     @property
     def oidc_login_available(self) -> bool:
         return bool(self.oidc_enabled and self.oidc_client_id and self.oidc_discovery_url)
@@ -279,6 +300,8 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def validate_auth_settings(self) -> "Settings":
         environment = self.deployment_environment.strip().lower()
+        self.legacy_keys_for("credentials")
+        self.legacy_keys_for("copilot")
         if environment not in {"development", "test", "staging", "production"}:
             raise ValueError(
                 "DEPLOYMENT_ENVIRONMENT must be one of development, test, staging, production"
@@ -485,6 +508,14 @@ class Settings(BaseSettings):
                     raise ValueError("Cloudflare R2 requires STORAGE_S3_REGION=auto")
 
         if environment == "production":
+            data_keys = [self.credential_encryption_key.get_secret_value().strip(),
+                         self.core_copilot_signing_key.get_secret_value().strip()]
+            if any(len(key) < 32 for key in data_keys) or len(set(data_keys + [self.secret_key.get_secret_value()])) != 3:
+                raise ValueError("Production requires independent CREDENTIAL_ENCRYPTION_KEY and CORE_COPILOT_SIGNING_KEY of at least 32 characters")
+            if not self.database_external_required or self.db_ssl_mode not in {"require", "verify-ca", "verify-full"}:
+                raise ValueError("Production requires DATABASE_EXTERNAL_REQUIRED=true and encrypted DB_SSL_MODE")
+            if not (self.redis_external_required and self.redis_tls_required and self.redis_auth_required):
+                raise ValueError("Production requires external authenticated Redis with TLS")
             secret = self.secret_key.get_secret_value().strip()
             if secret in {"", "change-me-in-production", "dev-secret-change-in-production"} or len(secret) < 32:
                 raise ValueError(

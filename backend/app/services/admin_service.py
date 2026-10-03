@@ -148,6 +148,8 @@ async def delete_user(
     user_id: uuid.UUID,
     current_user_id: uuid.UUID,
 ) -> bool:
+    if get_settings().is_production:
+        raise ValueError("Production account deletion requires the retention-aware deletion workflow; legacy deletion is disabled")
     if user_id == current_user_id:
         raise ValueError("Cannot delete your own account")
 

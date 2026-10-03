@@ -9,7 +9,7 @@ import uuid
 from decimal import Decimal
 from typing import Optional
 
-from fastapi import Depends, Request
+from fastapi import Depends, HTTPException, Request
 from fastapi_users import BaseUserManager, FastAPIUsers, UUIDIDMixin, schemas
 from fastapi_users.authentication import (
     AuthenticationBackend,
@@ -40,6 +40,12 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
     user_db: SQLAlchemyUserDatabase
     reset_password_token_secret = settings.secret_key
     verification_token_secret = settings.secret_key
+
+    async def on_before_delete(self, user: User, request: Request | None = None) -> None:
+        # The generated /api/users/{id} route bypasses admin_service. Guard at
+        # the manager boundary too, before its database adapter removes a row.
+        if get_settings().is_production:
+            raise HTTPException(status_code=409, detail="Account deletion requires the retention-aware deletion workflow")
 
     async def validate_password(self, password: str, user) -> None:
         if len(password) < 8 or len(password) > 128:

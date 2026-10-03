@@ -21,7 +21,17 @@ os.environ["CREDENTIALS_DIRECTORY"] = ""
 # we shim it with JSON before any model module imports it. Production runs
 # pgvector unchanged.
 import sqlalchemy.types  # noqa: E402
+from sqlalchemy.dialects.postgresql import UUID as _PGUUID  # noqa: E402
+from sqlalchemy.ext.compiler import compiles  # noqa: E402
 import pgvector.sqlalchemy as _pgv  # noqa: E402
+
+
+@compiles(_PGUUID, "sqlite")
+def _sqlite_uuid(type_, compiler, **kwargs):
+    # Literal UUID has NUMERIC affinity in SQLite. Rare all-digit/scientific-
+    # notation-looking random UUIDs become floats and crash the UUID processor.
+    # Keep exact text in tests; PostgreSQL's native UUID compilation is unchanged.
+    return "CHAR(32)"
 
 
 class _VectorJSON(sqlalchemy.types.JSON):

@@ -66,7 +66,7 @@ async def test_direct_support_submission_uses_server_result(
             "page_path": "/accounts",
             "app_version": "0.15.1",
             "locale": "en",
-            "error_reference": "FCREQ-ABC123",
+            "error_reference": "FCREQ-ABC123ABC123",
         },
     )
 

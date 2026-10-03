@@ -13,6 +13,10 @@ global:
 
 # If existingSecret is NOT set, this secret will be created with the values below
 secret:
+  # Development only. Production uses global.existingSecret.
+  credentialEncryptionKey: ""
+  coreCopilotSigningKey: ""
+  legacyDataKeys: ""
   # Development-only defaults. Production is fail-closed unless
   # global.existingSecret references an operator-managed Kubernetes Secret.
   secretKey: "dev-secret-change-in-production"

@@ -23,6 +23,16 @@ spec:
         {{- include "fincopilot.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: mcp-server
     spec:
+      initContainers:
+        - name: release-prerequisites
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          command: ["python", "scripts/prepare_release.py"]
+          envFrom:
+            - configMapRef:
+                name: {{ include "fincopilot.fullname" . }}-config
+            - secretRef:
+                name: {{ default (printf "%s-secrets" (include "fincopilot.fullname" .)) .Values.global.existingSecret }}
       containers:
         - name: mcp-server
           image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"

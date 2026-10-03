@@ -1,14 +1,8 @@
-"""Symmetric encryption for stored secrets (LLM API keys, etc.).
+"""Encrypt stored credentials independently of JWT authentication.
 
-Key derivation: PBKDF2(SHA256, app SECRET_KEY) so we don't need a
-separate key file. If the operator rotates SECRET_KEY, existing
-ciphertexts become unreadable — that's by design (rotation = re-enter
-your provider keys).
-
-Brand migrations are different from key rotation: they must not strand
-already-encrypted provider credentials. New writes use the FinCo-Pilot salt,
-while reads retain a one-way compatibility fallback for ciphertext created
-before the identity migration.
+Old data keys and both historical KDF salts remain readable during a staged,
+non-destructive rotation. New writes use CREDENTIAL_ENCRYPTION_KEY; development
+retains SECRET_KEY fallback for compatibility with existing installations.
 """
 from __future__ import annotations
 
@@ -29,18 +23,31 @@ _COMPAT_SALT_V1 = bytes.fromhex(
 )
 
 
-def _fernet_for_salt(salt: bytes) -> Fernet:
-    secret = get_settings().secret_key.get_secret_value().encode("utf-8")
+def data_keys() -> tuple[str, ...]:
+    """Read-only compatibility keys; these never authenticate login tokens."""
+    settings = get_settings()
+    return tuple(dict.fromkeys(filter(None, (
+        settings.credential_encryption_key.get_secret_value().strip()
+        or settings.secret_key.get_secret_value(),
+        *settings.legacy_keys_for("credentials"),
+    ))))
+
+
+def _fernet_for_salt(salt: bytes, key: str | None = None) -> Fernet:
+    return _derive_fernet(salt, key or data_keys()[0])
+
+
+@functools.lru_cache(maxsize=32)
+def _derive_fernet(salt: bytes, key: str) -> Fernet:
+    secret = key.encode("utf-8")
     raw = hashlib.pbkdf2_hmac("sha256", secret, salt, iterations=100_000, dklen=32)
     return Fernet(base64.urlsafe_b64encode(raw))
 
 
-@functools.lru_cache(maxsize=1)
 def _fernet() -> Fernet:
     return _fernet_for_salt(_CURRENT_SALT)
 
 
-@functools.lru_cache(maxsize=1)
 def _compat_fernet_v1() -> Fernet:
     return _fernet_for_salt(_COMPAT_SALT_V1)
 
@@ -55,15 +62,14 @@ def decrypt(ciphertext: str | None) -> str | None:
     if not ciphertext:
         return None
 
-    token = ciphertext.encode("ascii")
     try:
-        return _fernet().decrypt(token).decode("utf-8")
-    except (InvalidToken, ValueError):
-        pass
-
-    # Compatibility read path for credentials encrypted before the identity
-    # migration. New writes always use the current FinCo-Pilot salt above.
-    try:
-        return _compat_fernet_v1().decrypt(token).decode("utf-8")
-    except (InvalidToken, ValueError):
-        return None  # silently treat corrupt/rotated entries as missing
+        token = ciphertext.encode("ascii")
+    except UnicodeEncodeError:
+        return None
+    for key in data_keys():
+        for salt in (_CURRENT_SALT, _COMPAT_SALT_V1):
+            try:
+                return _fernet_for_salt(salt, key).decrypt(token).decode("utf-8")
+            except (InvalidToken, ValueError):
+                continue
+    return None

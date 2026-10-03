@@ -9,6 +9,7 @@ from app.core.config import get_settings
 from app.models.transaction import Transaction
 from app.models.transaction_attachment import TransactionAttachment
 from app.providers import get_storage_provider
+from app.services.storage_compensation import compensate_upload
 
 
 logger = logging.getLogger(__name__)
@@ -103,17 +104,10 @@ async def upload_attachment(
     try:
         await session.commit()
     except Exception:
-        # The object was written before the relational row. If the database
-        # commit fails, remove the just-written object so retries do not leave
-        # an unreachable blob. Failure to clean up is logged without the key;
-        # roadmap #29/#30 still own durable deletion/reconciliation jobs.
-        await session.rollback()
-        try:
-            await storage.delete(stored.storage_key)
-        except Exception:
-            logger.exception(
-                "Failed to remove transaction attachment after database commit failure"
-            )
+        await compensate_upload(
+            session, storage, stored.storage_key,
+            select(TransactionAttachment.id).where(TransactionAttachment.storage_key == stored.storage_key),
+        )
         raise
     await session.refresh(attachment)
     return attachment
@@ -205,8 +199,8 @@ async def cleanup_attachment_files(
     for key in storage_keys:
         try:
             await storage.delete(key)
-        except Exception:
-            pass  # best-effort cleanup; file may already be gone
+        except Exception as exc:
+            logger.warning("Transaction attachment cleanup deferred (%s)", type(exc).__name__)
 
 
 async def delete_attachment(

@@ -241,7 +241,7 @@ services:
         - CMD-SHELL
         - >-
           celery -A app.worker inspect ping
-          -d "celery@$HOSTNAME" --timeout=5 2>/dev/null | grep -q pong
+          -d "worker@$$HOSTNAME" --timeout=5 2>/dev/null | grep -q pong
       interval: 30s
       timeout: 10s
       retries: 3

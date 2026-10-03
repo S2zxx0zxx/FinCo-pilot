@@ -24,6 +24,16 @@ spec:
         app.kubernetes.io/component: celery-worker
     spec:
       terminationGracePeriodSeconds: {{ .Values.celeryWorker.terminationGracePeriodSeconds }}
+      initContainers:
+        - name: release-prerequisites
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          command: ["python", "scripts/prepare_release.py"]
+          envFrom:
+            - configMapRef:
+                name: {{ include "fincopilot.fullname" . }}-config
+            - secretRef:
+                name: {{ default (printf "%s-secrets" (include "fincopilot.fullname" .)) .Values.global.existingSecret }}
       containers:
         - name: celery-worker
           image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"

@@ -304,3 +304,27 @@ def test_production_rejects_insecure_storage_endpoint(secrets: Path):
             billing_tax_display_mode="inclusive",
             _secrets_dir=str(secrets),
         )
+
+
+@pytest.mark.parametrize('mode', ['disabled', '', 'schedule'])
+def test_invalid_fx_mode_rejected(mode):
+    with pytest.raises(ValidationError, match='FX_SYNC_MODE'):
+        Settings(fx_sync_mode=mode, _env_file=None)
+
+
+def test_required_production_fx_rejects_missing_app_id(secrets: Path):
+    kwargs = _production_settings_kwargs()
+    kwargs.update(require_fx_provider=True, openexchangerates_app_id='')
+    with pytest.raises(ValidationError, match='OPENEXCHANGERATES_APP_ID'):
+        Settings(**kwargs, _env_file=None, _secrets_dir=secrets)
+
+
+def test_supported_fx_currencies_normalized():
+    settings = Settings(supported_currencies='usd, INR,usd', _env_file=None)
+    assert settings.supported_currencies == 'USD,INR'
+
+
+@pytest.mark.parametrize('codes', ['', 'USD,,INR', 'USD,123', 'USD,EURO'])
+def test_invalid_supported_fx_currencies_rejected(codes):
+    with pytest.raises(ValidationError, match='SUPPORTED_CURRENCIES'):
+        Settings(supported_currencies=codes, _env_file=None)

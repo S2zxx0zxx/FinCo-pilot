@@ -5,11 +5,12 @@ metadata:
   labels:
     {{- include "fincopilot.labels" . | nindent 4 }}
 data:
+  FX_ALLOW_UNSAFE_1TO1_FALLBACK: {{ .Values.config.fxAllowUnsafe1to1Fallback | quote }}
   FRONTEND_URL: {{ include "fincopilot.frontendUrl" . | quote }}
   PLUGGY_OAUTH_REDIRECT_URI: {{ default (include "fincopilot.oauthRedirectUri" .) .Values.config.pluggyOauthRedirectUri | quote }}
   ENABLE_BANKING_OAUTH_REDIRECT_URI: {{ default (include "fincopilot.oauthRedirectUri" .) .Values.config.enableBankingOauthRedirectUri | quote }}
   {{- range $key, $value := .Values.config }}
-  {{- if and (ne $key "pluggyOauthRedirectUri") (ne $key "enableBankingOauthRedirectUri") }}
+  {{- if and (ne $key "pluggyOauthRedirectUri") (ne $key "enableBankingOauthRedirectUri") (ne $key "fxAllowUnsafe1to1Fallback") }}
   {{ $key | snakecase | upper }}: {{ tpl (print $value) $ | quote }}
   {{- end }}
   {{- end }}

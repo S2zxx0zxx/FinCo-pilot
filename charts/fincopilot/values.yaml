@@ -157,7 +157,10 @@ config:
   oidcRolesClaim: "groups"
   oidcAdminRoles: ""
   oidcWorkspaceRoleMap: ""
+  # Production: scheduled, requireFxProvider=true, unsafe fallback=false.
   fxSyncMode: "on_demand"
+  requireFxProvider: "false"
+  fxAllowUnsafe1to1Fallback: "true"
   tesouroDiretoEnabled: "true"
 
   # Redis/Celery runtime. REDIS_URL itself is secret material and lives in

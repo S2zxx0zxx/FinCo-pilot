@@ -135,3 +135,13 @@ Put `SMTP_PASSWORD` in `global.existingSecret`; never commit production Secret v
 `config.smtpTimeoutSeconds` defaults to 10; `smtpMaxConcurrentSends` defaults to 4 per process.
 An optional `smtpSslCaFile` needs an operator-provided read-only mount. Follow
 `docs/trust/FINCO_PRODUCTION_SMTP_V1.md` for the no-send probe and inbox acceptance.
+
+
+### Roadmap #18 production FX
+
+Set `config.requireFxProvider=true`, `config.fxSyncMode=scheduled` and
+`config.fxAllowUnsafe1to1Fallback=false`. Production rendering rejects missing
+provider enforcement, fabricated-rate fallback and on-demand mode. Inject
+`OPENEXCHANGERATES_APP_ID` through `global.existingSecret`, consistently into API,
+worker and Beat. See `docs/trust/FINCO_PRODUCTION_FX_V1.md` for provider research,
+shared quotas, historical import behavior and separate live acceptance gates.

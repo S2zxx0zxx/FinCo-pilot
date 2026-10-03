@@ -19,7 +19,7 @@ any production deletion, credential rotation or provider provisioning.
 | S3 downloads allocate an unbounded response body | Reject oversized declared length, bounded streaming, early close and checksum verification | Oversized declared and chunked stream tests |
 | S3 canonical path is double encoded | Sign the exact once-encoded wire path for headers and presigned URLs | Spaces, percent, plus and Unicode path regression |
 | Upload failures can leave or remove inconsistent files | Include primary promotion/flush in guarded invoice upload; compensate new uploads only after rollback/reference verification; preserve bytes when state cannot be verified; logo persistence guarded across commit | Storage compensation, invoice, logo and attachment tests |
-| Legacy production admin deletion ignores retention and shared-workspace policy | Production route refuses the unsafe cascade; development implementation retained; actual retention-aware execution remains #29/#30 | Production refusal and existing admin tests |
+| Legacy production user deletion ignores retention and shared-workspace policy | Both the custom admin route and framework-generated user route refuse unsafe deletion before any row is removed; development implementation retained; actual retention-aware execution remains #29/#30 | Both API routes preserve user data; service refusal and existing admin tests |
 
 ## Required key rollout for an existing installation
 

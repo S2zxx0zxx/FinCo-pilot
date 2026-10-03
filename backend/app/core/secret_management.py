@@ -16,6 +16,7 @@ INVENTORY_VERSION = "2026-10-02"
 
 class SecretKind(str, Enum):
     APPLICATION_SIGNING_KEY = "application_signing_key"
+    DATA_ENCRYPTION_KEY = "data_encryption_key"
     CONNECTION_STRING = "connection_string"
     BOOTSTRAP_TOKEN = "bootstrap_token"
     PROVIDER_CREDENTIAL = "provider_credential"
@@ -47,19 +48,19 @@ class ProductionSecret:
 
 PRODUCTION_SECRETS: dict[str, ProductionSecret] = {
     "CREDENTIAL_ENCRYPTION_KEY": ProductionSecret(
-        "CREDENTIAL_ENCRYPTION_KEY", "credential_encryption_key", SecretKind.INTERNAL_SIGNING_KEY,
-        ("backend", "celery-worker", "mcp-server"), "every production deployment",
+        "CREDENTIAL_ENCRYPTION_KEY", "credential_encryption_key", SecretKind.DATA_ENCRYPTION_KEY,
+        ("backend", "celery-worker", "celery-beat", "migration", "mcp-server"), "every production deployment",
         RotationImpact.COORDINATED_INFRA_CHANGE, False,
         notes="Independent encryption key. Retain old keys in LEGACY_DATA_KEYS until all stored credentials are re-encrypted.",
     ),
     "CORE_COPILOT_SIGNING_KEY": ProductionSecret(
         "CORE_COPILOT_SIGNING_KEY", "core_copilot_signing_key", SecretKind.INTERNAL_SIGNING_KEY,
-        ("backend",), "every production deployment", RotationImpact.COORDINATED_INFRA_CHANGE, False,
+        ("backend", "celery-worker", "celery-beat", "migration", "mcp-server"), "every production deployment", RotationImpact.COORDINATED_INFRA_CHANGE, False,
         notes="Independent system-agent identity key. Retain previous keys until every protected agent is re-signed.",
     ),
     "LEGACY_DATA_KEYS": ProductionSecret(
         "LEGACY_DATA_KEYS", "legacy_data_keys", SecretKind.INTERNAL_SIGNING_KEY,
-        ("backend", "celery-worker", "mcp-server"), "migrating existing encrypted credentials or system agents",
+        ("backend", "celery-worker", "celery-beat", "migration", "mcp-server"), "migrating existing encrypted credentials or system agents",
         RotationImpact.COORDINATED_INFRA_CHANGE, False,
         notes="JSON with separate credentials/copilot key arrays; read-only compatibility, never accepted for JWT authentication.",
     ),

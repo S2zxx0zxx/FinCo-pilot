@@ -111,6 +111,7 @@ secret files, so do not configure the same credential in two places.
 | `OPENEXCHANGERATES_APP_ID` | `openexchangerates_app_id` | production FX provider required | provider revoke/replace |
 | `STORAGE_S3_ACCESS_KEY` | `storage_s3_access_key` | S3 storage | provider revoke/replace |
 | `STORAGE_S3_SECRET_KEY` | `storage_s3_secret_key` | S3 storage | provider revoke/replace |
+| `CLOUDFLARE_TUNNEL_TOKEN` | `cloudflare_tunnel_token` | Cloudflare edge profile | provider revoke/replace |
 | `AGENTS_MCP_JWT_SECRET` | `agents_mcp_jwt_secret` | agents enabled | all MCP JWTs become invalid |
 | `AGENTS_OPENAI_API_KEY` | `agents_openai_api_key` | operator OpenAI route | provider revoke/replace |
 | `AGENTS_ANTHROPIC_API_KEY` | `agents_anthropic_api_key` | operator Anthropic route | provider revoke/replace |
@@ -196,6 +197,26 @@ This key is shared only by FinCo-Pilot backend and its MCP server.
 5. Verify a new token succeeds and an old token fails.
 
 Do not reuse `SECRET_KEY` here.
+
+
+### Cloudflare Tunnel token
+
+The selected zero-cost edge path uses a remotely managed Cloudflare Tunnel.
+Its connector token is a provider credential, not application configuration.
+
+- Store it only as `/run/secrets/cloudflare_tunnel_token` (host source:
+  `${FINCOPILOT_SECRETS_DIR}/cloudflare_tunnel_token`).
+- Only the `cloudflared` service receives that secret; backend/frontend/workers
+  do not need it.
+- Do not map the token through Compose environment interpolation or a public
+  `.env` file.
+- Rotate it in Cloudflare if exposed, replace the protected file, restart only
+  `cloudflared`, and verify a fresh connector becomes healthy before
+  invalidating the old connector token.
+- The token authenticates a tunnel connector; it does not grant R2 S3 access.
+  R2 uses its separate bucket-scoped credential pair.
+
+See [`FINCO_CLOUDFLARE_EDGE_V1.md`](./FINCO_CLOUDFLARE_EDGE_V1.md).
 
 ### Database credential
 

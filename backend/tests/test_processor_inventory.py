@@ -27,11 +27,16 @@ def test_selected_processors_are_release_gated_not_silently_approved():
         get_third_party_boundary("managed_postgresql").status
         is BoundaryStatus.SELECTED_RELEASE_GATED
     )
+    assert (
+        get_third_party_boundary("cloudflare_edge").status
+        is BoundaryStatus.SELECTED_RELEASE_GATED
+    )
 
     unresolved = {item.key for item in unresolved_operator_boundaries()}
     assert "zoho_desk" in unresolved
     assert "razorpay" in unresolved
     assert "managed_postgresql" in unresolved
+    assert "cloudflare_edge" in unresolved
 
 
 def test_core_ai_upstream_is_unresolved_and_high_sensitivity():
@@ -77,6 +82,20 @@ def test_unselected_infrastructure_remains_unresolved():
         boundary = get_third_party_boundary(key)
         assert boundary.status is BoundaryStatus.UNRESOLVED
         assert boundary.legal_role is LegalRoleStatus.CONTRACT_REVIEW_REQUIRED
+
+
+def test_selected_cloudflare_edge_is_separate_from_compute_host():
+    edge = get_third_party_boundary("cloudflare_edge")
+    assert edge.service == "Cloudflare DNS / TLS edge / Tunnel"
+    assert edge.status is BoundaryStatus.SELECTED_RELEASE_GATED
+    assert edge.sends_personal_data is True
+    assert edge.sends_financial_data is True
+    assert edge.sends_secrets_or_credentials is True
+    assert edge.deletion is DeletionExpectation.CONTRACTUAL_RETENTION_THEN_DELETE
+
+    compute = get_third_party_boundary("hosting_logging_provider")
+    assert compute.status is BoundaryStatus.UNRESOLVED
+    assert "compute" in compute.service.lower()
 
 
 def test_selected_object_storage_boundary_stays_release_gated():

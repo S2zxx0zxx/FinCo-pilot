@@ -2,11 +2,13 @@ import uuid
 import re
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import UserManager, current_active_user, current_superuser, get_user_manager
 from app.core.auth_policy import require_local_auth_enabled
 from app.core.database import get_async_session
+from app.core.config import get_settings
 from app.models.user import User
 from app.schemas.admin import (
     AdminUserCreate,
@@ -162,6 +164,10 @@ async def update_setting(
 async def registration_status(
     session: AsyncSession = Depends(get_async_session),
 ):
+    if get_settings().is_production and not await session.scalar(
+        select(User.id).where(User.is_superuser.is_(True), User.is_active.is_(True)).limit(1)
+    ):
+        raise HTTPException(status_code=409, detail="First admin bootstrap required before public registration")
     enabled = await admin_service.is_registration_enabled(session)
     return {"enabled": enabled}
 
@@ -212,6 +218,10 @@ async def check_registration_enabled(
     request: Request,
     session: AsyncSession = Depends(get_async_session),
 ):
+    if get_settings().is_production and not await session.scalar(
+        select(User.id).where(User.is_superuser.is_(True), User.is_active.is_(True)).limit(1)
+    ):
+        raise HTTPException(status_code=409, detail="First admin bootstrap required before public registration")
     enabled = await admin_service.is_registration_enabled(session)
     if not enabled:
         raise HTTPException(

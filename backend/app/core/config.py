@@ -542,9 +542,10 @@ class Settings(BaseSettings):
                     "Production DATABASE_URL cannot use the shipped default credentials/localhost"
                 )
 
-            if self.setup_enabled and not self.setup_token.get_secret_value().strip():
+            if self.setup_enabled and (len(self.setup_token.get_secret_value().strip()) < 32
+                                       or any(char.isspace() for char in self.setup_token.get_secret_value().strip())):
                 raise ValueError(
-                    "Production SETUP_ENABLED=true requires a high-entropy SETUP_TOKEN; "
+                    "Production SETUP_ENABLED=true requires a random SETUP_TOKEN with at least 32 characters and no whitespace; "
                     "prefer SETUP_ENABLED=false after provisioning the first admin"
                 )
 

@@ -32,6 +32,7 @@ export default function SetupPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [minimumPasswordLength, setMinimumPasswordLength] = useState(8)
   const [confirmPassword, setConfirmPassword] = useState('')
   const [currency, setCurrency] = useState('INR')
   const [error, setError] = useState('')
@@ -46,10 +47,11 @@ export default function SetupPage() {
     Promise.all([
       setup.status(),
       authApi.oidcConfig().catch(() => null),
-    ]).then(([{ has_users, setup_available }, authConfig]) => {
+    ]).then(([{ has_users, setup_available, minimum_password_length }, authConfig]) => {
       if (has_users || setup_available === false || authConfig?.local_auth_enabled === false) {
         navigate('/login', { replace: true })
       } else {
+        setMinimumPasswordLength(minimum_password_length ?? 8)
         setChecking(false)
       }
     }).catch(() => {
@@ -188,7 +190,8 @@ export default function SetupPage() {
                 onChange={(e) => setPassword(e.target.value)}
 
                 required
-                minLength={8}
+                minLength={minimumPasswordLength}
+                maxLength={128}
               />
             </div>
             <div className="space-y-1.5">
@@ -200,7 +203,8 @@ export default function SetupPage() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
 
                 required
-                minLength={8}
+                minLength={minimumPasswordLength}
+                maxLength={128}
               />
             </div>
             <div className="space-y-1.5">

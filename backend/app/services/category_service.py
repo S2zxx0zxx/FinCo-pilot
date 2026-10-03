@@ -46,6 +46,8 @@ async def create_default_categories(
     user_id: uuid.UUID,
     lang: str = "pt-BR",
     workspace_id: Optional[uuid.UUID] = None,
+    *,
+    commit: bool = True,
 ) -> list[Category]:
     # Guard against double-creation. Scope the check to the workspace
     # when one is provided so a user creating a SECOND workspace still
@@ -94,7 +96,10 @@ async def create_default_categories(
         )
         session.add(category)
         categories.append(category)
-    await session.commit()
+    if commit:
+        await session.commit()
+    else:
+        await session.flush()
     return categories
 
 

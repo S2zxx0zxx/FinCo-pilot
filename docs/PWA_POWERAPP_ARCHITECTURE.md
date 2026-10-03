@@ -8,15 +8,15 @@ FinCo-Pilot's PWA layer is designed to make the existing React/Vite product inst
 
 ### Cold launch
 
-`frontend/index.html` owns a zero-JavaScript launch surface. It reads the persisted theme before first paint and renders the FinCo F mark on the correct black/white surface while the JavaScript bundle, i18n, providers and initial route bootstrap. React retires the launch surface only after the lazy-route fallback threshold is covered, preventing a blank or white flash.
+`frontend/index.html` owns a zero-JavaScript launch surface. It reads the persisted theme before first paint and renders the FinCo F mark with a compact pulse signal while the JavaScript bundle, i18n, providers and initial route bootstrap. React retires that surface immediately after its first commit; there is no artificial minimum display time.
 
 ### Section navigation
 
-Every pathname change gets a short non-blocking FinCo transition. The router and network continue immediately underneath the overlay; the animation does not introduce an artificial data delay. The visual uses CSS perspective, transform and opacity rather than WebGL/Three.js so it remains lightweight on mobile GPUs. `prefers-reduced-motion` disables continuous motion.
+Pathname changes keep the destination UI visible and use only a slim, non-blocking pulse rail at the top edge. The retired full-screen orbit hand-off is not used. The rail is intentionally brief and never gates router, network or user interaction.
 
 ### Genuine lazy-route waits
 
-React `Suspense` uses the same visual language, but its fallback is delayed by 130 ms so a fast lazy import does not flash a second loader. Route chunks are warmed on pointer hover, pointer down and keyboard focus.
+React `Suspense` renders the compact FinCo pulse only for an actual suspended boundary. React Router v7 keeps normal navigation updates inside React transitions, so already-revealed UI is not deliberately replaced just to manufacture a loading moment. Route chunks are still warmed on pointer hover, pointer down and keyboard focus.
 
 ### Local data waits
 

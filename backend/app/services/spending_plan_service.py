@@ -51,19 +51,25 @@ async def calculate_spending_plan(session: AsyncSession, workspace_id: uuid.UUID
         blockers.append('An unsupported account type may contain debt; reconcile it before calculating.')
 
     # Only recent cached USD cross-rates are accepted, with an explicit age cap.
-    rates: dict[str, Decimal] = {'USD': Decimal(1)}
+    snapshots: dict[date, dict[str, Decimal]] = {}
     fx = (await session.scalars(select(FxRate).where(
         FxRate.base_currency == 'USD', FxRate.date <= today,
         FxRate.date >= today - timedelta(days=7),
     ).order_by(FxRate.date.desc()))).all()
     for row in fx:
-        rates.setdefault(row.quote_currency, row.rate)
+        snapshot = snapshots.setdefault(row.date, {"USD": Decimal(1)})
+        if row.quote_currency != "USD":
+            snapshot[row.quote_currency] = row.rate
 
     def convert(amount, source):
         amount = Decimal(str(amount))
         if source == currency:
             return amount
-        if source not in rates or currency not in rates or rates[source] <= 0 or rates[currency] <= 0:
+        rates = next((snapshot for snapshot in snapshots.values()
+                      if source in snapshot and currency in snapshot
+                      and snapshot[source].is_finite() and snapshot[currency].is_finite()
+                      and snapshot[source] > 0 and snapshot[currency] > 0), None)
+        if rates is None:
             blockers.append(f'A recent exchange rate for {source}/{currency} is unavailable.')
             return ZERO
         return amount * rates[currency] / rates[source]

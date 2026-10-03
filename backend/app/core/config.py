@@ -351,6 +351,13 @@ class Settings(BaseSettings):
         if len(self.operator_legal_name) > 255:
             raise ValueError("OPERATOR_LEGAL_NAME must be at most 255 characters")
 
+        currencies = [code.strip().upper() for code in self.supported_currencies.split(",")]
+        if any(len(code) != 3 or not code.isascii() or not code.isalpha() for code in currencies):
+            raise ValueError("SUPPORTED_CURRENCIES must contain three-letter currency codes")
+        self.supported_currencies = ",".join(dict.fromkeys(currencies))
+        if self.fx_sync_mode not in {"on_demand", "scheduled"}:
+            raise ValueError("FX_SYNC_MODE must be on_demand or scheduled")
+
         if self.support_provider not in {"external", "zoho_desk"}:
             raise ValueError("SUPPORT_PROVIDER must be external or zoho_desk")
         if not 1 <= self.support_rate_limit_per_hour <= 100:

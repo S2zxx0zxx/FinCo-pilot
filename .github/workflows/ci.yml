@@ -212,6 +212,8 @@ jobs:
           pip install --no-deps -e .
       - name: Verify Redis runtime round-trip
         run: python -m scripts.verify_production_redis --ci --redis-only
+      - name: Verify atomic FX provider request budget
+        run: python -m scripts.verify_fx_budget_redis
       - name: Verify live Celery worker broker/result round-trip
         run: |
           set -euo pipefail
@@ -449,22 +451,38 @@ jobs:
       - name: Lint production contract with external Secret
         if: steps.helm-changes.outputs.run_helm == 'true'
         run: |
-          helm lint charts/fincopilot \
-            --set config.deploymentEnvironment=production \
-            --set global.existingSecret=synthetic-ci-existing-secret \
-            --set postgresql.enabled=false \
-            --set config.databaseExternalRequired=true \
-            --set config.dbSslMode=verify-full \
-            --set redis.enabled=false \
-            --set config.redisExternalRequired=true \
-            --set config.redisTlsRequired=true \
-            --set config.redisAuthRequired=true \
-            --set config.storageProvider=s3 \
-            --set config.requireObjectStorage=true \
-            --set config.storageS3Vendor=cloudflare_r2 \
-            --set config.storageS3Bucket=synthetic-ci-private \
-            --set config.storageS3Region=auto \
+          production_args=(
+            --set config.deploymentEnvironment=production
+            --set global.existingSecret=synthetic-ci-existing-secret
+            --set postgresql.enabled=false
+            --set config.databaseExternalRequired=true
+            --set config.dbSslMode=verify-full
+            --set redis.enabled=false
+            --set config.redisExternalRequired=true
+            --set config.redisTlsRequired=true
+            --set config.redisAuthRequired=true
+            --set config.storageProvider=s3
+            --set config.requireObjectStorage=true
+            --set config.storageS3Vendor=cloudflare_r2
+            --set config.storageS3Bucket=synthetic-ci-private
+            --set config.storageS3Region=auto
             --set config.storageS3EndpointUrl=https://abc123.r2.cloudflarestorage.com
+            --set config.requireFxProvider=true
+            --set config.fxAllowUnsafe1to1Fallback=false
+            --set config.fxSyncMode=scheduled
+          )
+          helm lint charts/fincopilot "${production_args[@]}"
+          helm template finco charts/fincopilot "${production_args[@]}" >/tmp/finco-production-contract.yaml
+          grep -q 'FX_ALLOW_UNSAFE_1TO1_FALLBACK: "false"' /tmp/finco-production-contract.yaml
+          grep -q 'REQUIRE_FX_PROVIDER: "true"' /tmp/finco-production-contract.yaml
+          grep -q 'FX_SYNC_MODE: "scheduled"' /tmp/finco-production-contract.yaml
+          for override in config.requireFxProvider=false config.fxAllowUnsafe1to1Fallback=true config.fxSyncMode=on_demand; do
+            if helm template finco charts/fincopilot "${production_args[@]}" --set "$override" >/tmp/finco-invalid-fx.yaml 2>/tmp/finco-fx-gate.log; then
+              echo "Production unexpectedly rendered with $override" >&2
+              exit 1
+            fi
+            grep -q "production requires ${override%=*}" /tmp/finco-fx-gate.log
+          done
 
       - name: Validate Helm Chart with Kubeconform
         if: steps.helm-changes.outputs.run_helm == 'true'
@@ -489,4 +507,7 @@ jobs:
             --set config.storageS3Bucket=synthetic-ci-private \
             --set config.storageS3Region=auto \
             --set config.storageS3EndpointUrl=https://abc123.r2.cloudflarestorage.com \
+            --set config.requireFxProvider=true \
+            --set config.fxAllowUnsafe1to1Fallback=false \
+            --set config.fxSyncMode=scheduled \
             | kubeconform -summary -strict

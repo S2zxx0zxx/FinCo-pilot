@@ -42,22 +42,24 @@ async def _restamp_recurring_fx() -> int:
     try:
         async with session_maker() as session:
             users = (await session.execute(select(User))).scalars().all()
-        count = 0
-        for user in users:
-            primary = user.primary_currency
-            result = await session.execute(
-                select(RecurringTransaction).where(
-                    RecurringTransaction.user_id == user.id,
-                    RecurringTransaction.is_active == True,
-                    RecurringTransaction.currency != primary,
+            count = 0
+            for user in users:
+                primary = user.primary_currency
+                result = await session.execute(
+                    select(RecurringTransaction).where(
+                        RecurringTransaction.user_id == user.id,
+                        RecurringTransaction.is_active == True,
+                        RecurringTransaction.currency != primary,
+                    )
                 )
-            )
-            for rec in result.scalars().all():
-                await stamp_primary_amount(
-                    session, user.id, rec, date_field="start_date",
-                )
-                count += 1
-        await session.commit()
+                for rec in result.scalars().all():
+                    before = (rec.amount_primary, rec.fx_rate_used)
+                    await stamp_primary_amount(
+                        session, user.id, rec, date_field="next_occurrence", allow_fetch=False,
+                    )
+                    if (rec.amount_primary, rec.fx_rate_used) != before:
+                        count += 1
+            await session.commit()
     finally:
         await engine.dispose()
     return count

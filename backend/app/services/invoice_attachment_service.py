@@ -6,6 +6,7 @@ a transaction does not: the role a file plays, and which file *is* the
 document.
 """
 import uuid
+import logging
 from datetime import date as _date
 from typing import Optional
 
@@ -18,6 +19,9 @@ from app.models.invoice import Invoice
 from app.models.invoice_attachment import ATTACHMENT_KINDS, InvoiceAttachment
 from app.providers import get_storage_provider
 from app.services.attachment_service import _validate_file, sanitize_filename
+from app.services.storage_compensation import compensate_upload
+
+logger = logging.getLogger(__name__)
 
 
 async def _invoice_in_workspace(
@@ -131,9 +135,6 @@ async def upload(
     storage = get_storage_provider()
     stored = await storage.upload(storage_key, data, content_type)
 
-    if is_primary:
-        await _clear_primary(session, invoice_id)
-
     attachment = InvoiceAttachment(
         invoice_id=invoice_id,
         workspace_id=workspace_id,
@@ -149,26 +150,23 @@ async def upload(
         content_type=stored.content_type,
         size=stored.size,
     )
-    session.add(attachment)
     try:
+        if is_primary:
+            await _clear_primary(session, invoice_id)
+        session.add(attachment)
+        await session.flush()
         await session.commit()
-    except IntegrityError:
-        # Lost a race with a concurrent sync of the same file. The row is
-        # not ours, so neither is the blob: leaving it would be an orphan
-        # nothing can reach.
-        await session.rollback()
-        try:
-            await storage.delete(stored.storage_key)
-        except Exception:
-            pass
-        existing = (
-            await find_by_external_id(session, workspace_id, source, external_id)
-            if source and external_id
-            else None
+    except Exception as exc:
+        await compensate_upload(
+            session, storage, stored.storage_key,
+            select(InvoiceAttachment.id).where(InvoiceAttachment.storage_key == stored.storage_key),
         )
-        if existing is not None:
-            return existing
+        if isinstance(exc, IntegrityError) and source and external_id:
+            existing = await find_by_external_id(session, workspace_id, source, external_id)
+            if existing is not None:
+                return existing
         raise
+
     await session.refresh(attachment)
     return attachment
 
@@ -284,5 +282,5 @@ async def cleanup_files(session: AsyncSession, invoice_id: uuid.UUID) -> None:
     for key in keys:
         try:
             await storage.delete(key)
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning("Invoice attachment cleanup deferred (%s)", type(exc).__name__)

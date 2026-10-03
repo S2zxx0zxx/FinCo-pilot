@@ -18,7 +18,7 @@ class StorageIntegrityError(RuntimeError):
     """Stored bytes did not match FinCopilot upload-time integrity metadata."""
 
 
-def _sha256_hex(value: bytes) -> str:
+def _sha256_hex(value: bytes | bytearray) -> str:
     return hashlib.sha256(value).hexdigest()
 
 
@@ -143,7 +143,7 @@ class S3StorageProvider(StorageProvider):
         canonical_request = "\n".join(
             [
                 method.upper(),
-                _canonical_uri(parsed.path),
+                (parsed.path or "/"),
                 _canonical_query(list(parse_qsl(parsed.query, keep_blank_values=True))),
                 canonical_headers,
                 signed_names,
@@ -214,26 +214,30 @@ class S3StorageProvider(StorageProvider):
         async with httpx.AsyncClient(
             timeout=self._timeout(), follow_redirects=False
         ) as client:
-            response = await client.get(url, headers=headers)
-        if response.status_code == 404:
-            raise FileNotFoundError(f"File not found: {logical_key}")
-        response.raise_for_status()
-
-        max_bytes = self._settings().storage_max_file_size_mb * 1024 * 1024
-        if len(response.content) > max_bytes:
-            raise StorageIntegrityError(
-                "Stored object exceeds the configured maximum size"
-            )
-
-        expected_checksum = response.headers.get(_INTEGRITY_HEADER)
-        if expected_checksum:
-            expected_checksum = expected_checksum.strip().lower()
-            actual_checksum = _sha256_hex(response.content)
-            if not hmac.compare_digest(expected_checksum, actual_checksum):
-                raise StorageIntegrityError(
-                    "Stored object checksum verification failed"
-                )
-        return response.content
+            async with client.stream("GET", url, headers=headers) as response:
+                if response.status_code == 404:
+                    raise FileNotFoundError(f"File not found: {logical_key}")
+                response.raise_for_status()
+                max_bytes = self._settings().storage_max_file_size_mb * 1024 * 1024
+                length = response.headers.get("content-length")
+                if length is not None:
+                    try:
+                        declared_size = int(length)
+                    except ValueError:
+                        raise StorageIntegrityError("Invalid stored object length") from None
+                    if declared_size < 0 or declared_size > max_bytes:
+                        raise StorageIntegrityError("Stored object exceeds the configured maximum size")
+                data = bytearray()
+                async for chunk in response.aiter_bytes(chunk_size=64 * 1024):
+                    if len(data) + len(chunk) > max_bytes:
+                        raise StorageIntegrityError("Stored object exceeds the configured maximum size")
+                    data.extend(chunk)
+                expected_checksum = response.headers.get(_INTEGRITY_HEADER)
+                if expected_checksum and not hmac.compare_digest(
+                    expected_checksum.strip().lower(), _sha256_hex(data)
+                ):
+                    raise StorageIntegrityError("Stored object checksum verification failed")
+                return bytes(data)
 
     async def delete(self, storage_key: str) -> None:
         logical_key = self._validate_key(storage_key)
@@ -306,7 +310,7 @@ class S3StorageProvider(StorageProvider):
         canonical_request = "\n".join(
             [
                 "GET",
-                _canonical_uri(parsed.path),
+                (parsed.path or "/"),
                 canonical_qs,
                 canonical_headers,
                 "host",

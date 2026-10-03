@@ -11,6 +11,9 @@ x-backend-env: &backend-env
   CREDENTIALS_DIRECTORY: ${CREDENTIALS_DIRECTORY:-/run/secrets:/app/secrets}
   DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@db:5432/fincopilot}
   SECRET_KEY: ${SECRET_KEY:-dev-secret-change-in-production}
+  CREDENTIAL_ENCRYPTION_KEY: ${CREDENTIAL_ENCRYPTION_KEY:-}
+  CORE_COPILOT_SIGNING_KEY: ${CORE_COPILOT_SIGNING_KEY:-}
+  LEGACY_DATA_KEYS: ${LEGACY_DATA_KEYS:-}
   DEBUG: ${DEBUG:-true}
   RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
   RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}

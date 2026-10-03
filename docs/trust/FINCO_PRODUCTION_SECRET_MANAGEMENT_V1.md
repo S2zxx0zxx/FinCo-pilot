@@ -96,6 +96,9 @@ secret files, so do not configure the same credential in two places.
 
 | Runtime name | Compose file | Required when | Rotation effect |
 | --- | --- | --- | --- |
+| `CREDENTIAL_ENCRYPTION_KEY` | `credential_encryption_key` | every production deployment | staged re-encryption; retain previous credential key until verified |
+| `CORE_COPILOT_SIGNING_KEY` | `core_copilot_signing_key` | every production deployment | staged re-signing; retain previous identity key until verified |
+| `LEGACY_DATA_KEYS` | `legacy_data_keys` | migrating existing data | purpose-separated JSON compatibility rings; never JWT auth |
 | `SECRET_KEY` | `secret_key` | every production deployment | all application JWT sessions become invalid |
 | `DATABASE_URL` | `database_url` | every production deployment | coordinate DB credential + app restart |
 | `POSTGRES_PASSWORD` | `postgres_password` | bundled PostgreSQL | coordinate DB credential + `DATABASE_URL` |
@@ -173,7 +176,12 @@ maintenance window and fail closed rather than silently falling back.
 ### `SECRET_KEY`
 
 `SECRET_KEY` signs application credentials. Rotation intentionally invalidates
-existing application JWT sessions.
+existing application JWT sessions. Before the first rotation on an existing
+installation, separate data encryption and Core Copilot identity keys using
+[the #1–#16 revision runbook](FINCO_REVISION_1_16_V1.md). Older builds also used
+SECRET_KEY for stored credentials and system-agent signatures; retiring it
+without migrating these records strands data. Do not destroy keys still needed
+to restore retained backups.
 
 1. Announce/choose a maintenance boundary.
 2. Generate a new independent high-entropy value.
@@ -181,7 +189,7 @@ existing application JWT sessions.
 4. Restart API/workers that load Settings.
 5. Require users to sign in again.
 6. Verify login, logout, password reset/verification and protected APIs.
-7. Destroy the old value.
+7. Retire the old value only after the data-key migration and backup restoration requirements above are verified.
 
 Do not rotate `SECRET_KEY` merely because another provider key changed.
 

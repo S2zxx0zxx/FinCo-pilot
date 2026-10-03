@@ -1,4 +1,5 @@
 from enum import StrEnum
+import re
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -24,6 +25,16 @@ class SupportTicketCreate(BaseModel):
     app_version: str | None = Field(default=None, max_length=80)
     locale: str | None = Field(default=None, max_length=32)
     error_reference: str | None = Field(default=None, max_length=64)
+
+    @field_validator("error_reference")
+    @classmethod
+    def validate_error_reference(cls, value: str | None) -> str | None:
+        if value is None or not value.strip():
+            return None
+        value = value.strip().upper()
+        if not re.fullmatch(r"FCREQ-[A-F0-9]{12}", value):
+            raise ValueError("error_reference must be a FinCo request reference")
+        return value
 
     @field_validator("subject")
     @classmethod
@@ -51,7 +62,7 @@ class SupportTicketCreate(BaseModel):
             return None
         # Diagnostics only need an app-relative path. Reject full URLs so query
         # strings cannot accidentally forward OAuth codes or other secrets.
-        if not value.startswith("/") or "://" in value:
+        if not value.startswith("/") or value.startswith("//") or "\\" in value or "://" in value:
             raise ValueError("page_path must be an app-relative path")
         return value.split("?", 1)[0].split("#", 1)[0][:500]
 

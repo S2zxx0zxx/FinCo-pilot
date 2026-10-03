@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from typing import Any
 from urllib.parse import parse_qs, urlsplit
 
@@ -6,6 +7,60 @@ import pytest
 
 from app.core.config import Settings
 from app.providers.s3_storage import S3StorageProvider, StorageIntegrityError
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("declared", [True, False])
+async def test_oversized_download_stops_stream_before_full_body_is_read(monkeypatch, declared):
+    settings = _r2_settings(storage_max_file_size_mb=1)
+    monkeypatch.setattr("app.providers.s3_storage.get_settings", lambda: settings)
+    state = {"chunks": 0, "closed": False}
+
+    class LargeBody(httpx.AsyncByteStream):
+        async def __aiter__(self):
+            for _ in range(100):
+                state["chunks"] += 1
+                yield b"x" * (64 * 1024)
+
+        async def aclose(self):
+            state["closed"] = True
+
+    def handler(request):
+        headers = {"content-length": str(100 * 64 * 1024)} if declared else {}
+        return httpx.Response(200, request=request, headers=headers, stream=LargeBody())
+
+    real_client = httpx.AsyncClient
+    monkeypatch.setattr("app.providers.s3_storage.httpx.AsyncClient", lambda **kwargs: real_client(
+        **kwargs, transport=httpx.MockTransport(handler)))
+    with pytest.raises(StorageIntegrityError, match="maximum size"):
+        await S3StorageProvider().download("private/file.pdf")
+    assert state["chunks"] == (0 if declared else 17)
+    assert state["closed"] is True
+
+
+def test_sigv4_signs_the_exact_once_encoded_wire_path(monkeypatch):
+    import app.providers.s3_storage as module
+    settings = _r2_settings(storage_s3_prefix="folder one")
+    monkeypatch.setattr(module, "get_settings", lambda: settings)
+    hashes = []
+    real_hash = module._sha256_hex
+
+    def capture(value):
+        if value.startswith(b"GET\n"):
+            hashes.append(value.decode())
+        return real_hash(value)
+
+    monkeypatch.setattr(module, "_sha256_hex", capture)
+    provider = S3StorageProvider()
+    key = "file 100%+é.pdf"
+    url = provider._object_url(provider._qualified_key(key))
+    provider._signed_headers("GET", url, b"")
+    presigned = provider.get_url(key)
+    expected_path = "/finco-ci-private/folder%20one/file%20100%25%2B%C3%A9.pdf"
+    assert urlsplit(url).path == expected_path
+    assert urlsplit(presigned).path == expected_path
+    assert len(hashes) == 2
+    assert all(canonical.splitlines()[1] == expected_path for canonical in hashes)
 
 
 class _MemoryAsyncClient:
@@ -53,6 +108,10 @@ class _MemoryAsyncClient:
             content=data,
             headers=response_headers,
         )
+
+    @asynccontextmanager
+    async def stream(self, method: str, url: str, headers: dict[str, str]):
+        yield await self.get(url, headers)
 
     async def head(self, url: str, headers: dict[str, str]):
         entry = self.objects.get(url)

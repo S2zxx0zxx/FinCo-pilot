@@ -184,6 +184,14 @@ def test_invalid_tax_display_mode_is_rejected(secrets: Path):
 def _production_settings_kwargs() -> dict:
     return {
         "deployment_environment": "production",
+        "credential_encryption_key": "synthetic-encryption-key-with-more-than-32-characters",
+        "core_copilot_signing_key": "synthetic-copilot-key-with-more-than-32-characters",
+        "database_external_required": True,
+        "db_ssl_mode": "require",
+        "redis_external_required": True,
+        "redis_tls_required": True,
+        "redis_auth_required": True,
+        "redis_url": "rediss://finco:synthetic@redis.example.test:6379/0",
         "secret_key": "synthetic-production-key-with-more-than-32-characters",
         "frontend_url": "https://app.example.test",
         "database_url": "postgresql+asyncpg://finco:synthetic@db.example.test:5432/finco",
@@ -201,6 +209,23 @@ def _production_settings_kwargs() -> dict:
         "storage_s3_secret_key": "synthetic-secret-key",
         "storage_s3_endpoint_url": "https://abc123.r2.cloudflarestorage.com",
     }
+
+
+@pytest.mark.parametrize("override, expected", [
+    ({"database_external_required": False}, "DATABASE_EXTERNAL_REQUIRED"),
+    ({"db_ssl_mode": "prefer"}, "encrypted DB_SSL_MODE"),
+    ({"redis_external_required": False}, "external authenticated Redis"),
+    ({"redis_tls_required": False}, "external authenticated Redis"),
+    ({"redis_auth_required": False}, "external authenticated Redis"),
+    ({"credential_encryption_key": ""}, "independent CREDENTIAL_ENCRYPTION_KEY"),
+    ({"core_copilot_signing_key": "synthetic-production-key-with-more-than-32-characters"}, "independent CREDENTIAL_ENCRYPTION_KEY"),
+])
+def test_manual_production_configuration_cannot_bypass_release_security(secrets: Path, override, expected):
+    kwargs = _production_settings_kwargs()
+    kwargs.update(billing_checkout_enabled=False)
+    kwargs.update(override)
+    with pytest.raises(ValidationError, match=expected):
+        Settings(_secrets_dir=secrets, _env_file=None, **kwargs)
 
 
 def test_production_paid_checkout_refuses_unconfigured_tax_treatment(secrets: Path):

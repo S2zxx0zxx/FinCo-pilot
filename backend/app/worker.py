@@ -25,6 +25,14 @@ celery_app.conf.update(
     worker_prefetch_multiplier=settings.celery_worker_prefetch_multiplier,
     task_track_started=True,
     result_expires=settings.celery_result_expires_seconds,
+    redis_max_connections=settings.redis_max_connections,
+    redis_socket_connect_timeout=settings.redis_socket_connect_timeout_seconds,
+    redis_socket_timeout=settings.redis_socket_timeout_seconds,
+    redis_backend_health_check_interval=settings.redis_health_check_interval_seconds,
+    visibility_timeout=settings.celery_visibility_timeout_seconds,
+    result_backend_transport_options={
+        "visibility_timeout": settings.celery_visibility_timeout_seconds,
+    },
     broker_transport_options={
         "visibility_timeout": settings.celery_visibility_timeout_seconds,
         "socket_connect_timeout": settings.redis_socket_connect_timeout_seconds,

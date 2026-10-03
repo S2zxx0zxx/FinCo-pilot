@@ -58,7 +58,8 @@ config:
 
 Because workloads consume the Secret with `envFrom`, an externally-created
 Secret uses the actual uppercase application environment names, for example
-`SECRET_KEY`, `DATABASE_URL`, `SMTP_PASSWORD`,
+`SECRET_KEY`, `CREDENTIAL_ENCRYPTION_KEY`, `CORE_COPILOT_SIGNING_KEY`,
+`LEGACY_DATA_KEYS` (during migration), `DATABASE_URL`, `SMTP_PASSWORD`,
 `AGENTS_MCP_JWT_SECRET`, and `AGENTS_OPENAI_COMPAT_API_KEY`. Do **not** use
 the camelCase `values.yaml` field names in an external Secret.
 
@@ -113,3 +114,13 @@ the key `REDIS_URL`; do not put it in `values.yaml`.
 Celery worker readiness/liveness probes use the real broker. Beat is a
 single-replica `Recreate` deployment with a PID probe so rollouts do not run
 two schedulers at once.
+
+### Revision startup gate
+
+Backend, worker, Beat and MCP pods run `scripts/prepare_release.py` in an init
+container before starting. Production requires schema and provider acceptance,
+plus a data-key migration dry run. API readiness uses `/api/health/ready`.
+The migration hook remains an idempotent post-install/upgrade confirmation;
+`helm --wait` no longer allows traffic before migrations. Existing installations
+must follow [the data-key rollout runbook](../../docs/trust/FINCO_REVISION_1_16_V1.md)
+and include their previous data keys in the externally managed Secret.

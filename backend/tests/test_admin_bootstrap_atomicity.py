@@ -24,6 +24,9 @@ async def test_seed_failure_rolls_back_and_allows_retry(session, clean_db, monke
     await session.rollback()
     assert await session.scalar(select(func.count(User.id))) == 0
     assert await session.get(AppSetting, BOOTSTRAP_RECORD_KEY) is None
+    from app.core.database import Base
+    for table in Base.metadata.sorted_tables:
+        assert await session.scalar(select(func.count()).select_from(table)) == 0, table.name
     monkeypatch.setattr(rule_service, "create_default_rules", original)
     user = await provision_first_admin(session, manager, body)
     await session.commit()
@@ -88,3 +91,12 @@ async def test_production_registration_waits_for_admin(client, clean_db, monkeyp
     monkeypatch.setattr(get_settings(), "deployment_environment", "production")
     response = await client.post("/api/auth/register", json={"email": "public@example.com", "password": "StrongPass123!", "is_superuser": True})
     assert response.status_code == 409
+
+
+def test_password_file_rejects_fifo_without_waiting(tmp_path):
+    import os
+    from scripts.bootstrap_first_admin import password_from_file
+    fifo = tmp_path / "fifo"
+    os.mkfifo(fifo, 0o600)
+    with pytest.raises(ValueError):
+        password_from_file(str(fifo))

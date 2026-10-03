@@ -26,7 +26,12 @@ async def main():
         async with engine.begin() as connection:
             await connection.execute(text(f'CREATE SCHEMA "{schema}"'))
         async with isolated.begin() as connection:
-            await connection.run_sync(Base.metadata.create_all)
+            await connection.run_sync(lambda sync: Base.metadata.create_all(sync, checkfirst=False))
+            resolved_schema = await connection.scalar(text(
+                "SELECT n.nspname FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace "
+                "WHERE c.oid=\'users\'::regclass"
+            ))
+            assert resolved_schema == schema, "Proof must resolve its own isolated user table"
         start = asyncio.Event()
 
         async def attempt(number):

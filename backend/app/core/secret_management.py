@@ -11,7 +11,7 @@ from enum import Enum
 
 
 INVENTORY_ID = "FINCO_PRODUCTION_SECRET_MANAGEMENT_V1"
-INVENTORY_VERSION = "2026-10-02"
+INVENTORY_VERSION = "2026-10-03"
 
 
 class SecretKind(str, Enum):
@@ -151,6 +151,15 @@ PRODUCTION_SECRETS: dict[str, ProductionSecret] = {
         "AGENTS_EMBEDDING_OPENAI_API_KEY", "agents_embedding_openai_api_key", SecretKind.PROVIDER_CREDENTIAL,
         ("backend", "celery-worker"), "remote OpenAI/OpenAI-compatible embeddings are enabled",
         RotationImpact.PROVIDER_REVOKE_AND_REPLACE, True,
+    ),
+    "CLOUDFLARE_TUNNEL_TOKEN": ProductionSecret(
+        "CLOUDFLARE_TUNNEL_TOKEN", "cloudflare_tunnel_token", SecretKind.PROVIDER_CREDENTIAL,
+        ("cloudflared",), "the cloudflare-edge production profile is enabled",
+        RotationImpact.PROVIDER_REVOKE_AND_REPLACE, True,
+        notes=(
+            "Remotely managed Cloudflare Tunnel token. Keep it out of application "
+            "environments; the cloudflared connector reads the dedicated secret file."
+        ),
     ),
     "REDIS_URL": ProductionSecret(
         "REDIS_URL", "redis_url", SecretKind.CONNECTION_STRING,

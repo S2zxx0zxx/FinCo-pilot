@@ -18,25 +18,27 @@ describe('FinCoNavigationTransition', () => {
     vi.useRealTimers()
   })
 
-  it('stays invisible on first paint and animates a real section change', () => {
+  it('stays invisible on first paint and uses a short non-blocking pulse on navigation', () => {
     vi.useFakeTimers()
-    render(
+    const { container } = render(
       <MemoryRouter initialEntries={['/']}>
         <Harness />
       </MemoryRouter>,
     )
 
-    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    expect(container.querySelector('.finco-navigation-pulse')).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Go reports' }))
     act(() => vi.advanceTimersByTime(20))
-    expect(screen.getByRole('status', { name: 'Opening Reports' })).toBeInTheDocument()
-    expect(screen.getByText('Preparing Reports')).toBeInTheDocument()
 
-    act(() => vi.advanceTimersByTime(340))
-    expect(screen.getByRole('status', { name: 'Opening Reports' })).toHaveClass('finco-route-loader--leaving')
+    const pulse = container.querySelector('.finco-navigation-pulse')
+    expect(pulse).toBeInTheDocument()
+    expect(container.querySelector('.finco-loading-screen')).not.toBeInTheDocument()
 
-    act(() => vi.advanceTimersByTime(180))
-    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    act(() => vi.advanceTimersByTime(160))
+    expect(container.querySelector('.finco-navigation-pulse')).toHaveClass('finco-navigation-pulse--leaving')
+
+    act(() => vi.advanceTimersByTime(90))
+    expect(container.querySelector('.finco-navigation-pulse')).not.toBeInTheDocument()
   })
 })

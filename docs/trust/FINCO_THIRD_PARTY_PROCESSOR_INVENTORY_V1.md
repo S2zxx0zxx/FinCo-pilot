@@ -2,7 +2,7 @@
 
 **Roadmap:** #12 — Third-party processor inventory  
 **Contract:** `FINCO_THIRD_PARTY_PROCESSOR_INVENTORY_V1`  
-**Version:** 2026-10-02  
+**Version:** 2026-10-03  
 **Status:** engineering inventory contract; production activation remains provider/deployment specific.
 
 The canonical machine-readable source is:
@@ -73,11 +73,19 @@ No locally configured model/provider becomes production-approved merely because 
 - R2 location hints/jurisdictions are not treated as an India-residency guarantee.
 - Roadmap #25 still owns isolated backup/restore proof; selecting R2 does not close disaster recovery.
 
+### Selected Cloudflare edge boundary
+
+- **Cloudflare DNS / TLS edge / Tunnel** is selected for the zero-cost public edge path.
+- A dedicated FinCo-Pilot hostname and remotely managed Tunnel are provisioned without replacing the existing root-site or mail DNS records.
+- TLS termination means request metadata, headers and application request/response content can transit the Cloudflare boundary; this is not merely a DNS-only processor.
+- Selection remains release-gated until a durable origin connector is running, live HTTPS/API acceptance passes, caching/security behavior is reviewed, and current contract/retention/data-location terms are accepted.
+- This selection does **not** select or prove the production compute host or application log sink.
+
 ### Infrastructure boundaries still unresolved
 
 The inventory intentionally leaves these unresolved until their roadmap items select the real vendor:
 
-- production hosting / reverse proxy / log sink;
+- production compute host / application log sink;
 - managed Redis, if used;
 - transactional SMTP;
 - optional OIDC provider.

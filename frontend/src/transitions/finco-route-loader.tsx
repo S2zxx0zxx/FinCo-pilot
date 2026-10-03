@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useLocation } from 'react-router-dom'
 import { FinCoLogo } from '@/components/finco-logo'
 import { routeDestinationLabel } from '@/transitions/route-labels'
@@ -12,47 +12,56 @@ export function FinCoLoaderVisual({
 }) {
   return (
     <div
-      className={`finco-route-loader${leaving ? ' finco-route-loader--leaving' : ''}`}
+      className={`finco-loading-screen${leaving ? ' finco-loading-screen--leaving' : ''}`}
       role="status"
       aria-live="polite"
       aria-label={`Opening ${destination}`}
     >
-      <div className="finco-route-loader__scene" aria-hidden="true">
-        <div className="finco-route-loader__orbit finco-route-loader__orbit--outer" />
-        <div className="finco-route-loader__orbit finco-route-loader__orbit--inner" />
-        <div className="finco-route-loader__halo" />
-        <div className="finco-route-loader__logo">
-          <FinCoLogo size={68} />
+      <div className="finco-loading-screen__content">
+        <div className="finco-loading-screen__mark" aria-hidden="true">
+          <span className="finco-loading-screen__halo" />
+          <FinCoLogo size={46} className="finco-loading-screen__logo" />
         </div>
-      </div>
-      <div className="finco-route-loader__copy">
-        <span className="finco-route-loader__brand">FinCo-Pilot</span>
-        <span className="finco-route-loader__destination">Preparing {destination}</span>
-      </div>
-      <div className="finco-route-loader__progress" aria-hidden="true">
-        <span />
+
+        <div className="finco-loading-screen__copy">
+          <span className="finco-loading-screen__brand">FinCo-Pilot</span>
+          <span className="finco-loading-screen__destination">Opening {destination}</span>
+        </div>
+
+        <div className="finco-loading-screen__signal" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </div>
       </div>
     </div>
   )
 }
 
+export function FinCoNavigationPulse({ leaving = false }: { leaving?: boolean }) {
+  return (
+    <div
+      className={`finco-navigation-pulse${leaving ? ' finco-navigation-pulse--leaving' : ''}`}
+      aria-hidden="true"
+    >
+      <span className="finco-navigation-pulse__track">
+        <span className="finco-navigation-pulse__bar" />
+      </span>
+    </div>
+  )
+}
+
 /**
- * Delayed Suspense fallback for route chunks.
+ * Suspense fallback for real route waits.
  *
- * Fast chunk loads never flash a second fallback. A separate navigation
- * transition handles the intentional app-like page hand-off, while this
- * fallback takes over if the lazy route itself genuinely needs longer.
+ * React Router v7 already wraps router state updates in React transitions, so
+ * already-visible content is kept on screen during normal navigations. This
+ * fallback is therefore reserved for genuine cold/slow boundaries instead of
+ * being artificially delayed or shown on every route change.
  */
 export function FinCoRouteLoader() {
   const location = useLocation()
-  const [visible, setVisible] = useState(false)
   const destination = useMemo(() => routeDestinationLabel(location.pathname), [location.pathname])
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => setVisible(true), 130)
-    return () => window.clearTimeout(timer)
-  }, [])
-
-  if (!visible) return null
   return <FinCoLoaderVisual destination={destination} />
 }

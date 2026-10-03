@@ -17,14 +17,11 @@ function retireBootSurface() {
   const boot = document.getElementById('finco-boot')
   if (!boot) return
 
-  // Keep the zero-JS launch surface just long enough to bridge React's first
-  // render and the 130ms lazy-route fallback threshold. This prevents a white
-  // or empty flash on cold starts while remaining comfortably sub-second.
-  requestAnimationFrame(() => {
-    window.setTimeout(() => {
-      boot.classList.add('finco-boot--leaving')
-      window.setTimeout(() => boot.remove(), 220)
-    }, 150)
+  // React has committed its first UI. Fade the zero-JS boot surface immediately
+  // instead of holding it on screen for an artificial minimum duration.
+  window.requestAnimationFrame(() => {
+    boot.classList.add('finco-boot--leaving')
+    window.setTimeout(() => boot.remove(), 120)
   })
 }
 

@@ -87,10 +87,11 @@ async def test_missing_identity_key_quarantines_existing_core_without_replacemen
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("old_key", ["old-data-key", " old-data-key "])
 async def test_atomic_migration_preserves_ids_and_credentials_after_legacy_retirement(
-    session, test_user, test_workspace, monkeypatch,
+    session, test_user, test_workspace, monkeypatch, old_key,
 ):
-    _install_keys(monkeypatch, jwt="old-data-key")
+    _install_keys(monkeypatch, jwt=old_key)
     core = await agent_service.ensure_core_copilot(session, test_workspace.id, test_user.id)
     llm = LlmConnection(user_id=test_user.id, name="Original connection", kind="openai",
                         api_key_encrypted=crypto.encrypt("llm-credential"))
@@ -101,7 +102,7 @@ async def test_atomic_migration_preserves_ids_and_credentials_after_legacy_retir
     await session.commit()
     ids = (core.id, llm.id, bank.id)
     original = llm.api_key_encrypted
-    _install_keys(monkeypatch, encryption="new-data-key", identity="new-identity-key", legacy="old-data-key")
+    _install_keys(monkeypatch, encryption="new-data-key", identity="new-identity-key", legacy=old_key)
     counts = await rotate_data(session)
     assert counts == {"llm_credentials": 1, "bank_credentials": 1, "copilot_identities": 1}
     assert llm.api_key_encrypted == original  # dry run never rewrites rows

@@ -266,7 +266,8 @@ class Settings(BaseSettings):
             if (not isinstance(keys, list) or len(keys) > 8
                     or any(not isinstance(key, str) or not key.strip() or len(key) > 1024 for key in keys)):
                 raise ValueError("LEGACY_DATA_KEYS permits at most eight bounded keys per purpose")
-        return tuple(dict.fromkeys(key.strip() for key in rings.get(purpose, [])))
+        # Compatibility keys must match the original cryptographic bytes exactly.
+        return tuple(dict.fromkeys(rings.get(purpose, [])))
 
     @property
     def oidc_login_available(self) -> bool:

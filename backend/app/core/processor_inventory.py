@@ -17,7 +17,7 @@ from enum import Enum
 
 
 INVENTORY_ID = "FINCO_THIRD_PARTY_PROCESSOR_INVENTORY_V1"
-INVENTORY_VERSION = "2026-10-02"
+INVENTORY_VERSION = "2026-10-03"
 
 
 class BoundaryStatus(str, Enum):
@@ -327,9 +327,40 @@ THIRD_PARTY_BOUNDARIES: dict[str, ThirdPartyBoundary] = {
             "an India-residency guarantee, and roadmap #25 still owns isolated restore proof."
         ),
     ),
+    "cloudflare_edge": ThirdPartyBoundary(
+        key="cloudflare_edge",
+        service="Cloudflare DNS / TLS edge / Tunnel",
+        status=BoundaryStatus.SELECTED_RELEASE_GATED,
+        purpose="public DNS, TLS edge termination, DDoS/security edge, and private tunnel transport to the FinCo-Pilot origin",
+        data_classes=(
+            "ip_address",
+            "http_request_metadata",
+            "http_headers",
+            "request_response_content_in_transit",
+            "authentication_session_headers_in_transit",
+        ),
+        sends_personal_data=True,
+        sends_financial_data=True,
+        sends_secrets_or_credentials=True,
+        legal_role=LegalRoleStatus.CONTRACT_REVIEW_REQUIRED,
+        deletion=DeletionExpectation.CONTRACTUAL_RETENTION_THEN_DELETE,
+        roadmap_gates=(1, 2, 12, 25, 26, 58),
+        public_docs=(
+            "https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/",
+            "https://www.cloudflare.com/privacypolicy/",
+            "https://developers.cloudflare.com/data-localization/",
+        ),
+        notes=(
+            "Selected zero-cost edge path. An operator-owned remotely managed Tunnel and "
+            "dedicated FinCo-Pilot hostname are provisioned without changing the existing "
+            "root-site/mail records. Production remains release-gated until a durable origin "
+            "connector, edge-cache/security rules, retention/contract review, and live HTTPS/API "
+            "acceptance pass. Cloudflare edge selection does not select the compute host/log sink."
+        ),
+    ),
     "hosting_logging_provider": ThirdPartyBoundary(
         key="hosting_logging_provider",
-        service="Production hosting / reverse proxy / log sink",
+        service="Production compute host / application log sink",
         status=BoundaryStatus.UNRESOLVED,
         purpose="serve FinCo-Pilot and retain bounded security/request logs",
         data_classes=("ip_address", "request_metadata", "request_reference", "security_logs"),
@@ -340,7 +371,8 @@ THIRD_PARTY_BOUNDARIES: dict[str, ThirdPartyBoundary] = {
         deletion=DeletionExpectation.OPERATOR_INFRA_LIFECYCLE,
         roadmap_gates=(1, 2, 12, 25, 26, 58),
         notes=(
-            "No production host/log vendor is selected. India residency and automatic log "
+            "No production compute/log vendor is selected. Cloudflare edge is tracked separately. "
+            "India residency and automatic log "
             "expiry cannot be claimed until the actual deployment is configured and verified."
         ),
     ),

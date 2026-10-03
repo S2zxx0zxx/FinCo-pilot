@@ -89,7 +89,8 @@ PRODUCTION_SECRETS: dict[str, ProductionSecret] = {
     ),
     "SMTP_PASSWORD": ProductionSecret(
         "SMTP_PASSWORD", "smtp_password", SecretKind.PROVIDER_CREDENTIAL,
-        ("backend", "celery-worker"), "authenticated transactional SMTP is enabled",
+        ("backend", "celery-worker", "celery-beat", "migration", "mcp-server"),
+        "authenticated transactional SMTP is enabled (all shared Settings consumers)",
         RotationImpact.PROVIDER_REVOKE_AND_REPLACE, True,
     ),
     "METRICS_TOKEN": ProductionSecret(

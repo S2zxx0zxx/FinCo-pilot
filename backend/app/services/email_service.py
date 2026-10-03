@@ -1,44 +1,43 @@
 import asyncio
 import logging
-import smtplib
-import ssl
+import threading
+from email.utils import formatdate, make_msgid
+from html import escape
 from email.message import EmailMessage
 from urllib.parse import quote
 
 from app.core.config import get_settings
+from app.core.smtp_runtime import EmailDeliveryError, failure_reason, mailbox, smtp_connection
 
 logger = logging.getLogger(__name__)
 
 
-def _send_message(message: EmailMessage) -> None:
-    settings = get_settings()
-    if settings.smtp_use_ssl:
-        context = ssl.create_default_context()
-        with smtplib.SMTP_SSL(
-            settings.smtp_host,
-            settings.smtp_port,
-            timeout=20,
-            context=context,
-        ) as smtp:
-            if settings.smtp_username:
-                smtp.login(
-                    settings.smtp_username,
-                    settings.smtp_password.get_secret_value(),
-                )
-            smtp.send_message(message)
-        return
+# Capacity is held by the worker until the socket closes, including after an
+# async caller disconnects. There is no unbounded mail queue or raw-token outbox.
+_capacity_lock = threading.Lock()
+_active_sends = 0
+_pending_tasks: set[asyncio.Task] = set()
 
-    with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=20) as smtp:
-        smtp.ehlo()
-        if settings.smtp_starttls:
-            smtp.starttls(context=ssl.create_default_context())
-            smtp.ehlo()
-        if settings.smtp_username:
-            smtp.login(
-                settings.smtp_username,
-                settings.smtp_password.get_secret_value(),
-            )
-        smtp.send_message(message)
+
+def _send_message(message: EmailMessage) -> None:
+    with smtp_connection(get_settings()) as smtp:
+        refused = smtp.send_message(message, from_addr=str(message["From"]),
+                                    to_addrs=[str(message["To"])])
+        if refused:
+            raise EmailDeliveryError("recipient_refused")
+
+
+def _deliver_reserved(message: EmailMessage) -> None:
+    global _active_sends
+    try:
+        _send_message(message)
+    except Exception as exc:
+        reason = failure_reason(exc)
+        logger.warning("Transactional email submission failed (%s)", reason)
+        raise EmailDeliveryError(reason) from None
+    finally:
+        with _capacity_lock:
+            _active_sends -= 1
 
 
 async def send_email(
@@ -57,25 +56,46 @@ async def send_email(
     settings = get_settings()
     if not settings.email_delivery_available:
         if settings.email_delivery_required:
-            raise RuntimeError("Transactional email is required but SMTP is not configured")
+            raise EmailDeliveryError("not_configured")
         logger.warning("Transactional email skipped because SMTP is not configured")
         return False
 
     message = EmailMessage()
-    message["From"] = settings.smtp_from_email
-    message["To"] = recipient
+    message["From"] = mailbox(settings.smtp_from_email)
+    message["To"] = mailbox(recipient)
     message["Subject"] = subject
+    message["Date"] = formatdate(localtime=False, usegmt=True)
+    message["Message-ID"] = make_msgid(domain=str(message["From"]).rsplit("@", 1)[1])
+    message["Auto-Submitted"] = "auto-generated"
     message.set_content(text_body)
     if html_body:
         message.add_alternative(html_body, subtype="html")
 
-    try:
-        await asyncio.to_thread(_send_message, message)
-        return True
-    except Exception:
-        logger.exception("Transactional email delivery failed")
+    global _active_sends
+    with _capacity_lock:
+        reserved = _active_sends < settings.smtp_max_concurrent_sends
+        if reserved:
+            _active_sends += 1
+    if not reserved:
         if settings.email_delivery_required:
-            raise
+            raise EmailDeliveryError("capacity")
+        return False
+    # Keep a task alive when the HTTP caller is cancelled: cancelling to_thread
+    # cannot stop its socket, nor may it release the capacity slot prematurely.
+    task = asyncio.create_task(asyncio.to_thread(_deliver_reserved, message))
+    _pending_tasks.add(task)
+    def consume_result(completed: asyncio.Task) -> None:
+        _pending_tasks.discard(completed)
+        if not completed.cancelled():
+            completed.exception()
+    task.add_done_callback(consume_result)
+    try:
+        await asyncio.shield(task)
+        return True  # SMTP accepted; inbox delivery is not implied.
+    except Exception as exc:
+        reason = failure_reason(exc)
+        if settings.email_delivery_required:
+            raise EmailDeliveryError(reason) from None
         return False
 
 
@@ -92,7 +112,7 @@ async def send_password_reset_email(recipient: str, token: str) -> bool:
         ),
         html_body=(
             "<p>A password reset was requested for your FinCo-Pilot account.</p>"
-            f'<p><a href="{url}">Reset your password</a></p>'
+            f'<p><a href="{escape(url, quote=True)}">Reset your password</a></p>'
             "<p>If you did not request this, you can ignore this email.</p>"
         ),
     )
@@ -111,7 +131,7 @@ async def send_verification_email(recipient: str, token: str) -> bool:
         ),
         html_body=(
             "<p>Verify the email address for your FinCo-Pilot account.</p>"
-            f'<p><a href="{url}">Verify email</a></p>'
+            f'<p><a href="{escape(url, quote=True)}">Verify email</a></p>'
             "<p>If you did not create this account, you can ignore this email.</p>"
         ),
     )

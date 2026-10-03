@@ -124,3 +124,14 @@ The migration hook remains an idempotent post-install/upgrade confirmation;
 `helm --wait` no longer allows traffic before migrations. Existing installations
 must follow [the data-key rollout runbook](../../docs/trust/FINCO_REVISION_1_16_V1.md)
 and include their previous data keys in the externally managed Secret.
+
+
+### Production SMTP (#17)
+
+Local-auth production requires `config.emailDeliveryRequired=true`, verified TLS via
+`config.smtpUseSsl=true` (with `smtpStarttls=false`) or mandatory STARTTLS, actual
+`config.smtpHost`, `smtpPort`, `smtpUsername`, and a verified `smtpFromEmail`.
+Put `SMTP_PASSWORD` in `global.existingSecret`; never commit production Secret values.
+`config.smtpTimeoutSeconds` defaults to 10; `smtpMaxConcurrentSends` defaults to 4 per process.
+An optional `smtpSslCaFile` needs an operator-provided read-only mount. Follow
+`docs/trust/FINCO_PRODUCTION_SMTP_V1.md` for the no-send probe and inbox acceptance.

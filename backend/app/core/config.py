@@ -8,6 +8,7 @@ from pydantic import SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from app.core.redis_runtime import validate_redis_target
+from app.core.smtp_runtime import validate_smtp_settings
 
 CREDENTIALS_DIRECTORY: list[Path] = [
     Path(p) for p in getenv("CREDENTIALS_DIRECTORY", "/run/secrets:/app/secrets").split(":") if p
@@ -102,6 +103,9 @@ class Settings(BaseSettings):
     smtp_from_email: str = ""
     smtp_starttls: bool = True
     smtp_use_ssl: bool = False
+    smtp_ssl_ca_file: str = ""
+    smtp_timeout_seconds: int = 10
+    smtp_max_concurrent_sends: int = 4
 
     # Customer support / trust layer. Public contact metadata is intentionally
     # separate from transactional SMTP: a support inbox is a human help
@@ -320,10 +324,7 @@ class Settings(BaseSettings):
                 f"missing: {', '.join(missing)}"
             )
 
-        if self.smtp_use_ssl and self.smtp_starttls:
-            raise ValueError("SMTP_USE_SSL and SMTP_STARTTLS cannot both be true")
-        if not 1 <= self.smtp_port <= 65535:
-            raise ValueError("SMTP_PORT must be between 1 and 65535")
+        validate_smtp_settings(self)
 
         operator_type = self.operator_entity_type.strip().lower()
         if operator_type not in OPERATOR_ENTITY_TYPES:

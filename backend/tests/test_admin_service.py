@@ -35,6 +35,15 @@ from app.schemas.admin import AdminUserUpdate
 pytestmark = pytest.mark.asyncio
 
 
+async def test_production_legacy_deletion_preserves_user(session, test_user, monkeypatch):
+    from types import SimpleNamespace
+    monkeypatch.setattr("app.services.admin_service.get_settings", lambda: SimpleNamespace(is_production=True))
+    user_id = test_user.id
+    with pytest.raises(ValueError, match="retention-aware deletion workflow"):
+        await delete_user(session, user_id, uuid.uuid4())
+    assert await get_user(session, user_id) is test_user
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

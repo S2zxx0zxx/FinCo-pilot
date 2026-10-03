@@ -17,6 +17,31 @@ TODAY = date.today()
 PDF = b"%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n"
 
 
+@pytest.mark.asyncio
+async def test_primary_flush_failure_compensates_only_new_upload(client, biz_headers, monkeypatch):
+    from unittest.mock import AsyncMock
+    from app.providers.storage import StoredFile
+    from app.services import invoice_attachment_service
+
+    invoice = await make_invoice(client, biz_headers)
+    original = (await upload(client, biz_headers, invoice["id"], filename="original.pdf", is_primary=True)).json()
+    storage = AsyncMock()
+    storage.upload.return_value = StoredFile(storage_key="revision/new-object", size=len(PDF), content_type="application/pdf")
+    monkeypatch.setattr(invoice_attachment_service, "get_storage_provider", lambda: storage)
+
+    async def fail_primary(*args):
+        raise RuntimeError("synthetic primary flush failure")
+
+    monkeypatch.setattr(invoice_attachment_service, "_clear_primary", fail_primary)
+    with pytest.raises(RuntimeError, match="synthetic primary flush failure"):
+        await upload(client, biz_headers, invoice["id"], filename="new.pdf", is_primary=True)
+    storage.delete.assert_awaited_once_with("revision/new-object")
+    listing = (await client.get(f"/api/invoices/{invoice['id']}/attachments", headers=biz_headers)).json()
+    assert len(listing) == 1
+    assert listing[0]["id"] == original["id"]
+    assert listing[0]["is_primary"] is True
+
+
 @pytest_asyncio.fixture
 async def personal_ws(session: AsyncSession, test_user):
     """The user's personal workspace, resolved by kind.

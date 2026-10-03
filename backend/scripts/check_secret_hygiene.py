@@ -106,6 +106,8 @@ def scan_production_compose() -> list[str]:
         "CREDENTIALS_DIRECTORY: /run/secrets",
         "FINCOPILOT_SECRETS_DIR",
         "POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password",
+        "--token-file",
+        "/run/secrets/cloudflare_tunnel_token",
     )
     for marker in required_markers:
         if marker not in text:

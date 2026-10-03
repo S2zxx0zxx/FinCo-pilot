@@ -30,6 +30,7 @@ def test_critical_signing_and_provider_secrets_are_registered():
         "SECRET_KEY", "DATABASE_URL", "POSTGRES_PASSWORD", "SETUP_TOKEN",
         "RAZORPAY_KEY_SECRET", "ZOHO_DESK_CLIENT_SECRET", "ZOHO_DESK_REFRESH_TOKEN",
         "AGENTS_MCP_JWT_SECRET", "AGENTS_OPENAI_COMPAT_API_KEY", "STORAGE_S3_SECRET_KEY",
+        "CLOUDFLARE_TUNNEL_TOKEN",
     }
     assert expected <= set(PRODUCTION_SECRETS)
 
@@ -44,7 +45,7 @@ def test_provider_credentials_require_revoke_and_replace_rotation():
     for name in (
         "RAZORPAY_KEY_SECRET", "ZOHO_DESK_CLIENT_SECRET", "ZOHO_DESK_REFRESH_TOKEN",
         "PLUGGY_CLIENT_SECRET", "OIDC_CLIENT_SECRET", "AGENTS_OPENAI_COMPAT_API_KEY",
-        "STORAGE_S3_ACCESS_KEY", "STORAGE_S3_SECRET_KEY",
+        "STORAGE_S3_ACCESS_KEY", "STORAGE_S3_SECRET_KEY", "CLOUDFLARE_TUNNEL_TOKEN",
     ):
         item = get_production_secret(name)
         assert item.provider_managed is True
@@ -60,6 +61,7 @@ def test_plaintext_prod_compose_guard_covers_unconditional_secrets():
     assert "STORAGE_S3_ACCESS_KEY" in forbidden
     assert "STORAGE_S3_SECRET_KEY" in forbidden
     assert "REDIS_URL" in forbidden
+    assert "CLOUDFLARE_TUNNEL_TOKEN" in forbidden
 
 
 def test_unknown_secret_fails_closed():

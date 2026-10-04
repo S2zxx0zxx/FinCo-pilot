@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { ensureRazorpaySdk } from '@/lib/razorpay-sdk'
+import { useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -324,7 +325,14 @@ export default function PricingPage() {
     setParams(nextParams, { replace: true })
   }
 
+  const checkoutStarting = useRef(false)
   const continueWithPlan = async (plan: PlanId) => {
+    if (checkoutStarting.current) return
+    checkoutStarting.current = true
+    try { await startCheckout(plan) } finally { checkoutStarting.current = false }
+  }
+
+  const startCheckout = async (plan: PlanId) => {
     if (user && currentPlan === plan) return
     selectPlan(plan)
 
@@ -338,6 +346,12 @@ export default function PricingPage() {
     const publicKey = import.meta.env.VITE_RAZORPAY_KEY_ID as string | undefined
     if (!publicKey) {
       toast.error('Payment checkout is not configured on this installation.')
+      return
+    }
+    try {
+      await ensureRazorpaySdk()
+    } catch {
+      toast.error('Payment SDK failed to load. Please try again.')
       return
     }
     if (!window.Razorpay) {

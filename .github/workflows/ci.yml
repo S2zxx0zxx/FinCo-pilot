@@ -167,6 +167,10 @@ jobs:
         env:
           FINCO_DISPOSABLE_DB_TEST: "yes"
         run: python -m scripts.verify_mfa_secret_postgres
+      - name: Verify concurrent single-use password reset on PostgreSQL
+        env:
+          FINCO_DISPOSABLE_DB_TEST: "yes"
+        run: python -m scripts.verify_password_reset_postgres
       - name: Verify concurrent first-admin bootstrap on PostgreSQL
         env:
           FINCO_DISPOSABLE_DB_TEST: "yes"
@@ -224,6 +228,8 @@ jobs:
           pip install --no-deps -e .
       - name: Verify Redis runtime round-trip
         run: python -m scripts.verify_production_redis --ci --redis-only
+      - name: Verify atomic password recovery recipient limit
+        run: python -m scripts.verify_password_recovery_redis
       - name: Verify atomic FX provider request budget
         run: python -m scripts.verify_fx_budget_redis
       - name: Verify atomic mixed-factor login challenges on Redis
@@ -303,6 +309,9 @@ jobs:
 
       - name: Run tests
         run: npm test
+
+      - name: Verify recovery edge privacy on real Nginx
+        run: bash scripts/verify-recovery-edge.sh
 
   helm-checks:
     name: Helm Checks

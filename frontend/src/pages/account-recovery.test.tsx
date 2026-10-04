@@ -43,3 +43,17 @@ it('shows an actionable error for an expired verification token', async () => {
   expect(await screen.findByRole('alert')).toHaveTextContent('Request a new email')
   expect(screen.getByRole('link', { name: 'Request a new verification link' })).toHaveAttribute('href', '/request-verification')
 })
+
+it('removes the token from navigation before submission while retaining it only for the form', async () => {
+  const { useLocation } = await import('react-router-dom')
+  function Location() { return <output data-testid="location">{useLocation().search}</output> }
+  api.resetPassword.mockRejectedValue(new Error('expired'))
+  render(<MemoryRouter initialEntries={['/reset-password?token=private-reset&from=email']}><AccountRecovery mode="reset" /><Location /></MemoryRouter>)
+  await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('?from=email'))
+  expect(screen.getByTestId('location')).not.toHaveTextContent('private-reset')
+  fireEvent.change(screen.getByLabelText('New password (8–128 characters)'), { target: { value: 'New-password-123' } })
+  fireEvent.change(screen.getByLabelText('Confirm password'), { target: { value: 'New-password-123' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Change password' }))
+  await waitFor(() => expect(api.resetPassword).toHaveBeenCalledWith('private-reset', 'New-password-123'))
+  expect(await screen.findByRole('alert')).toHaveTextContent('Request a new email')
+})

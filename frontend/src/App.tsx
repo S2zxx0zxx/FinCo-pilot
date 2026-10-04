@@ -77,10 +77,10 @@ function App() {
                     <Suspense fallback={<FinCoRouteLoader />}>
                       <Routes>
                         <Route path="/setup" element={<SetupPage />} />
-                        <Route path="/forgot-password" element={<AccountRecovery mode="forgot" />} />
-                        <Route path="/reset-password" element={<AccountRecovery mode="reset" />} />
-                        <Route path="/verify-email" element={<AccountRecovery mode="verify" />} />
-                        <Route path="/request-verification" element={<AccountRecovery mode="request-verification" />} />
+                        <Route path="/forgot-password" element={<AccountRecovery key="forgot" mode="forgot" />} />
+                        <Route path="/reset-password" element={<AccountRecovery key="reset" mode="reset" />} />
+                        <Route path="/verify-email" element={<AccountRecovery key="verify" mode="verify" />} />
+                        <Route path="/request-verification" element={<AccountRecovery key="request-verification" mode="request-verification" />} />
                         <Route path="*" element={<main className="p-10 space-y-4"><h1 className="text-xl">Page not found</h1><a className="underline" href="/">Return home</a></main>} />
                         <Route path="/login" element={<LoginPage />} />
                         <Route path="/auth/oidc/callback" element={<OIDCCallbackPage />} />

@@ -1,4 +1,5 @@
 import time
+import uuid
 
 from fastapi import HTTPException, Request
 
@@ -35,6 +36,9 @@ class RateLimiter:
         client_ip = resolve_client_ip(request, get_settings().trusted_proxy_hops)
         key = f"rate_limit:{request.url.path}:{client_ip}"
 
+        await self.check_key(key)
+
+    async def check_key(self, key: str) -> None:
         r = await get_redis()
         now = time.time()
         window_start = now - self.window_seconds
@@ -42,7 +46,7 @@ class RateLimiter:
         pipe = r.pipeline()
         pipe.zremrangebyscore(key, 0, window_start)
         pipe.zcard(key)
-        pipe.zadd(key, {str(now): now})
+        pipe.zadd(key, {uuid.uuid4().hex: now})
         pipe.expire(key, self.window_seconds)
         results = await pipe.execute()
 

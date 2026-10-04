@@ -135,3 +135,11 @@ async def send_verification_email(recipient: str, token: str) -> bool:
             "<p>If you did not create this account, you can ignore this email.</p>"
         ),
     )
+
+
+async def send_password_changed_email(recipient: str) -> bool:
+    return await send_email(
+        recipient=recipient, subject="Your FinCo-Pilot password was changed",
+        text_body="Your FinCo-Pilot password was changed. Sign in again using your new password. "
+                  "If you did not make this change, contact support through your FinCo-Pilot app immediately.",
+    )

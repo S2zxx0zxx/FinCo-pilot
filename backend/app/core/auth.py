@@ -4,6 +4,7 @@ import hmac
 import re
 
 import jwt
+from pwdlib.exceptions import PwdlibError
 from fastapi_users import exceptions
 from fastapi_users.jwt import generate_jwt
 import uuid
@@ -18,6 +19,7 @@ from fastapi_users.authentication import (
     JWTStrategy,
 )
 from fastapi_users.db import SQLAlchemyUserDatabase
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import SecretStr
 
@@ -27,6 +29,7 @@ from app.core.database import get_async_session
 from app.models.user import User
 from app.services.email_service import (
     send_password_reset_email,
+    send_password_changed_email,
     send_verification_email,
 )
 
@@ -106,6 +109,44 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
         # propagate only when production explicitly requires transactional mail.
         await send_password_reset_email(user.email, token)
         logger.info("Password reset email processed for user %s", user.id)
+
+    async def reset_password(self, token: str, password: str, request: Request | None = None) -> User:
+        require_local_auth_enabled()
+        try:
+            data = jwt.decode(token, self.reset_password_token_secret.get_secret_value()
+                              if isinstance(self.reset_password_token_secret, SecretStr)
+                              else self.reset_password_token_secret,
+                              algorithms=["HS256"], audience=self.reset_password_token_audience,
+                              options={"require": ["sub", "aud", "exp", "password_fgpt"]})
+            if type(data["exp"]) is not int or not isinstance(data["sub"], str):
+                raise ValueError("Invalid reset claims")
+            fingerprint = data["password_fgpt"]
+            if not isinstance(fingerprint, str) or not 1 <= len(fingerprint) <= 1024:
+                raise ValueError("Invalid reset fingerprint")
+            identity = self.parse_id(data["sub"])
+        except (jwt.PyJWTError, ValueError, TypeError, OverflowError, exceptions.InvalidID):
+            raise exceptions.InvalidResetPasswordToken() from None
+        # Lock and refresh before the library verifies the password fingerprint.
+        # A second PostgreSQL reset waits, then sees the changed password hash.
+        user = (await self.user_db.session.scalars(select(User).where(User.id == identity)
+                .with_for_update().execution_options(populate_existing=True))).one_or_none()
+        if user is None:
+            raise exceptions.UserNotExists()
+        try:
+            valid, _ = self.password_helper.verify_and_update(user.hashed_password, fingerprint)
+        except (ValueError, TypeError, PwdlibError):
+            raise exceptions.InvalidResetPasswordToken() from None
+        if not valid:
+            raise exceptions.InvalidResetPasswordToken()
+        return await super().reset_password(token, password, request)
+
+    async def on_after_reset_password(self, user: User, request: Request | None = None) -> None:
+        try:
+            await send_password_changed_email(user.email)
+        except Exception:
+            # The password commit succeeded; a notification failure must not
+            # invite the client to retry an already-consumed reset credential.
+            logger.warning("Password change notification could not be completed for user %s", user.id)
 
     async def on_after_request_verify(
         self,

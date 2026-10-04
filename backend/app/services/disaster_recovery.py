@@ -13,6 +13,7 @@ import re
 import subprocess
 import tarfile
 import tempfile
+import time
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -341,6 +342,7 @@ async def backup(storage=None) -> dict:
                     await connection.execute(
                         text("SET LOCAL idle_in_transaction_session_timeout = 0")
                     )
+                    captured_at = datetime.now(timezone.utc).isoformat()
                     snapshot = await connection.scalar(text("SELECT pg_export_snapshot()"))
                     tables = await inventory(connection)
                     refs = await referenced_files(connection)
@@ -400,7 +402,7 @@ async def backup(storage=None) -> dict:
                     )
             manifest = {
                 "format": TAG,
-                "created_at": datetime.now(timezone.utc).isoformat(),
+                "created_at": captured_at,
                 "data_key_ids": key_ids(),
                 "alembic_heads": sorted(revisions),
                 "tables": tables,
@@ -482,6 +484,8 @@ def expire(*, apply: bool = False) -> dict:
 
 
 async def restore(snapshot_id: str, database_url: str, destination: Path) -> dict:
+    started_at = datetime.now(timezone.utc)
+    started_clock = time.monotonic()
     if not HEX64.fullmatch(snapshot_id):
         raise RecoveryError("Exact snapshot ID required")
     target = make_url(database_url)
@@ -597,8 +601,16 @@ async def restore(snapshot_id: str, database_url: str, destination: Path) -> dic
                             {"path": str(output.resolve()), "id": uuid.UUID(entry["doc_id"])},
                         )
             report = {
+                "format": "finco-restore-report-v1",
                 "status": "quarantined_restore_verified",
                 "snapshot_id": snapshot_id,
+                "backup_created_at": manifest["created_at"],
+                "restore_started_at": started_at.isoformat(),
+                "restore_completed_at": datetime.now(timezone.utc).isoformat(),
+                "restore_elapsed_seconds": round(time.monotonic() - started_clock, 3),
+                "target_identity_sha256": hashlib.sha256(
+                    json.dumps([target.host, target.port or 5432, target.database]).encode()
+                ).hexdigest(),
                 "tables": len(observed),
                 "files": len(manifest["files"]) - 1,
                 "automatic_release": False,

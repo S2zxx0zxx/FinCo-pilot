@@ -56,5 +56,7 @@ No VPS, production database, authorised offsite backup repository or real R2 buc
 
 ## Primary research
 
+For incident containment, recovery evidence, manual cutover and rollback, use the [#26 disaster recovery runbook](FINCO_DISASTER_RECOVERY_RUNBOOK_V1.md). Current manifests record conservative snapshot capture time; current restore reports bind snapshot/target and measure isolated restore duration. That duration is not end-to-end RTO. Earlier reports require a fresh rehearsal to obtain these fields.
+
 - [PostgreSQL 16 pg_dump](https://www.postgresql.org/docs/16/app-pgdump.html), [pg_restore](https://www.postgresql.org/docs/16/app-pgrestore.html), [backup/PITR](https://www.postgresql.org/docs/16/backup.html): consistent exported snapshots, custom format, trusted-source SQL, single-transaction restore and logical-versus-WAL recovery.
 - [Restic backup](https://restic.readthedocs.io/en/stable/040_backup.html), [restore](https://restic.readthedocs.io/en/stable/050_restore.html), [retention](https://restic.readthedocs.io/en/stable/060_forget.html), [scripting](https://restic.readthedocs.io/en/stable/075_scripting.html): encryption, complete/partial exit semantics, no built-in scheduler, current-versus-newest retention semantics and integrity checks.

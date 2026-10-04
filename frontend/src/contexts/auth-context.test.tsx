@@ -382,3 +382,29 @@ it('keeps the MFA recovery screen authenticated during same-account replacement 
   await act(async () => complete(enrolled))
   await waitFor(() => expect(result.current.user).toEqual(enrolled))
 })
+
+it('updates only the matching account ownership flag and preserves session and privileges', async () => {
+  localStorage.setItem('token', 'verification-session')
+  auth.me.mockResolvedValue({ ...USER, is_verified: false })
+  const { result } = await renderAuth()
+  act(() => result.current.confirmEmailVerification?.('other-account'))
+  expect(result.current.user?.is_verified).toBe(false)
+  act(() => result.current.confirmEmailVerification?.(USER.id))
+  expect(result.current.user).toEqual({ ...USER, is_verified: true })
+  expect(result.current.token).toBe('verification-session')
+  expect(auth.login).not.toHaveBeenCalled()
+})
+
+it('ignores a late verification callback after the stored session changes or logout', async () => {
+  localStorage.setItem('token', 'original-session')
+  auth.me.mockResolvedValue({ ...USER, is_verified: false })
+  const { result } = await renderAuth()
+  const late = result.current.confirmEmailVerification
+  localStorage.setItem('token', 'different-session')
+  act(() => late?.(USER.id))
+  expect(result.current.user?.is_verified).toBe(false)
+  act(() => result.current.logout())
+  act(() => late?.(USER.id))
+  expect(result.current.user).toBeNull()
+  expect(result.current.token).toBeNull()
+})

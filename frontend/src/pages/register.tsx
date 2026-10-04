@@ -105,6 +105,7 @@ export default function RegisterPage() {
             </div>
             <h1 className="text-xl font-semibold tracking-tight">{t('auth.register')}</h1>
             <p className="text-sm text-muted-foreground mt-1">{t('auth.registerDescription')}</p>
+            <p className="text-sm text-muted-foreground">After signup, check your email for verification. You can request another link from the sign-in page.</p>
           </div>
           <CardContent className="space-y-4 px-8 pt-4">
             {error && (

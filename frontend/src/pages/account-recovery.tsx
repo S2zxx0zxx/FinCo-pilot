@@ -1,6 +1,7 @@
 import { useLaunchText } from '@/lib/launch-copy'
-import { useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { AuthContext } from '@/contexts/auth-context'
 import { recoveryApi } from '@/lib/recovery-api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,6 +10,7 @@ import { Label } from '@/components/ui/label'
 type Mode = 'forgot' | 'reset' | 'verify' | 'request-verification'
 
 export default function AccountRecovery({ mode }: { mode: Mode }) {
+  const authContext = useContext(AuthContext)
   const tr = useLaunchText()
   const [params, setParams] = useSearchParams()
   const [email, setEmail] = useState('')
@@ -40,7 +42,12 @@ export default function AccountRecovery({ mode }: { mode: Mode }) {
     try {
       if (mode === 'forgot') await recoveryApi.forgotPassword(email)
       if (mode === 'reset') await recoveryApi.resetPassword(token, password)
-      if (mode === 'verify') await recoveryApi.verifyEmail(token)
+      if (mode === 'verify') {
+        const verified = await recoveryApi.verifyEmail(token)
+        if (verified?.is_verified === true && typeof verified.id === 'string') {
+          authContext?.confirmEmailVerification?.(verified.id)
+        }
+      }
       if (mode === 'request-verification') await recoveryApi.requestVerification(email)
       setMessage(mode === 'reset' ? "Password changed. Sign in again on your devices." : mode === 'verify' ? "Email verified. You can return to your account." : "If this address is eligible, an email will arrive shortly. Check your spam folder too.")
       setDone(true)

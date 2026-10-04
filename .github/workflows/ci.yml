@@ -171,6 +171,10 @@ jobs:
         env:
           FINCO_DISPOSABLE_DB_TEST: "yes"
         run: python -m scripts.verify_password_reset_postgres
+      - name: Prove verification single use on PostgreSQL
+        env:
+          FINCO_DISPOSABLE_DB_TEST: "yes"
+        run: python -m scripts.verify_email_verification_postgres
       - name: Verify concurrent first-admin bootstrap on PostgreSQL
         env:
           FINCO_DISPOSABLE_DB_TEST: "yes"

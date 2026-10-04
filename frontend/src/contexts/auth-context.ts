@@ -16,6 +16,7 @@ interface AuthContextType {
   loginWithToken: (accessToken: string, options?: { preserveCurrentUser: true }) => void
   register: (email: string, password: string, preferences?: Record<string, string>) => Promise<void>
   updateUser: (user: User) => void
+  confirmEmailVerification?: (userId: string) => void
   logout: () => void
 }
 

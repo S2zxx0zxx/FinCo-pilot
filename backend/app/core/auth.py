@@ -21,7 +21,7 @@ from fastapi_users.authentication import (
 from fastapi_users.db import SQLAlchemyUserDatabase
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from pydantic import SecretStr
+from pydantic import EmailStr, SecretStr, TypeAdapter, ValidationError
 
 from app.core.auth_policy import require_local_auth_enabled
 from app.core.config import get_settings
@@ -98,6 +98,15 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
         await session.commit()
         await create_default_categories(session, user.id, lang, workspace_id=workspace.id)
         await create_default_rules(session, user.id, lang, workspace_id=workspace.id)
+        background = getattr(request.state, "registration_mail", None)
+        if background is not None and not user.is_verified:
+            from app.api.password_recovery import queue_account_email
+            try:
+                await queue_account_email(background, user.email, "verify")
+            except HTTPException:
+                # Account creation committed. Resend stays available; do not
+                # report a failed registration or expose provider details.
+                logger.warning("Initial verification request could not be scheduled for user %s", user.id)
 
     async def on_after_forgot_password(
         self,
@@ -147,6 +156,30 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
             # The password commit succeeded; a notification failure must not
             # invite the client to retry an already-consumed reset credential.
             logger.warning("Password change notification could not be completed for user %s", user.id)
+
+    async def verify(self, token: str, request: Request | None = None) -> User:
+        require_local_auth_enabled()
+        try:
+            key = self.verification_token_secret
+            data = jwt.decode(token, key.get_secret_value() if isinstance(key, SecretStr) else key,
+                              algorithms=["HS256"], audience=self.verification_token_audience,
+                              options={"require": ["sub", "aud", "exp", "email"]})
+            if type(data["exp"]) is not int or not isinstance(data["sub"], str):
+                raise ValueError("Invalid verification claims")
+            email = data["email"]
+            if not isinstance(email, str) or len(email) > 320:
+                raise ValueError("Invalid verification email")
+            TypeAdapter(EmailStr).validate_python(email)
+            identity = self.parse_id(data["sub"])
+        except (jwt.PyJWTError, ValueError, TypeError, OverflowError, ValidationError, exceptions.InvalidID):
+            raise exceptions.InvalidVerifyToken() from None
+        user = (await self.user_db.session.scalars(select(User).where(User.id == identity)
+                .with_for_update().execution_options(populate_existing=True))).one_or_none()
+        if user is None or not user.is_active:
+            raise exceptions.InvalidVerifyToken()
+        # Preserve the installed library's current-email matching contract.
+        # It rechecks expiry after the lock and updates only is_verified.
+        return await super().verify(token, request)
 
     async def on_after_request_verify(
         self,

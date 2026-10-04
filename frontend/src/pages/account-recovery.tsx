@@ -44,8 +44,8 @@ export default function AccountRecovery({ mode }: { mode: Mode }) {
       if (mode === 'reset') await recoveryApi.resetPassword(token, password)
       if (mode === 'verify') {
         const verified = await recoveryApi.verifyEmail(token)
-        if (verified?.is_verified === true && typeof verified.id === 'string') {
-          authContext?.confirmEmailVerification?.(verified.id)
+        if (verified?.is_verified === true && typeof verified.id === 'string' && typeof verified.email === 'string') {
+          authContext?.confirmEmailVerification?.(verified.id, verified.email)
         }
       }
       if (mode === 'request-verification') await recoveryApi.requestVerification(email)

@@ -59,7 +59,7 @@ it('removes the token from navigation before submission while retaining it only 
 })
 
 it('verifies a valid ownership link without creating a login session', async () => {
-  api.verifyEmail.mockResolvedValue({ id: 'verified-account', is_verified: true })
+  api.verifyEmail.mockResolvedValue({ id: 'verified-account', email: 'verified@example.com', is_verified: true })
   localStorage.clear()
   render(<MemoryRouter initialEntries={['/verify-email?token=ownership-link']}><AccountRecovery mode="verify" /></MemoryRouter>)
   fireEvent.click(screen.getByRole('button', { name: 'Verify email' }))

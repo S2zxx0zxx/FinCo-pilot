@@ -107,8 +107,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(normalizeUser(updatedUser))
   }, [])
 
-  const confirmEmailVerification = useCallback((userId: string) => {
-    setUser(current => current?.id === userId && token && localStorage.getItem('token') === token
+  const confirmEmailVerification = useCallback((userId: string, email: string) => {
+    setUser(current => current?.id === userId && current.email === email && token && localStorage.getItem('token') === token
       ? { ...current, is_verified: true } : current)
   }, [token])
 

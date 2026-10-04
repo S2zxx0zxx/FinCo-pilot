@@ -64,12 +64,18 @@ def _creation_client(order_id: str = _ORDER_ID) -> MagicMock:
     def create(*, data: dict[str, Any]) -> dict[str, Any]:
         return {
             "id": order_id,
+            "entity": "order", "receipt": data["receipt"], "status": "created",
+            "attempts": 0, "amount_paid": 0, "amount_due": data["amount"],
             "amount": data["amount"],
             "currency": data["currency"],
             "notes": data.get("notes", {}),
         }
 
     client.order.create.side_effect = create
+    def fetch(identifier):
+        data = client.order.create.call_args.kwargs["data"]
+        return create(data=data)
+    client.order.fetch.side_effect = fetch
     return client
 
 
@@ -120,10 +126,13 @@ def _provider_order(
         "fincopilot_offer_code": reservation.offer_code,
         "fincopilot_campaign_version": reservation.campaign_version,
     }
+    if reservation.founder_wave is not None:
+        notes["fincopilot_founder_wave"] = str(reservation.founder_wave)
     if notes_override:
         notes.update(notes_override)
     return {
         "id": reservation.provider_order_id,
+        "entity": "order", "receipt": reservation.provider_receipt,
         "amount": reservation.amount_minor if amount is None else amount,
         "currency": currency,
         "notes": notes,
@@ -140,6 +149,7 @@ def _provider_payment(
 ) -> dict[str, Any]:
     return {
         "id": _PAYMENT_ID,
+        "entity": "payment", "captured": status == "captured",
         "order_id": order_id or reservation.provider_order_id,
         "amount": reservation.amount_minor if amount is None else amount,
         "currency": currency,
@@ -286,18 +296,17 @@ async def test_same_active_order_is_reused_without_provider_duplicate(
     )
     assert first.status_code == 200
 
-    second_provider = _creation_client("order_should_not_be_created")
     second, _ = await _start_order(
-        client, auth_headers, provider_client=second_provider
+        client, auth_headers, provider_client=first_provider
     )
     assert second.status_code == 200
     assert second.json()["reservation_id"] == first.json()["reservation_id"]
     assert second.json()["order_id"] == first.json()["order_id"]
-    second_provider.order.create.assert_not_called()
+    assert first_provider.order.create.call_count == 1
 
 
 @pytest.mark.asyncio
-async def test_provider_create_failure_releases_reservation(
+async def test_provider_create_failure_preserves_uncertain_reservation(
     client: AsyncClient,
     auth_headers: dict,
     checkout_enabled,
@@ -314,7 +323,8 @@ async def test_provider_create_failure_releases_reservation(
         await session.execute(select(CheckoutReservation))
     ).scalars().all()
     assert len(rows) == 1
-    assert rows[0].status == ReservationStatus.CANCELLED.value
+    assert rows[0].status == ReservationStatus.RESERVED.value
+    assert rows[0].provider_order_state == "uncertain"
     assert rows[0].founder_position is None
 
 
@@ -369,7 +379,7 @@ async def test_missing_provider_credentials_do_not_hold_capacity(
 
 
 @pytest.mark.asyncio
-async def test_modal_cancel_releases_quote(
+async def test_modal_cancel_cannot_release_payable_provider_order(
     client: AsyncClient,
     auth_headers: dict,
     checkout_enabled,
@@ -383,11 +393,10 @@ async def test_modal_cancel_releases_quote(
         json={"reservation_id": response.json()["reservation_id"]},
         headers=auth_headers,
     )
-    assert cancelled.status_code == 200
-    assert cancelled.json()["status"] == "cancelled"
+    assert cancelled.status_code == 409
 
     reservation = await _reservation(session, response.json()["reservation_id"])
-    assert reservation.status == ReservationStatus.CANCELLED.value
+    assert reservation.status == ReservationStatus.RESERVED.value
 
 
 @pytest.mark.asyncio
@@ -406,7 +415,7 @@ async def test_invalid_signature_stops_before_provider_fetch(
             json={
                 "razorpay_payment_id": _PAYMENT_ID,
                 "razorpay_order_id": _ORDER_ID,
-                "razorpay_signature": "wrong",
+                "razorpay_signature": "0" * 64,
             },
             headers=auth_headers,
         )
@@ -649,3 +658,168 @@ async def test_founder_capture_creates_real_member_and_updates_public_counter(
     assert wave["claimed"] == 1
     assert wave["held"] == 0
     assert wave["available"] == 4_999
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('field,value', [
+    ('id', 'forged'), ('id', 123), ('amount', '9900'), ('amount', 9900.0),
+    ('currency', 'USD'), ('receipt', 'other'), ('notes', {}), ('entity', 'payment'),
+])
+async def test_invalid_creation_is_durable_and_never_reposted(client, auth_headers, checkout_enabled, session, field, value):
+    provider = _creation_client()
+    original = provider.order.create.side_effect
+    provider.order.create.side_effect = lambda **kwargs: {**original(**kwargs), field: value}
+    response, _ = await _start_order(client, auth_headers, provider_client=provider)
+    assert response.status_code == 502
+    row = (await session.execute(select(CheckoutReservation))).scalar_one()
+    assert row.provider_order_state == 'uncertain'
+    provider.order.all.return_value = {'entity':'collection','count':0,'items':[]}
+    retry, _ = await _start_order(client, auth_headers, provider_client=provider)
+    assert retry.status_code == 502
+    assert provider.order.create.call_count == 1
+    assert response.headers['cache-control'] == 'no-store'
+
+
+@pytest.mark.asyncio
+async def test_lost_reply_recovers_exact_remote_receipt_without_new_post(client, auth_headers, checkout_enabled, session):
+    provider = _creation_client()
+    original = provider.order.create.side_effect
+    saved = []
+    def lost(**kwargs):
+        saved.append(original(**kwargs))
+        raise TimeoutError('synthetic lost reply')
+    provider.order.create.side_effect = lost
+    failed, _ = await _start_order(client, auth_headers, provider_client=provider)
+    assert failed.status_code == 502
+    provider.order.all.return_value = {'entity':'collection','count':1,'items':saved}
+    recovered, _ = await _start_order(client, auth_headers, provider_client=provider)
+    assert recovered.status_code == 200, recovered.text
+    assert recovered.json()['key_id'] == _FAKE_KEY_ID
+    assert provider.order.create.call_count == 1
+    assert provider.order.all.call_args.args[0]['receipt'] == saved[0]['receipt']
+    assert len(saved[0]['receipt']) == 35
+    assert provider.order.create.call_args.kwargs['data']['partial_payment'] is False
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("duplicate_exact", [False, True])
+async def test_receipt_recovery_is_exact_and_duplicate_safe(
+    client, auth_headers, checkout_enabled, duplicate_exact
+):
+    provider = _creation_client()
+    original = provider.order.create.side_effect
+    saved = []
+
+    def lost(**kwargs):
+        saved.append(original(**kwargs))
+        raise TimeoutError("synthetic lost reply")
+
+    provider.order.create.side_effect = lost
+    failed, _ = await _start_order(client, auth_headers, provider_client=provider)
+    assert failed.status_code == 502
+    assert len(saved) == 1
+
+    exact = saved[0]
+    second = {
+        **exact,
+        "id": "order_LookalikeSynthetic",
+        "receipt": exact["receipt"] if duplicate_exact else exact["receipt"] + "x",
+    }
+    provider.order.all.return_value = {
+        "entity": "collection",
+        "count": 2,
+        "items": [second, exact],
+    }
+    recovered, _ = await _start_order(client, auth_headers, provider_client=provider)
+
+    if duplicate_exact:
+        assert recovered.status_code == 502
+        assert "unresolved" in recovered.json()["detail"].lower()
+    else:
+        assert recovered.status_code == 200, recovered.text
+        assert recovered.json()["order_id"] == exact["id"]
+
+    assert provider.order.create.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_key_drift_blocks_before_any_remote_call(client, auth_headers, checkout_enabled, monkeypatch):
+    first, _ = await _start_order(client, auth_headers)
+    assert first.status_code == 200
+    monkeypatch.setattr(checkout_enabled, 'razorpay_key_id', 'rzp_test_other_synthetic')
+    provider = _creation_client()
+    retry, _ = await _start_order(client, auth_headers, provider_client=provider)
+    assert retry.status_code == 409
+    provider.order.create.assert_not_called()
+    provider.order.fetch.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_pending_remote_outcome_survives_expiry_and_blocks_different_plan(client, auth_headers, checkout_enabled, session):
+    provider = _creation_client()
+    provider.order.create.side_effect = TimeoutError('synthetic outage')
+    first, _ = await _start_order(client, auth_headers, provider_client=provider)
+    assert first.status_code == 502
+    row = (await session.execute(select(CheckoutReservation))).scalar_one()
+    row.expires_at = datetime.now(timezone.utc) - timedelta(days=1)
+    await session.commit()
+    other, _ = await _start_order(client, auth_headers, plan='max')
+    assert other.status_code == 400
+    await session.refresh(row)
+    assert row.status == 'reserved'
+    assert row.provider_order_state == 'uncertain'
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('status', ['attempted','paid'])
+async def test_attempted_order_cannot_reopen_or_create_duplicate(client, auth_headers, checkout_enabled, status):
+    provider = _creation_client()
+    first, _ = await _start_order(client, auth_headers, provider_client=provider)
+    assert first.status_code == 200
+    original = provider.order.fetch.side_effect
+    provider.order.fetch.side_effect = lambda identifier: {**original(identifier), 'status':status, 'attempts':1}
+    retry, _ = await _start_order(client, auth_headers, provider_client=provider)
+    assert retry.status_code == 409
+    assert provider.order.create.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_cross_account_order_rejected_before_provider_fetch(client, auth_headers, checkout_enabled, test_user, session):
+    first, _ = await _start_order(client, auth_headers)
+    assert first.status_code == 200
+    row = await _reservation(session, first.json()['reservation_id'])
+    other = User(id=uuid.uuid4(), email='checkout-other@example.invalid', hashed_password='synthetic', is_active=True, is_verified=True)
+    session.add(other)
+    await session.flush()
+    row.user_id = other.id
+    await session.commit()
+    provider = MagicMock()
+    with patch('app.api.checkout._get_razorpay_client', return_value=provider):
+        result = await client.post('/api/checkout/verify-payment', headers=auth_headers, json={'razorpay_order_id':_ORDER_ID,'razorpay_payment_id':_PAYMENT_ID,'razorpay_signature':_sig()})
+    assert result.status_code == 400
+    provider.order.fetch.assert_not_called()
+    provider.payment.fetch.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_captured_payment_id_substitution_is_rejected(client, auth_headers, checkout_enabled, session, test_user):
+    first, _ = await _start_order(client, auth_headers)
+    row = await _reservation(session, first.json()['reservation_id'])
+    payment = _provider_payment(row)
+    payment['id'] = 'pay_OtherSynthetic'
+    provider = _verification_client(row, test_user, payment=payment)
+    with patch('app.api.checkout._get_razorpay_client', return_value=provider):
+        result = await client.post('/api/checkout/verify-payment', headers=auth_headers, json={'razorpay_order_id':_ORDER_ID,'razorpay_payment_id':_PAYMENT_ID,'razorpay_signature':_sig()})
+    assert result.status_code == 400
+    await session.refresh(row)
+    assert row.status == 'reserved'
+
+
+def test_real_sdk_transport_is_bounded_and_retries_disabled(checkout_enabled):
+    from app.api.checkout import _get_razorpay_client
+    sdk = _get_razorpay_client()
+    assert sdk.retry_enabled is False
+    assert sdk.max_retries == 1
+    with patch('requests.Session.request', return_value=MagicMock()) as request:
+        sdk.session.request('POST', 'https://api.razorpay.com/v1/orders')
+    assert request.call_args.kwargs['timeout'] == (5, 20)
+    assert request.call_args.kwargs['allow_redirects'] is False

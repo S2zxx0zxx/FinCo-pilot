@@ -341,7 +341,7 @@ async def request_reference(request, call_next):
         )
 
     response.headers["X-Request-ID"] = reference
-    if request.url.path.startswith(("/api/account-deletion", "/api/workspace-deletion")):
+    if request.url.path.startswith(("/api/account-deletion", "/api/workspace-deletion", "/api/checkout")):
         response.headers["Cache-Control"] = "no-store"
     if response.status_code >= 500:
         logger.error(

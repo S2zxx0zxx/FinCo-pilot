@@ -102,6 +102,13 @@ class CheckoutReservation(Base):
             "founder_position IS NULL OR founder_position >= 1",
             name="ck_checkout_reservation_founder_position",
         ),
+        CheckConstraint(
+            "provider_order_state IN ('unstarted', 'creating', 'uncertain', 'ready')",
+            name="ck_checkout_reservation_provider_order_state",
+        ),
+        UniqueConstraint(
+            "provider_receipt", name="uq_checkout_reservation_provider_receipt"
+        ),
         UniqueConstraint(
             "provider_order_id", name="uq_checkout_reservation_provider_order"
         ),
@@ -160,6 +167,16 @@ class CheckoutReservation(Base):
     )
     provider: Mapped[str] = mapped_column(
         String(40), nullable=False, default="razorpay", server_default="razorpay"
+    )
+    # Durable claim is committed BEFORE the provider call. Never reset an
+    # ambiguous attempt just because the HTTP request or quote timed out.
+    provider_order_state: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="unstarted", server_default="unstarted"
+    )
+    provider_key_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    provider_receipt: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+    provider_started_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )
     provider_order_id: Mapped[Optional[str]] = mapped_column(
         String(255), nullable=True

@@ -7,6 +7,7 @@ metadata:
     app.kubernetes.io/component: frontend
 data:
   default.conf.template: |
+    log_format finco_private '$remote_addr [$time_local] "$request_method $uri $server_protocol" $status $body_bytes_sent';
     # Preserve the original HTTPS scheme from a trusted edge/ingress proxy.
     # Unknown values fall back to the pod-local Nginx scheme.
     map $http_x_forwarded_proto $finco_forwarded_proto {
@@ -14,8 +15,17 @@ data:
         https https;
     }
 
+    map $uri $finco_recovery_cache_control {
+        default "";
+        /reset-password "no-store";
+        /verify-email "no-store";
+    }
+
     server {
         listen 8080;
+        add_header Cache-Control $finco_recovery_cache_control always;
+        access_log /var/log/nginx/access.log finco_private;
+        add_header Referrer-Policy "no-referrer" always;
         root /usr/share/nginx/html;
         index index.html;
 
@@ -40,6 +50,11 @@ data:
         location = /index.html {
             add_header Cache-Control "no-store, no-cache, must-revalidate";
             try_files $uri =404;
+        }
+
+        location ~ ^/(reset-password|verify-email)$ {
+            error_log /dev/null;
+            try_files /index.html =404;
         }
 
         # SPA fallback — serve index.html for all non-file routes

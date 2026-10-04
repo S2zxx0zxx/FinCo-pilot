@@ -1,5 +1,5 @@
 import { useLaunchText } from '@/lib/launch-copy'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { recoveryApi } from '@/lib/recovery-api'
 import { Button } from '@/components/ui/button'
@@ -18,7 +18,14 @@ export default function AccountRecovery({ mode }: { mode: Mode }) {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
-  const token = params.get('token') || ''
+  const [token] = useState(() => params.get('token') || '')
+  useEffect(() => {
+    if (params.has('token')) {
+      const clean = new URLSearchParams(params)
+      clean.delete('token')
+      setParams(clean, { replace: true })
+    }
+  }, [params, setParams])
   const needsToken = mode === 'reset' || mode === 'verify'
   const title = { forgot: tr("Forgot your password?"), reset: tr("Set a new password"), verify: tr("Verify your email"), 'request-verification': tr("Request verification email") }[mode]
 

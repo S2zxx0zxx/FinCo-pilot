@@ -169,3 +169,13 @@ group is re-run after that correction.
 Final PR-head CI, deployment validation and merge evidence are recorded in PR #29.
 No real provider/inbox acceptance occurred in the local SMTP fixture: its certificates,
 server, credentials and mailbox are isolated test data.
+
+
+### Roadmap #23 follow-up (2026-10-04)
+
+The forgot-password API now accepts generic requests before background lookup/SMTP,
+so recipient-specific delivery failure cannot reveal registered addresses. HTTP 202
+is acceptance only; configuration/capacity failures remain generic, operator SMTP
+failures remain visible, and verification behavior is unchanged. Required reset
+claims/single-use concurrency, notification and browser/edge protections are in
+`FINCO_PASSWORD_RESET_EMAIL_E2E_V1.md`. Real inbox acceptance above remains pending.

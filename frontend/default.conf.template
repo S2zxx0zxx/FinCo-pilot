@@ -1,3 +1,6 @@
+# Path-only access records omit recovery query tokens and referrers.
+log_format finco_private '$remote_addr [$time_local] "$request_method $uri $server_protocol" $status $body_bytes_sent';
+
 # Preserve the original HTTPS scheme from a trusted edge proxy such as
 # Cloudflare Tunnel. Unknown/spoofed values fall back to Nginx's local scheme.
 map $http_x_forwarded_proto $finco_forwarded_proto {
@@ -5,18 +8,26 @@ map $http_x_forwarded_proto $finco_forwarded_proto {
     https https;
 }
 
+map $uri $finco_recovery_cache_control {
+    default "";
+    /reset-password "no-store";
+    /verify-email "no-store";
+}
+
 server {
     listen 8080;
     root /usr/share/nginx/html;
     index index.html;
     server_tokens off;
+    add_header Cache-Control $finco_recovery_cache_control always;
+    access_log /var/log/nginx/access.log finco_private;
 
     # Baseline browser hardening. CSP intentionally allows HTTPS provider
     # scripts/frames because bank-connect widgets are third-party surfaces;
     # frame-ancestors/object/base/form remain locked down.
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-Frame-Options "DENY" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Referrer-Policy "no-referrer" always;
     add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(self)" always;
     add_header Cross-Origin-Opener-Policy "same-origin" always;
     add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss:; frame-src https:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests" always;
@@ -63,6 +74,12 @@ server {
     location = /index.html {
         add_header Cache-Control "no-store, no-cache, must-revalidate";
         try_files $uri =404;
+    }
+
+    # No error-log request URI for incoming recovery credentials.
+    location ~ ^/(reset-password|verify-email)$ {
+        error_log /dev/null;
+        try_files /index.html =404;
     }
 
     # SPA fallback — serve index.html for all non-file routes.

@@ -26,7 +26,7 @@ async function start(response=quote){
 }
 it('uses server key and keeps one modal open across repeated clicks',async()=>{
   const {user,fetcher}=await start()
-  expect(options.key).toBe('rzp_test_server');expect(opens).toBe(1)
+  expect(options.key).toBe('rzp_test_server');expect(options.retry).toEqual({enabled:false});expect(opens).toBe(1)
   await user.click(screen.getByRole('button',{name:'Continue with Pro'}))
   expect(opens).toBe(1);expect(fetcher).toHaveBeenCalledTimes(1)
 })

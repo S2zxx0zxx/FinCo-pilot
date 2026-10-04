@@ -42,6 +42,10 @@ export interface RazorpayCheckoutOptions {
   order_id: string;
   handler: (response: RazorpaySuccessResponse) => void;
   modal?: RazorpayModalOptions;
+  retry?: {
+    /** One FinCo server Order maps to one payment attempt. */
+    enabled: boolean;
+  };
   theme?: { color?: string };
   prefill?: {
     name?: string;

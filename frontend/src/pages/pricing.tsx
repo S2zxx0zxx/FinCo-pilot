@@ -465,6 +465,11 @@ export default function PricingPage() {
             void cancelQuote()
           },
         },
+        // Razorpay's Orders guidance requires a fresh server Order for each
+        // payment attempt. Keep in-modal retry disabled so this Order can never
+        // be silently reused after a failed attempt. Full failed-attempt
+        // reconciliation/new-order issuance belongs to roadmap #39.
+        retry: { enabled: false },
         theme: { color: '#000000' },
       }
 

@@ -227,3 +227,17 @@ async def test_disconnected_stream_has_safe_failure(enabled):
         await ingress.verified_razorpay_webhook(request)
     assert error.value.status_code == 400
     assert error.value.headers == {"Cache-Control": "no-store"}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("event", ["payment.downtime.started", "subscription.charged", "refund.processed"])
+async def test_provider_documented_event_names_do_not_assume_one_dot(enabled, event):
+    assert (await send(BODY.replace(b"payment.captured", event.encode()))).status_code == 503
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("event", ["payment..captured", "payment.captured\n", "payment." + "a" * 128])
+async def test_invalid_event_names_fail_closed(enabled, event):
+    envelope = json.loads(BODY)
+    envelope["event"] = event
+    assert (await send(json.dumps(envelope).encode())).status_code == 400

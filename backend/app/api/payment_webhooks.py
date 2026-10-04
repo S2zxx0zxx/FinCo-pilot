@@ -119,7 +119,8 @@ async def verified_razorpay_webhook(request: Request) -> VerifiedWebhook:
         if (not isinstance(event, dict) or event.get("entity") != "event"
                 or event.get("account_id") != settings.razorpay_webhook_account_id
                 or not isinstance(event.get("event"), str)
-                or not re.fullmatch(r"[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*", event["event"])
+                or len(event["event"]) > 128
+                or not re.fullmatch(r"[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+", event["event"])
                 or not isinstance(event.get("payload"), dict)
                 or type(event.get("created_at")) is not int or event["created_at"] < 0):
             raise ValueError("Invalid envelope")

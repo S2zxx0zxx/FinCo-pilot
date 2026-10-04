@@ -81,7 +81,7 @@ Standard-library HMAC avoids a new cryptographic dependency; tests cross-check t
 installed provider SDK. Durable persistence and deduplication cannot be replaced
 by a local-memory cache or a guessed third-party abstraction.
 
-Focused acceptance covers 37 webhook cases and all executable statements in the
+Focused acceptance covers 43 webhook cases and all executable statements in the
 new ingress module; coverage is an execution measure, not a security guarantee.
 An independent native Uvicorn HTTP rehearsal also verified genuine chunked signed
 delivery (503/no-store), forged signature (401), and unfinished streaming upload
@@ -89,3 +89,8 @@ delivery (503/no-store), forged signature (401), and unfinished streaming upload
 startup lifespan disabled. No external provider or database was involved.
 Final full-suite CI and merged-main evidence belongs in the PR and canonical
 continuity record, so this version does not predeclare those outcomes.
+
+The final primary-source review also confirmed documented multi-segment event
+names such as `payment.downtime.started`; envelope validation therefore bounds
+the event name without incorrectly assuming exactly one period. Subscription and
+refund envelopes are authenticatable here without activating their later lifecycle.

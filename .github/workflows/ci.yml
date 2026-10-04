@@ -187,6 +187,10 @@ jobs:
         env:
           FINCO_DISPOSABLE_DB_TEST: "yes"
         run: python -m scripts.verify_admin_bootstrap_postgres
+      - name: Verify durable concurrent webhook receipts on PostgreSQL
+        env:
+          FINCO_DISPOSABLE_DB_TEST: "yes"
+        run: python -m scripts.verify_webhook_inbox_postgres
       - name: Verify concurrent founder pricing boundary on PostgreSQL
         env:
           FINCO_DISPOSABLE_DB_TEST: "yes"

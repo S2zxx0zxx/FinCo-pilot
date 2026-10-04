@@ -1,5 +1,10 @@
 # Original roadmap #32: signed payment webhook
 
+Update from original #33: durable receipts now provide the authenticated route
+with commit-before-200 acknowledgement. The 503-only behavior below describes
+this original #32 milestone; see FINCO_WEBHOOK_EVENT_PERSISTENCE_V1.md for the
+current ingress contract. Live collection/fulfillment remain separately gated.
+
 Baseline: main `b22ccc33342bbab305e453fbb38d204d4ff987b8`, original #31 / PR44.
 Repository audit found browser checkout capture verification, dedicated reservation
 state and permission/secret inventories, but no webhook route or signing keys.

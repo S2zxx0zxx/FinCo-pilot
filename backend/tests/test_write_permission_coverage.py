@@ -35,7 +35,7 @@ WRITE_GATES = {"current_writable_workspace"}
 #: inventory of everything that will need re-deciding when permissions get
 #: finer, which is why the reason is stored next to the path.
 ALLOWLIST: dict[tuple[str, str], str] = {
-    ("POST", "/api/webhooks/razorpay"): "raw-body HMAC and exact merchant binding; no billing mutations",
+    ("POST", "/api/webhooks/razorpay"): "raw-body HMAC and exact merchant binding; durable global receipt only, no workspace/entitlement mutation",
     ("POST", '/api/workspace-deletion'): 'actual owner of explicitly confirmed target, fresh full authentication; archive and collaborator blockers rechecked by workflow',
     ("POST", '/api/workspace-deletion/{identity}/cancel'): 'original requester only, fresh authentication and no execution lease',
     ("POST", '/api/workspace-deletion/{identity}/detach-manager'): 'fresh actual requesting owner, exact workspace UUID and audited evidence',

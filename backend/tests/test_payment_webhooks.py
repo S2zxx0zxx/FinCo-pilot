@@ -14,7 +14,15 @@ from starlette.requests import Request
 
 from app.api import payment_webhooks as ingress
 from app.core.config import Settings, get_settings
-from app.main import app
+from fastapi import Depends, FastAPI
+
+# Isolated #32 authentication probe. Full committed HTTP ingress is tested in #33.
+app = FastAPI()
+
+
+@app.post("/api/webhooks/razorpay")
+async def guard_probe(verified=Depends(ingress.verified_razorpay_webhook)):
+    raise ingress._reject(503)
 
 SECRET = "synthetic-webhook-secret-0123456789"
 OLD = "synthetic-previous-secret-0123456789"
@@ -46,7 +54,7 @@ async def send(body=BODY, sig=None, headers=None):
 
 
 @pytest.mark.asyncio
-async def test_valid_is_not_acknowledged_before_durable_handoff(enabled):
+async def test_valid_authentication_reaches_guard_probe(enabled):
     response = await send()
     assert response.status_code == 503
     assert response.headers["cache-control"] == "no-store"

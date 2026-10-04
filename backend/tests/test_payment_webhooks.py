@@ -203,3 +203,27 @@ async def test_excessive_nesting_and_overflow_float(enabled):
     for value in [b"[" * 33 + b"0" + b"]" * 33, b"1e999"]:
         body = BODY.replace(b'"pay_Synthetic"', value)
         assert (await send(body)).status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_finite_payload_number_is_accepted_without_activation(enabled):
+    assert (await send(BODY.replace(b'"pay_Synthetic"', b"1.25"))).status_code == 503
+
+
+@pytest.mark.asyncio
+async def test_non_json_media_rejected(enabled):
+    headers = {"content-type": "text/plain", "x-razorpay-signature": signature()}
+    assert (await send(headers=headers)).status_code == 415
+
+
+@pytest.mark.asyncio
+async def test_disconnected_stream_has_safe_failure(enabled):
+    async def receive():
+        return {"type": "http.disconnect"}
+
+    request = Request({"type": "http", "headers": [(b"content-type", b"application/json"),
+                      (b"x-razorpay-signature", signature().encode())]}, receive)
+    with pytest.raises(ingress.HTTPException) as error:
+        await ingress.verified_razorpay_webhook(request)
+    assert error.value.status_code == 400
+    assert error.value.headers == {"Cache-Control": "no-store"}

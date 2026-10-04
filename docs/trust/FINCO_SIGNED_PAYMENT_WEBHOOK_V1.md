@@ -75,7 +75,17 @@ claim is made.
 - [Payment event envelopes and snapshots](https://razorpay.com/docs/webhooks/payments/)
 - [Official open-source Python signature implementation](https://github.com/razorpay/razorpay-python/blob/master/razorpay/utility/utility.py)
 - [SDK discussion of body encoding/signature pitfalls](https://github.com/razorpay/razorpay-python/issues/121)
+- [OWASP REST input, content-type and request-size guidance](https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html)
 
 Standard-library HMAC avoids a new cryptographic dependency; tests cross-check the
 installed provider SDK. Durable persistence and deduplication cannot be replaced
 by a local-memory cache or a guessed third-party abstraction.
+
+Focused acceptance covers 37 webhook cases and all executable statements in the
+new ingress module; coverage is an execution measure, not a security guarantee.
+An independent native Uvicorn HTTP rehearsal also verified genuine chunked signed
+delivery (503/no-store), forged signature (401), and unfinished streaming upload
+(408 within the read deadline) against the full application's middleware with
+startup lifespan disabled. No external provider or database was involved.
+Final full-suite CI and merged-main evidence belongs in the PR and canonical
+continuity record, so this version does not predeclare those outcomes.

@@ -9,6 +9,7 @@ from app.agents.models.agent import Agent
 from app.agents.models.connection import LlmConnection
 from app.agents.services import agent_service, crypto
 from app.core.config import get_settings
+from app.core import credential_keys
 from app.models.bank_connection import BankConnection
 from scripts.rotate_data_keys import rotate_data
 
@@ -20,7 +21,7 @@ def _install_keys(monkeypatch, *, encryption="", identity="", jwt="new-session-k
         "core_copilot_signing_key": SecretStr(identity),
         "legacy_data_keys": SecretStr(json.dumps({"credentials": [legacy], "copilot": [legacy]}) if legacy else ""),
     })
-    monkeypatch.setattr(crypto, "get_settings", lambda: settings)
+    monkeypatch.setattr(credential_keys, "get_settings", lambda: settings)
     monkeypatch.setattr(agent_service, "get_settings", lambda: settings)
     return settings
 
@@ -104,7 +105,7 @@ async def test_atomic_migration_preserves_ids_and_credentials_after_legacy_retir
     original = llm.api_key_encrypted
     _install_keys(monkeypatch, encryption="new-data-key", identity="new-identity-key", legacy=old_key)
     counts = await rotate_data(session)
-    assert counts == {"llm_credentials": 1, "bank_credentials": 1, "copilot_identities": 1}
+    assert counts == {"llm_credentials": 1, "bank_credentials": 1, "copilot_identities": 1, "mfa_seeds": 0}
     assert llm.api_key_encrypted == original  # dry run never rewrites rows
     await rotate_data(session, apply=True)
     await session.commit()

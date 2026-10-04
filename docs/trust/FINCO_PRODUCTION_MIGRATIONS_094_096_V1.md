@@ -39,3 +39,7 @@ Production completion requires all actual checklist evidence. No production migr
 - PostgreSQL ALTER TABLE lock and constraint behavior: https://www.postgresql.org/docs/current/sql-altertable.html
 - PostgreSQL transaction-local settings: https://www.postgresql.org/docs/current/sql-set.html
 - Alembic revision, upgrade/downgrade and actual current state: https://alembic.sqlalchemy.org/en/latest/tutorial.html
+
+## Integration checkpoint — 2026-10-04
+
+The operator subsequently explicitly authorized merging all reviewed pending PRs before production deployment. This supersedes the earlier merge hold, without marking live acceptance complete. PR #32 has merged migration 098/MFA hardening; the integrated release therefore targets head 098. PR #33 now includes current MFA and support privacy code and retains both populated 094–096 and encrypted-seed PostgreSQL CI proofs. Actual production execution still requires the rollout checklist above; no production database has been migrated.

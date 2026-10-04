@@ -6,6 +6,7 @@ from sqlalchemy import JSON, Boolean, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
+from app.core.mfa_secret import EncryptedMFASeed
 
 if TYPE_CHECKING:
     from app.models.category import Category
@@ -47,7 +48,7 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
 
     auth_epoch: Mapped[str] = mapped_column(String(36), default="", server_default="")
 
-    totp_secret: Mapped[Optional[str]] = mapped_column(String(32), nullable=True, default=None)
+    totp_secret: Mapped[Optional[str]] = mapped_column(EncryptedMFASeed(), nullable=True, default=None)
     is_2fa_enabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
     oidc_issuer: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
     oidc_subject: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)

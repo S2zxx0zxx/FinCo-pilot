@@ -18,13 +18,20 @@ def _make_redis_mock_with_store():
     async def mock_get(key):
         return store.get(key)
 
-    async def mock_set(key, value, ex=None):
+    async def mock_set(key, value, ex=None, nx=False):
+        if nx and key in store:
+            return None
         store[key] = value
+        return True
 
     async def mock_delete(key):
         store.pop(key, None)
 
+    async def mock_getdel(key):
+        return store.pop(key, None)
+
     mock.get = AsyncMock(side_effect=mock_get)
+    mock.getdel = AsyncMock(side_effect=mock_getdel)
     mock.set = AsyncMock(side_effect=mock_set)
     mock.delete = AsyncMock(side_effect=mock_delete)
 
@@ -260,6 +267,8 @@ async def test_verify_2fa_invalid_token(client: AsyncClient):
 async def test_verify_2fa_with_valid_token(client: AsyncClient, test_user_with_2fa):
     mock_r = AsyncMock()
     mock_r.get = AsyncMock(return_value=json.dumps({"user_id": str(test_user_with_2fa.id), "available_methods": ["totp"], "credential_stamp": get_jwt_strategy().stamp(test_user_with_2fa)}))
+    mock_r.getdel = AsyncMock(return_value=mock_r.get.return_value)
+    mock_r.set = AsyncMock(return_value=True)
     mock_r.delete = AsyncMock()
     pipe = MagicMock()
     pipe.execute = AsyncMock(return_value=[0, 0, True, True])
@@ -278,3 +287,38 @@ async def test_verify_2fa_with_valid_token(client: AsyncClient, test_user_with_2
         )
     assert resp.status_code == 200
     assert "access_token" in resp.json()
+
+
+async def test_login_totp_cannot_replay_across_distinct_challenges(client, test_user_with_2fa):
+    credentials = {"username": "2fa@example.com", "password": "testpass123"}
+    first = await client.post("/api/auth/login", data=credentials)
+    second = await client.post("/api/auth/login", data=credentials)
+    code = pyotp.TOTP(test_user_with_2fa.totp_secret).now()
+    accepted = await client.post("/api/auth/2fa/verify", json={"temp_token": first.json()["temp_token"], "code": code})
+    replay = await client.post("/api/auth/2fa/verify", json={"temp_token": second.json()["temp_token"], "code": code})
+    assert accepted.status_code == 200
+    assert replay.status_code == 400
+    assert "access_token" not in replay.json()
+
+
+async def test_factor_enable_revokes_previous_session_and_returns_replacement(client, auth_headers, test_user):
+    setup = await client.post("/api/auth/2fa/setup", headers=auth_headers)
+    code = pyotp.TOTP(setup.json()["secret"]).now()
+    enabled = await client.post("/api/auth/2fa/enable", headers=auth_headers, json={"code": code})
+    assert enabled.status_code == 200
+    assert (await client.get("/api/users/me", headers=auth_headers)).status_code == 401
+    replacement = {"Authorization": "Bearer " + enabled.json()["access_token"]}
+    assert (await client.get("/api/users/me", headers=replacement)).status_code == 200
+
+
+@pytest.mark.parametrize("environment", ["staging", "STAGING", " production "])
+async def test_protected_mfa_enrollment_requires_current_password(client, auth_headers, test_user, monkeypatch, environment):
+    from app.core.config import get_settings
+    setup = await client.post("/api/auth/2fa/setup", headers=auth_headers)
+    code = pyotp.TOTP(setup.json()["secret"]).now()
+    monkeypatch.setattr(get_settings(), "deployment_environment", environment)
+    for password in (None, "wrong-password"):
+        response = await client.post("/api/auth/2fa/enable", headers=auth_headers, json={"code": code, "password": password})
+        assert response.status_code == 400
+    response = await client.post("/api/auth/2fa/enable", headers=auth_headers, json={"code": code, "password": "testpass123"})
+    assert response.status_code == 200

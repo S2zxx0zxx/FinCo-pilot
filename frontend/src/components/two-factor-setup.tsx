@@ -22,7 +22,7 @@ interface TwoFactorSetupProps {
 
 export function TwoFactorSetup({ open, onClose }: TwoFactorSetupProps) {
   const { t } = useTranslation()
-  const { user, updateUser } = useAuth()
+  const { user, updateUser, loginWithToken } = useAuth()
   const is2faEnabled = user?.is_2fa_enabled ?? false
 
   // Enable flow
@@ -30,6 +30,7 @@ export function TwoFactorSetup({ open, onClose }: TwoFactorSetupProps) {
   const [secret, setSecret] = useState('')
   const [otpauthUri, setOtpauthUri] = useState('')
   const [setupCode, setSetupCode] = useState('')
+  const [setupPassword, setSetupPassword] = useState('')
   const [setupLoading, setSetupLoading] = useState(false)
   const [setupStep, setSetupStep] = useState<'idle' | 'qr'>('idle')
   const [error, setError] = useState('')
@@ -59,7 +60,9 @@ export function TwoFactorSetup({ open, onClose }: TwoFactorSetupProps) {
     setSetupLoading(true)
     setError('')
     try {
-      const result = await auth.enable2fa(setupCode)
+      const result = await auth.enable2fa(setupCode, setupPassword)
+      if (result.access_token) loginWithToken(result.access_token)
+      setSetupPassword('')
       setRecoveryCodes(result.recovery_codes)
       toast.success(t('auth.twoFactorEnabled'))
       if (user) updateUser({ ...user, is_2fa_enabled: true })
@@ -75,7 +78,8 @@ export function TwoFactorSetup({ open, onClose }: TwoFactorSetupProps) {
     setDisableLoading(true)
     setError('')
     try {
-      await auth.disable2fa(disablePassword, disableCode)
+      const result = await auth.disable2fa(disablePassword, disableCode)
+      if (result?.access_token) loginWithToken(result.access_token)
       toast.success(t('auth.twoFactorDisabled'))
       if (user) updateUser({ ...user, is_2fa_enabled: false })
       handleClose()
@@ -91,6 +95,7 @@ export function TwoFactorSetup({ open, onClose }: TwoFactorSetupProps) {
     setSecret('')
     setOtpauthUri('')
     setSetupCode('')
+    setSetupPassword('')
     setSetupStep('idle')
     setError('')
     setDisablePassword('')
@@ -114,7 +119,7 @@ export function TwoFactorSetup({ open, onClose }: TwoFactorSetupProps) {
             <Button type="button" variant="outline" disabled={disableLoading || !disablePassword || disableCode.length !== 6} onClick={async () => {
               setDisableLoading(true)
               setError('')
-              try { setRecoveryCodes((await auth.recoveryCodes(disablePassword, disableCode)).recovery_codes) }
+              try { const result = await auth.recoveryCodes(disablePassword, disableCode); loginWithToken(result.access_token); setRecoveryCodes(result.recovery_codes) }
               catch { setError('Enter your password and current authenticator code to replace recovery codes.') }
               finally { setDisableLoading(false) }
             }}>Generate replacement recovery codes</Button>
@@ -191,6 +196,8 @@ export function TwoFactorSetup({ open, onClose }: TwoFactorSetupProps) {
               </div>
             </div>
             <div className="space-y-2">
+              <Label htmlFor="setup-password">{t('auth.password')}</Label>
+              <Input id="setup-password" type="password" autoComplete="current-password" value={setupPassword} onChange={e => setSetupPassword(e.target.value)} required />
               <Label htmlFor="setup-code">{t('auth.twoFactor')}</Label>
               <Input
                 id="setup-code"
@@ -210,7 +217,7 @@ export function TwoFactorSetup({ open, onClose }: TwoFactorSetupProps) {
               <Button type="button" variant="outline" onClick={handleClose}>
                 {t('common.cancel')}
               </Button>
-              <Button type="submit" disabled={setupLoading || setupCode.length !== 6}>
+              <Button type="submit" disabled={setupLoading || setupCode.length !== 6 || !setupPassword}>
                 {setupLoading ? t('common.loading') : t('auth.verify')}
               </Button>
             </DialogFooter>

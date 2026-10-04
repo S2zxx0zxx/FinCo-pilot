@@ -1,6 +1,6 @@
 # Roadmap #18 — production FX provider
 
-Status: engineering implemented; local verification passed; PR CI/merge pending. Provider account,
+Status: engineering implemented and merged in PR #30; final PR-head CI passed. Provider account,
 credential provisioning, production sync and live deployment acceptance are not
 claimed. This file preserves the distinction between CI evidence and live gates.
 
@@ -136,5 +136,5 @@ from HTTP mocks, local SQLite or green GitHub CI.
   after full-suite collection and are covered by the final focused suite; PR CI
   verifies the complete final tree. The precision-boundary test first reproduced
   the issue, then passed after validation was tightened.
-- [ ] PR CI green; reviewed commit merged to main.
+- [x] PR #30 CI green; reviewed commit merged to main.
 - [ ] Live acceptance gates above supplied with real provider/deployment evidence.

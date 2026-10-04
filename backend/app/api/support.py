@@ -61,7 +61,6 @@ async def submit_support_ticket(
     )
     return SupportTicketRead(
         reference=created.reference,
-        ticket_id=created.ticket_id,
         ticket_number=created.ticket_number,
         support_tier=created.support_tier,
         priority=created.priority,

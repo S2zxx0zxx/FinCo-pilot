@@ -191,6 +191,7 @@ def test_cli_incomplete_exit_and_private_failure(case, monkeypatch, capsys):
     from scripts import recovery_evidence as cli
 
     directory, _, _ = case
+    monkeypatch.setattr(cli.os, "umask", lambda _mask: None)
     monkeypatch.setattr(cli, "evaluate", lambda path: evidence.evaluate(path, now=NOW))
     monkeypatch.setattr(
         "sys.argv", ["recovery_evidence", "evaluate", "--case-directory", str(directory)]

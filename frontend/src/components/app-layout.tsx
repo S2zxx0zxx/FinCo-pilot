@@ -808,6 +808,7 @@ function UserMenu({
         </DropdownMenuSub>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
+          <Link to="/workspace-deletion">{currentLang === 'hi' ? 'संग्रहीत कार्यक्षेत्र हटाएँ' : 'Delete archived workspace'}</Link>
           <Link to="/account-deletion">{currentLang === 'hi' ? 'व्यक्तिगत खाता हटाएँ' : 'Delete personal account'}</Link>
         </DropdownMenuItem>
         <DropdownMenuItem

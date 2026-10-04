@@ -165,7 +165,7 @@ async def get_membership(
         select(WorkspaceMember).where(
             WorkspaceMember.workspace_id == workspace_id,
             WorkspaceMember.user_id == user_id,
-        )
+        ).execution_options(populate_existing=True)
     )
     return result.scalar_one_or_none()
 
@@ -312,6 +312,7 @@ async def add_member(
     invited_by_user_id: Optional[uuid.UUID] = None,
 ) -> WorkspaceMember:
     """Insert a new membership. Caller validates the inviter's permission."""
+    await lock_workspace_mutation(session, workspace_id)
     if role not in WORKSPACE_ROLES:
         raise HTTPException(status_code=400, detail=f"Invalid role: {role}")
     existing = await get_membership(session, workspace_id, user_id)
@@ -334,6 +335,7 @@ async def update_member_role(
     user_id: uuid.UUID,
     new_role: str,
 ) -> WorkspaceMember:
+    await lock_workspace_mutation(session, workspace_id)
     if new_role not in WORKSPACE_ROLES:
         raise HTTPException(status_code=400, detail=f"Invalid role: {new_role}")
     member = await get_membership(session, workspace_id, user_id)
@@ -341,14 +343,16 @@ async def update_member_role(
         raise HTTPException(status_code=404, detail="Member not found")
     # Block demoting the sole owner — leaves the workspace ownerless.
     if member.role == "owner" and new_role != "owner":
+        active_ids = list((await session.scalars(select(User.id).where(User.is_active.is_(True)))).all())
         owners = await session.execute(
             select(WorkspaceMember).where(
                 WorkspaceMember.workspace_id == workspace_id,
                 WorkspaceMember.role == "owner",
+                WorkspaceMember.user_id.in_(active_ids),
             )
         )
         owner_rows = owners.scalars().all()
-        if len(owner_rows) <= 1:
+        if member.user_id in active_ids and len(owner_rows) <= 1:
             raise HTTPException(status_code=400, detail="Cannot demote the sole owner")
     member.role = new_role
     await session.flush()
@@ -389,9 +393,7 @@ async def archive_workspace(
 ) -> Workspace:
     """Soft-delete: flip is_archived. Refuses to archive the requester's
     LAST accessible workspace (they'd be locked out)."""
-    workspace = await session.get(Workspace, workspace_id)
-    if workspace is None:
-        raise HTTPException(status_code=404, detail="Workspace not found")
+    workspace = await lock_workspace_mutation(session, workspace_id)
     if workspace.is_archived:
         return workspace
     # Count this user's other workspaces (member OR manager).
@@ -426,17 +428,32 @@ async def remove_member(
     workspace_id: uuid.UUID,
     user_id: uuid.UUID,
 ) -> None:
+    await lock_workspace_mutation(session, workspace_id)
     member = await get_membership(session, workspace_id, user_id)
     if member is None:
         raise HTTPException(status_code=404, detail="Member not found")
     if member.role == "owner":
+        active_ids = list((await session.scalars(select(User.id).where(User.is_active.is_(True)))).all())
         owners = await session.execute(
             select(WorkspaceMember).where(
                 WorkspaceMember.workspace_id == workspace_id,
                 WorkspaceMember.role == "owner",
+                WorkspaceMember.user_id.in_(active_ids),
             )
         )
-        if len(owners.scalars().all()) <= 1:
+        if member.user_id in active_ids and len(owners.scalars().all()) <= 1:
             raise HTTPException(status_code=400, detail="Cannot remove the sole owner")
     await session.delete(member)
     await session.flush()
+
+
+async def lock_workspace_mutation(session: AsyncSession, workspace_id: uuid.UUID):
+    """Serialize owner/member/archive changes and fail closed behind a purge."""
+    from app.models.workspace_deletion import WorkspaceDeletion
+    workspace = await session.scalar(select(Workspace).where(Workspace.id == workspace_id).with_for_update().execution_options(populate_existing=True))
+    if not workspace:
+        raise HTTPException(404, "Workspace not found")
+    frozen = await session.scalar(select(WorkspaceDeletion.id).where(WorkspaceDeletion.workspace_id == workspace_id, WorkspaceDeletion.state.in_(['executing', 'external_retry', 'primary_workspace_deleted', 'backup_expiry_pending', 'complete'])).limit(1))
+    if frozen:
+        raise HTTPException(409, "Workspace deletion has started")
+    return workspace

@@ -203,6 +203,11 @@ jobs:
           FINCO_DISPOSABLE_DB_TEST: "yes"
         run: python -m scripts.verify_account_deletion_postgres
 
+      - name: Verify shared workspace deletion and concurrent owner exits on PostgreSQL
+        env:
+          FINCO_DISPOSABLE_DB_TEST: 'yes'
+        run: python -m scripts.verify_workspace_deletion_postgres
+
   redis-worker-smoke:
     name: Redis + Worker Smoke
     runs-on: ubuntu-latest

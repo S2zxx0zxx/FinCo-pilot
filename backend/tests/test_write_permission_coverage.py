@@ -35,6 +35,18 @@ WRITE_GATES = {"current_writable_workspace"}
 #: inventory of everything that will need re-deciding when permissions get
 #: finer, which is why the reason is stored next to the path.
 ALLOWLIST: dict[tuple[str, str], str] = {
+    ("POST", '/api/workspace-deletion'): 'actual owner of explicitly confirmed target, fresh full authentication; archive and collaborator blockers rechecked by workflow',
+    ("POST", '/api/workspace-deletion/{identity}/cancel'): 'original requester only, fresh authentication and no execution lease',
+    ("POST", '/api/workspace-deletion/{identity}/detach-manager'): 'fresh actual requesting owner, exact workspace UUID and audited evidence',
+    ("POST", '/api/workspace-deletion/{identity}/transfer-billing'): 'fresh current actual payer-owner only, explicit requesting owner target and evidence',
+    ("POST", '/api/workspace-deletion/operator/holds'): 'fresh superuser, existing target workspace and verified scoped evidence before execution',
+    ("POST", '/api/workspace-deletion/operator/holds/{identity}/release'): 'fresh superuser and actual hold-release evidence',
+    ("POST", '/api/workspace-deletion/operator/{identity}/review'): 'fresh superuser, exact graph/holds/provider/schema inventory review',
+    ("POST", '/api/workspace-deletion/operator/{identity}/receipt'): 'fresh superuser, exact required evidence and correct lifecycle phase',
+    ("POST", '/api/workspace-deletion/operator/{identity}/execute'): 'different fresh current superuser, original actual owner permission and all scope blockers rechecked under write fence',
+    ("POST", '/api/workspace-deletion/operator/{identity}/backup-proof'): 'fresh superuser and actual recoverability evidence after primary deletion',
+    ("POST", '/api/workspace-deletion/operator/{identity}/repair-billing'): 'independent fresh superuser, only null payer repair to active actual requesting owner with evidence',
+
     ("POST", "/api/account-deletion"): "own account, explicit confirmation and fresh full authentication",
     ("POST", "/api/account-deletion/{identity}/cancel"): "own request, fresh authentication, before irreversible execution",
     ("POST", "/api/account-deletion/operator/holds"): "fresh superuser authentication and evidence-gated hold",
@@ -221,6 +233,10 @@ def test_a_mutating_route_declares_a_permission_decision(method, path):
             assert "current_workspace" in names, "read-only does not mean cross-workspace"
         if (method, path) in WORKSPACE_SCOPED_EXEMPTIONS:
             assert "current_workspace" in names, "chat metadata exemptions stay workspace-scoped"
+        if path.startswith(("/api/account-deletion", "/api/workspace-deletion")):
+            assert "require_fresh" in names, "destructive/evidence/governance workflows require fresh full authentication"
+            if "/operator/" in path:
+                assert "current_superuser" in names, "operator workflow requires a superuser"
         if path.startswith("/api/admin/"):
             assert "current_superuser" in names, "instance administration requires a superuser"
         return

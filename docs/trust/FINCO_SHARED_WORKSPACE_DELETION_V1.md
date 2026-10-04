@@ -340,3 +340,7 @@ Roadmap #11 is policy/engineering-contract complete only when:
 - final PR-head CI and post-merge main CI are green.
 
 Production workspace hard-delete acceptance is **not** claimed by #11.
+
+## Original #30 implementation follow-up
+
+The original policy/history above is preserved. Original #30 now implements the separate durable deletion workflow and safety gates; see [Shared deletion implementation](FINCO_SHARED_WORKSPACE_DELETION_IMPLEMENTATION_V1.md). Archive remains non-destructive. Real provider/processor/version/legacy storage and backup-expiry evidence are operational gates; code/test completion does not certify them.

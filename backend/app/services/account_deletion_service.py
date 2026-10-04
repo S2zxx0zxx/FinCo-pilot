@@ -25,7 +25,7 @@ from app.providers import get_storage_provider
 
 PERSONAL_TABLES = {"user_passkeys", "external_mcp_tokens", "mcp_approvals", "agent_llm_usage", "billing_usage_counters", "agent_llm_connections", "subscriptions"}
 PAYMENT_TABLES = {"checkout_reservations", "founding_members", "pricing_audit_events", "pricing_campaigns"}
-RECEIPT_TABLES = {"account_deletions", "account_deletion_holds", "account_deletion_events"}
+RECEIPT_TABLES = {"account_deletions", "account_deletion_holds", "account_deletion_events", "workspace_deletions", "workspace_deletion_holds", "workspace_deletion_events"}
 
 
 def storage_namespace(kind: str) -> str:
@@ -85,7 +85,7 @@ async def lock_inventory(session: AsyncSession):
     jobs. This transaction-wide lock waits for existing writers and fences new
     writers while the exact manifest and primary purge commit atomically.
     """
-    expected = set("app_settings fx_rates users agent_llm_connections billing_usage_counters checkout_reservations pricing_audit_events pricing_campaigns subscriptions user_passkeys workspaces agents bank_connections category_groups collections external_mcp_tokens founding_members groups invoice_settings loans payees reconciliation_rules rules workspace_members workspace_tax_ids agent_conversations agent_knowledge_docs agent_tools categories group_members institutions invoices mcp_approvals payee_mapping payee_tax_ids accounts agent_knowledge_chunks agent_messages asset_groups budgets invoice_attachments invoice_lines agent_llm_usage assets collection_accounts collection_asset_groups credit_card_bills import_logs recurring_transactions asset_transactions asset_values goals transactions group_settlements invoice_allocations reconciliation_events reconciliation_suggestions transaction_attachments transaction_splits account_deletions account_deletion_holds account_deletion_events".split())
+    expected = set("app_settings fx_rates users agent_llm_connections billing_usage_counters checkout_reservations pricing_audit_events pricing_campaigns subscriptions user_passkeys workspaces agents bank_connections category_groups collections external_mcp_tokens founding_members groups invoice_settings loans payees reconciliation_rules rules workspace_members workspace_tax_ids agent_conversations agent_knowledge_docs agent_tools categories group_members institutions invoices mcp_approvals payee_mapping payee_tax_ids accounts agent_knowledge_chunks agent_messages asset_groups budgets invoice_attachments invoice_lines agent_llm_usage assets collection_accounts collection_asset_groups credit_card_bills import_logs recurring_transactions asset_transactions asset_values goals transactions group_settlements invoice_allocations reconciliation_events reconciliation_suggestions transaction_attachments transaction_splits account_deletions account_deletion_holds account_deletion_events workspace_deletions workspace_deletion_holds workspace_deletion_events".split())
     if set(Base.metadata.tables) != expected:
         raise HTTPException(409, "New model tables require deletion policy review")
     bind = session.get_bind()
@@ -107,12 +107,14 @@ async def lock_inventory(session: AsyncSession):
         raise HTTPException(409, "Database migrations are required before deletion")
 
 
-async def inventory(session: AsyncSession, user: User):
+async def inventory(session: AsyncSession, user: User, *, workspace_scope: list[uuid.UUID] | None = None):
     memberships = list((await session.scalars(select(WorkspaceMember))).all())
     own = {m.workspace_id: m for m in memberships if m.user_id == user.id}
     workspaces = list((await session.scalars(select(Workspace).where(or_(
         Workspace.id.in_(own), Workspace.created_by_user_id == user.id,
         Workspace.managed_by_user_id == user.id, Workspace.billing_owner_user_id == user.id)))).all())
+    if workspace_scope is not None:
+        workspaces = [w for w in workspaces if w.id in workspace_scope]
     active_users = set((await session.scalars(select(User.id).where(User.is_active.is_(True)))).all())
     facts = [WorkspaceDeletionFacts(str(w.id), w.kind, own[w.id].role if w.id in own else None,
         sum(m.workspace_id == w.id for m in memberships),
@@ -122,10 +124,19 @@ async def inventory(session: AsyncSession, user: User):
     admin_count = await session.scalar(select(func.count()).select_from(User).where(User.is_active.is_(True), User.is_superuser.is_(True)))
     held = await session.scalar(select(AccountDeletionHold.id).where(AccountDeletionHold.user_id == user.id, AccountDeletionHold.released_at.is_(None)).limit(1))
     plan = build_personal_account_deletion_plan(facts, is_last_active_superuser=bool(user.is_superuser and admin_count == 1), verified_legal_hold=held is not None)
-    private = [uuid.UUID(w.workspace_id) for w in plan.workspaces if w.mode == WorkspaceExitMode.DELETE_WITH_ACCOUNT]
+    private = workspace_scope if workspace_scope is not None else [uuid.UUID(w.workspace_id) for w in plan.workspaces if w.mode == WorkspaceExitMode.DELETE_WITH_ACCOUNT]
+    from app.models.workspace_deletion import WorkspaceDeletionHold
+    workspace_hold = await session.scalar(select(WorkspaceDeletionHold.id).where(WorkspaceDeletionHold.workspace_id.in_(private), WorkspaceDeletionHold.released_at.is_(None)).limit(1))
     conditions = {"workspaces": Workspace.__table__.c.id.in_(private)}
     tables = list(Base.metadata.sorted_tables)
-    blockers = [b.value for b in plan.blockers]
+    blockers = [b.value for b in plan.blockers] if workspace_scope is None else []
+    if workspace_hold:
+        blockers.append("verified_workspace_hold")
+    if workspace_scope is None:
+        from app.models.workspace_deletion import WorkspaceDeletion
+        pending = await session.scalar(select(WorkspaceDeletion.id).where(WorkspaceDeletion.requester_id == user.id, WorkspaceDeletion.state.not_in(["cancelled", "complete", "backup_expiry_pending"])).limit(1))
+        if pending:
+            blockers.append("workspace_deletion_pending")
     hashes = {}
     objects = []
     requirements = ["operator_hold_and_retention_review", "processor_inventory_review", "backup_inventory_review", "unmapped_legacy_storage_review", "processor_cleanup_after_primary"]
@@ -159,7 +170,7 @@ async def inventory(session: AsyncSession, user: User):
                 objects.append({"kind": "attachment", "key": key, "provider": get_settings().storage_provider, "namespace": storage_namespace("attachment"), "done": False})
             if path:
                 objects.append({"kind": "knowledge", "key": path, "provider": "knowledge_local", "namespace": storage_namespace("knowledge"), "done": False})
-        if workspace is not None and "user_id" in table.c:
+        if workspace_scope is None and workspace is not None and "user_id" in table.c:
             if await session.scalar(select(func.count()).select_from(table).where(table.c.user_id == user.id, workspace.is_(None))):
                 blockers.append("unscoped_legacy_data")
     from app.services.invoice_logo_service import storage_key as logo_key
@@ -239,16 +250,16 @@ async def inventory(session: AsyncSession, user: User):
                     blockers.append("cross_workspace_reference")
     # External access may remain even for a shared connection whose records are preserved.
     banks = Base.metadata.tables["bank_connections"]
-    bank_rows = list((await session.execute(select(banks).where(or_(banks.c.user_id == user.id, banks.c.workspace_id.in_(private))))).mappings())
+    bank_rows = list((await session.execute(select(banks).where((or_(banks.c.user_id == user.id, banks.c.workspace_id.in_(private)) if workspace_scope is None else banks.c.workspace_id.in_(private))))).mappings())
     for row in bank_rows:
         requirements.append("bank_revoke:" + str(row["id"]))
     subscriptions = Base.metadata.tables["subscriptions"]
-    subs = list((await session.execute(select(subscriptions).where(subscriptions.c.user_id == user.id))).mappings())
+    subs = list((await session.execute(select(subscriptions).where(subscriptions.c.user_id == user.id))).mappings()) if workspace_scope is None else []
     for row in subs:
         if row["provider_subscription_id"] or row["provider_customer_id"] or row["status"] not in {"free", "cancelled", "canceled", "expired"}:
             requirements.append("billing_cancel:" + str(row["id"]))
     llm = Base.metadata.tables["agent_llm_connections"]
-    llm_rows = list((await session.execute(select(llm).where(llm.c.user_id == user.id))).mappings())
+    llm_rows = list((await session.execute(select(llm).where(llm.c.user_id == user.id))).mappings()) if workspace_scope is None else []
     for row in llm_rows:
         requirements.append("llm_revoke_and_processor_cleanup:" + str(row["id"]))
     for item in objects:

@@ -205,7 +205,7 @@ async def verify_2fa(
 
     # Generate JWT
     strategy = get_jwt_strategy()
-    token = await strategy.write_token(user)
+    token = await strategy.write_token(user, fresh_auth=True)
     await session.commit()
     return {"access_token": token, "token_type": "bearer"}
 

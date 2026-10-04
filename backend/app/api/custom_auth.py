@@ -55,7 +55,7 @@ async def login(
 
     # Normal login — generate JWT
     strategy = get_jwt_strategy()
-    token = await strategy.write_token(user)
+    token = await strategy.write_token(user, fresh_auth=True)
     return {"access_token": token, "token_type": "bearer"}
 
 

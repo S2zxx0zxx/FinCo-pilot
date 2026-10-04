@@ -111,6 +111,11 @@ async def update_user(
     if not user:
         return None
 
+    from app.models.account_deletion import AccountDeletion
+    if await session.scalar(select(AccountDeletion.id).where(AccountDeletion.user_id == user_id,
+        AccountDeletion.state.in_(["executing", "external_retry", "primary_data_deleted", "backup_expiry_pending", "complete"]))):
+        raise ValueError("Deletion tombstones cannot be reactivated or edited")
+
     # Self-protection: can't demote or deactivate self
     if user_id == current_user_id:
         if data.is_superuser is False:

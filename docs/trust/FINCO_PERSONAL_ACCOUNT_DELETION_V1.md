@@ -302,3 +302,11 @@ Roadmap #10 is behavior-contract complete only when:
 - CI is green on the final branch head and post-merge main.
 
 Production account-deletion acceptance is **not** claimed by this roadmap item.
+
+## Roadmap #29 implementation follow-up
+
+The original #10 acceptance/historical statements above are preserved. Roadmap
+#29 now implements this contract through durable, operator-reviewed requests,
+private graph/byte cleanup, shared preservation, retries and evidence-gated
+backup completion. See [the #29 implementation and operator runbook](FINCO_PERSONAL_ACCOUNT_DELETION_IMPLEMENTATION_V1.md).
+Live provider/hold/backup facts are not inferred from code or empty ledgers.

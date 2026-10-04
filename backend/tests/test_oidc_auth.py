@@ -738,3 +738,36 @@ async def test_oidc_callback_registration_disabled_does_not_block_existing_email
     assert response.status_code == 307
     await session.refresh(test_user)
     assert test_user.oidc_subject == "linked-with-registration-disabled"
+
+
+@pytest.mark.asyncio
+async def test_deletion_reauthentication_requests_max_age_and_prompt(client, monkeypatch, oidc_settings):
+    redis = FakeRedis()
+    async def discover():
+        return {'authorization_endpoint': 'https://id.example.com/authorize'}
+    async def get_redis():
+        return redis
+    monkeypatch.setattr(oidc_auth, '_discover', discover)
+    monkeypatch.setattr(oidc_auth, 'get_redis', get_redis)
+    response = await client.get('/api/auth/oidc/login?reauthenticate=true', follow_redirects=False)
+    params = parse_qs(urlparse(response.headers['location']).query)
+    assert params['prompt'] == ['login'] and params['max_age'] == ['0']
+    state = json.loads(redis.store['oidc_state:' + params['state'][0]])
+    assert state['reauthenticate'] is True
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('auth_time', [None, True, 1])
+async def test_deletion_oidc_requires_verified_recent_auth_time_before_user_changes(client, monkeypatch, oidc_settings, auth_time):
+    from unittest.mock import AsyncMock
+    redis = FakeRedis()
+    await redis.set('oidc_state:fresh', json.dumps({'nonce': 'nonce', 'reauthenticate': True}))
+    monkeypatch.setattr(oidc_auth, 'get_redis', AsyncMock(return_value=redis))
+    monkeypatch.setattr(oidc_auth, '_discover', AsyncMock(return_value={'issuer': 'https://id.example.com'}))
+    monkeypatch.setattr(oidc_auth, '_exchange_code', AsyncMock(return_value={'id_token': 'verified-by-helper'}))
+    monkeypatch.setattr(oidc_auth, '_decode_id_token', AsyncMock(return_value={'sub': 'user', 'auth_time': auth_time}))
+    creator = AsyncMock()
+    monkeypatch.setattr(oidc_auth, '_get_or_create_oidc_user', creator)
+    response = await client.get('/api/auth/oidc/callback?code=synthetic&state=fresh', follow_redirects=False)
+    assert response.status_code == 401
+    creator.assert_not_awaited()

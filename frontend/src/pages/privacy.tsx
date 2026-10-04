@@ -62,6 +62,7 @@ export default function PrivacyPage() {
         </section>)}
       </>}
       <footer className="flex flex-wrap gap-5 border-t pt-6 text-sm">
+        <Link to="/terms" className="underline">{hi ? 'सेवा की शर्तें' : 'Terms of service'}</Link>
         <Link to="/support?category=privacy_data" className="underline">{hi ? 'Privacy सहायता' : 'Privacy help'}</Link>
         <Link to="/login" className="underline">{hi ? 'साइन इन पर जाएँ' : 'Return to sign in'}</Link>
       </footer>

@@ -12,7 +12,7 @@ export interface PrivacyPolicy {
 }
 
 const bilingual = z.object({ en: z.string(), hi: z.string() })
-const policySchema = z.object({
+export const policySchema = z.object({
   version: z.string(), reviewed_on: z.string(), status: z.enum(['draft', 'published']), effective_date: z.string().nullable(),
   operator: z.object({ brand_name: z.string(), legal_name: z.string().nullable(), entity_type: z.string(), country_code: z.string() }),
   contact: z.object({ name: z.string().nullable(), email: z.string().nullable(), address: z.string().nullable() }),

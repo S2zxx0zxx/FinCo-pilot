@@ -1,3 +1,4 @@
+import { TermsLink } from '@/components/terms-link'
 import { PrivacyLink } from '@/components/privacy-link'
 import { useLaunchText } from '@/lib/launch-copy'
 import { useState, useEffect } from 'react'
@@ -167,6 +168,7 @@ export default function RegisterPage() {
               {t('support.helpLink')}
             </Link>
             <PrivacyLink />
+            <TermsLink />
           </CardFooter>
         </form>
       </Card>

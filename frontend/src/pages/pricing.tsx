@@ -1,3 +1,4 @@
+import { TermsLink } from '@/components/terms-link'
 import { PrivacyLink } from '@/components/privacy-link'
 import { ensureRazorpaySdk } from '@/lib/razorpay-sdk'
 import { useMemo, useRef, useState } from 'react'
@@ -629,7 +630,7 @@ export default function PricingPage() {
 
         <footer className="mx-auto mt-12 max-w-xl text-center text-xs leading-5 text-muted-foreground">
           Prices shown in INR. The backend confirms the exact offer before checkout. {taxCopy}
-          <div className="mt-3"><PrivacyLink /></div>
+          <div className="mt-3 flex flex-wrap justify-center gap-4"><PrivacyLink /><TermsLink /></div>
         </footer>
       </div>
     </main>

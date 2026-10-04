@@ -19,6 +19,12 @@ async def get_privacy_policy():
     return JSONResponse(public_policy(get_settings()), headers={"Cache-Control": "no-store"})
 
 
+@router.get("/terms")
+async def get_terms():
+    from app.core.terms import public_terms
+    return JSONResponse(public_terms(get_settings()), headers={"Cache-Control": "no-store"})
+
+
 @router.get("/info")
 async def get_app_info():
     settings = get_settings()

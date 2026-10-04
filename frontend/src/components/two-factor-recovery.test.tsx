@@ -17,5 +17,5 @@ it('accepts a complete unused recovery code when replacing a lost authenticator'
   expect(submit).toBeEnabled()
   fireEvent.click(submit)
   await waitFor(() => expect(disable).toHaveBeenCalledWith('My-password-123', code))
-  await waitFor(() => expect(rotated).toHaveBeenCalledWith('replacement-session'))
+  await waitFor(() => expect(rotated).toHaveBeenCalledWith('replacement-session', { preserveCurrentUser: true }))
 })

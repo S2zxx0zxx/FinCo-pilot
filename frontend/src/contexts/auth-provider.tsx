@@ -91,10 +91,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (localStorage.getItem('token') === data.access_token) setUser(normalizeUser(me))
   }, [adoptToken])
 
-  const loginWithToken = useCallback((accessToken: string) => {
-    adoptToken(accessToken)
-    // The cancellable token effect owns the session probe.
-  }, [adoptToken])
+  const loginWithToken = useCallback((accessToken: string, options?: { preserveCurrentUser: true }) => {
+    if (options?.preserveCurrentUser && user) {
+      // Only authenticated same-account MFA responses use this path. Keep the
+      // recovery-code screen mounted while the cancellable probe revalidates.
+      queryClient.clear()
+      localStorage.setItem('token', accessToken)
+      setToken(accessToken)
+    } else {
+      adoptToken(accessToken)
+    }
+  }, [adoptToken, queryClient, user])
 
   const updateUser = useCallback((updatedUser: User) => {
     setUser(normalizeUser(updatedUser))

@@ -21,6 +21,6 @@ it('requires password confirmation and replaces the session after enrollment', a
   fireEvent.change(screen.getByLabelText('auth.password'), { target: { value: 'synthetic-current-password' } })
   fireEvent.click(submit)
   await waitFor(() => expect(enable).toHaveBeenCalledWith('123456', 'synthetic-current-password'))
-  expect(replaceSession).toHaveBeenCalledWith('fresh-session')
+  expect(replaceSession).toHaveBeenCalledWith('fresh-session', { preserveCurrentUser: true })
   expect(await screen.findByText('Save your recovery codes')).toBeInTheDocument()
 })

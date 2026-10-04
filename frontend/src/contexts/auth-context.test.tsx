@@ -366,3 +366,19 @@ it('waits for a new cross-tab session identity instead of redirecting during its
   await waitFor(() => expect(result.current.user).toEqual(USER))
   expect(result.current.isLoading).toBe(false)
 })
+
+it('keeps the MFA recovery screen authenticated during same-account replacement validation', async () => {
+  localStorage.setItem('token', 'current-session')
+  auth.me.mockResolvedValue(USER)
+  const { result } = await renderAuth()
+  await waitFor(() => expect(result.current.user).toEqual(USER))
+  let complete!: (user: User) => void
+  auth.me.mockReturnValueOnce(new Promise<User>((resolve) => { complete = resolve }))
+  act(() => result.current.loginWithToken('mfa-replacement', { preserveCurrentUser: true }))
+  expect(result.current.user).toEqual(USER)
+  expect(result.current.isLoading).toBe(false)
+  expect(result.current.token).toBe('mfa-replacement')
+  const enrolled = { ...USER, is_2fa_enabled: true }
+  await act(async () => complete(enrolled))
+  await waitFor(() => expect(result.current.user).toEqual(enrolled))
+})

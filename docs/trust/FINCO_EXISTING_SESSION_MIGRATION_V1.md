@@ -20,7 +20,7 @@ No broad forced auth_epoch rewrite is needed to reject unstamped sessions. It wo
 1. Read actual installed FastAPI Users JWT strategy and application issuance/verification, MFA/logout/password paths, Axios interceptors and cross-tab cache behavior.
 2. Enforce server-issued session claim shape: sub/aud/exp/stamp required, pinned algorithm/audience, expiry validation and lowercase 64-hex HMAC stamp. Catch invalid input before DB reads; refresh current password/epoch/activity before stamp comparison. Existing current issuance remains compatible.
 3. Bind frontend 401 invalidation to the rejected request's actual Authorization header and current local token. Preserve explicit headers for logout so replacement login does not change which token is sent.
-4. Notify the same-tab auth provider when current-token rejection occurs. Clear private query cache on rejection, token/account adoption and cross-tab sign-out/storage clear. Use a cancellable token probe; stale responses never install another account's identity.
+4. Notify the same-tab auth provider when current-token rejection occurs. Clear private query cache on rejection, token/account adoption and cross-tab sign-out/storage clear. Use a cancellable token probe; stale responses never install another account's identity. Authenticated same-account MFA replacement responses explicitly retain the current identity during revalidation so recovery-code screens stay mounted; generic account adoption clears it.
 5. Regression matrix covers real API rejection and logout/re-login, real Axios interceptor behavior, cross-tab/current-token cache isolation and late account probes. Run full existing CI before finalizing reviewed branch.
 
 ## Rollout and real acceptance (pending)

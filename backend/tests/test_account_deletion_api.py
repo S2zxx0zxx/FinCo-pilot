@@ -68,8 +68,13 @@ async def test_execution_revokes_sessions_but_secret_receipt_still_works(client,
     data = response.json()
     job = await session.get(AccountDeletion, uuid.UUID(data['id']))
     await service.review_deletion(session, job, test_superuser, 'a'*64)
-    for required in job.manifest['requirements']:
+    for required in [key for key in job.manifest['requirements'] if not service.post_primary_requirement(key)]:
         await service.record_receipt(session, job, test_superuser, required, 'b'*64)
+    await service.execute_deletion(session, job, str(test_superuser.id))
+    assert job.state == 'external_retry' and job.error_code == 'post_primary_reconciliation_required'
+    for key in job.manifest['requirements']:
+        if service.post_primary_requirement(key):
+            await service.record_receipt(session, job, test_superuser, key, 'c'*64)
     await service.execute_deletion(session, job, str(test_superuser.id))
     assert (await client.get('/api/users/me', headers=auth_headers)).status_code == 401
     assert (await client.post(f"/api/account-deletion/{data['id']}/cancel", headers=auth_headers)).status_code == 401

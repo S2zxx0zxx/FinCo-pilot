@@ -28,6 +28,8 @@ interface OperatorStatus extends Status {
   review_fingerprint: string | null
   receipts: Record<string, unknown>
   user_id: string
+  objects: Array<{ kind: string; key: string; provider: string; done: boolean }>
+  private_workspaces: string[]
 }
 
 const copy = {
@@ -36,6 +38,7 @@ const copy = {
     fresh: 'Sign in again with your full password and second factor, passkey, or OIDC authentication. Submit within five minutes.', login: 'Sign in again', oidc: 'Reauthenticate with OIDC',
     preview: 'Private workspaces / preserved workspaces / required operator checks', request: 'Request deletion', confirmation: 'Type DELETE MY ACCOUNT to confirm', cancel: 'Cancel request',
     saved: 'Save the request ID and secret receipt below before leaving. The secret is shown only once. Do not share it; it allows deletion status lookup after sign-out.',
+    inventory: 'Protected cleanup inventory (operator only)',
     copy: 'Copy secret receipt', requests: 'Recent deletion requests',
     receipt: 'Secret receipt', id: 'Request ID', check: 'Check deletion status', status: 'Status', pending: 'External checks / object cleanup pending', blocked: 'Resolve blockers before execution',
     error: 'Request failed. Sign in again if authentication expired; retry without creating duplicate requests.', operator: 'Deletion operator', evidence: 'SHA-256 of real evidence (64 lowercase hex characters)', review: 'Review current inventory', attest: 'Record external evidence', execute: 'Execute or resume deletion',
@@ -46,6 +49,7 @@ const copy = {
     fresh: 'पासवर्ड और दूसरे कारक, पासकी या OIDC से फिर पूरा प्रमाणीकरण करें। पाँच मिनट के भीतर अनुरोध दें।', login: 'फिर साइन इन करें', oidc: 'OIDC से दोबारा प्रमाणीकरण',
     preview: 'निजी कार्यक्षेत्र / सुरक्षित साझा कार्यक्षेत्र / आवश्यक संचालक जाँच', request: 'हटाने का अनुरोध दें', confirmation: 'पुष्टि के लिए DELETE MY ACCOUNT लिखें', cancel: 'अनुरोध रद्द करें',
     saved: 'आगे बढ़ने से पहले अनुरोध पहचान और नीचे दी गई गुप्त रसीद सुरक्षित रखें। रसीद केवल एक बार दिखेगी। इसे साझा न करें; साइन आउट के बाद स्थिति देखने के लिए इसकी जरूरत होगी।',
+    inventory: 'सुरक्षित सफ़ाई सूची (केवल संचालक)',
     copy: 'गुप्त रसीद कॉपी करें', requests: 'हाल के विलोपन अनुरोध',
     receipt: 'गुप्त रसीद', id: 'अनुरोध पहचान', check: 'स्थिति जाँचें', status: 'स्थिति', pending: 'बाहरी जाँच / फ़ाइल सफ़ाई लंबित', blocked: 'कार्रवाई से पहले रुकावटें दूर करें',
     error: 'अनुरोध असफल हुआ। प्रमाणीकरण समाप्त होने पर फिर साइन इन करें। एक ही अनुरोध बार-बार न बनाएँ।', operator: 'हटाने की प्रक्रिया का संचालक', evidence: 'वास्तविक प्रमाण का SHA-256 (64 छोटे अक्षर/अंक)', review: 'वर्तमान डेटा की समीक्षा करें', attest: 'बाहरी प्रमाण दर्ज करें', execute: 'हटाना शुरू करें या फिर चलाएँ',
@@ -145,6 +149,8 @@ export default function AccountDeletionPage() {
       </select>
       <Button disabled={busy || !id} onClick={() => void run(loadOperator)}>{c.load}</Button>
       {operator && <>
+        <label htmlFor="deletion-inventory">{c.inventory}</label>
+        <textarea id="deletion-inventory" readOnly className="w-full rounded border p-2" rows={6} value={JSON.stringify({ workspaces: operator.private_workspaces, objects: operator.objects }, null, 2)} />
         <label htmlFor="deletion-evidence">{c.evidence}</label><Input id="deletion-evidence" value={evidence} onChange={e => setEvidence(e.target.value)} autoComplete="off" />
         <Button disabled={busy || !validEvidence} onClick={() => void run(() => operate('review', { evidence_sha256: evidence }))}>{c.review}</Button>
         <label htmlFor="deletion-requirement">{c.requirement}</label>

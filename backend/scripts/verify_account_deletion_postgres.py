@@ -10,7 +10,7 @@ from pathlib import Path
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
 from fastapi import HTTPException
-from sqlalchemy import insert, text, update
+from sqlalchemy import insert, select, text, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
@@ -58,6 +58,12 @@ async def main():
             private_bytes.write_bytes(b'synthetic private bytes')
             shared_bytes = Path(directory)/'shared.pdf'
             shared_bytes.write_bytes(b'synthetic shared bytes')
+            orphan = Path(directory)/str(private_id)/'invoices/logo'/f'{uuid.uuid4()}.png'
+            orphan.parent.mkdir(parents=True)
+            orphan.write_bytes(b'synthetic replaced orphan logo')
+            kept_orphan = Path(directory)/str(shared_id)/'invoices/logo'/f'{uuid.uuid4()}.png'
+            kept_orphan.parent.mkdir(parents=True)
+            kept_orphan.write_bytes(b'synthetic shared historical logo')
             async with sessions() as session:
                 user = User(id=uid, email='synthetic-deletion@example.invalid', hashed_password='synthetic-unusable-hash', is_active=True, is_verified=True, is_superuser=False)
                 admin = User(id=aid, email='synthetic-operator@example.invalid', hashed_password='synthetic-unusable-hash', is_active=True, is_verified=True, is_superuser=True)
@@ -70,7 +76,7 @@ async def main():
                 session.add_all(accounts)
                 await session.flush()
                 from datetime import date
-                transactions = [Transaction(id=uuid.uuid4(), user_id=uid, workspace_id=account.workspace_id, account_id=account.id, date=date.today(), amount=1, currency='INR', description='Synthetic', type='expense') for account in accounts]
+                transactions = [Transaction(id=uuid.uuid4(), user_id=uid, workspace_id=account.workspace_id, account_id=account.id, date=date.today(), amount=1, currency='INR', description='Synthetic', type='expense', source='manual') for account in accounts]
                 session.add_all(transactions)
                 await session.flush()
                 session.add_all([TransactionAttachment(transaction_id=tx.id, user_id=uid, workspace_id=tx.workspace_id, filename=key, storage_key=key, content_type='application/pdf', size=4) for tx, key in zip(transactions, ['private.pdf', 'shared.pdf'], strict=True)])
@@ -80,7 +86,7 @@ async def main():
                 job = await session.get(AccountDeletion, jid)
                 assert job
                 await service.review_deletion(session, job, admin, 'a'*64)
-                for requirement in job.manifest['requirements']:
+                for requirement in [key for key in job.manifest['requirements'] if not service.post_primary_requirement(key)]:
                     await service.record_receipt(session, job, admin, requirement, 'b'*64)
             # A competing writer really waits on the workflow's table lock.
             async with sessions() as fenced, sessions() as writer:
@@ -93,11 +99,28 @@ async def main():
                 assert not task.done(), 'Competing writer bypassed table fence'
                 await fenced.rollback()
                 await task
+            # The upload dependency's KEY SHARE lock must also hold the fence.
+            async with sessions() as reader, sessions() as fenced:
+                await reader.execute(select(Workspace).where(Workspace.id == private_id).with_for_update(read=True, key_share=True))
+                task = asyncio.create_task(service.lock_inventory(fenced))
+                await asyncio.sleep(0.1)
+                assert not task.done(), 'Deletion bypassed an in-flight upload reader'
+                await reader.rollback()
+                await task
+                await fenced.rollback()
             async with sessions() as session:
                 job = await service.locked_job(session, jid)
                 await service.execute_deletion(session, job, str(aid))
+                assert job.state == 'external_retry' and job.error_code == 'post_primary_reconciliation_required'
+                admin = await session.get(User, aid)
+                assert admin
+                for key in job.manifest['requirements']:
+                    if service.post_primary_requirement(key):
+                        await service.record_receipt(session, job, admin, key, 'd'*64)
+                await service.execute_deletion(session, job, str(aid))
                 assert job.state == 'backup_expiry_pending'
                 assert not private_bytes.exists() and shared_bytes.exists()
+                assert not orphan.exists() and kept_orphan.exists()
                 assert await session.get(Workspace, private_id) is None
                 assert await session.get(Account, accounts[0].id) is None
                 assert await session.get(Account, accounts[1].id)

@@ -118,12 +118,13 @@ async def operator_requests(user: User = Depends(current_superuser), session: As
     return [service.public_status(job) for job in jobs]
 
 
-@router.get("/operator/{identity}")
+@router.get("/operator/{identity}", dependencies=[Depends(require_fresh)])
 async def operator_request(identity: uuid.UUID, user: User = Depends(current_superuser), session: AsyncSession = Depends(get_async_session)):
     job = await service.locked_job(session, identity)
     return {**service.public_status(job), "requirements": job.manifest.get("requirements", []),
         "review_fingerprint": job.review.get("fingerprint"), "receipts": job.receipts,
-        "user_id": str(job.user_id)}
+        "user_id": str(job.user_id), "private_workspaces": job.manifest.get("private_workspaces", []),
+        "objects": job.manifest.get("objects", [])}
 
 
 @router.post("/operator/holds", status_code=201, dependencies=[Depends(require_fresh)])

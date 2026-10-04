@@ -57,6 +57,10 @@ def audit(session: AsyncSession, job: AccountDeletion, action: str, actor: str |
     session.add(AccountDeletionEvent(deletion_id=job.id, event_type=action, actor_id=actor, details=details))
 
 
+def post_primary_requirement(key: str) -> bool:
+    return key in {"unmapped_legacy_storage_review", "processor_cleanup_after_primary"} or key.startswith(("storage_versions:", "storage_namespace_versions:"))
+
+
 def public_status(job: AccountDeletion):
     return {"id": str(job.id), "state": job.state, "blockers": job.blockers,
             "error_code": job.error_code, "requested_at": job.requested_at,
@@ -88,7 +92,7 @@ async def lock_inventory(session: AsyncSession):
     if bind.dialect.name == "postgresql":
         await session.execute(text("SET LOCAL lock_timeout = '5s'"))
         names = ', '.join('"' + name + '"' for name in sorted(Base.metadata.tables))
-        await session.execute(text(f"LOCK TABLE {names} IN SHARE ROW EXCLUSIVE MODE"))
+        await session.execute(text(f"LOCK TABLE {names} IN EXCLUSIVE MODE"))
     elif get_settings().is_production:
         raise HTTPException(409, "Production deletion requires PostgreSQL")
     connection = await session.connection()
@@ -124,7 +128,7 @@ async def inventory(session: AsyncSession, user: User):
     blockers = [b.value for b in plan.blockers]
     hashes = {}
     objects = []
-    requirements = ["operator_hold_and_retention_review", "processor_inventory_review", "backup_inventory_review"]
+    requirements = ["operator_hold_and_retention_review", "processor_inventory_review", "backup_inventory_review", "unmapped_legacy_storage_review", "processor_cleanup_after_primary"]
     for table in tables:
         if table.name in (PERSONAL_TABLES - {"external_mcp_tokens", "mcp_approvals"}) | PAYMENT_TABLES | RECEIPT_TABLES | {"users", "fx_rates", "app_settings"}:
             continue
@@ -158,6 +162,52 @@ async def inventory(session: AsyncSession, user: User):
         if workspace is not None and "user_id" in table.c:
             if await session.scalar(select(func.count()).select_from(table).where(table.c.user_id == user.id, workspace.is_(None))):
                 blockers.append("unscoped_legacy_data")
+    from app.services.invoice_logo_service import storage_key as logo_key
+    for name in ("invoice_settings", "invoices"):
+        table = Base.metadata.tables[name]
+        for row in (await session.execute(select(table).where(table.c.workspace_id.in_(private)))).mappings():
+            logo = row.get("logo_id") if name == "invoice_settings" else ((row.get("snapshot") or {}).get("issuer") or {}).get("logo_id")
+            if logo:
+                try:
+                    key = logo_key(row["workspace_id"], uuid.UUID(str(logo)))
+                except (ValueError, TypeError):
+                    blockers.append("invalid_logo_reference")
+                    continue
+                objects.append({"kind": "attachment", "key": key, "provider": get_settings().storage_provider,
+                    "namespace": storage_namespace("attachment"), "done": False})
+    # Enumerate only exact UUID workspace namespaces. This also discovers
+    # replaced/unreferenced invoice logos and orphaned attachment uploads.
+    for workspace_id in private:
+        if get_settings().storage_provider == "s3":
+            requirements.append("storage_namespace_versions:" + str(workspace_id))
+        try:
+            discovered = await get_storage_provider().list_keys(str(workspace_id) + "/")
+        except Exception:
+            blockers.append("storage_inventory_unavailable")
+            discovered = []
+        for key in discovered:
+            objects.append({"kind": "attachment", "key": key, "provider": get_settings().storage_provider,
+                "namespace": storage_namespace("attachment"), "done": False})
+    for item in objects:
+        try:
+            key = item["key"]
+            if not isinstance(key, str):
+                raise ValueError("Invalid object key type")
+            if item["kind"] == "attachment":
+                if not key or key.startswith("/") or "\\" in key or "\x00" in key or any(part in {"", ".", ".."} for part in key.split("/")):
+                    raise ValueError("Invalid exact object key")
+            else:
+                from app.agents.config import get_agent_settings
+                base = Path(get_agent_settings().knowledge_storage_path).absolute()
+                path = Path(key).absolute()
+                path.relative_to(base)
+                path.resolve().relative_to(base.resolve())
+                if path == base or path.is_symlink():
+                    raise ValueError("Unsafe knowledge path")
+        except (ValueError, TypeError, OSError):
+            blockers.append("unsafe_storage_reference")
+    objects = list({(item["kind"], item["key"]): item for item in objects}.values())
+    objects.sort(key=lambda item: (item["kind"], item["key"]))
     # Shared byte references are a pre-purge blocker, not an irreversible
     # dead-end discovered only after private rows have already disappeared.
     for item in objects:
@@ -242,7 +292,11 @@ async def review_deletion(session: AsyncSession, job: AccountDeletion, actor: Us
 
 
 async def record_receipt(session: AsyncSession, job: AccountDeletion, actor: User, requirement: str, evidence: str):
-    if job.lease_token or job.state != State.READY.value or not job.review or requirement not in job.manifest.get("requirements", []):
+    post = post_primary_requirement(requirement)
+    allowed = (job.state == State.READY.value and not post) or (
+        job.state == State.EXTERNAL_RETRY.value and post and job.error_code == "post_primary_reconciliation_required"
+        and job.manifest.get("primary_database_purged") is True)
+    if job.lease_token or not allowed or not job.review or requirement not in job.manifest.get("requirements", []):
         raise HTTPException(409, "Reviewed request and exact required receipt are necessary")
     audit(session, job, "external_receipt", str(actor.id), requirement=requirement, evidence_sha256=evidence, manifest_sha256=job.review["fingerprint"])
     job.receipts = {**job.receipts, requirement: {"evidence_sha256": evidence,
@@ -252,6 +306,10 @@ async def record_receipt(session: AsyncSession, job: AccountDeletion, actor: Use
 
 async def purge_primary(session: AsyncSession, job: AccountDeletion, actor_id: str | None):
     await lock_inventory(session)
+    if actor_id is not None:
+        operator = await session.scalar(select(User).where(User.id == uuid.UUID(actor_id)).execution_options(populate_existing=True))
+        if not operator or not operator.is_active or not operator.is_superuser or operator.id == job.user_id:
+            raise HTTPException(403, "A different current active operator is required")
     user = (await session.scalars(select(User).where(User.id == job.user_id).execution_options(populate_existing=True))).one()
     manifest, blockers, conditions = await inventory(session, user)
     if blockers:
@@ -262,7 +320,7 @@ async def purge_primary(session: AsyncSession, job: AccountDeletion, actor_id: s
     review_at = datetime.fromisoformat(job.review["at"])
     if (utcnow() - review_at).total_seconds() > 86400:
         raise HTTPException(409, "Operator review expired")
-    if any(job.receipts.get(key, {}).get("fingerprint") != current for key in manifest["requirements"]):
+    if any(job.receipts.get(key, {}).get("fingerprint") != current for key in manifest["requirements"] if not post_primary_requirement(key)):
         raise HTTPException(409, "External cleanup and retention receipts are still required")
     transition(job, State.EXECUTING)
     # Rotation and deactivation commit in the SAME transaction as the purge.
@@ -292,7 +350,7 @@ async def purge_primary(session: AsyncSession, job: AccountDeletion, actor_id: s
         await session.execute(update(Workspace).where(column == user.id).values({column.key: None}))
     await session.execute(update(WorkspaceMember).where(WorkspaceMember.invited_by_user_id == user.id).values(invited_by_user_id=None))
     await session.execute(delete(Workspace).where(conditions["workspaces"]))
-    job.manifest = manifest
+    job.manifest = {**manifest, "primary_database_purged": True}
     audit(session, job, "primary_purged", actor_id, manifest_sha256=current)
     await session.commit()
 
@@ -396,6 +454,13 @@ async def execute_deletion(session: AsyncSession, job: AccountDeletion, actor_id
     if job.lease_token != lease:
         raise HTTPException(409, "Execution lease changed")
     job.lease_token, job.lease_until = None, None
+    if any(job.receipts.get(key, {}).get("fingerprint") != job.review.get("fingerprint")
+           for key in job.manifest.get("requirements", []) if post_primary_requirement(key)):
+        transition(job, State.EXTERNAL_RETRY)
+        job.error_code = "post_primary_reconciliation_required"
+        audit(session, job, "post_primary_evidence_pending", actor_id)
+        await session.commit()
+        return
     job.error_code = None
     job.primary_deleted_at = utcnow()
     transition(job, State.PRIMARY_DATA_DELETED)

@@ -1,5 +1,5 @@
 import uuid
-from datetime import timedelta
+from datetime import date, timedelta
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -24,9 +24,19 @@ async def approved(session, user, admin):
     result = await service.request_deletion(session, user)
     job = await session.get(AccountDeletion, uuid.UUID(result['id']))
     await service.review_deletion(session, job, admin, 'a' * 64)
-    for requirement in job.manifest['requirements']:
+    for requirement in [key for key in job.manifest['requirements'] if not service.post_primary_requirement(key)]:
         await service.record_receipt(session, job, admin, requirement, 'b' * 64)
     return job, result
+
+
+async def finish_execution(session, job, admin):
+    await session.refresh(admin)
+    await service.execute_deletion(session, job, str(admin.id))
+    if job.error_code == "post_primary_reconciliation_required":
+        for key in job.manifest["requirements"]:
+            if service.post_primary_requirement(key):
+                await service.record_receipt(session, job, admin, key, 'e'*64)
+        await service.execute_deletion(session, job, str(admin.id))
 
 
 @pytest.mark.asyncio
@@ -41,7 +51,7 @@ async def test_private_cleanup_shared_preservation_backup_gate(session, test_use
     await session.commit()
     job, _ = await approved(session, test_user, admin)
     assert not job.blockers
-    await service.execute_deletion(session, job)
+    await finish_execution(session, job, admin)
     assert job.state == 'backup_expiry_pending'
     assert await session.get(Workspace, test_workspace.id) is None
     await session.refresh(shared)
@@ -84,7 +94,7 @@ async def test_changed_inventory_and_missing_receipts_fail_before_purge(session,
         await service.execute_deletion(session, job)
     await session.refresh(admin)
     await session.refresh(test_workspace)
-    for requirement in job.manifest['requirements']:
+    for requirement in [key for key in job.manifest['requirements'] if not service.post_primary_requirement(key)]:
         await service.record_receipt(session, job, admin, requirement, 'b' * 64)
     test_workspace.name = 'Changed after review'
     await session.commit()
@@ -111,7 +121,7 @@ async def test_object_failure_resumes_from_durable_manifest(session, test_user, 
         assert not test_user.is_active
         assert 'secret' not in str(service.public_status(job))
         provider.delete.side_effect = None
-        await service.execute_deletion(session, job)
+        await finish_execution(session, job, admin)
     assert job.state == 'backup_expiry_pending' and job.manifest['objects'] == []
     assert provider.delete.await_count == 2
 
@@ -178,7 +188,7 @@ async def test_expired_review_and_new_hold_require_recheck(session, test_user, t
     await session.refresh(admin)
     await session.refresh(test_user)
     await service.review_deletion(session, job, admin, 'a'*64)
-    for requirement in job.manifest['requirements']:
+    for requirement in [key for key in job.manifest['requirements'] if not service.post_primary_requirement(key)]:
         await service.record_receipt(session, job, admin, requirement, 'b'*64)
     session.add(AccountDeletionHold(user_id=test_user.id, evidence_sha256='d'*64, reason='dispute', verified_by=str(admin.id)))
     await session.commit()
@@ -195,9 +205,64 @@ async def test_user_cannot_be_reactivated_through_admin_service(session, test_us
     from sqlalchemy import select
     admin = await operator(session)
     job, _ = await approved(session, test_user, admin)
-    await service.execute_deletion(session, job)
+    await finish_execution(session, job, admin)
     with pytest.raises(ValueError, match='tombstones'):
         await update_user(session, test_user.id, AdminUserUpdate(is_active=True), admin.id)
     events = list((await session.scalars(select(AccountDeletionEvent).where(AccountDeletionEvent.deletion_id == job.id))).all())
     assert {'requested', 'reviewed', 'external_receipt', 'primary_purged', 'backup_expiry_pending'} <= {event.event_type for event in events}
     assert 'private-key' not in str([e.details for e in events])
+
+
+@pytest.mark.asyncio
+async def test_private_current_snapshot_and_orphan_logos_all_enter_manifest(session, test_user, test_workspace, monkeypatch, tmp_path):
+    from app.core.config import get_settings
+    from app.models.invoice import Invoice, InvoiceSettings
+    current = uuid.uuid4()
+    orphan = uuid.uuid4()
+    frozen = uuid.uuid4()
+    logo = tmp_path/str(test_workspace.id)/'invoices/logo'/f'{orphan}.png'
+    logo.parent.mkdir(parents=True)
+    logo.write_bytes(b'old-private-logo')
+    monkeypatch.setattr(get_settings(), 'storage_local_path', str(tmp_path))
+    session.add(InvoiceSettings(workspace_id=test_workspace.id, logo_id=current))
+    session.add(Invoice(workspace_id=test_workspace.id, user_id=test_user.id,
+        direction="receivable", origin="local", status="draft", issue_date=date.today(), due_date=date.today(), snapshot={"issuer": {"logo_id": str(frozen)}}))
+    await session.commit()
+    result = await service.request_deletion(session, test_user)
+    job = await session.get(AccountDeletion, uuid.UUID(result['id']))
+    keys = {item['key'] for item in job.manifest['objects']}
+    assert f'{test_workspace.id}/invoices/logo/{current}.png' in keys
+    assert f'{test_workspace.id}/invoices/logo/{orphan}.png' in keys
+    assert f'{test_workspace.id}/invoices/logo/{frozen}.png' in keys
+    assert not job.blockers
+
+
+@pytest.mark.asyncio
+async def test_storage_inventory_failure_and_unsafe_refs_block_before_any_deletion(session, test_user, test_workspace, test_transactions):
+    session.add(TransactionAttachment(transaction_id=test_transactions[0].id, workspace_id=test_workspace.id,
+        user_id=test_user.id, filename='bad', storage_key='../escape', content_type='application/pdf', size=1))
+    await session.commit()
+    provider = AsyncMock()
+    provider.list_keys.side_effect = RuntimeError('sensitive-provider-message')
+    with patch.object(service, 'get_storage_provider', return_value=provider):
+        result = await service.request_deletion(session, test_user)
+    assert set(result['blockers']) == {'storage_inventory_unavailable', 'unsafe_storage_reference'}
+    assert 'sensitive-provider-message' not in str(result)
+    assert test_user.is_active
+
+
+@pytest.mark.asyncio
+async def test_processor_and_version_receipts_cannot_be_filled_before_primary_purge(session, test_user, test_workspace):
+    admin = await operator(session)
+    job, _ = await approved(session, test_user, admin)
+    for key in job.manifest['requirements']:
+        if service.post_primary_requirement(key):
+            with pytest.raises(HTTPException, match='exact required receipt'):
+                await service.record_receipt(session, job, admin, key, 'c'*64)
+    await service.execute_deletion(session, job, str(admin.id))
+    assert not test_user.is_active and job.state == 'external_retry'
+    assert job.error_code == 'post_primary_reconciliation_required'
+    assert job.primary_deleted_at is None
+    assert service.public_status(job)['pending_external_count'] == 2
+    await finish_execution(session, job, admin)
+    assert job.state == 'backup_expiry_pending'

@@ -102,3 +102,5 @@ __all__ = [
     "collection_accounts",
     "collection_asset_groups",
 ]
+
+from app.models.account_deletion import AccountDeletion, AccountDeletionHold, AccountDeletionEvent  # noqa: F401

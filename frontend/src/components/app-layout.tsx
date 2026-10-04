@@ -807,6 +807,9 @@ function UserMenu({
           </DropdownMenuPortal>
         </DropdownMenuSub>
         <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link to="/account-deletion">{currentLang === 'hi' ? 'व्यक्तिगत खाता हटाएँ' : 'Delete personal account'}</Link>
+        </DropdownMenuItem>
         <DropdownMenuItem
           onClick={logout}
           className="text-rose-600 focus:text-rose-600"

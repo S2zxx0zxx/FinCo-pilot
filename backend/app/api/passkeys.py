@@ -405,7 +405,7 @@ async def verify_passkey_authentication(
     )
 
     strategy = get_jwt_strategy()
-    token = await strategy.write_token(user)
+    token = await strategy.write_token(user, fresh_auth=True)
     return {"access_token": token, "token_type": "bearer"}
 
 
@@ -485,5 +485,5 @@ async def verify_passkey_second_factor(
     await _delete_second_factor_temp_token(body.temp_token, user)
 
     strategy = get_jwt_strategy()
-    token = await strategy.write_token(user)
+    token = await strategy.write_token(user, fresh_auth=True)
     return {"access_token": token, "token_type": "bearer"}

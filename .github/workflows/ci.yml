@@ -198,6 +198,11 @@ jobs:
           FINCO_DISPOSABLE_DB_TEST: "yes"
         run: python -m scripts.verify_mcp_approval_postgres
 
+      - name: Verify personal deletion and stale-writer fencing on PostgreSQL
+        env:
+          FINCO_DISPOSABLE_DB_TEST: "yes"
+        run: python -m scripts.verify_account_deletion_postgres
+
   redis-worker-smoke:
     name: Redis + Worker Smoke
     runs-on: ubuntu-latest

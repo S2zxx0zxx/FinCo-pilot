@@ -35,6 +35,15 @@ WRITE_GATES = {"current_writable_workspace"}
 #: inventory of everything that will need re-deciding when permissions get
 #: finer, which is why the reason is stored next to the path.
 ALLOWLIST: dict[tuple[str, str], str] = {
+    ("POST", "/api/account-deletion"): "own account, explicit confirmation and fresh full authentication",
+    ("POST", "/api/account-deletion/{identity}/cancel"): "own request, fresh authentication, before irreversible execution",
+    ("POST", "/api/account-deletion/operator/holds"): "fresh superuser authentication and evidence-gated hold",
+    ("POST", "/api/account-deletion/operator/holds/{identity}/release"): "fresh superuser authentication and release evidence",
+    ("POST", "/api/account-deletion/operator/{identity}/review"): "fresh superuser authentication and retention review",
+    ("POST", "/api/account-deletion/operator/{identity}/receipt"): "fresh superuser authentication and exact external evidence",
+    ("POST", "/api/account-deletion/operator/{identity}/execute"): "different fresh superuser, inventory checks and durable lease",
+    ("POST", "/api/account-deletion/operator/{identity}/backup-proof"): "fresh superuser authentication and actual recoverability cutoff",
+
     ("POST", "/api/dashboard/spending-plan"): "read-only cash calculation within current workspace; writes nothing",
     # Not workspace-scoped: the actor is the user, on their own account.
     ("PATCH", "/me"): "the requester's own user record",

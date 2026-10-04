@@ -1,7 +1,8 @@
 import hashlib
 import hmac
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
-from urllib.parse import parse_qsl, quote, urlsplit, urlunsplit
+from urllib.parse import parse_qsl, quote, unquote, urlsplit, urlunsplit
 
 import httpx
 
@@ -179,6 +180,60 @@ class S3StorageProvider(StorageProvider):
     def _timeout(cls) -> httpx.Timeout:
         seconds = float(cls._settings().storage_s3_request_timeout_seconds)
         return httpx.Timeout(seconds, connect=min(seconds, 10.0))
+
+    async def list_keys(self, prefix: str) -> list[str]:
+        if not prefix or not prefix.endswith("/") or prefix.startswith("/"):
+            raise ValueError("Invalid inventory prefix")
+        qualified = self._qualified_key(prefix)
+        root_prefix = self._settings().storage_s3_prefix.strip().strip("/")
+        root_prefix = root_prefix + "/" if root_prefix else ""
+        token = None
+        seen_tokens = set()
+        keys = set()
+        async with httpx.AsyncClient(timeout=self._timeout(), follow_redirects=False) as client:
+            for _ in range(100):
+                query = [("list-type", "2"), ("prefix", qualified), ("max-keys", "1000"), ("encoding-type", "url")]
+                if token:
+                    query.append(("continuation-token", token))
+                url = self._object_url("") + "?" + _canonical_query(query)
+                headers = self._signed_headers("GET", url, b"")
+                payload = bytearray()
+                async with client.stream("GET", url, headers=headers) as response:
+                    response.raise_for_status()
+                    async for chunk in response.aiter_bytes():
+                        payload.extend(chunk)
+                        if len(payload) > 2 * 1024 * 1024:
+                            raise StorageIntegrityError("Object inventory response exceeds limit")
+                if b"<!DOCTYPE" in payload.upper() or b"<!ENTITY" in payload.upper():
+                    raise StorageIntegrityError("Unsafe object inventory XML")
+                try:
+                    document = ET.fromstring(payload)
+                except ET.ParseError:
+                    raise StorageIntegrityError("Invalid object inventory XML") from None
+                if document.tag.split("}")[-1] != "ListBucketResult":
+                    raise StorageIntegrityError("Invalid inventory root")
+                page = document.findall("{*}Contents/{*}Key")
+                if len(page) > 1000 or document.findtext("{*}EncodingType") != "url":
+                    raise StorageIntegrityError("Invalid object inventory encoding/count")
+                for element in page:
+                    key = unquote(element.text or "", errors="strict")
+                    if not key.startswith(qualified) or len(key) > 2000:
+                        raise StorageIntegrityError("Object inventory escaped requested namespace")
+                    logical = key[len(root_prefix):]
+                    try:
+                        if self._validate_key(logical) != logical:
+                            raise ValueError("Normalized key")
+                    except ValueError:
+                        raise StorageIntegrityError("Invalid logical inventory key") from None
+                    keys.add(logical)
+                truncated = document.findtext("{*}IsTruncated")
+                if truncated == "false":
+                    return sorted(keys)
+                token = document.findtext("{*}NextContinuationToken")
+                if truncated != "true" or not token or len(token) > 8192 or token in seen_tokens:
+                    raise StorageIntegrityError("Invalid inventory pagination")
+                seen_tokens.add(token)
+        raise StorageIntegrityError("Object inventory exceeds deletion batch limit")
 
     async def upload(
         self, storage_key: str, data: bytes, content_type: str

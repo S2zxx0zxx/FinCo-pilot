@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
+from app.api.account_deletion import router as account_deletion_router
 from app.api.accounts import router as accounts_router
 from app.api.admin import router as admin_router, check_registration_enabled
 from app.api.asset_groups import router as asset_groups_router
@@ -228,6 +229,7 @@ app.include_router(settings_router)
 app.include_router(workspaces_router, dependencies=[Depends(workspace_guard)])
 app.include_router(admin_router)
 app.include_router(pricing_admin_router)
+app.include_router(account_deletion_router)
 app.include_router(support_router)
 app.include_router(info_router)
 
@@ -337,6 +339,8 @@ async def request_reference(request, call_next):
         )
 
     response.headers["X-Request-ID"] = reference
+    if request.url.path.startswith("/api/account-deletion"):
+        response.headers["Cache-Control"] = "no-store"
     if response.status_code >= 500:
         logger.error(
             "Request failed reference=%s method=%s path=%s status=%s",

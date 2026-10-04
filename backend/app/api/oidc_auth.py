@@ -1,3 +1,4 @@
+import time
 import base64
 import hashlib
 import json
@@ -65,7 +66,7 @@ async def oidc_config():
 
 
 @router.get("/login")
-async def oidc_login():
+async def oidc_login(reauthenticate: bool = False):
     settings = get_settings()
     if not settings.oidc_client_id:
         raise HTTPException(status_code=500, detail="OIDC_CLIENT_ID is required")
@@ -83,7 +84,7 @@ async def oidc_login():
     r = await get_redis()
     await r.set(
         f"oidc_state:{state}",
-        json.dumps({"nonce": nonce, "code_verifier": code_verifier}),
+        json.dumps({"nonce": nonce, "code_verifier": code_verifier, "reauthenticate": reauthenticate}),
         ex=OIDC_STATE_TTL,
     )
 
@@ -97,6 +98,8 @@ async def oidc_login():
         "code_challenge": code_challenge,
         "code_challenge_method": "S256",
     }
+    if reauthenticate:
+        params.update({"prompt": "login", "max_age": "0"})
     return RedirectResponse(f"{authorization_endpoint}?{urlencode(params)}")
 
 
@@ -384,10 +387,15 @@ async def oidc_callback(
     claims = await _decode_id_token(
         discovery, id_token, state_data["nonce"], token_response.get("access_token", "")
     )
+    fresh = state_data.get("reauthenticate") is True
+    if fresh:
+        auth_time = claims.get("auth_time")
+        if type(auth_time) is not int or not 0 <= time.time() - auth_time <= 300:
+            raise HTTPException(401, "OIDC provider must confirm recent authentication")
     userinfo = await _fetch_userinfo(discovery, token_response.get("access_token", ""))
     user = await _get_or_create_oidc_user(claims, userinfo, discovery.get("issuer", ""), session, user_manager)
     if not user.is_active:
         raise HTTPException(status_code=403, detail="User is inactive")
-    token = await get_jwt_strategy().write_token(user)
+    token = await get_jwt_strategy().write_token(user, fresh_auth=fresh)
     frontend_url = get_settings().frontend_url.rstrip("/")
     return RedirectResponse(f"{frontend_url}/auth/oidc/callback#access_token={token}&token_type=bearer")

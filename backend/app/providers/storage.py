@@ -33,6 +33,10 @@ class StorageProvider(ABC):
         """Delete a file from storage."""
         ...
 
+    async def list_keys(self, prefix: str) -> list[str]:
+        """Inventory exact logical keys for deletion; unsupported backends fail closed."""
+        raise NotImplementedError("Storage inventory is required for deletion")
+
     def get_url(self, storage_key: str) -> str | None:
         """Return a direct URL (e.g. presigned S3 URL). None for local storage."""
         return None

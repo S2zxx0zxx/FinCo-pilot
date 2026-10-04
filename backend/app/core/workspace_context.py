@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from fastapi import Depends, Header, HTTPException
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import current_active_user
@@ -116,6 +117,24 @@ async def current_workspace(
 
 async def current_writable_workspace(
     ctx: WorkspaceContext = Depends(current_workspace),
+    session: AsyncSession = Depends(get_async_session),
 ) -> WorkspaceContext:
+    ctx.require_write()
+    # Hold the workspace through upload/provider calls. Deletion's EXCLUSIVE
+    # table fence waits for this KEY SHARE reader before capturing file keys.
+    workspace = await session.scalar(select(Workspace).where(Workspace.id == ctx.workspace.id)
+        .with_for_update(read=True, key_share=True).execution_options(populate_existing=True))
+    if workspace is None:
+        raise HTTPException(404, "Workspace no longer exists")
+    ctx.workspace = workspace
+    # Membership may have changed while this request waited behind deletion.
+    member = await session.scalar(select(WorkspaceMember).where(
+        WorkspaceMember.workspace_id == workspace.id, WorkspaceMember.user_id == ctx.user_id)
+        .execution_options(populate_existing=True))
+    if member is None:
+        if not await is_workspace_manager(session, workspace.id, ctx.user_id):
+            raise HTTPException(403, "Workspace access changed")
+        member = _virtual_manager_member(workspace.id, ctx.user_id)
+    ctx.member = member
     ctx.require_write()
     return ctx

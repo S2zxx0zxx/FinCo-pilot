@@ -1,3 +1,4 @@
+import time
 import logging
 import hashlib
 import hmac
@@ -63,6 +64,10 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
         safe: bool = False,
         request: Request | None = None,
     ) -> User:
+        from app.models.account_deletion import AccountDeletion
+        if await self.user_db.session.scalar(select(AccountDeletion.id).where(AccountDeletion.user_id == user.id,
+            AccountDeletion.state.in_(["executing", "external_retry", "primary_data_deleted", "backup_expiry_pending", "complete"]))):
+            raise HTTPException(409, "Deletion tombstones cannot be reactivated or edited")
         if user_update.password is not None:
             require_local_auth_enabled()
         return await super().update(user_update, user, safe=safe, request=request)
@@ -209,9 +214,10 @@ class RevocableJWTStrategy(JWTStrategy):
         value = f"{user.id}:{user.hashed_password}:{user.auth_epoch or ''}"
         return hmac.new(settings.secret_key.get_secret_value().encode(), value.encode(), hashlib.sha256).hexdigest()
 
-    async def write_token(self, user: User) -> str:
+    async def write_token(self, user: User, *, fresh_auth: bool = False) -> str:
         return generate_jwt(
-            {"sub": str(user.id), "aud": self.token_audience, "credential_stamp": self.stamp(user)},
+            {"sub": str(user.id), "aud": self.token_audience, "credential_stamp": self.stamp(user),
+             **({"auth_time": int(time.time())} if fresh_auth else {})},
             self.encode_key, self.lifetime_seconds, algorithm=self.algorithm,
         )
 

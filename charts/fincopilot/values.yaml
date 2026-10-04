@@ -54,6 +54,8 @@ secret:
   # Razorpay payment credentials. Prefer global.existingSecret in production.
   razorpayKeyId: ""
   razorpayKeySecret: ""
+  razorpayWebhookSecret: ""
+  razorpayWebhookPreviousSecret: ""
 
   # Agents (LLM)
   agentsMcpJwtSecret: "dev-mcp-secret-change-in-production"
@@ -68,6 +70,9 @@ secret:
 
 # Non-sensitive configuration
 config:
+  razorpayWebhookEnabled: false
+  razorpayWebhookAccountId: ""
+  razorpayWebhookPreviousSecretExpiresAt: "0"
   # Leave development for chart smoke/lint. Set production only together with
   # global.existingSecret; templates deliberately fail otherwise.
   deploymentEnvironment: "development"

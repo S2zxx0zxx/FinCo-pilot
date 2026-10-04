@@ -35,6 +35,7 @@ WRITE_GATES = {"current_writable_workspace"}
 #: inventory of everything that will need re-deciding when permissions get
 #: finer, which is why the reason is stored next to the path.
 ALLOWLIST: dict[tuple[str, str], str] = {
+    ("POST", "/api/webhooks/razorpay"): "raw-body HMAC and exact merchant binding; no billing mutations",
     ("POST", '/api/workspace-deletion'): 'actual owner of explicitly confirmed target, fresh full authentication; archive and collaborator blockers rechecked by workflow',
     ("POST", '/api/workspace-deletion/{identity}/cancel'): 'original requester only, fresh authentication and no execution lease',
     ("POST", '/api/workspace-deletion/{identity}/detach-manager'): 'fresh actual requesting owner, exact workspace UUID and audited evidence',
@@ -143,7 +144,7 @@ ALLOWLIST: dict[tuple[str, str], str] = {
 # user would prevent the operation. All other exemptions still require a user.
 PUBLIC_ROUTES = {
     ("POST", path) for path in (
-        "/login", "/request-verify-token", "/verify", "/register", "/forgot-password", "/reset-password",
+        "/api/webhooks/razorpay", "/login", "/request-verify-token", "/verify", "/register", "/forgot-password", "/reset-password",
         "/2fa/verify", "/passkeys/authenticate/options", "/passkeys/authenticate/verify",
         "/passkeys/2fa/options", "/passkeys/2fa/verify", "/api/setup/create-admin",
     )
@@ -222,6 +223,8 @@ def test_the_walk_actually_finds_the_routes():
 def test_a_mutating_route_declares_a_permission_decision(method, path):
     route = next(r for m, p, r in _mutating_routes() if (m, p) == (method, path))
     names = _dependency_names(route)
+    if path == "/api/webhooks/razorpay":
+        assert "verified_razorpay_webhook" in names
     if (method, path) in ALLOWLIST:
         assert ALLOWLIST[(method, path)].strip(), "an exemption needs a reason"
         assert not names & WRITE_GATES, "remove the redundant write-gate exemption"

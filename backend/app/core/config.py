@@ -60,6 +60,16 @@ class Settings(BaseSettings):
     # wants a legal name published in public app metadata/policies.
     operator_legal_name: str = ""
 
+    # Explicitly public publication facts. Never infer from SMTP/private profiles.
+    privacy_policy_published: bool = False
+    privacy_policy_reviewed_version: str = ""
+    privacy_policy_effective_date: str = ""
+    privacy_contact_name: str = ""
+    privacy_contact_email: str = ""
+    privacy_contact_address: str = ""
+    privacy_processing_locations: str = ""
+    privacy_infrastructure_providers: str = ""
+
     # One-time bootstrap endpoint.
     setup_enabled: bool = True
     setup_token: SecretStr = SecretStr("")
@@ -350,6 +360,9 @@ class Settings(BaseSettings):
             raise ValueError("OPERATOR_BRAND_NAME must be at most 120 characters")
         if len(self.operator_legal_name) > 255:
             raise ValueError("OPERATOR_LEGAL_NAME must be at most 255 characters")
+
+        from app.core.privacy_policy import validate_publication_settings
+        validate_publication_settings(self)
 
         currencies = [code.strip().upper() for code in self.supported_currencies.split(",")]
         if any(len(code) != 3 or not code.isascii() or not code.isalpha() for code in currencies):

@@ -1,3 +1,4 @@
+import { PrivacyLink } from '@/components/privacy-link'
 import { useLaunchText } from '@/lib/launch-copy'
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -165,6 +166,7 @@ export default function RegisterPage() {
             <Link to="/support?from=%2Fregister&category=account_access" className="text-sm text-muted-foreground hover:text-primary hover:underline">
               {t('support.helpLink')}
             </Link>
+            <PrivacyLink />
           </CardFooter>
         </form>
       </Card>

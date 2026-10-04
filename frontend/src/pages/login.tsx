@@ -1,3 +1,4 @@
+import { PrivacyLink } from '@/components/privacy-link'
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -387,6 +388,7 @@ export default function LoginPage() {
                   {t('support.helpLink')}
                 </Link>
               </div>
+              <PrivacyLink />
             </CardFooter>
           </form>
         </Card>
@@ -502,6 +504,7 @@ export default function LoginPage() {
               <Link to="/support?from=%2Flogin&category=account_access" className="text-sm text-muted-foreground hover:text-primary hover:underline">
                 {t('support.helpLink')}
               </Link>
+              <PrivacyLink />
             </CardFooter>
           )}
         </form>

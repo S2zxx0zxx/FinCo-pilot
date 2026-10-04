@@ -25,6 +25,7 @@ const LoginPage = lazy(() => import('@/pages/login'))
 const RegisterPage = lazy(() => import('@/pages/register'))
 const PricingPage = lazy(() => import('@/pages/pricing'))
 const SupportPage = lazy(() => import('@/pages/support'))
+const PrivacyPage = lazy(() => import('@/pages/privacy'))
 const LoansPage = lazy(() => import('@/pages/loans'))
 const SpendingPlanPage = lazy(() => import('@/pages/spending-plan'))
 const DashboardPage = lazy(() => import('@/pages/dashboard'))
@@ -87,6 +88,7 @@ function App() {
                         <Route path="/register" element={<RegisterPage />} />
                         <Route path="/pricing" element={<PricingPage />} />
                         <Route path="/support" element={<SupportPage />} />
+                        <Route path="/privacy" element={<PrivacyPage />} />
                         {/* A client opening a link the sender shared. Deliberately
                             outside ProtectedRoute and outside AppLayout: the
                             recipient has no account, and the token is the whole

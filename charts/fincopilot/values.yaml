@@ -99,6 +99,15 @@ config:
   operatorEntityType: "individual"
   operatorCountryCode: "IN"
   operatorLegalName: ""
+  # Deliberately public facts; blank defaults keep privacy notice a draft.
+  privacyPolicyPublished: "false"
+  privacyPolicyReviewedVersion: ""
+  privacyPolicyEffectiveDate: ""
+  privacyContactName: ""
+  privacyContactEmail: ""
+  privacyContactAddress: ""
+  privacyProcessingLocations: ""
+  privacyInfrastructureProviders: ""
 
   # Customer support / trust layer. Disabled until a real inbox/portal exists.
   supportEnabled: "false"

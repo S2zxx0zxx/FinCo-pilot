@@ -114,3 +114,19 @@ async def test_fresh_unclassified_provider_does_not_turn_debt_into_spendable_cas
     assert plan.safe_to_spend is None
     assert plan.daily_allowance is None
     assert any('distinguish cash from loan accounts' in message for message in plan.blockers)
+
+
+@pytest.mark.asyncio
+async def test_fx_requires_same_publication_date(session, test_user, test_workspace):
+    from app.models.fx_rate import FxRate
+    test_user.preferences = {**(test_user.preferences or {}), 'currency_display': 'INR'}
+    cash = await account(session, test_user, test_workspace, currency='EUR')
+    await transaction(session, test_user, test_workspace, cash, '100', 'credit')
+    session.add_all([
+        FxRate(base_currency='USD', quote_currency='EUR', rate=Decimal('0.9'), date=date.today(), source='test'),
+        FxRate(base_currency='USD', quote_currency='INR', rate=Decimal('83'), date=date.today()-timedelta(days=1), source='test'),
+    ])
+    await session.commit()
+    plan = await calculate_spending_plan(session, test_workspace.id, test_user.id, SpendingPlanRequest(obligations_reviewed=True))
+    assert plan.safe_to_spend is None
+    assert any('exchange rate' in blocker for blocker in plan.blockers)

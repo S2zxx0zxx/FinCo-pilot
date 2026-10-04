@@ -13,11 +13,19 @@ global:
 
 # If existingSecret is NOT set, this secret will be created with the values below
 secret:
-  # MUST change in production
+  # Development only. Production uses global.existingSecret.
+  credentialEncryptionKey: ""
+  coreCopilotSigningKey: ""
+  legacyDataKeys: ""
+  # Development-only defaults. Production is fail-closed unless
+  # global.existingSecret references an operator-managed Kubernetes Secret.
   secretKey: "dev-secret-change-in-production"
   # If postgresql.enabled is true, the internal database will be deployed.
   # If postgresql.enabled is false, you must provide your external database URL here or in existingSecret.
   databaseUrl: 'postgresql+asyncpg://postgres:postgres@{{ include "fincopilot.fullname" . }}-postgresql:5432/fincopilot'
+  # Development-only bundled Redis URL. Production injects REDIS_URL from
+  # global.existingSecret and never renders it from committed values.
+  redisUrl: 'redis://{{ include "fincopilot.fullname" . }}-redis-master:6379/0'
 
   # Pluggy
   pluggyClientId: ""
@@ -34,6 +42,15 @@ secret:
   # OpenExchangeRates
   openexchangeratesAppId: ""
 
+  # Bootstrap / SMTP / metrics
+  setupToken: ""
+  smtpPassword: ""
+  metricsToken: ""
+
+  # S3-compatible storage credentials
+  storageS3AccessKey: ""
+  storageS3SecretKey: ""
+
   # Razorpay payment credentials. Prefer global.existingSecret in production.
   razorpayKeyId: ""
   razorpayKeySecret: ""
@@ -43,6 +60,7 @@ secret:
   agentsOpenaiApiKey: ""
   agentsAnthropicApiKey: ""
   agentsOpenaiCompatApiKey: ""
+  agentsEmbeddingOpenaiApiKey: ""
 
   # Zoho Desk direct-ticket OAuth secrets. Prefer global.existingSecret in production.
   zohoDeskClientSecret: ""
@@ -50,7 +68,37 @@ secret:
 
 # Non-sensitive configuration
 config:
+  # Leave development for chart smoke/lint. Set production only together with
+  # global.existingSecret; templates deliberately fail otherwise.
+  deploymentEnvironment: "development"
   debug: "false"
+
+  # PostgreSQL runtime. Development chart defaults remain local-friendly.
+  # Production rendering requires postgresql.enabled=false,
+  # databaseExternalRequired=true and encrypted DB transport.
+  databaseExternalRequired: "false"
+  dbSslMode: "prefer"
+  dbSslCaFile: ""
+  dbPoolMode: "queue"
+  dbPoolSize: "5"
+  dbMaxOverflow: "5"
+  dbPoolTimeoutSeconds: "15"
+  dbPoolRecycleSeconds: "900"
+  dbConnectTimeoutSeconds: "10"
+  dbCommandTimeoutSeconds: "30"
+  dbStatementTimeoutMs: "30000"
+  dbIdleTransactionTimeoutMs: "30000"
+  dbPreparedStatementCacheSize: "100"
+  dbApplicationName: "fincopilot"
+
+  # Public operator/business identity. These are non-secret descriptors of who
+  # operates this FinCo-Pilot deployment; do not use them to imply incorporation
+  # or registration that has not actually occurred.
+  operatorIdentityEnabled: "true"
+  operatorBrandName: "FinCo-Pilot"
+  operatorEntityType: "individual"
+  operatorCountryCode: "IN"
+  operatorLegalName: ""
 
   # Customer support / trust layer. Disabled until a real inbox/portal exists.
   supportEnabled: "false"
@@ -78,6 +126,17 @@ config:
   razorpayPlanMaxMonthlyId: ""
   # Set false only when oidc.enabled, oidc.clientId, and oidc.discoveryUrl are configured.
   localAuthEnabled: "true"
+  # #17: set delivery required in production; supply SMTP_PASSWORD via existingSecret.
+  emailDeliveryRequired: "false"
+  smtpHost: ""
+  smtpPort: "587"
+  smtpUsername: ""
+  smtpFromEmail: ""
+  smtpStarttls: "true"
+  smtpUseSsl: "false"
+  smtpSslCaFile: ""
+  smtpTimeoutSeconds: "10"
+  smtpMaxConcurrentSends: "4"
   # Leave empty to auto-compute from global.domain (e.g. http://fincopilot.local/oauth/callback)
   pluggyOauthRedirectUri: ""
   enableBankingApiUrl: "https://api.enablebanking.com"
@@ -98,17 +157,40 @@ config:
   oidcRolesClaim: "groups"
   oidcAdminRoles: ""
   oidcWorkspaceRoleMap: ""
+  # Production: scheduled, requireFxProvider=true, unsafe fallback=false.
   fxSyncMode: "on_demand"
+  requireFxProvider: "false"
+  fxAllowUnsafe1to1Fallback: "true"
   tesouroDiretoEnabled: "true"
 
-  # Redis configuration
-  # If redis.enabled is true, the internal redis will be deployed.
-  # If redis.enabled is false, you must provide your external Redis URL here.
-  redisUrl: 'redis://{{ include "fincopilot.fullname" . }}-redis-master:6379/0'
-  celeryBrokerUrl: 'redis://{{ include "fincopilot.fullname" . }}-redis-master:6379/0'
-  celeryResultBackend: 'redis://{{ include "fincopilot.fullname" . }}-redis-master:6379/0'
+  # Redis/Celery runtime. REDIS_URL itself is secret material and lives in
+  # secret.redisUrl for development or global.existingSecret in production.
+  # Production requires redis.enabled=false plus external/TLS/auth gates.
+  redisExternalRequired: "false"
+  redisTlsRequired: "false"
+  redisAuthRequired: "false"
+  redisSslCaFile: ""
+  redisMaxConnections: "50"
+  redisSocketConnectTimeoutSeconds: "5"
+  redisSocketTimeoutSeconds: "5"
+  redisHealthCheckIntervalSeconds: "30"
+  celeryResultExpiresSeconds: "86400"
+  celeryVisibilityTimeoutSeconds: "3600"
+  celeryWorkerPrefetchMultiplier: "1"
 
+  # Object storage. Development remains local-friendly; production Helm
+  # validation requires the selected private Cloudflare R2 contract.
+  storageProvider: "local"
+  requireObjectStorage: "false"
   storageLocalPath: "/app/data/attachments"
+  storageS3Vendor: "generic"
+  storageS3Bucket: ""
+  storageS3Region: ""
+  storageS3EndpointUrl: ""
+  storageS3Prefix: "fincopilot"
+  storageS3RequestTimeoutSeconds: "30"
+  storageS3PresignTtlSeconds: "300"
+
   agentsKnowledgeStoragePath: "/app/data/agent_knowledge"
 
   # Agents feature
@@ -122,6 +204,7 @@ config:
   agentsOllamaBaseUrl: "http://ollama:11434"
   agentsOpenaiCompatBaseUrl: ""
   agentsEmbeddingProvider: "native"
+  agentsEmbeddingOpenaiBaseUrl: "https://api.openai.com/v1"
   agentsEmbeddingModel: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
 # Backend configuration
@@ -165,6 +248,9 @@ frontend:
 celeryWorker:
   enabled: true
   replicaCount: 1
+  concurrency: 2
+  maxTasksPerChild: 200
+  terminationGracePeriodSeconds: 90
   image:
     pullPolicy: IfNotPresent
   resources:
@@ -178,6 +264,7 @@ celeryWorker:
 # Celery Beat configuration
 celeryBeat:
   enabled: true
+  terminationGracePeriodSeconds: 30
   image:
     pullPolicy: IfNotPresent
   resources:
@@ -246,7 +333,8 @@ httpRoute:
   #   namespace: gateway-system
   # Path matches will route /api to backend and / to frontend.
 
-# Simple StatefulSet for PostgreSQL
+# Development/local fallback PostgreSQL. Production must disable this and
+# supply DATABASE_URL through global.existingSecret.
 postgresql:
   enabled: true
   image:
@@ -255,7 +343,8 @@ postgresql:
     pullPolicy: IfNotPresent
   resources: {}
 
-# Simple StatefulSet for Redis
+# Development/local fallback Redis. Production must disable this and inject
+# REDIS_URL through global.existingSecret.
 redis:
   enabled: true
   image:

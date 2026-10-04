@@ -1,7 +1,7 @@
 """Tests for FX rate service, API endpoints, and multi-currency integration."""
 
 import uuid
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -614,10 +614,7 @@ class TestOpenExchangeRatesProvider:
 
         provider = OpenExchangeRatesProvider()
         mock_response = MagicMock()
-        mock_response.json.return_value = {
-            "base": "USD",
-            "rates": {"BRL": 5.1, "EUR": 0.93},
-        }
+        mock_response.text = '{"base":"USD","timestamp":' + str(int(datetime.now(timezone.utc).timestamp())) + ',"rates":{"BRL":5.1,"EUR":0.93}}'
         mock_response.raise_for_status = MagicMock()
 
         mock_client = MagicMock()
@@ -651,10 +648,7 @@ class TestOpenExchangeRatesProvider:
 
         provider = OpenExchangeRatesProvider()
         mock_response = MagicMock()
-        mock_response.json.return_value = {
-            "base": "USD",
-            "rates": {"BRL": 4.9, "GBP": 0.78},
-        }
+        mock_response.text = '{"base":"USD","timestamp":1749945600,"rates":{"BRL":4.9,"GBP":0.78}}'
         mock_response.raise_for_status = MagicMock()
 
         mock_client = MagicMock()
@@ -1695,3 +1689,135 @@ class TestFxFallbackFlag:
         assert len(fallback_items) == 1
         assert fallback_items[0]["amount_primary"] is None
         assert fallback_items[0]["fx_fallback"] is True
+
+
+@pytest.mark.asyncio
+async def test_fx_never_looks_ahead(session: AsyncSession, clean_db):
+    from app.services.fx_rate_service import _resolve_rate
+    target = date(2025, 1, 1)
+    await _insert_rate(session, "EUR", Decimal("0.9"), target + timedelta(days=1))
+    assert await _resolve_rate(session, "USD", "EUR", target, allow_fetch=False) is None
+
+
+@pytest.mark.asyncio
+async def test_fx_never_blends_different_dates(session: AsyncSession, clean_db):
+    from app.services.fx_rate_service import _resolve_rate
+    target = date(2025, 1, 10)
+    await _insert_rate(session, "EUR", Decimal("0.9"), target)
+    await _insert_rate(session, "BRL", Decimal("5"), target - timedelta(days=1))
+    assert await _resolve_rate(session, "EUR", "BRL", target, allow_fetch=False) is None
+
+
+@pytest.mark.asyncio
+async def test_fx_rejects_stale_cached_rate(session: AsyncSession, clean_db):
+    from app.services.fx_rate_service import _resolve_rate
+    target = date(2025, 1, 10)
+    await _insert_rate(session, "EUR", Decimal("0.9"), target - timedelta(days=8))
+    assert await _resolve_rate(session, "USD", "EUR", target, allow_fetch=False) is None
+
+
+@pytest.mark.asyncio
+async def test_sync_keeps_provider_publication_date():
+    from app.providers.openexchangerates import RateSnapshot
+    from app.services.fx_rate_service import sync_rates
+    published = date.today() - timedelta(days=1)
+    provider = MagicMock(name='provider')
+    provider.name = 'openexchangerates'
+    provider.fetch_latest = AsyncMock(return_value=RateSnapshot({'EUR': Decimal('0.9')}, published))
+    session = AsyncMock()
+    with patch('app.services.fx_rate_service._provider', provider):
+        assert await sync_rates(session) == 1
+    statement = session.execute.call_args.args[0]
+    assert statement.compile().params['date'] == published
+
+
+@pytest.mark.asyncio
+async def test_scheduled_conversion_never_calls_provider(session: AsyncSession, clean_db):
+    from types import SimpleNamespace
+    from app.services.fx_rate_service import _resolve_rate
+    with patch('app.services.fx_rate_service.get_settings', return_value=SimpleNamespace(fx_sync_mode='scheduled')), patch('app.services.fx_rate_service.sync_rates', AsyncMock()) as sync:
+        assert await _resolve_rate(session, 'USD', 'EUR') is None
+        sync.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_recurring_worker_keeps_session_open_and_uses_cache():
+    from types import SimpleNamespace
+    from app.tasks.fx_rate_tasks import _restamp_recurring_fx
+    engine = AsyncMock()
+    session = AsyncMock()
+    user = SimpleNamespace(id=uuid.uuid4(), primary_currency='INR')
+    rec = SimpleNamespace(amount_primary=None, fx_rate_used=None)
+    users_result = MagicMock()
+    users_result.scalars.return_value.all.return_value = [user]
+    rec_result = MagicMock()
+    rec_result.scalars.return_value.all.return_value = [rec]
+    session.execute.side_effect = [users_result, rec_result]
+    closed = False
+    async def close(*args):
+        nonlocal closed
+        closed = True
+    session.__aexit__.side_effect = close
+    session.__aenter__.return_value = session
+    async def stamp(*args, **kwargs):
+        assert not closed
+        assert kwargs == {'date_field': 'next_occurrence', 'allow_fetch': False}
+        rec.amount_primary = Decimal('83')
+        rec.fx_rate_used = Decimal('83')
+    async def commit():
+        assert not closed
+    session.commit.side_effect = commit
+    maker = MagicMock(return_value=session)
+    with patch('app.tasks.fx_rate_tasks._make_session_maker', return_value=(engine, maker)), patch('app.services.fx_rate_service.stamp_primary_amount', side_effect=stamp):
+        assert await _restamp_recurring_fx() == 1
+    assert closed
+    engine.dispose.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_backfill_fetches_recurring_and_asset_only_dates(session: AsyncSession, test_user: User, test_workspace):
+    from contextlib import asynccontextmanager
+    from app.models.asset import Asset
+    from app.models.recurring_transaction import RecurringTransaction
+    from app.tasks.fx_backfill_tasks import _backfill_primary_amounts
+    rec_date, asset_date = date(2025, 6, 15), date(2025, 6, 20)
+    rec = RecurringTransaction(user_id=test_user.id, workspace_id=test_workspace.id, description='FX recurring-only',
+        amount=Decimal('10'), currency='USD', type='debit', frequency='monthly',
+        start_date=rec_date, next_occurrence=rec_date)
+    asset = Asset(user_id=test_user.id, workspace_id=test_workspace.id, name='FX asset-only',
+        type='investment', currency='USD', purchase_price=Decimal('20'), purchase_date=asset_date)
+    session.add_all([rec, asset])
+    await session.commit()
+    @asynccontextmanager
+    async def maker():
+        yield session
+    async def sync(db, target):
+        await _insert_rate(db, test_user.primary_currency, Decimal('83'), target)
+        return 1
+    mocked_sync = AsyncMock(side_effect=sync)
+    engine = AsyncMock()
+    with patch('app.tasks.fx_backfill_tasks._make_session_maker', return_value=(engine, maker)), patch('app.services.fx_rate_service.sync_rates', mocked_sync):
+        stats = await _backfill_primary_amounts()
+    assert [call.args[1] for call in mocked_sync.call_args_list] == [rec_date, asset_date]
+    assert rec.amount_primary == Decimal('830.00')
+    assert asset.purchase_price_primary == Decimal('1660.00')
+    assert stats == {'transactions': 0, 'recurring': 1, 'assets': 1, 'rates_synced': 2}
+    engine.dispose.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_refresh_budget_denial_does_not_claim_sync(client: AsyncClient, auth_headers):
+    with patch('app.api.fx_rates.sync_rates', AsyncMock(return_value=0)):
+        response = await client.post('/api/fx-rates/refresh', headers=auth_headers)
+    assert response.status_code == 200
+    assert response.json()['synced'] is False
+    assert response.json()['publication_date'] is None
+
+
+@pytest.mark.asyncio
+async def test_refresh_provider_error_is_controlled(client: AsyncClient, auth_headers):
+    from app.providers.openexchangerates import FxProviderError
+    with patch('app.api.fx_rates.sync_rates', AsyncMock(side_effect=FxProviderError('safe provider failure'))):
+        response = await client.post('/api/fx-rates/refresh', headers=auth_headers)
+    assert response.status_code == 503
+    assert response.json()['detail'] == 'FX provider unavailable'

@@ -11,10 +11,10 @@ import logging
 import uuid
 from pathlib import Path
 
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.pool import NullPool
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.config import get_settings
+from app.core.database_runtime import create_database_engine
 from app.worker import celery_app
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ async def _async_ingest(doc_id_str: str, agent_id_str: str) -> dict:
     # event loops that asyncio.run() has already closed, raising "another
     # operation is in progress" on the next task. NullPool ensures the
     # engine doesn't cache anything beyond this task.
-    engine = create_async_engine(get_settings().database_url, poolclass=NullPool)
+    engine = create_database_engine(get_settings(), short_lived=True)
     session_maker = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     try:
         return await _do_ingest(session_maker, doc_id, agent_id)

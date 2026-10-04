@@ -128,6 +128,44 @@ async def test_upload_attachment(session: AsyncSession, test_user, test_workspac
     assert att.transaction_id == txn_for_attach.id
 
 
+async def test_upload_attachment_removes_object_when_commit_fails(
+    session: AsyncSession, test_user, test_workspace, txn_for_attach
+):
+    mock_storage = AsyncMock()
+    mock_storage.upload = AsyncMock(
+        return_value=StoredFile(
+            storage_key="orphan/key",
+            size=9,
+            content_type="application/pdf",
+        )
+    )
+    mock_storage.delete = AsyncMock()
+
+    with (
+        patch(
+            "app.services.attachment_service.get_storage_provider",
+            return_value=mock_storage,
+        ),
+        patch.object(
+            session,
+            "commit",
+            AsyncMock(side_effect=RuntimeError("synthetic database failure")),
+        ),
+    ):
+        with pytest.raises(RuntimeError, match="synthetic database failure"):
+            await upload_attachment(
+                session,
+                test_workspace.id,
+                test_user.id,
+                txn_for_attach.id,
+                "receipt.pdf",
+                "application/pdf",
+                b"fake-data",
+            )
+
+    mock_storage.delete.assert_awaited_once_with("orphan/key")
+
+
 async def test_upload_attachment_max_limit(session: AsyncSession, test_user, test_workspace, txn_for_attach):
     """Exceeding max attachments per transaction raises ValueError."""
     # Pre-seed attachments up to the limit

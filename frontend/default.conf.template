@@ -1,3 +1,10 @@
+# Preserve the original HTTPS scheme from a trusted edge proxy such as
+# Cloudflare Tunnel. Unknown/spoofed values fall back to Nginx's local scheme.
+map $http_x_forwarded_proto $finco_forwarded_proto {
+    default $scheme;
+    https https;
+}
+
 server {
     listen 8080;
     root /usr/share/nginx/html;
@@ -26,7 +33,7 @@ server {
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Proto $finco_forwarded_proto;
     }
 
     # A service worker must be revalidated aggressively. Caching this file at

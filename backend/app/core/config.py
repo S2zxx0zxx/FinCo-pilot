@@ -1,4 +1,5 @@
 from functools import lru_cache
+import json
 from os import getenv
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -6,8 +7,11 @@ from urllib.parse import urlsplit
 from pydantic import SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.core.redis_runtime import validate_redis_target
+from app.core.smtp_runtime import validate_smtp_settings
+
 CREDENTIALS_DIRECTORY: list[Path] = [
-    Path(p) for p in getenv("CREDENTIALS_DIRECTORY", "/run/secrets").split(":") if p
+    Path(p) for p in getenv("CREDENTIALS_DIRECTORY", "/run/secrets:/app/secrets").split(":") if p
 ]
 
 # Zoho Desk OAuth returns an API origin for the account's data center. Keep the
@@ -28,11 +32,33 @@ ZOHO_DESK_DATA_CENTER_HOSTS: dict[str, str] = {
 ZOHO_DESK_API_HOSTS = frozenset(ZOHO_DESK_DATA_CENTER_HOSTS.values())
 
 
+OPERATOR_ENTITY_TYPES = frozenset({
+    "individual",
+    "sole_proprietorship",
+    "partnership",
+    "llp",
+    "private_limited",
+    "public_limited",
+    "other_registered_entity",
+})
+
+
 class Settings(BaseSettings):
     # App
     app_name: str = "FinCo-Pilot"
     debug: bool = False
     deployment_environment: str = "development"  # development|test|staging|production
+
+    # Public operator/business identity. This is intentionally separate from
+    # workspace issuer details: it describes who operates the FinCo-Pilot
+    # service itself, not a user's own business.
+    operator_identity_enabled: bool = True
+    operator_brand_name: str = "FinCo-Pilot"
+    operator_entity_type: str = "individual"
+    operator_country_code: str = "IN"
+    # Optional for an individual launch. Set only when the operator explicitly
+    # wants a legal name published in public app metadata/policies.
+    operator_legal_name: str = ""
 
     # One-time bootstrap endpoint.
     setup_enabled: bool = True
@@ -40,13 +66,28 @@ class Settings(BaseSettings):
 
     # Database
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/fincopilot"
+    # Roadmap #14 production PostgreSQL runtime. Development may use the bundled
+    # local database; production deployment templates require an external target.
+    database_external_required: bool = False
+    db_ssl_mode: str = "prefer"  # disable|prefer|require|verify-ca|verify-full
+    db_ssl_ca_file: str = ""
+    db_pool_mode: str = "queue"  # queue|null
     db_pool_size: int = 10
     db_max_overflow: int = 20
     db_pool_timeout_seconds: int = 30
     db_pool_recycle_seconds: int = 1800
+    db_connect_timeout_seconds: int = 10
+    db_command_timeout_seconds: int = 30
+    db_statement_timeout_ms: int = 30_000
+    db_idle_transaction_timeout_ms: int = 30_000
+    db_prepared_statement_cache_size: int = 100
+    db_application_name: str = "fincopilot"
 
     # Auth
     secret_key: SecretStr = SecretStr("change-me-in-production")
+    credential_encryption_key: SecretStr = SecretStr("")
+    core_copilot_signing_key: SecretStr = SecretStr("")
+    legacy_data_keys: SecretStr = SecretStr("")
     local_auth_enabled: bool = True
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 60 * 24
@@ -62,6 +103,9 @@ class Settings(BaseSettings):
     smtp_from_email: str = ""
     smtp_starttls: bool = True
     smtp_use_ssl: bool = False
+    smtp_ssl_ca_file: str = ""
+    smtp_timeout_seconds: int = 10
+    smtp_max_concurrent_sends: int = 4
 
     # Customer support / trust layer. Public contact metadata is intentionally
     # separate from transactional SMTP: a support inbox is a human help
@@ -136,12 +180,19 @@ class Settings(BaseSettings):
     storage_max_attachments_per_transaction: int = 10
     storage_max_attachments_per_invoice: int = 20
 
-    # S3-compatible Storage
+    # S3-compatible object storage. Production #16 selects Cloudflare R2,
+    # while the runtime remains compatible with AWS S3 / private S3 endpoints.
+    storage_s3_vendor: str = "generic"  # generic|cloudflare_r2|aws_s3
     storage_s3_bucket: str = ""
     storage_s3_region: str = ""
     storage_s3_access_key: SecretStr = SecretStr("")
     storage_s3_secret_key: SecretStr = SecretStr("")
     storage_s3_endpoint_url: str = ""
+    # Logical namespace inside the bucket. Treat as immutable after first
+    # production upload; changing it would make existing objects unreachable.
+    storage_s3_prefix: str = "fincopilot"
+    storage_s3_request_timeout_seconds: int = 30
+    storage_s3_presign_ttl_seconds: int = 300
 
     # Registration
     registration_enabled: bool = True
@@ -179,8 +230,20 @@ class Settings(BaseSettings):
     oidc_admin_roles: str = ""
     oidc_workspace_role_map: str = ""
 
-    # Celery / Redis
+    # Celery / Redis. Production templates require an external authenticated
+    # TLS target supplied through secret storage; development remains local-friendly.
     redis_url: str = "redis://localhost:6379/0"
+    redis_external_required: bool = False
+    redis_tls_required: bool = False
+    redis_auth_required: bool = False
+    redis_ssl_ca_file: str = ""
+    redis_max_connections: int = 50
+    redis_socket_connect_timeout_seconds: int = 5
+    redis_socket_timeout_seconds: int = 5
+    redis_health_check_interval_seconds: int = 30
+    celery_result_expires_seconds: int = 86_400
+    celery_visibility_timeout_seconds: int = 3_600
+    celery_worker_prefetch_multiplier: int = 1
     bank_sync_lock_ttl_seconds: int = 300
 
     # Reverse proxy
@@ -192,6 +255,23 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.deployment_environment.strip().lower() == "production"
+
+    def legacy_keys_for(self, purpose: str) -> tuple[str, ...]:
+        raw = self.legacy_data_keys.get_secret_value().strip()
+        if not raw:
+            return ()
+        try:
+            rings = json.loads(raw)
+        except ValueError:
+            raise ValueError("LEGACY_DATA_KEYS must be a JSON object with credentials and copilot arrays") from None
+        if not isinstance(rings, dict) or set(rings) - {"credentials", "copilot"}:
+            raise ValueError("LEGACY_DATA_KEYS contains an unknown key purpose")
+        for keys in rings.values():
+            if (not isinstance(keys, list) or len(keys) > 8
+                    or any(not isinstance(key, str) or not key.strip() or len(key) > 1024 for key in keys)):
+                raise ValueError("LEGACY_DATA_KEYS permits at most eight bounded keys per purpose")
+        # Compatibility keys must match the original cryptographic bytes exactly.
+        return tuple(dict.fromkeys(rings.get(purpose, [])))
 
     @property
     def oidc_login_available(self) -> bool:
@@ -224,6 +304,8 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def validate_auth_settings(self) -> "Settings":
         environment = self.deployment_environment.strip().lower()
+        self.legacy_keys_for("credentials")
+        self.legacy_keys_for("copilot")
         if environment not in {"development", "test", "staging", "production"}:
             raise ValueError(
                 "DEPLOYMENT_ENVIRONMENT must be one of development, test, staging, production"
@@ -242,10 +324,39 @@ class Settings(BaseSettings):
                 f"missing: {', '.join(missing)}"
             )
 
-        if self.smtp_use_ssl and self.smtp_starttls:
-            raise ValueError("SMTP_USE_SSL and SMTP_STARTTLS cannot both be true")
-        if not 1 <= self.smtp_port <= 65535:
-            raise ValueError("SMTP_PORT must be between 1 and 65535")
+        validate_smtp_settings(self)
+
+        operator_type = self.operator_entity_type.strip().lower()
+        if operator_type not in OPERATOR_ENTITY_TYPES:
+            raise ValueError(
+                "OPERATOR_ENTITY_TYPE must be one of: "
+                + ", ".join(sorted(OPERATOR_ENTITY_TYPES))
+            )
+        if self.operator_identity_enabled:
+            if not self.operator_brand_name.strip():
+                raise ValueError(
+                    "OPERATOR_IDENTITY_ENABLED=true requires OPERATOR_BRAND_NAME"
+                )
+            country = self.operator_country_code.strip().upper()
+            if len(country) != 2 or not country.isalpha():
+                raise ValueError(
+                    "OPERATOR_COUNTRY_CODE must be a two-letter country code"
+                )
+            if operator_type != "individual" and not self.operator_legal_name.strip():
+                raise ValueError(
+                    "A non-individual OPERATOR_ENTITY_TYPE requires OPERATOR_LEGAL_NAME"
+                )
+        if len(self.operator_brand_name) > 120:
+            raise ValueError("OPERATOR_BRAND_NAME must be at most 120 characters")
+        if len(self.operator_legal_name) > 255:
+            raise ValueError("OPERATOR_LEGAL_NAME must be at most 255 characters")
+
+        currencies = [code.strip().upper() for code in self.supported_currencies.split(",")]
+        if any(len(code) != 3 or not code.isascii() or not code.isalpha() for code in currencies):
+            raise ValueError("SUPPORTED_CURRENCIES must contain three-letter currency codes")
+        self.supported_currencies = ",".join(dict.fromkeys(currencies))
+        if self.fx_sync_mode not in {"on_demand", "scheduled"}:
+            raise ValueError("FX_SYNC_MODE must be on_demand or scheduled")
 
         if self.support_provider not in {"external", "zoho_desk"}:
             raise ValueError("SUPPORT_PROVIDER must be external or zoho_desk")
@@ -334,6 +445,48 @@ class Settings(BaseSettings):
 
         if self.storage_provider not in {"local", "s3"}:
             raise ValueError("STORAGE_PROVIDER must be local or s3")
+        if self.storage_s3_vendor not in {"generic", "cloudflare_r2", "aws_s3"}:
+            raise ValueError(
+                "STORAGE_S3_VENDOR must be generic, cloudflare_r2, or aws_s3"
+            )
+        if not 1 <= self.storage_s3_request_timeout_seconds <= 120:
+            raise ValueError(
+                "STORAGE_S3_REQUEST_TIMEOUT_SECONDS must be between 1 and 120"
+            )
+        if not 60 <= self.storage_s3_presign_ttl_seconds <= 900:
+            raise ValueError(
+                "STORAGE_S3_PRESIGN_TTL_SECONDS must be between 60 and 900"
+            )
+
+        storage_prefix = self.storage_s3_prefix.strip().strip("/")
+        if (
+            len(storage_prefix) > 128
+            or storage_prefix == ".."
+            or storage_prefix.startswith("../")
+            or "/../" in f"/{storage_prefix}/"
+        ):
+            raise ValueError("STORAGE_S3_PREFIX must be a safe object-key prefix")
+
+        storage_endpoint = self.storage_s3_endpoint_url.strip()
+        storage_endpoint_parts = urlsplit(storage_endpoint) if storage_endpoint else None
+        if storage_endpoint_parts is not None:
+            if (
+                storage_endpoint_parts.scheme not in {"http", "https"}
+                or not storage_endpoint_parts.hostname
+                or storage_endpoint_parts.username is not None
+                or storage_endpoint_parts.password is not None
+                or storage_endpoint_parts.query
+                or storage_endpoint_parts.fragment
+                or storage_endpoint_parts.path not in {"", "/"}
+            ):
+                raise ValueError(
+                    "STORAGE_S3_ENDPOINT_URL must be a bare http(s) object-storage origin"
+                )
+            if environment == "production" and storage_endpoint_parts.scheme != "https":
+                raise ValueError(
+                    "Production STORAGE_S3_ENDPOINT_URL must use https://"
+                )
+
         if self.storage_provider == "s3":
             missing_storage = []
             if not self.storage_s3_bucket.strip():
@@ -349,7 +502,28 @@ class Settings(BaseSettings):
                     "STORAGE_PROVIDER=s3 requires: " + ", ".join(missing_storage)
                 )
 
+            if self.storage_s3_vendor == "cloudflare_r2":
+                if storage_endpoint_parts is None:
+                    raise ValueError(
+                        "STORAGE_S3_VENDOR=cloudflare_r2 requires STORAGE_S3_ENDPOINT_URL"
+                    )
+                endpoint_host = (storage_endpoint_parts.hostname or "").lower()
+                if not endpoint_host.endswith(".r2.cloudflarestorage.com"):
+                    raise ValueError(
+                        "Cloudflare R2 endpoint must end with .r2.cloudflarestorage.com"
+                    )
+                if self.storage_s3_region.strip().lower() != "auto":
+                    raise ValueError("Cloudflare R2 requires STORAGE_S3_REGION=auto")
+
         if environment == "production":
+            data_keys = [self.credential_encryption_key.get_secret_value().strip(),
+                         self.core_copilot_signing_key.get_secret_value().strip()]
+            if any(len(key) < 32 for key in data_keys) or len(set(data_keys + [self.secret_key.get_secret_value()])) != 3:
+                raise ValueError("Production requires independent CREDENTIAL_ENCRYPTION_KEY and CORE_COPILOT_SIGNING_KEY of at least 32 characters")
+            if not self.database_external_required or self.db_ssl_mode not in {"require", "verify-ca", "verify-full"}:
+                raise ValueError("Production requires DATABASE_EXTERNAL_REQUIRED=true and encrypted DB_SSL_MODE")
+            if not (self.redis_external_required and self.redis_tls_required and self.redis_auth_required):
+                raise ValueError("Production requires external authenticated Redis with TLS")
             secret = self.secret_key.get_secret_value().strip()
             if secret in {"", "change-me-in-production", "dev-secret-change-in-production"} or len(secret) < 32:
                 raise ValueError(
@@ -368,9 +542,10 @@ class Settings(BaseSettings):
                     "Production DATABASE_URL cannot use the shipped default credentials/localhost"
                 )
 
-            if self.setup_enabled and not self.setup_token.get_secret_value().strip():
+            if self.setup_enabled and (len(self.setup_token.get_secret_value().strip()) < 32
+                                       or any(char.isspace() for char in self.setup_token.get_secret_value().strip())):
                 raise ValueError(
-                    "Production SETUP_ENABLED=true requires a high-entropy SETUP_TOKEN; "
+                    "Production SETUP_ENABLED=true requires a random SETUP_TOKEN with at least 32 characters and no whitespace; "
                     "prefer SETUP_ENABLED=false after provisioning the first admin"
                 )
 
@@ -403,15 +578,82 @@ class Settings(BaseSettings):
                     "Production METRICS_ENABLED=true requires a high-entropy METRICS_TOKEN"
                 )
 
-            if self.require_object_storage and self.storage_provider != "s3":
+            if not self.require_object_storage:
                 raise ValueError(
-                    "Production REQUIRE_OBJECT_STORAGE=true requires STORAGE_PROVIDER=s3"
+                    "Production requires REQUIRE_OBJECT_STORAGE=true"
                 )
+            if self.storage_provider != "s3":
+                raise ValueError(
+                    "Production requires STORAGE_PROVIDER=s3"
+                )
+
+        db_url = urlsplit(self.database_url)
+        if db_url.scheme not in {"postgresql", "postgresql+asyncpg"}:
+            raise ValueError("DATABASE_URL must use PostgreSQL with the asyncpg runtime")
+        if not db_url.hostname or not db_url.path.strip("/"):
+            raise ValueError("DATABASE_URL must include a PostgreSQL host and database name")
+        if self.db_ssl_mode not in {"disable", "prefer", "require", "verify-ca", "verify-full"}:
+            raise ValueError(
+                "DB_SSL_MODE must be disable, prefer, require, verify-ca, or verify-full"
+            )
+        if self.db_pool_mode not in {"queue", "null"}:
+            raise ValueError("DB_POOL_MODE must be queue or null")
+        if self.database_external_required:
+            local_database_hosts = {
+                "localhost", "127.0.0.1", "::1", "db", "postgres", "postgresql"
+            }
+            if (db_url.hostname or "").lower() in local_database_hosts:
+                raise ValueError(
+                    "DATABASE_EXTERNAL_REQUIRED=true requires an external PostgreSQL host"
+                )
+            if self.db_ssl_mode not in {"require", "verify-ca", "verify-full"}:
+                raise ValueError(
+                    "DATABASE_EXTERNAL_REQUIRED=true requires DB_SSL_MODE=require, "
+                    "verify-ca, or verify-full"
+                )
+
+        validate_redis_target(
+            self.redis_url,
+            external_required=self.redis_external_required,
+            tls_required=self.redis_tls_required,
+            auth_required=self.redis_auth_required,
+        )
+        if not 1 <= self.redis_max_connections <= 10_000:
+            raise ValueError("REDIS_MAX_CONNECTIONS must be between 1 and 10000")
+        if (
+            self.redis_socket_connect_timeout_seconds < 1
+            or self.redis_socket_timeout_seconds < 1
+        ):
+            raise ValueError("Redis socket connect/read timeouts must be positive")
+        if not 0 <= self.redis_health_check_interval_seconds <= 3_600:
+            raise ValueError(
+                "REDIS_HEALTH_CHECK_INTERVAL_SECONDS must be between 0 and 3600"
+            )
+        if not 60 <= self.celery_result_expires_seconds <= 604_800:
+            raise ValueError(
+                "CELERY_RESULT_EXPIRES_SECONDS must be between 60 and 604800"
+            )
+        if not 60 <= self.celery_visibility_timeout_seconds <= 86_400:
+            raise ValueError(
+                "CELERY_VISIBILITY_TIMEOUT_SECONDS must be between 60 and 86400"
+            )
+        if not 1 <= self.celery_worker_prefetch_multiplier <= 16:
+            raise ValueError(
+                "CELERY_WORKER_PREFETCH_MULTIPLIER must be between 1 and 16"
+            )
 
         if self.db_pool_size < 1 or self.db_max_overflow < 0:
             raise ValueError("Database pool sizes must be non-negative and DB_POOL_SIZE must be >= 1")
         if self.db_pool_timeout_seconds < 1 or self.db_pool_recycle_seconds < 1:
             raise ValueError("Database pool timeout/recycle values must be positive")
+        if self.db_connect_timeout_seconds < 1 or self.db_command_timeout_seconds < 1:
+            raise ValueError("Database connect/command timeouts must be positive")
+        if self.db_statement_timeout_ms < 1000 or self.db_idle_transaction_timeout_ms < 1000:
+            raise ValueError("Database statement/idle transaction timeouts must be at least 1000 ms")
+        if not 0 <= self.db_prepared_statement_cache_size <= 10_000:
+            raise ValueError("DB_PREPARED_STATEMENT_CACHE_SIZE must be between 0 and 10000")
+        if not self.db_application_name.strip() or len(self.db_application_name) > 63:
+            raise ValueError("DB_APPLICATION_NAME must be 1-63 characters")
         if self.bank_sync_lock_ttl_seconds < 60:
             raise ValueError("BANK_SYNC_LOCK_TTL_SECONDS must be at least 60 seconds")
         if not 120 <= self.billing_offer_reservation_ttl_seconds <= 1800:
@@ -438,6 +680,7 @@ class Settings(BaseSettings):
         env_file=(".env", Path(__file__).resolve().parents[2] / ".env"),
         secrets_dir=CREDENTIALS_DIRECTORY,
         extra="ignore",
+        hide_input_in_errors=True,
     )
 
 

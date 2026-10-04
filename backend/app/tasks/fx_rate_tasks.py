@@ -1,10 +1,11 @@
 import asyncio
 import logging
 
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.worker import celery_app
 from app.core.config import get_settings
+from app.core.database_runtime import create_database_engine
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +13,7 @@ logger = logging.getLogger(__name__)
 def _make_session_maker():
     """Create a fresh engine+session for the Celery worker event loop."""
     settings = get_settings()
-    engine = create_async_engine(settings.database_url)
+    engine = create_database_engine(settings, short_lived=True)
     return engine, async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
@@ -41,22 +42,24 @@ async def _restamp_recurring_fx() -> int:
     try:
         async with session_maker() as session:
             users = (await session.execute(select(User))).scalars().all()
-        count = 0
-        for user in users:
-            primary = user.primary_currency
-            result = await session.execute(
-                select(RecurringTransaction).where(
-                    RecurringTransaction.user_id == user.id,
-                    RecurringTransaction.is_active == True,
-                    RecurringTransaction.currency != primary,
+            count = 0
+            for user in users:
+                primary = user.primary_currency
+                result = await session.execute(
+                    select(RecurringTransaction).where(
+                        RecurringTransaction.user_id == user.id,
+                        RecurringTransaction.is_active == True,
+                        RecurringTransaction.currency != primary,
+                    )
                 )
-            )
-            for rec in result.scalars().all():
-                await stamp_primary_amount(
-                    session, user.id, rec, date_field="start_date",
-                )
-                count += 1
-        await session.commit()
+                for rec in result.scalars().all():
+                    before = (rec.amount_primary, rec.fx_rate_used)
+                    await stamp_primary_amount(
+                        session, user.id, rec, date_field="next_occurrence", allow_fetch=False,
+                    )
+                    if (rec.amount_primary, rec.fx_rate_used) != before:
+                        count += 1
+            await session.commit()
     finally:
         await engine.dispose()
     return count

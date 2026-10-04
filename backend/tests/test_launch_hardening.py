@@ -50,6 +50,7 @@ async def test_recovery_code_is_one_use(client, auth_headers, test_user):
     redis = _make_redis_mock_with_store()
     setup = (await client.post('/api/auth/2fa/setup', headers=auth_headers)).json()
     enabled = await client.post('/api/auth/2fa/enable', headers=auth_headers, json={'code': pyotp.TOTP(setup['secret']).now()})
+    auth_headers = {"Authorization": "Bearer " + enabled.json()["access_token"]}
     codes = enabled.json()['recovery_codes']
     assert len(codes) == len(set(codes)) == 10
     assert (await client.post('/api/auth/2fa/enable', headers=auth_headers, json={'code': pyotp.TOTP(setup['secret']).now()})).status_code == 409
@@ -158,11 +159,13 @@ async def test_password_change_invalidates_pending_second_factor(client, auth_he
 async def test_lost_authenticator_can_be_replaced_with_password_and_unused_recovery_code(client, auth_headers, test_user, session):
     setup = (await client.post('/api/auth/2fa/setup', headers=auth_headers)).json()
     enabled = (await client.post('/api/auth/2fa/enable', headers=auth_headers, json={'code': pyotp.TOTP(setup['secret']).now()})).json()
+    auth_headers = {"Authorization": "Bearer " + enabled["access_token"]}
     code = enabled['recovery_codes'][0]
     assert (await client.post('/api/auth/2fa/disable', headers=auth_headers, json={'password': 'wrong-password', 'code': code})).status_code == 400
     # Wrong password must not consume the code.
     disabled = await client.post('/api/auth/2fa/disable', headers=auth_headers, json={'password': 'testpass123', 'code': code})
     assert disabled.status_code == 200
+    auth_headers = {"Authorization": "Bearer " + disabled.json()["access_token"]}
     await session.refresh(test_user)
     assert test_user.is_2fa_enabled is False
     assert test_user.totp_secret is None
@@ -172,5 +175,6 @@ async def test_lost_authenticator_can_be_replaced_with_password_and_unused_recov
     response = await client.post('/api/auth/2fa/enable', headers=auth_headers, json={'code': pyotp.TOTP(replacement['secret']).now()})
     assert response.status_code == 200
     assert set(response.json()['recovery_codes']).isdisjoint(enabled['recovery_codes'])
+    auth_headers = {"Authorization": "Bearer " + response.json()["access_token"]}
     # An old recovery code never disables the newly enrolled authenticator.
     assert (await client.post('/api/auth/2fa/disable', headers=auth_headers, json={'password': 'testpass123', 'code': code})).status_code == 400

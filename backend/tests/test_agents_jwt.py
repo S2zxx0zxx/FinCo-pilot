@@ -85,7 +85,7 @@ def test_expired_token_rejected():
             "iat": int(time.time()) - 7200,
             "exp": int(time.time()) - 3600,
         },
-        s.mcp_jwt_secret,
+        s.mcp_jwt_secret.get_secret_value(),
         algorithm=JWT_ALGO,
     )
 

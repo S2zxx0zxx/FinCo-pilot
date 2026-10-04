@@ -14,145 +14,136 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-.finco-route-loader {
+.finco-loading-screen {
   position: fixed;
   inset: 0;
   z-index: 120;
-  display: flex;
+  display: grid;
   min-height: 100dvh;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  place-items: center;
   overflow: hidden;
-  background: color-mix(in srgb, var(--background) 94%, transparent);
+  background: var(--background);
   color: var(--foreground);
-  backdrop-filter: blur(18px) saturate(0.8);
-  -webkit-backdrop-filter: blur(18px) saturate(0.8);
-  animation: finco-loader-enter 180ms ease-out both;
+  animation: finco-loading-enter 120ms ease-out both;
 }
 
-.finco-route-loader::before {
-  content: '';
-  position: absolute;
-  width: min(68vw, 560px);
-  aspect-ratio: 1;
-  border-radius: 9999px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--foreground) 8%, transparent) 0%, transparent 68%);
-  filter: blur(18px);
-  pointer-events: none;
-}
-
-.finco-route-loader__scene {
-  position: relative;
-  display: grid;
-  width: 132px;
-  height: 132px;
-  place-items: center;
-  perspective: 900px;
-  transform-style: preserve-3d;
-}
-
-.finco-route-loader__logo {
-  position: relative;
-  z-index: 3;
-  display: grid;
-  place-items: center;
-  color: var(--foreground);
-  filter: drop-shadow(0 18px 28px color-mix(in srgb, var(--foreground) 12%, transparent));
-  transform-style: preserve-3d;
-  will-change: transform, opacity;
-  animation: finco-logo-float 2.15s cubic-bezier(0.45, 0, 0.55, 1) infinite;
-}
-
-.finco-route-loader__halo {
-  position: absolute;
-  inset: 29px;
-  z-index: 1;
-  border-radius: 9999px;
-  background: color-mix(in srgb, var(--foreground) 7%, transparent);
-  box-shadow:
-    0 0 42px color-mix(in srgb, var(--foreground) 10%, transparent),
-    inset 0 0 22px color-mix(in srgb, var(--foreground) 7%, transparent);
-  animation: finco-halo-breathe 2.15s ease-in-out infinite;
-}
-
-.finco-route-loader__orbit {
-  position: absolute;
-  z-index: 2;
-  border: 1px solid color-mix(in srgb, var(--foreground) 19%, transparent);
-  border-radius: 9999px;
-  transform-style: preserve-3d;
-  will-change: transform, opacity;
-}
-
-.finco-route-loader__orbit::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: -3px;
-  width: 6px;
-  height: 6px;
-  margin-top: -3px;
-  border-radius: 9999px;
-  background: var(--foreground);
-  box-shadow: 0 0 15px color-mix(in srgb, var(--foreground) 58%, transparent);
-}
-
-.finco-route-loader__orbit--outer {
-  inset: 4px;
-  animation: finco-orbit-outer 3.4s linear infinite;
-}
-
-.finco-route-loader__orbit--inner {
-  inset: 18px;
-  opacity: 0.58;
-  animation: finco-orbit-inner 2.7s linear infinite reverse;
-}
-
-.finco-route-loader__copy {
-  position: relative;
-  z-index: 2;
+.finco-loading-screen__content {
   display: flex;
-  margin-top: 20px;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 0;
   text-align: center;
 }
 
-.finco-route-loader__brand {
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: -0.025em;
+.finco-loading-screen__mark {
+  position: relative;
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--foreground) 4%, var(--background));
+  box-shadow:
+    0 18px 44px color-mix(in srgb, #000 16%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 9%, transparent);
 }
 
-.finco-route-loader__destination {
+.finco-loading-screen__halo {
+  position: absolute;
+  inset: -7px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 14%, transparent);
+  border-radius: 24px;
+  opacity: 0;
+  pointer-events: none;
+  animation: finco-loading-halo 1.05s ease-out infinite;
+}
+
+.finco-loading-screen__logo {
+  position: relative;
+  z-index: 1;
+  color: var(--foreground);
+  will-change: transform, opacity;
+  animation: finco-loading-logo 1.05s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.finco-loading-screen__copy {
+  display: flex;
+  margin-top: 15px;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.finco-loading-screen__brand {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.finco-loading-screen__destination {
   color: var(--muted-foreground);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.01em;
 }
 
-.finco-route-loader__progress {
-  position: relative;
-  z-index: 2;
-  width: min(180px, 48vw);
-  height: 2px;
-  margin-top: 18px;
-  overflow: hidden;
-  border-radius: 9999px;
-  background: color-mix(in srgb, var(--foreground) 9%, transparent);
+.finco-loading-screen__signal {
+  display: flex;
+  width: 86px;
+  margin-top: 14px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
 
-.finco-route-loader__progress > span {
-  position: absolute;
-  inset-block: 0;
-  left: -44%;
-  width: 44%;
-  border-radius: inherit;
+.finco-loading-screen__signal > span {
+  width: 22px;
+  height: 2px;
+  border-radius: 9999px;
+  background: currentColor;
+  opacity: 0.22;
+  transform: scaleX(0.28);
+  transform-origin: center;
+  will-change: transform, opacity;
+  animation: finco-loading-signal 880ms ease-in-out infinite;
+}
+
+.finco-loading-screen__signal > span:nth-child(2) {
+  animation-delay: 110ms;
+}
+
+.finco-loading-screen__signal > span:nth-child(3) {
+  animation-delay: 220ms;
+}
+
+.finco-navigation-pulse {
+  position: fixed;
+  top: env(safe-area-inset-top, 0px);
+  right: 0;
+  left: 0;
+  z-index: 210;
+  height: 3px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.finco-navigation-pulse__track {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+}
+
+.finco-navigation-pulse__bar {
+  display: block;
+  width: min(46vw, 420px);
+  height: 100%;
+  border-radius: 9999px;
   background: var(--foreground);
-  will-change: transform;
-  animation: finco-progress-sweep 1.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  opacity: 0.9;
+  transform: translate3d(-110%, 0, 0);
+  will-change: transform, opacity;
+  animation: finco-navigation-sweep 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
 .finco-network-banner {
@@ -246,35 +237,31 @@ body {
   color: var(--foreground);
 }
 
-@keyframes finco-loader-enter {
+@keyframes finco-loading-enter {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-@keyframes finco-logo-float {
-  0%, 100% { transform: translate3d(0, 2px, 18px) rotateX(4deg) rotateY(-7deg) scale(0.985); }
-  50% { transform: translate3d(0, -4px, 28px) rotateX(-4deg) rotateY(7deg) scale(1.025); }
+@keyframes finco-loading-logo {
+  0%, 100% { transform: scale(0.96); opacity: 0.82; }
+  50% { transform: scale(1.025); opacity: 1; }
 }
 
-@keyframes finco-halo-breathe {
-  0%, 100% { transform: scale(0.94); opacity: 0.45; }
-  50% { transform: scale(1.08); opacity: 0.88; }
+@keyframes finco-loading-halo {
+  0% { transform: scale(0.9); opacity: 0; }
+  45% { opacity: 0.52; }
+  100% { transform: scale(1.14); opacity: 0; }
 }
 
-@keyframes finco-orbit-outer {
-  from { transform: rotateX(68deg) rotateZ(0deg); }
-  to { transform: rotateX(68deg) rotateZ(360deg); }
+@keyframes finco-loading-signal {
+  0%, 100% { transform: scaleX(0.28); opacity: 0.22; }
+  50% { transform: scaleX(1); opacity: 0.92; }
 }
 
-@keyframes finco-orbit-inner {
-  from { transform: rotateY(67deg) rotateZ(0deg); }
-  to { transform: rotateY(67deg) rotateZ(360deg); }
-}
-
-@keyframes finco-progress-sweep {
-  0% { transform: translate3d(0, 0, 0); opacity: 0.35; }
-  50% { opacity: 1; }
-  100% { transform: translate3d(330%, 0, 0); opacity: 0.35; }
+@keyframes finco-navigation-sweep {
+  0% { transform: translate3d(-110%, 0, 0); opacity: 0.22; }
+  70% { opacity: 0.95; }
+  100% { transform: translate3d(250%, 0, 0); opacity: 0.55; }
 }
 
 @keyframes finco-card-in {
@@ -293,16 +280,6 @@ body {
     bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     width: calc(100vw - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
   }
-
-  .finco-route-loader__scene {
-    width: 116px;
-    height: 116px;
-  }
-
-  .finco-route-loader__logo svg {
-    width: 60px;
-    height: 60px;
-  }
 }
 
 @media (display-mode: standalone) {
@@ -313,17 +290,28 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .finco-route-loader,
-  .finco-route-loader__logo,
-  .finco-route-loader__halo,
-  .finco-route-loader__orbit,
-  .finco-route-loader__progress > span,
+  .finco-loading-screen,
+  .finco-loading-screen__logo,
+  .finco-loading-screen__halo,
+  .finco-loading-screen__signal > span,
+  .finco-navigation-pulse__bar,
   .finco-network-banner,
   .finco-pwa-card {
     animation: none !important;
   }
 
-  .finco-route-loader__orbit {
-    opacity: 0.32;
+  .finco-loading-screen__halo {
+    display: none;
+  }
+
+  .finco-loading-screen__signal > span {
+    transform: scaleX(0.72);
+    opacity: 0.6;
+  }
+
+  .finco-navigation-pulse__bar {
+    width: 100%;
+    transform: none;
+    opacity: 0.7;
   }
 }

@@ -21,7 +21,17 @@ os.environ["CREDENTIALS_DIRECTORY"] = ""
 # we shim it with JSON before any model module imports it. Production runs
 # pgvector unchanged.
 import sqlalchemy.types  # noqa: E402
+from sqlalchemy.dialects.postgresql import UUID as _PGUUID  # noqa: E402
+from sqlalchemy.ext.compiler import compiles  # noqa: E402
 import pgvector.sqlalchemy as _pgv  # noqa: E402
+
+
+@compiles(_PGUUID, "sqlite")
+def _sqlite_uuid(type_, compiler, **kwargs):
+    # Literal UUID has NUMERIC affinity in SQLite. Rare all-digit/scientific-
+    # notation-looking random UUIDs become floats and crash the UUID processor.
+    # Keep exact text in tests; PostgreSQL's native UUID compilation is unchanged.
+    return "CHAR(32)"
 
 
 class _VectorJSON(sqlalchemy.types.JSON):
@@ -102,6 +112,16 @@ TestSessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_com
 # mapping automatically when we create tables via Base.metadata (it converts
 # PostgreSQL UUID to CHAR(32)). We just need to make sure we use string-based
 # UUID comparisons.
+
+
+@pytest.fixture(autouse=True)
+def reset_agent_settings_cache_between_tests():
+    """Prevent one test's temporary AGENTS_* environment from leaking via LRU cache."""
+    from app.agents.config import get_agent_settings
+
+    get_agent_settings.cache_clear()
+    yield
+    get_agent_settings.cache_clear()
 
 
 @pytest_asyncio.fixture(scope="session", loop_scope="session", autouse=True)

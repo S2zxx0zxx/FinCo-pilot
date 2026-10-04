@@ -33,6 +33,7 @@ from app.core.rate_limit import login_rate_limit
 from app.core.redis import get_redis
 from app.core.webauthn import resolve_webauthn_context
 from app.api.two_factor import _parse_temp_token_payload
+from app.core.mfa_challenge import consume_login_challenge
 from app.models.passkey import UserPasskey
 from app.models.user import User
 from app.schemas.passkey import (
@@ -95,16 +96,20 @@ async def _get_second_factor_user_id(temp_token: str, session: AsyncSession) -> 
     if payload is None or not isinstance(available_methods, list) or "passkey" not in available_methods:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
     import secrets
-    user = await session.get(User, uuid.UUID(str(payload["user_id"])))
+    try:
+        user_id = uuid.UUID(str(payload["user_id"]))
+    except ValueError:
+        raise HTTPException(401, "Invalid token") from None
+    user = await session.get(User, user_id, populate_existing=True)
     stamp = payload.get("credential_stamp")
     if user is None or not user.is_active or not isinstance(stamp, str) or not secrets.compare_digest(stamp, get_jwt_strategy().stamp(user)):
         raise HTTPException(status_code=401, detail="Login challenge invalidated; sign in again")
     return str(payload["user_id"])
 
 
-async def _delete_second_factor_temp_token(temp_token: str) -> None:
+async def _delete_second_factor_temp_token(temp_token: str, user: User) -> None:
     redis = await get_redis()
-    await redis.delete(f"2fa_temp:{temp_token}")
+    await consume_login_challenge(redis, temp_token, user, "passkey")
 
 
 async def _store_challenge(prefix: str, payload: dict[str, Any]) -> str:
@@ -172,9 +177,7 @@ async def _verify_passkey_credential(
             require_user_verification=True,
         )
     except Exception as exc:
-        logger.warning(
-            "Passkey verification failed for credential %s: %s", passkey.credential_id, exc
-        )
+        logger.warning("Passkey verification rejected")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid passkey") from exc
 
     verified_credential_id = _as_base64url(verification.credential_id)
@@ -478,7 +481,8 @@ async def verify_passkey_second_factor(
         passkey=passkey,
         session=session,
     )
-    await _delete_second_factor_temp_token(body.temp_token)
+    await session.refresh(user, attribute_names=["hashed_password", "auth_epoch", "is_active", "is_2fa_enabled", "totp_secret"])
+    await _delete_second_factor_temp_token(body.temp_token, user)
 
     strategy = get_jwt_strategy()
     token = await strategy.write_token(user)

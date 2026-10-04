@@ -304,13 +304,8 @@ async def create_support_ticket(
         )
 
     sensitive = find_sensitive_content(
-        ticket.subject,
-        ticket.message,
-        ticket.page_path,
-        ticket.app_version,
-        ticket.locale,
-        ticket.error_reference,
-        user_agent[:500],
+        ticket.subject, ticket.message, ticket.page_path, ticket.app_version,
+        ticket.locale, ticket.error_reference, user_agent[:500],
     )
     if sensitive:
         raise HTTPException(

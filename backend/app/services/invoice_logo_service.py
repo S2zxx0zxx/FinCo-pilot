@@ -23,10 +23,12 @@ from typing import Optional
 
 from PIL import Image, UnidentifiedImageError
 from PIL.Image import Resampling
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.invoice import InvoiceSettings
+from app.models.invoice import Invoice, InvoiceSettings
 from app.providers import get_storage_provider
+from app.services.storage_compensation import compensate_upload
 
 #: Roughly twice the largest box any renderer draws it in, so a screen at
 #: two device pixels per CSS pixel still has real detail to show.
@@ -109,8 +111,21 @@ async def store(
     logo_id = uuid.uuid4()
     storage = get_storage_provider()
     await storage.upload(storage_key(workspace_id, logo_id), png, "image/png")
-    settings.logo_id = logo_id
-    await session.flush()
+    try:
+        settings.logo_id = logo_id
+        await session.flush()
+        await session.commit()
+    except Exception:
+        await compensate_upload(
+            session, storage, storage_key(workspace_id, logo_id),
+            select(InvoiceSettings.id).where(InvoiceSettings.logo_id == logo_id).union_all(
+                select(Invoice.id).where(
+                    Invoice.workspace_id == workspace_id,
+                    Invoice.snapshot["issuer"]["logo_id"].as_string() == str(logo_id),
+                )
+            ),
+        )
+        raise
     return logo_id
 
 

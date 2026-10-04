@@ -1,8 +1,10 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import model_validator
+from pydantic import SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from app.core.config import CREDENTIALS_DIRECTORY
 
 
 class AgentSettings(BaseSettings):
@@ -28,8 +30,19 @@ class AgentSettings(BaseSettings):
 
     # Shared secret used to mint short-lived JWTs for MCP calls. Distinct
     # from the main app secret so revocation is independent.
-    mcp_jwt_secret: str = "change-me-in-production"
+    mcp_jwt_secret: SecretStr = SecretStr("change-me-in-production")
     mcp_jwt_ttl_seconds: int = 600
+
+    # Operator-level inference defaults. Secret values are typed as SecretStr
+    # and can come from /run/secrets through the same Pydantic settings source
+    # as the core application. Runtime code must not bypass this with os.getenv.
+    default_provider: str = "ollama"
+    default_model: str = ""
+    ollama_base_url: str = "http://ollama:11434"
+    openai_api_key: SecretStr = SecretStr("")
+    anthropic_api_key: SecretStr = SecretStr("")
+    openai_compat_base_url: str = ""
+    openai_compat_api_key: SecretStr = SecretStr("")
 
     # TTL for long-lived tokens minted via the UI for external agents
     # (Claude Desktop, n8n, custom clients). The feature itself follows
@@ -66,7 +79,7 @@ class AgentSettings(BaseSettings):
     embedding_native_cache_dir: str = "/app/data/embedding_models"
     embedding_ollama_base_url: str = "http://ollama:11434"
     embedding_openai_base_url: str = "https://api.openai.com/v1"
-    embedding_openai_api_key: str = ""
+    embedding_openai_api_key: SecretStr = SecretStr("")
 
     # Where uploaded knowledge files live on disk (per-instance).
     knowledge_storage_path: str = "/app/data/agent_knowledge"
@@ -77,7 +90,8 @@ class AgentSettings(BaseSettings):
         from app.core.config import get_settings
 
         if self.enabled and get_settings().is_production:
-            if self.mcp_jwt_secret == "change-me-in-production" or len(self.mcp_jwt_secret) < 32:
+            mcp_secret = self.mcp_jwt_secret.get_secret_value()
+            if mcp_secret == "change-me-in-production" or len(mcp_secret) < 32:
                 raise ValueError("Production agents require a unique AGENTS_MCP_JWT_SECRET of at least 32 characters")
         if not 1 <= self.mcp_external_ttl_days <= 90:
             raise ValueError("AGENTS_MCP_EXTERNAL_TTL_DAYS must be between 1 and 90")
@@ -95,6 +109,7 @@ class AgentSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=(".env", Path(__file__).resolve().parents[2] / ".env"),
         env_prefix="AGENTS_",
+        secrets_dir=CREDENTIALS_DIRECTORY,
         extra="ignore",
     )
 

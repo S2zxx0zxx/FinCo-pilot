@@ -1,12 +1,13 @@
-.finco-route-loader--leaving {
+.finco-loading-screen--leaving,
+.finco-navigation-pulse--leaving {
   opacity: 0;
   pointer-events: none;
-  transition: opacity 180ms ease, visibility 180ms ease;
-  visibility: hidden;
+  transition: opacity 90ms ease-out;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .finco-route-loader--leaving {
+  .finco-loading-screen--leaving,
+  .finco-navigation-pulse--leaving {
     transition: none;
   }
 }

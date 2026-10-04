@@ -50,7 +50,7 @@ def verify_request(request: Request) -> CallContext:
     try:
         payload = jwt.decode(
             token,
-            _settings().mcp_jwt_secret,
+            _settings().mcp_jwt_secret.get_secret_value(),
             algorithms=[JWT_ALGO],
             audience=JWT_AUDIENCE,
             issuer=JWT_ISSUER,

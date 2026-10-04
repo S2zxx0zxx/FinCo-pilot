@@ -25,17 +25,7 @@ spec:
             - sh
             - -c
             - |
-              echo "Starting database migration..."
-              for i in $(seq 1 30); do
-                if alembic upgrade head; then
-                  echo "Migration successful."
-                  exit 0
-                fi
-                echo "Migration failed (database might not be ready). Retrying in 5 seconds..."
-                sleep 5
-              done
-              echo "Migration failed after multiple retries."
-              exit 1
+              python scripts/prepare_release.py
           envFrom:
             - configMapRef:
                 name: {{ include "fincopilot.fullname" . }}-config

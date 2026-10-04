@@ -24,7 +24,7 @@ Branch: `fix/production-hardening-2026-09-19`.
 | F13 — accounts | Supported type, three-letter currency, nonblank name, nonnegative credit terms and valid billing days checked at the API boundary. Existing wallet/investment types preserved. |
 | F14 — invalid dates | Account summary/history date query parameters are parsed as dates, yielding 422 instead of 500. |
 | F15 — dependencies | Frontend lockfile updated within declared ranges; npm audit reports zero known advisories at verification time. This is not a guarantee against future disclosures. |
-| F16 — storage | Production Compose forwards bucket, region, endpoint and credentials and the object-storage requirement flag. Actual S3 upload/download/delete and restore test still required. |
+| F16 — storage | **Roadmap #16 engineering implementation merged; production acceptance remains gated.** Cloudflare R2 is selected/release-gated; production is fail-closed to S3-compatible object storage, attachment bytes use private object storage, a credential-safe write/HEAD/read/delete acceptance probe exists, and Docker/Helm parity is covered by CI. A real operator-owned R2 bucket/probe and roadmap #25 isolated restore remain external gates. |
 | F17 — live AI | **Unverified external gate.** Choose actual provider/model, configure the existing connection mechanism, run streamed responses, tool approval/denial, document retrieval and failure recovery on the deployed host. No workflow green tick is treated as inference proof. |
 | F18 — catalogue | Free/Pro AI action allowances set to zero to match the existing Max-only agent capability. This does not add a separate basic AI assistant. |
 | F19 — external writes | Registered external tokens default read-only. Explicit write scope, live authorization and strict JSON boolean `apply` are required; OpenAI snippet also requests client-side approval. Every external write now queues an exact, ten-minute approval in Agent Connections. A logged-in user must approve it in the app; the server rechecks token, membership, capability and quota. Durable single-use claims prevent replay; uncertain execution is marked for review and never automatically retried. |
@@ -32,7 +32,7 @@ Branch: `fix/production-hardening-2026-09-19`.
 | F21 — metrics | Token-protected `/metrics`, bounded method/status labels and per-process uptime/request totals. Multiworker aggregation, alert rules, tracing and on-call routing remain operator work. |
 | F22 — app fallback | Global React render error boundary and useful unknown-route screen. Existing page/network errors remain separate. |
 | F23 — 2FA recovery | Ten cryptographically random one-use recovery codes; only hashes stored. Reissue requires password and current TOTP. Codes shown once. A consumed code cannot log in again. A lost authenticator can be replaced by disabling it with the password and a different unused recovery code, then enrolling a new device. All old recovery codes are invalidated. Second-factor mutations are serialized under a user row lock. |
-| F24 — policies/support/exit | **Partial.** The Support & Trust Layer V1 now provides public support discovery, authenticated structured ticket submission, safe request correlation, severity-first routing, security-reporting separation, provider-secret isolation, and Docker/Helm configuration. A real operator-owned inbox/portal and real Zoho Desk ticket smoke test are still required before roadmap #7 is operationally DONE. Operator identity, privacy/retention/processor details, terms and shared-workspace deletion policy remain open. Do not publish invented legal promises or cascade-delete collaborators' financial data. |
+| F24 — policies/support/exit | **Partial.** Support & Trust Layer V1 plus roadmap #8 operator identity, #9 retention, #10 personal-account deletion behavior, #11 shared-workspace deletion policy, and #12 third-party processor/data-recipient inventory are defined as engineering contracts. Unresolved production vendors (hosting, SMTP, object storage, managed infrastructure, external AI) remain explicit release gates. Privacy/Terms publication and executable deletion/provider reconciliation remain open. A real direct Zoho Desk app-to-provider smoke test is still required to close roadmap #7 operationally. |
 | F25 — PWA | Existing shell/offline behavior retained. No offline financial editing/sync guarantee. Device installation, update and reconnect still require browser acceptance. |
 | F26 — safe-to-spend | New workspace-scoped conservative calculation and dashboard entry. Reserves full card debt, upcoming/pending debits, recurring projections and user-entered buffers/obligations. Blocks headline on incomplete review, stale/unconfirmed provider refresh, unsupported account types or missing recent FX. See limits below. |
 | F27 — loans/EMI | **Partial implementation verified.** Workspace loan plans, fixed-rate monthly amortization, manual paid-installment counts, optimistic concurrency, backup export and safe-to-spend reserves are implemented. Bank reconciliation, variable rates, fees, partial payments and principal prepayments remain open. |
@@ -182,3 +182,325 @@ The public launch still requires these concrete operator inputs:
 Provide names and non-secret configuration in the task; configure credentials in the host's
 secret manager. Without these inputs the real provider integrations, legal copy and live
 acceptance tests cannot be completed. GitHub authorization alone does not supply them.
+
+## October 1 — Roadmap #9 data-retention contract
+
+Roadmap #8 operator/business identity was verified merged on main before this work began
+(PR #15, main `b87d7cb30f8b2f1ef2ea47918ee22c94bdcd71e6`; post-merge CI #184 green).
+Roadmap #9 therefore starts from that exact main state on
+`feat/data-retention-policy-v1`.
+
+The retention audit covers PostgreSQL user/workspace/finance/billing/security/AI models,
+Redis ephemeral state, transaction/invoice object storage, agent knowledge files,
+user-generated exports, support/Zoho, application/request logs, production backups,
+bank-provider data and known processor boundaries. The canonical contract is
+`docs/trust/FINCO_DATA_RETENTION_V1.md`; machine-readable invariants are in
+`backend/app/core/retention.py`.
+
+Important current-state findings are intentionally **not** marked fixed by policy work:
+- the legacy admin user-delete path is incomplete for the current workspace/agents/billing model;
+- that path can delete transaction-attachment DB rows without deleting corresponding blobs;
+- workspaces are archived, not hard-deleted;
+- file cleanup is partly best-effort and has no durable orphan reconciler;
+- production log sink/residency/expiry and backup expiry are not yet externally proven;
+- third-party deletion/revocation must be verified per processor.
+
+The engineering contract uses a 365-day security/request-log baseline, a 30-day maximum
+normal backup window, 365 days after support-ticket closure, 30 days after abandoned
+checkout expiry, a 30-day terminal-state window for exact MCP approval arguments,
+365 days for minimal approval/security evidence, and purpose-bound retention for primary
+finance/workspace content.
+These are operator engineering decisions except where the contract explicitly identifies
+a legal or provider anchor.
+
+Legal/provider review for this checkpoint:
+- The current IT SPDI Rules 2011 purpose-limitation rule is recorded as a present-day
+  retention anchor where applicable; it does not create an invented fixed-year period.
+- CERT-In's April 2022 direction is treated conservatively as the current 180-day ICT-log
+  reference and India-residency anchor; exact operator classification still requires legal review.
+- DPDP Rules 6 and 8 are recorded as scheduled future requirements, not as already-operative
+  October 2026 law: the notified 18-month commencement places them in May 2027.
+- Razorpay's published India terms are recorded as a six-month invoice/charge-slip provider
+  requirement when that contract applies.
+- RBI Card-on-File restrictions are a storage prohibition, not a general retention period:
+  FinCo-Pilot must not persist full card PAN/CVV.
+- Zoho Desk's current documentation records a 60-day default Recycle Bin window, supports
+  earlier permanent deletion by an authorised admin, and lists a 90-day service-data backup
+  tail after Trash deletion. That residual processor retention is tracked for roadmap #12.
+
+This checkpoint establishes the retention contract only. Personal deletion, shared-workspace
+deletion, processor inventory, production secret management, backup/restore, published
+privacy/terms and deletion E2E remain their own roadmap items. CI evidence must be added
+after the branch workflow completes; this section does not claim production enforcement.
+
+
+
+## October 2 — Roadmap #10 personal account deletion behavior contract
+
+Roadmap #9 was verified merged on `main` at
+`b0878929348122188a836bcc0f120ced5ff95803` before this work began. Roadmap #10
+therefore defines deletion behavior without redoing the retention audit.
+
+Canonical contract:
+`docs/trust/FINCO_PERSONAL_ACCOUNT_DELETION_V1.md`
+
+Machine-readable preflight:
+`backend/app/core/account_deletion.py`
+
+Regression coverage:
+`backend/tests/test_account_deletion_contract.py`
+
+The contract deliberately does **not** expose or wire a destructive self-service deletion
+endpoint yet. Runtime implementation, durable jobs, provider revocation calls, object cleanup,
+processor deletion and E2E acceptance remain roadmap #29.
+
+The preflight is fail-closed. A workspace is implicitly deleted with a user account only when
+it is a genuinely private personal workspace: the user is sole member/owner and there is no
+external manager. Every other workspace is preserved. Sole-owner shared workspaces and shared
+workspace billing ownership block destructive account deletion until ownership/billing is
+deliberately resolved. Creator/manager references are detached or anonymised without
+destroying the shared ledger.
+
+The canonical execution order invalidates authentication and revokes personal provider access
+before primary database deletion, then deletes object/vector copies, handles processor copies,
+writes only a minimal deletion tombstone and waits for the bounded backup-expiry condition.
+Provider/object failures remain retryable and may not be reported as complete.
+
+The legacy admin `delete_user()` path remains explicitly unsuitable for self-service account
+deletion because it predates newer domains, can orphan attachment bytes, does not prove
+upstream bank/provider revocation and does not resolve shared-workspace ownership/billing.
+
+Roadmap #10 is a behavior/engineering-contract gate. Roadmap #29 remains the production
+implementation/test gate, and roadmap #11/#30 remain authoritative for shared-workspace
+hard-deletion behavior.
+
+
+## October 2 — Roadmap #11 shared-workspace deletion policy contract
+
+Roadmap #10 personal account deletion behavior was verified merged and post-merge green on
+`main` at `7fc58331cb2b348a621739545523db0bd4419714` before this work began.
+
+Canonical contract:
+`docs/trust/FINCO_SHARED_WORKSPACE_DELETION_V1.md`
+
+Machine-readable preflight:
+`backend/app/core/workspace_deletion.py`
+
+Regression coverage:
+`backend/tests/test_workspace_deletion_contract.py`
+
+The repository still has no workspace hard-delete endpoint. Existing
+`POST /api/workspaces/{workspace_id}/archive` remains a non-destructive archive operation
+and must not be reinterpreted as deletion.
+
+V1 hard-delete policy is deliberately strict: the requester must be an actual owner member,
+the workspace must already be archived, the requester must be the sole remaining member and
+owner, any other external manager must be detached, billing ownership must be resolved to the
+requester, and the request cannot delete the requester's last accessible workspace. A virtual
+manager alone is not destructive authority. A concrete verified legal hold fails closed.
+
+Workspace deletion does not cancel or alter the user's global subscription. Payment/security/
+support evidence continues under the narrower #9 retention windows.
+
+The future #30 workflow must freeze writes, capture a bounded non-secret deletion manifest,
+cancel pending invitations, revoke provider access, delete workspace-owned object/knowledge
+bytes while storage keys remain available, then delete primary SQL rows, reconcile processor
+copies, write a minimal deletion tombstone and wait for bounded backup expiry. Partial external
+failure remains visible/retriable and cannot be reported as complete.
+
+Roadmap #11 establishes policy only. Durable deletion jobs, provider calls, object reconciliation,
+SQL hard-delete implementation and production E2E remain roadmap #30.
+
+
+## October 2 — Roadmap #12 third-party processor/data-recipient inventory
+
+Roadmap #11 was verified merged on `main` at
+`a9c4f000e278aab9924c05130a3b18fcbc57eae2` before #12 began.
+
+Canonical machine-readable registry:
+`backend/app/core/processor_inventory.py`
+
+Human-readable contract:
+`docs/trust/FINCO_THIRD_PARTY_PROCESSOR_INVENTORY_V1.md`
+
+Regression coverage:
+`backend/tests/test_processor_inventory.py`
+
+The registry is deliberately legally neutral: it records technical data boundaries and
+release gates rather than guessing that every external service has the same legal role.
+Unknown provider keys fail closed. Selected services such as Zoho Desk and Razorpay remain
+release-gated until their live provider acceptance is complete.
+
+Core Copilot keeps operator-hosted OmniRoute separate from the unresolved external upstream
+model/search provider. User-configured Advanced Agent LLM endpoints and external MCP servers
+remain explicit user-directed boundaries and cannot silently become the Core route.
+
+Hosting/logging, managed PostgreSQL/Redis, object storage, SMTP and optional OIDC remain
+unresolved until their roadmap items name the actual provider and verify region, retention,
+deletion, access and contract facts. Public reference-data services are separately classified
+and must be re-reviewed if future code starts sending user-specific data.
+
+#12 is an engineering inventory gate. It does not itself prove production DPA execution,
+provider-side deletion, production residency, or published Privacy/Terms text.
+
+
+## October 2 — Roadmap #13 production secret management
+
+Roadmap #12 was verified merged on `main` at
+`37492e6886a88b1dd170edcb11cf1876e464c4cd` before #13 began.
+
+Canonical machine-readable registry:
+`backend/app/core/secret_management.py`
+
+Operator/rotation runbook:
+`docs/trust/FINCO_PRODUCTION_SECRET_MANAGEMENT_V1.md`
+
+Current-tree CI guard:
+`backend/scripts/check_secret_hygiene.py`
+
+The implementation removes canonical secret values from production Compose environment
+interpolation and mounts an operator-controlled directory read-only at `/run/secrets`.
+The bundled PostgreSQL container uses `POSTGRES_PASSWORD_FILE`. Main and Agent Settings
+share Pydantic file-secret sources; AI provider/API credentials no longer bypass typed
+settings with direct `os.getenv` reads. MCP and remote-embedding credentials are represented
+as `SecretStr` and unwrapped only at the cryptographic/provider boundary.
+
+Kubernetes production now fails Helm rendering unless `global.existingSecret` names an
+operator-managed Secret. Development chart defaults remain development-only. Production
+operators must additionally enable Secret encryption at rest, restrict RBAC and keep real
+Secret manifests/values outside Git.
+
+The canonical rotation contract distinguishes application-session invalidation
+(`SECRET_KEY`), MCP-token invalidation (`AGENTS_MCP_JWT_SECRET`), coordinated database
+credential changes and provider revoke/replace flows. A provider credential previously
+exposed in chat/screenshot must be replaced at the provider; deleting a screenshot or local
+file is not remediation.
+
+Roadmap #13 can close its engineering gate only after the PR-head CI is fully green and the
+diff is verified secret-free. Live provisioning of the selected host/secret manager and
+provider-specific smoke tests remain deployment/provider acceptance work; CI does not prove
+that external production credentials have been provisioned.
+
+
+## October 2 — Roadmap #14 production PostgreSQL
+
+Roadmap #13 production secret management was verified merged on `main` at
+`f5723dbd080194a10c193666ba3c4827145cee3a` before #14 began.
+
+Canonical runtime:
+`backend/app/core/database_runtime.py`
+
+Operator/acceptance contract:
+`docs/trust/FINCO_PRODUCTION_POSTGRESQL_V1.md`
+
+Safe acceptance probe:
+`backend/scripts/verify_production_postgres.py`
+
+Neon Postgres is the selected, release-gated zero-cost provider for roadmap #14, while the
+runtime remains provider-neutral. Production is external-managed-PostgreSQL first. The
+application requires PostgreSQL 15+,
+pgvector, explicit encrypted transport, bounded API pooling and finite connect/command/
+statement/idle-transaction timeouts. Managed-provider libpq TLS query parameters are removed
+before the URL reaches asyncpg; FinCo-Pilot applies one explicit TLS policy through the driver.
+
+FastAPI uses the bounded canonical engine pool. Short-lived Celery/agent task engines and
+Alembic use `NullPool`, preventing each task process from multiplying the managed provider's
+connection budget. Online Alembic migrations take a PostgreSQL session advisory lock so two
+deploy processes cannot mutate the schema concurrently.
+
+Production Compose keeps the bundled pgvector container only behind the explicit
+`bundled-db` profile and otherwise consumes the secret-managed external `DATABASE_URL`.
+Production Helm fails closed if bundled PostgreSQL remains enabled, the external-database gate
+is disabled, or encrypted DB transport is not configured.
+
+The acceptance probe is deliberately credential-safe. It checks PostgreSQL version,
+read/write primary status, active TLS where required, pgvector availability/installation,
+exact Alembic head and a rolled-back temporary-table read/write round-trip without printing
+the database URL, role, password or application data. CI runs the same probe only against the
+explicitly opted-in disposable `finco_ci` PostgreSQL database.
+
+Roadmap #14 engineering closure requires PR-head CI to be fully green and the final diff to
+remain secret-free. Operational closure additionally requires the real managed PostgreSQL
+project/endpoint to be selected, its `DATABASE_URL` installed through roadmap #13 secret
+storage, migrations applied and the safe acceptance probe passed against that project.
+
+Provider history/PITR is not counted as disaster-recovery proof. Roadmap #25 still requires an
+actual isolated backup/restore rehearsal and integrity verification.
+
+
+## October 2 — Roadmap #15 production Redis / workers
+
+Production Redis and background-worker engineering now has an explicit
+fail-closed contract. Redis connection construction is centralized with bounded
+pool/timeouts, optional CA support and target validation. Production requires an
+external authenticated TLS target; `REDIS_URL` is delivered through the #13
+secret store rather than production Compose environment interpolation.
+
+Celery now retries broker startup, uses low prefetch, expires result metadata,
+bounds visibility timeout and exposes a side-effect-free broker/worker/result
+acceptance task. Production Compose and Helm add worker health checks, graceful
+shutdown and process recycling. Beat is explicitly a singleton scheduler; the
+Kubernetes deployment uses `Recreate` and no longer mounts task data volumes.
+
+A credential-safe acceptance script performs Redis ping/write/read/TTL/delete
+and can require a live worker round-trip. CI runs a disposable Redis 8 service,
+a real worker smoke and a real Beat startup smoke. Production Helm refuses
+bundled Redis, non-TLS Redis or unauthenticated Redis.
+
+This is the #15 engineering/runtime contract. A real production Redis account
+is not claimed until the operator provisions an authenticated `rediss://`
+target in secret storage and runs the same acceptance probe against the deployed
+API/worker while confirming exactly one Beat instance is healthy.
+
+
+## October 2 — Roadmap #16 production object storage
+
+Roadmap #15 Redis/workers was verified merged on `main` at
+`87dc8ec90c82352b0ead397d05acbff3c5fd93a3` before #16 began.
+
+Canonical contract:
+`docs/trust/FINCO_PRODUCTION_OBJECT_STORAGE_V1.md`
+
+Credential-safe acceptance probe:
+`backend/scripts/verify_production_object_storage.py`
+
+Cloudflare R2 Standard is selected for the zero-cost launch path while the
+runtime remains S3-compatible. Production configuration requires private object
+storage; Docker Compose no longer treats a local attachment volume as the
+production source of truth, and Helm does not render/mount the attachment PVC
+when S3 mode is active.
+
+The S3 adapter now applies a stable logical prefix, bounded request/presign
+timeouts, SHA-256 upload integrity metadata, verification on read, maximum
+download-size enforcement and no redirect following. Transaction attachment
+uploads compensate a failed relational commit by attempting to remove the
+already-uploaded object.
+
+The processor inventory now records Cloudflare R2 as selected/release-gated.
+This does not establish India residency. Provider location/jurisdiction and
+contract facts remain operator review items.
+
+Roadmap #16 engineering closure requires the branch PR-head CI and Helm gates to
+be green. Operational closure additionally requires an operator-owned private
+R2 bucket, bucket-scoped Object Read & Write credentials stored through roadmap
+#13 secret management, a successful real
+`python -m scripts.verify_production_object_storage` run, and one authenticated
+FinCo-Pilot upload/download/delete smoke. Roadmap #25 still owns an isolated
+backup/restore rehearsal.
+
+## Roadmap #1–#16 revision
+
+See [the revision findings and rollout runbook](trust/FINCO_REVISION_1_16_V1.md)
+for independent data keys, safe key migration, dependency startup gates,
+streaming/SigV4 fixes, support filtering, worker/result-backend limits and
+production refusal of legacy account deletion. External acceptance gates and
+future retention-aware deletion execution remain explicit.
+
+
+## Roadmap #17 production SMTP engineering
+
+See [the SMTP contract and acceptance checklist](trust/FINCO_PRODUCTION_SMTP_V1.md).
+Production local authentication now requires authenticated certificate-verified TLS SMTP,
+submission capacity/timeouts are bounded, errors are sanitized, and the safe probe separates
+connection acceptance from actual inbox delivery. Live provider/sender/domain acceptance
+and roadmap #23/#24 real-email E2E remain explicit operator gates.

@@ -182,7 +182,7 @@ export const workspaces = {
 
 // Setup
 export const setup = {
-  status: async (): Promise<{ has_users: boolean; setup_available?: boolean }> => {
+  status: async (): Promise<{ has_users: boolean; setup_available?: boolean; minimum_password_length?: number }> => {
     const { data } = await api.get('/setup/status')
     return data
   },
@@ -226,16 +226,17 @@ export const auth = {
     const { data } = await api.post('/auth/2fa/setup')
     return data
   },
-  enable2fa: async (code: string): Promise<{ recovery_codes: string[] }> => {
-    const { data } = await api.post('/auth/2fa/enable', { code })
+  enable2fa: async (code: string, password: string): Promise<{ recovery_codes: string[]; access_token: string }> => {
+    const { data } = await api.post('/auth/2fa/enable', { code, password })
     return data
   },
-  recoveryCodes: async (password: string, code: string): Promise<{ recovery_codes: string[] }> => {
+  recoveryCodes: async (password: string, code: string): Promise<{ recovery_codes: string[]; access_token: string }> => {
     const { data } = await api.post('/auth/2fa/recovery-codes', { password, code })
     return data
   },
-  disable2fa: async (password: string, code: string): Promise<void> => {
-    await api.post('/auth/2fa/disable', { password, code })
+  disable2fa: async (password: string, code: string): Promise<{ access_token: string }> => {
+    const { data } = await api.post('/auth/2fa/disable', { password, code })
+    return data
   },
   verify2fa: async (tempToken: string, code: string): Promise<{ access_token: string; token_type: string }> => {
     const { data } = await api.post('/auth/2fa/verify', { temp_token: tempToken, code })
@@ -1615,10 +1616,28 @@ export const support = {
   },
 }
 
+// Public operator metadata returned by /api/info. This deliberately contains
+// no registration secrets, private addresses, tax IDs, or payment credentials.
+export interface OperatorIdentity {
+  brand_name: string
+  entity_type:
+    | 'individual'
+    | 'sole_proprietorship'
+    | 'partnership'
+    | 'llp'
+    | 'private_limited'
+    | 'public_limited'
+    | 'other_registered_entity'
+  country_code: string
+  legal_name: string | null
+  contact_email: string | null
+}
+
 // App-level feature flags (whether optional modules like agents are mounted)
 export interface AppInfo {
   features: { agents: boolean; tesouro_direto?: boolean }
   support?: SupportPublicInfo
+  operator?: OperatorIdentity | null
 }
 
 export const info = {

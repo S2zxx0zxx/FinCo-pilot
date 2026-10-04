@@ -5,28 +5,34 @@ x-podman:
 
 x-backend-env: &backend-env
   DEPLOYMENT_ENVIRONMENT: production
-  DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set for production}
-  SECRET_KEY: ${SECRET_KEY:?SECRET_KEY must be set for production}
+  # Production secrets are file-mounted below. Keeping values out of the
+  # Compose environment prevents `docker compose config` / process-env leaks.
+  CREDENTIALS_DIRECTORY: /run/secrets
   DEBUG: ${DEBUG:-false}
   BILLING_CHECKOUT_ENABLED: ${BILLING_CHECKOUT_ENABLED:-false}
   BILLING_OFFER_RESERVATION_TTL_SECONDS: ${BILLING_OFFER_RESERVATION_TTL_SECONDS:-600}
   BILLING_TAX_DISPLAY_MODE: ${BILLING_TAX_DISPLAY_MODE:-unconfigured}
   RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
-  RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
   RAZORPAY_PLAN_PRO_MONTHLY_ID: ${RAZORPAY_PLAN_PRO_MONTHLY_ID:-}
   RAZORPAY_PLAN_PRO_ANNUAL_ID: ${RAZORPAY_PLAN_PRO_ANNUAL_ID:-}
   RAZORPAY_PLAN_MAX_MONTHLY_ID: ${RAZORPAY_PLAN_MAX_MONTHLY_ID:-}
   METRICS_ENABLED: ${METRICS_ENABLED:-false}
-  METRICS_TOKEN: ${METRICS_TOKEN:-}
   EMAIL_DELIVERY_REQUIRED: ${EMAIL_DELIVERY_REQUIRED:-true}
   SMTP_HOST: ${SMTP_HOST:-}
   SMTP_PORT: ${SMTP_PORT:-587}
   SMTP_USERNAME: ${SMTP_USERNAME:-}
-  SMTP_PASSWORD: ${SMTP_PASSWORD:-}
   SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-}
   SMTP_STARTTLS: ${SMTP_STARTTLS:-true}
   SMTP_USE_SSL: ${SMTP_USE_SSL:-false}
+  SMTP_SSL_CA_FILE: ${SMTP_SSL_CA_FILE:-}
+  SMTP_TIMEOUT_SECONDS: ${SMTP_TIMEOUT_SECONDS:-10}
+  SMTP_MAX_CONCURRENT_SENDS: ${SMTP_MAX_CONCURRENT_SENDS:-4}
   FRONTEND_URL: ${FRONTEND_URL:?FRONTEND_URL must be the public https URL}
+  OPERATOR_IDENTITY_ENABLED: ${OPERATOR_IDENTITY_ENABLED:-true}
+  OPERATOR_BRAND_NAME: ${OPERATOR_BRAND_NAME:-FinCo-Pilot}
+  OPERATOR_ENTITY_TYPE: ${OPERATOR_ENTITY_TYPE:-individual}
+  OPERATOR_COUNTRY_CODE: ${OPERATOR_COUNTRY_CODE:-IN}
+  OPERATOR_LEGAL_NAME: ${OPERATOR_LEGAL_NAME:-}
   SUPPORT_ENABLED: ${SUPPORT_ENABLED:-false}
   SUPPORT_EMAIL: ${SUPPORT_EMAIL:-}
   SUPPORT_PORTAL_URL: ${SUPPORT_PORTAL_URL:-}
@@ -40,19 +46,27 @@ x-backend-env: &backend-env
   ZOHO_DESK_ORG_ID: ${ZOHO_DESK_ORG_ID:-}
   ZOHO_DESK_DEPARTMENT_ID: ${ZOHO_DESK_DEPARTMENT_ID:-}
   ZOHO_DESK_CLIENT_ID: ${ZOHO_DESK_CLIENT_ID:-}
-  ZOHO_DESK_CLIENT_SECRET: ${ZOHO_DESK_CLIENT_SECRET:-}
-  ZOHO_DESK_REFRESH_TOKEN: ${ZOHO_DESK_REFRESH_TOKEN:-}
   SETUP_ENABLED: ${SETUP_ENABLED:-false}
-  SETUP_TOKEN: ${SETUP_TOKEN:-}
-  DB_POOL_SIZE: ${DB_POOL_SIZE:-10}
-  DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW:-20}
-  DB_POOL_TIMEOUT_SECONDS: ${DB_POOL_TIMEOUT_SECONDS:-30}
-  DB_POOL_RECYCLE_SECONDS: ${DB_POOL_RECYCLE_SECONDS:-1800}
+  # Production PostgreSQL is external by default. DATABASE_URL itself is
+  # supplied through /run/secrets by the roadmap #13 secret contract.
+  DATABASE_EXTERNAL_REQUIRED: ${DATABASE_EXTERNAL_REQUIRED:-true}
+  DB_SSL_MODE: ${DB_SSL_MODE:-verify-full}
+  DB_SSL_CA_FILE: ${DB_SSL_CA_FILE:-}
+  DB_POOL_MODE: ${DB_POOL_MODE:-queue}
+  DB_POOL_SIZE: ${DB_POOL_SIZE:-5}
+  DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW:-5}
+  DB_POOL_TIMEOUT_SECONDS: ${DB_POOL_TIMEOUT_SECONDS:-15}
+  DB_POOL_RECYCLE_SECONDS: ${DB_POOL_RECYCLE_SECONDS:-900}
+  DB_CONNECT_TIMEOUT_SECONDS: ${DB_CONNECT_TIMEOUT_SECONDS:-10}
+  DB_COMMAND_TIMEOUT_SECONDS: ${DB_COMMAND_TIMEOUT_SECONDS:-30}
+  DB_STATEMENT_TIMEOUT_MS: ${DB_STATEMENT_TIMEOUT_MS:-30000}
+  DB_IDLE_TRANSACTION_TIMEOUT_MS: ${DB_IDLE_TRANSACTION_TIMEOUT_MS:-30000}
+  DB_PREPARED_STATEMENT_CACHE_SIZE: ${DB_PREPARED_STATEMENT_CACHE_SIZE:-100}
+  DB_APPLICATION_NAME: ${DB_APPLICATION_NAME:-fincopilot}
   PLUGGY_CLIENT_ID: ${PLUGGY_CLIENT_ID:-}
-  PLUGGY_CLIENT_SECRET: ${PLUGGY_CLIENT_SECRET:-}
   PLUGGY_OAUTH_REDIRECT_URI: ${PLUGGY_OAUTH_REDIRECT_URI:-}
   ENABLE_BANKING_APP_ID: ${ENABLE_BANKING_APP_ID:-}
-  ENABLE_BANKING_PRIVATE_KEY_FILE: ${ENABLE_BANKING_PRIVATE_KEY_FILE:-/app/secrets/enable_banking_private.pem}
+  ENABLE_BANKING_PRIVATE_KEY_FILE: ${ENABLE_BANKING_PRIVATE_KEY_FILE:-/run/secrets/enable_banking_private.pem}
   ENABLE_BANKING_API_URL: ${ENABLE_BANKING_API_URL:-https://api.enablebanking.com}
   ENABLE_BANKING_OAUTH_REDIRECT_URI: ${ENABLE_BANKING_OAUTH_REDIRECT_URI:-}
   SIMPLEFIN_ENABLED: ${SIMPLEFIN_ENABLED:-false}
@@ -61,7 +75,6 @@ x-backend-env: &backend-env
   OIDC_PROVIDER_NAME: ${OIDC_PROVIDER_NAME:-OIDC}
   OIDC_DISCOVERY_URL: ${OIDC_DISCOVERY_URL:-}
   OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
-  OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
   OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI:-}
   OIDC_SCOPES: ${OIDC_SCOPES:-openid email profile}
   OIDC_AUTO_REGISTER: ${OIDC_AUTO_REGISTER:-true}
@@ -72,39 +85,50 @@ x-backend-env: &backend-env
   OIDC_ADMIN_ROLES: ${OIDC_ADMIN_ROLES:-}
   OIDC_WORKSPACE_ROLE_MAP: ${OIDC_WORKSPACE_ROLE_MAP:-}
   LOCAL_AUTH_ENABLED: ${LOCAL_AUTH_ENABLED:-true}
-  OPENEXCHANGERATES_APP_ID: ${OPENEXCHANGERATES_APP_ID:?OPENEXCHANGERATES_APP_ID is required for truthful multi-currency totals}
-  FX_SYNC_MODE: ${FX_SYNC_MODE:-on_demand}
+  FX_SYNC_MODE: ${FX_SYNC_MODE:-scheduled}
   FX_ALLOW_UNSAFE_1TO1_FALLBACK: "false"
   REQUIRE_FX_PROVIDER: "true"
   TESOURO_DIRETO_ENABLED: ${TESOURO_DIRETO_ENABLED:-true}
   TRUSTED_PROXY_HOPS: ${TRUSTED_PROXY_HOPS:-1}
-  REDIS_URL: redis://redis:6379/0
+  # REDIS_URL is secret-file delivered as /run/secrets/redis_url.
+  REDIS_EXTERNAL_REQUIRED: ${REDIS_EXTERNAL_REQUIRED:-true}
+  REDIS_TLS_REQUIRED: ${REDIS_TLS_REQUIRED:-true}
+  REDIS_AUTH_REQUIRED: ${REDIS_AUTH_REQUIRED:-true}
+  REDIS_SSL_CA_FILE: ${REDIS_SSL_CA_FILE:-}
+  REDIS_MAX_CONNECTIONS: ${REDIS_MAX_CONNECTIONS:-50}
+  REDIS_SOCKET_CONNECT_TIMEOUT_SECONDS: ${REDIS_SOCKET_CONNECT_TIMEOUT_SECONDS:-5}
+  REDIS_SOCKET_TIMEOUT_SECONDS: ${REDIS_SOCKET_TIMEOUT_SECONDS:-5}
+  REDIS_HEALTH_CHECK_INTERVAL_SECONDS: ${REDIS_HEALTH_CHECK_INTERVAL_SECONDS:-30}
+  CELERY_RESULT_EXPIRES_SECONDS: ${CELERY_RESULT_EXPIRES_SECONDS:-86400}
+  CELERY_VISIBILITY_TIMEOUT_SECONDS: ${CELERY_VISIBILITY_TIMEOUT_SECONDS:-3600}
+  CELERY_WORKER_PREFETCH_MULTIPLIER: ${CELERY_WORKER_PREFETCH_MULTIPLIER:-1}
   BANK_SYNC_LOCK_TTL_SECONDS: ${BANK_SYNC_LOCK_TTL_SECONDS:-300}
-  STORAGE_PROVIDER: ${STORAGE_PROVIDER:-local}
+  # Roadmap #16: production attachment bytes live in private Cloudflare R2.
+  # Access/secret keys are file-delivered through /run/secrets.
+  STORAGE_PROVIDER: ${STORAGE_PROVIDER:-s3}
   STORAGE_LOCAL_PATH: /app/data/attachments
-  REQUIRE_OBJECT_STORAGE: ${REQUIRE_OBJECT_STORAGE:-false}
-  STORAGE_S3_BUCKET: ${STORAGE_S3_BUCKET:-}
-  STORAGE_S3_REGION: ${STORAGE_S3_REGION:-}
-  STORAGE_S3_ACCESS_KEY: ${STORAGE_S3_ACCESS_KEY:-}
-  STORAGE_S3_SECRET_KEY: ${STORAGE_S3_SECRET_KEY:-}
-  STORAGE_S3_ENDPOINT_URL: ${STORAGE_S3_ENDPOINT_URL:-}
+  REQUIRE_OBJECT_STORAGE: ${REQUIRE_OBJECT_STORAGE:-true}
+  STORAGE_S3_VENDOR: ${STORAGE_S3_VENDOR:-cloudflare_r2}
+  STORAGE_S3_BUCKET: ${STORAGE_S3_BUCKET:?STORAGE_S3_BUCKET must name the private production bucket}
+  STORAGE_S3_REGION: ${STORAGE_S3_REGION:-auto}
+  STORAGE_S3_ENDPOINT_URL: ${STORAGE_S3_ENDPOINT_URL:?STORAGE_S3_ENDPOINT_URL must be the private S3 API origin}
+  STORAGE_S3_PREFIX: ${STORAGE_S3_PREFIX:-fincopilot-prod}
+  STORAGE_S3_REQUEST_TIMEOUT_SECONDS: ${STORAGE_S3_REQUEST_TIMEOUT_SECONDS:-30}
+  STORAGE_S3_PRESIGN_TTL_SECONDS: ${STORAGE_S3_PRESIGN_TTL_SECONDS:-300}
   AGENTS_EXTERNAL_MCP_URL: ${AGENTS_EXTERNAL_MCP_URL:-}
   AGENTS_KNOWLEDGE_STORAGE_PATH: /app/data/agent_knowledge
   AGENTS_ENABLED: ${AGENTS_ENABLED:-false}
   AGENTS_BUILTIN_MCP_URL: ${AGENTS_BUILTIN_MCP_URL:-http://mcp-server:8765/mcp}
   AGENTS_EXTRA_MCP_SERVERS: ${AGENTS_EXTRA_MCP_SERVERS:-}
-  AGENTS_MCP_JWT_SECRET: ${AGENTS_MCP_JWT_SECRET:?AGENTS_MCP_JWT_SECRET must be set even when agents are currently disabled}
   AGENTS_MCP_EXTERNAL_TTL_DAYS: ${AGENTS_MCP_EXTERNAL_TTL_DAYS:-90}
   AGENTS_CORE_COPILOT_DAILY_MESSAGES: ${AGENTS_CORE_COPILOT_DAILY_MESSAGES:-50}
   AGENTS_CORE_COPILOT_MAX_OUTPUT_TOKENS: ${AGENTS_CORE_COPILOT_MAX_OUTPUT_TOKENS:-1200}
   AGENTS_DEFAULT_PROVIDER: ${AGENTS_DEFAULT_PROVIDER:-ollama}
   AGENTS_DEFAULT_MODEL: ${AGENTS_DEFAULT_MODEL:-}
   AGENTS_OLLAMA_BASE_URL: ${AGENTS_OLLAMA_BASE_URL:-http://ollama:11434}
-  AGENTS_OPENAI_API_KEY: ${AGENTS_OPENAI_API_KEY:-}
-  AGENTS_ANTHROPIC_API_KEY: ${AGENTS_ANTHROPIC_API_KEY:-}
   AGENTS_OPENAI_COMPAT_BASE_URL: ${AGENTS_OPENAI_COMPAT_BASE_URL:-}
-  AGENTS_OPENAI_COMPAT_API_KEY: ${AGENTS_OPENAI_COMPAT_API_KEY:-}
   AGENTS_EMBEDDING_PROVIDER: ${AGENTS_EMBEDDING_PROVIDER:-native}
+  AGENTS_EMBEDDING_OPENAI_BASE_URL: ${AGENTS_EMBEDDING_OPENAI_BASE_URL:-https://api.openai.com/v1}
   AGENTS_EMBEDDING_MODEL: ${AGENTS_EMBEDDING_MODEL:-sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2}
 
 x-backend-base: &backend-base
@@ -112,33 +136,40 @@ x-backend-base: &backend-base
   environment: *backend-env
   extra_hosts:
     - "host.docker.internal:host-gateway"
-  depends_on:
-    db: { condition: service_healthy }
-    redis: { condition: service_healthy }
   volumes:
-    - ./secrets:/app/secrets:ro
-    - attachments:/app/data/attachments
+    - ${FINCOPILOT_SECRETS_DIR:?FINCOPILOT_SECRETS_DIR must point to a host-only secret directory}:/run/secrets:ro
     - agent_knowledge:/app/data/agent_knowledge
     - agent_embedding_models:/app/data/embedding_models
   restart: unless-stopped
 
 services:
   redis:
+    # Explicit local/self-hosted fallback only. The production default is an
+    # external secret-managed rediss:// target and does not start this service.
+    profiles: ["bundled-redis"]
     image: docker.io/library/redis:8-alpine
     restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
       timeout: 3s
-      retries: 5
+      retries: 12
 
   db:
+    # Explicit fallback only. Production defaults to an external managed
+    # PostgreSQL target supplied by DATABASE_URL.
+    profiles: ["bundled-db"]
     image: ${DB_IMAGE:-docker.io/pgvector/pgvector:pg16}
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set for production}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
       POSTGRES_DB: ${POSTGRES_DB:-fincopilot}
+    secrets:
+      - postgres_password
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -149,7 +180,12 @@ services:
 
   backend:
     <<: *backend-base
-    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    command: >-
+      sh -c "alembic upgrade head &&
+      python -m scripts.verify_production_postgres &&
+      python -m scripts.verify_production_redis --redis-only &&
+      python -m scripts.verify_production_object_storage &&
+      uvicorn app.main:app --host 0.0.0.0 --port 8000"
     # Loopback-only diagnostics. Public traffic must reach the backend through
     # the bundled frontend/reverse proxy so trusted-proxy rate limiting cannot
     # be bypassed with spoofed X-Forwarded-For headers.
@@ -158,8 +194,10 @@ services:
 
   frontend:
     image: ghcr.io/s2zxx0zxx/fincopilot-frontend:${FINCOPILOT_VERSION:?FINCOPILOT_VERSION must pin an immutable release tag}
+    # Host-local diagnostics only. Public traffic enters through the selected
+    # edge/reverse proxy (Cloudflare Tunnel in the zero-cost launch path).
     ports:
-      - "${FRONTEND_PORT:-3000}:8080"
+      - "127.0.0.1:${FRONTEND_PORT:-3000}:8080"
     environment:
       BACKEND_URL: http://backend:8000
       FRONTEND_URL: ${FRONTEND_URL:?FRONTEND_URL must be set}
@@ -168,13 +206,67 @@ services:
         condition: service_started
     restart: unless-stopped
 
+  cloudflared:
+    profiles: ["cloudflare-edge"]
+    image: cloudflare/cloudflared:${CLOUDFLARED_VERSION:-2026.9.3}
+    command:
+      - tunnel
+      - --no-autoupdate
+      - --loglevel
+      - info
+      - --metrics
+      - 0.0.0.0:2000
+      - run
+      - --token-file
+      - /run/secrets/cloudflare_tunnel_token
+    depends_on:
+      frontend:
+        condition: service_started
+    secrets:
+      - cloudflare_tunnel_token
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
   celery-worker:
     <<: *backend-base
-    command: celery -A app.worker worker --loglevel=info --concurrency=${CELERY_CONCURRENCY:-4}
+    command: >-
+      celery -A app.worker worker
+      --loglevel=info
+      --hostname=worker@%h
+      --concurrency=${CELERY_CONCURRENCY:-4}
+      --max-tasks-per-child=${CELERY_MAX_TASKS_PER_CHILD:-200}
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          celery -A app.worker inspect ping
+          -d "worker@$$HOSTNAME" --timeout=5 2>/dev/null | grep -q pong
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    stop_grace_period: 90s
 
   celery-beat:
     <<: *backend-base
-    command: celery -A app.worker beat --loglevel=info
+    command: >-
+      celery -A app.worker beat
+      --loglevel=info
+      --pidfile=/tmp/celerybeat.pid
+      --schedule=/tmp/celerybeat-schedule
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'test -s /tmp/celerybeat.pid && kill -0 $(cat /tmp/celerybeat.pid)'
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    stop_grace_period: 30s
 
   mcp-server:
     <<: *backend-base
@@ -183,8 +275,14 @@ services:
     ports:
       - "${AGENTS_MCP_EXTERNAL_HOST_PORT:-127.0.0.1:8765}:8765"
 
+secrets:
+  cloudflare_tunnel_token:
+    file: ${FINCOPILOT_SECRETS_DIR:?FINCOPILOT_SECRETS_DIR must point to a host-only secret directory}/cloudflare_tunnel_token
+  postgres_password:
+    file: ${FINCOPILOT_SECRETS_DIR:?FINCOPILOT_SECRETS_DIR must point to a host-only secret directory}/postgres_password
+
 volumes:
   pgdata:
-  attachments:
+  redis_data:
   agent_knowledge:
   agent_embedding_models:

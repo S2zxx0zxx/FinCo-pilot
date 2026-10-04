@@ -1,26 +1,23 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import { FinCoLoaderVisual } from '@/transitions/finco-route-loader'
-import { routeDestinationLabel } from '@/transitions/route-labels'
+import { FinCoNavigationPulse } from '@/transitions/finco-route-loader'
 
-const HOLD_MS = 360
-const EXIT_MS = 180
+const HOLD_MS = 180
+const EXIT_MS = 90
 
 /**
- * Native-feeling hand-off for real page/section navigation.
+ * Non-blocking route feedback.
  *
- * The route starts loading immediately; this overlay never delays the router or
- * network. It simply covers the visual hand-off for a short, consistent window
- * so users do not see layout flashes between large finance sections.
+ * The previous implementation covered the whole app for ~540 ms after every
+ * pathname change, which made fast navigation feel artificially slow. This
+ * version keeps the destination UI visible and only paints a slim pulse rail
+ * at the top edge for a brief hand-off.
  */
 export function FinCoNavigationTransition() {
   const location = useLocation()
   const mounted = useRef(false)
   const sequence = useRef(0)
-  const [state, setState] = useState<{
-    destination: string
-    leaving: boolean
-  } | null>(null)
+  const [leaving, setLeaving] = useState<boolean | null>(null)
 
   useEffect(() => {
     if (!mounted.current) {
@@ -29,22 +26,16 @@ export function FinCoNavigationTransition() {
     }
 
     const current = ++sequence.current
-    const destination = routeDestinationLabel(location.pathname)
-
-    // Schedule the visual hand-off after the router commit instead of forcing a
-    // synchronous state update from the effect itself.
     const showFrame = window.requestAnimationFrame(() => {
-      if (sequence.current === current) setState({ destination, leaving: false })
+      if (sequence.current === current) setLeaving(false)
     })
 
     const beginExit = window.setTimeout(() => {
-      if (sequence.current === current) {
-        setState((value) => value ? { ...value, leaving: true } : null)
-      }
+      if (sequence.current === current) setLeaving(true)
     }, HOLD_MS)
 
     const finish = window.setTimeout(() => {
-      if (sequence.current === current) setState(null)
+      if (sequence.current === current) setLeaving(null)
     }, HOLD_MS + EXIT_MS)
 
     return () => {
@@ -54,6 +45,6 @@ export function FinCoNavigationTransition() {
     }
   }, [location.pathname])
 
-  if (!state) return null
-  return <FinCoLoaderVisual destination={state.destination} leaving={state.leaving} />
+  if (leaving === null) return null
+  return <FinCoNavigationPulse leaving={leaving} />
 }

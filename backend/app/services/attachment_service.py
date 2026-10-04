@@ -1,3 +1,4 @@
+import logging
 import re
 import uuid
 
@@ -8,6 +9,10 @@ from app.core.config import get_settings
 from app.models.transaction import Transaction
 from app.models.transaction_attachment import TransactionAttachment
 from app.providers import get_storage_provider
+from app.services.storage_compensation import compensate_upload
+
+
+logger = logging.getLogger(__name__)
 
 
 def sanitize_filename(filename: str) -> str:
@@ -96,7 +101,14 @@ async def upload_attachment(
         size=stored.size,
     )
     session.add(attachment)
-    await session.commit()
+    try:
+        await session.commit()
+    except Exception:
+        await compensate_upload(
+            session, storage, stored.storage_key,
+            select(TransactionAttachment.id).where(TransactionAttachment.storage_key == stored.storage_key),
+        )
+        raise
     await session.refresh(attachment)
     return attachment
 
@@ -187,8 +199,8 @@ async def cleanup_attachment_files(
     for key in storage_keys:
         try:
             await storage.delete(key)
-        except Exception:
-            pass  # best-effort cleanup; file may already be gone
+        except Exception as exc:
+            logger.warning("Transaction attachment cleanup deferred (%s)", type(exc).__name__)
 
 
 async def delete_attachment(

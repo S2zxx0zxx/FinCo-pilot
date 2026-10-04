@@ -11,8 +11,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.auth import current_active_user, get_jwt_strategy
 from app.core.auth_policy import require_local_auth_enabled
 from app.core.database import get_async_session
+from app.core.config import get_settings
 from app.core.rate_limit import login_rate_limit
 from app.core.redis import get_redis
+from app.core.mfa_challenge import consume_login_challenge
 from app.models.user import User
 from app.schemas.two_factor import (
     TwoFactorDisableRequest,
@@ -52,11 +54,11 @@ def _verify_totp(secret: str, code: str) -> bool:
 
 
 def _parse_temp_token_payload(raw: str | bytes) -> dict[str, object] | None:
-    if isinstance(raw, bytes):
-        raw = raw.decode()
     try:
+        if isinstance(raw, bytes):
+            raw = raw.decode()
         payload = json.loads(raw)
-    except (TypeError, ValueError, json.JSONDecodeError):
+    except (TypeError, ValueError, UnicodeDecodeError):
         return None
     if not isinstance(payload, dict) or not isinstance(payload.get("user_id"), str):
         return None
@@ -98,14 +100,25 @@ async def enable_2fa(
     if not user.totp_secret:
         raise HTTPException(status_code=400, detail="Call /2fa/setup first")
 
+    if get_settings().deployment_environment.strip().lower() in {"staging", "production"}:
+        from fastapi_users.db import SQLAlchemyUserDatabase
+        from app.core.auth import UserManager
+        manager = UserManager(SQLAlchemyUserDatabase(session, User))
+        password = body.password.get_secret_value() if body.password else ""
+        valid, _ = manager.password_helper.verify_and_update(password, user.hashed_password)
+        if not valid:
+            raise HTTPException(400, "Current password required to enable MFA")
+
     if not _verify_totp(user.totp_secret, body.code):
         raise HTTPException(status_code=400, detail="Invalid 2FA code")
 
     user.is_2fa_enabled = True
     codes = _new_recovery_codes(user)
+    user.auth_epoch = str(uuid.uuid4())
+    token = await get_jwt_strategy().write_token(user)
     session.add(user)
     await session.commit()
-    return {"detail": "2FA enabled", "recovery_codes": codes}
+    return {"detail": "2FA enabled", "recovery_codes": codes, "access_token": token, "token_type": "bearer"}
 
 
 @router.post("/2fa/disable", dependencies=[Depends(login_rate_limit)])
@@ -132,9 +145,11 @@ async def disable_2fa(
     user.totp_secret = None
     user.is_2fa_enabled = False
     user.recovery_code_hashes = []
+    user.auth_epoch = str(uuid.uuid4())
+    token = await get_jwt_strategy().write_token(user)
     session.add(user)
     await session.commit()
-    return {"detail": "2FA disabled"}
+    return {"detail": "2FA disabled", "access_token": token, "token_type": "bearer"}
 
 
 @router.post("/2fa/verify", dependencies=[Depends(login_rate_limit)])
@@ -155,7 +170,11 @@ async def verify_2fa(
         raise HTTPException(status_code=401, detail="Invalid token")
 
     # Load user
-    result = await session.execute(select(User).where(User.id == uuid.UUID(str(payload["user_id"]))).with_for_update())
+    try:
+        user_id = uuid.UUID(str(payload["user_id"]))
+    except ValueError:
+        raise HTTPException(401, "Invalid token") from None
+    result = await session.execute(select(User).where(User.id == user_id).with_for_update().execution_options(populate_existing=True))
     user = result.scalar_one_or_none()
     if not user or not user.is_active or not (user.is_2fa_enabled and user.totp_secret):
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -168,16 +187,26 @@ async def verify_2fa(
     if len(body.code) == 20:
         if not _consume_recovery_code(user, body.code):
             raise HTTPException(400, "Invalid 2FA code")
-        await session.commit()
     elif not _verify_totp(user.totp_secret, body.code):
         raise HTTPException(status_code=400, detail="Invalid 2FA code")
 
-    # Delete temp token
-    await r.delete(redis_key)
+    if len(body.code) != 20:
+        # Retain a digest for longer than the full +/-1 accepted time window.
+        # No OTP or seed is placed in the Redis key. Distinct login challenges
+        # cannot reuse a successful code across replicas.
+        digest = hashlib.sha256(f"{user.id}:{user.totp_secret}:{body.code}".encode()).hexdigest()
+        try:
+            reserved = await r.set(f"totp_used:{user.id}:{digest}", "1", nx=True, ex=120)
+        except Exception:
+            raise HTTPException(503, "Authentication service unavailable") from None
+        if reserved is not True:
+            raise HTTPException(400, "Authenticator code already used; wait for a new code")
+    await consume_login_challenge(r, body.temp_token, user, "totp")
 
     # Generate JWT
     strategy = get_jwt_strategy()
     token = await strategy.write_token(user)
+    await session.commit()
     return {"access_token": token, "token_type": "bearer"}
 
 
@@ -195,5 +224,7 @@ async def regenerate_recovery_codes(
     if not valid or not user.is_2fa_enabled or not user.totp_secret or not _verify_totp(user.totp_secret, body.code):
         raise HTTPException(400, "Password and current authenticator code required")
     codes = _new_recovery_codes(user)
+    user.auth_epoch = str(uuid.uuid4())
+    token = await get_jwt_strategy().write_token(user)
     await session.commit()
-    return {"recovery_codes": codes}
+    return {"recovery_codes": codes, "access_token": token, "token_type": "bearer"}

@@ -4,6 +4,7 @@ import hashlib
 import hmac
 import uuid
 from typing import Optional
+from fastapi import HTTPException
 
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -31,6 +32,7 @@ def _core_signature(
     workspace_id: uuid.UUID,
     user_id: uuid.UUID,
     version: int,
+    signing_key: str | None = None,
 ) -> str:
     """Server-authenticate the JSON marker without adding a schema migration.
 
@@ -38,7 +40,9 @@ def _core_signature(
     are not a safe privilege boundary. Bind the system marker to stable row
     identifiers with the application's server secret.
     """
-    secret = get_settings().secret_key.get_secret_value().encode("utf-8")
+    settings = get_settings()
+    secret = (signing_key or settings.core_copilot_signing_key.get_secret_value().strip()
+              or settings.secret_key.get_secret_value()).encode("utf-8")
     payload = (
         f"finco-core-copilot:{version}:{agent_id}:{workspace_id}:{user_id}"
     ).encode("utf-8")
@@ -56,18 +60,28 @@ def is_core_copilot(agent: Agent) -> bool:
     signature = extra.get("server_signature")
     if not isinstance(signature, str) or not signature:
         return False
-    expected = _core_signature(
-        agent_id=agent.id,
-        workspace_id=agent.workspace_id,
-        user_id=agent.user_id,
-        version=version,
-    )
-    return hmac.compare_digest(signature, expected)
+    settings = get_settings()
+    keys = (settings.core_copilot_signing_key.get_secret_value().strip()
+            or settings.secret_key.get_secret_value(),
+            *settings.legacy_keys_for("copilot"))
+    return any(hmac.compare_digest(signature, _core_signature(
+        agent_id=agent.id, workspace_id=agent.workspace_id,
+        user_id=agent.user_id, version=version, signing_key=key,
+    )) for key in keys if key)
+
+
+def has_protected_copilot_marker(agent: Agent) -> bool:
+    """A signed system row must never become a shared editable custom agent."""
+    extra = agent.extra if isinstance(agent.extra, dict) else {}
+    return (extra.get("kind") == CORE_COPILOT_KIND
+            and extra.get("system_managed") is True
+            and bool(extra.get("server_signature")))
 
 
 def can_access_agent(agent: Agent, user_id: uuid.UUID) -> bool:
     """Workspace agents are shared; the system core copilot is per-user."""
-    return not is_core_copilot(agent) or agent.user_id == user_id
+    return (not has_protected_copilot_marker(agent)
+            or (is_core_copilot(agent) and agent.user_id == user_id))
 
 
 async def ensure_core_copilot(
@@ -96,8 +110,16 @@ async def ensure_core_copilot(
     )).scalars().all())
     for row in rows:
         if not is_core_copilot(row):
+            if has_protected_copilot_marker(row):
+                raise HTTPException(status_code=503, detail="Copilot is temporarily unavailable. Contact support.")
             continue
         extra = row.extra if isinstance(row.extra, dict) else {}
+        current_signature = _core_signature(agent_id=row.id, workspace_id=row.workspace_id,
+                                            user_id=row.user_id, version=int(extra.get("version") or 0))
+        if extra.get("server_signature") != current_signature:
+            row.extra = {**extra, "server_signature": current_signature}
+            await session.commit()
+            extra = row.extra
         if int(extra.get("version") or 0) < CORE_COPILOT_VERSION:
             row.name = CORE_COPILOT_NAME
             row.description = "Your context-aware FinCo-Pilot assistant"
@@ -175,7 +197,7 @@ async def list_agents(
     rows = [
         row
         for row in (await session.execute(q)).scalars().all()
-        if not is_core_copilot(row)
+        if not has_protected_copilot_marker(row)
     ]
     # System-managed core copilots stay out of advanced-agent management.
     # One scalar query per (conv, kb) so the agents list page can show
@@ -259,6 +281,8 @@ async def update_agent(
     agent = await get_agent(session, agent_id, workspace_id)
     if agent is None:
         return None
+    if has_protected_copilot_marker(agent):
+        raise ValueError("System Copilot cannot be modified through custom-agent operations")
     payload = data.model_dump(exclude_unset=True)
     # If turning this agent into the default, clear the flag on every
     # other agent in the same workspace first — the partial unique
@@ -294,7 +318,7 @@ async def get_default_agent(
         )
     )).scalars().all())
     explicit = next(
-        (row for row in explicit_rows if not is_core_copilot(row)),
+        (row for row in explicit_rows if not has_protected_copilot_marker(row)),
         None,
     )
     if explicit is not None:
@@ -304,7 +328,7 @@ async def get_default_agent(
         .where(Agent.workspace_id == workspace_id, Agent.is_archived.is_(False))
         .order_by(Agent.created_at.desc())
     )).scalars().all())
-    return next((row for row in rows if not is_core_copilot(row)), None)
+    return next((row for row in rows if not has_protected_copilot_marker(row)), None)
 
 
 async def delete_agent(
@@ -313,6 +337,8 @@ async def delete_agent(
     agent = await get_agent(session, agent_id, workspace_id)
     if agent is None:
         return False
+    if has_protected_copilot_marker(agent):
+        raise ValueError("System Copilot cannot be deleted through custom-agent operations")
     await session.delete(agent)
     await session.commit()
     return True

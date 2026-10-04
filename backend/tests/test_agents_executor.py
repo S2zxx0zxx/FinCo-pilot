@@ -10,12 +10,14 @@ Pattern:
   - We patch `_provider_for` and pass our fake MCP into AgentExecutor.
 """
 import uuid
+from contextlib import contextmanager
 from typing import AsyncIterator
 from unittest.mock import patch
 
 import pytest
 from sqlalchemy import select
 
+from app.agents.config import get_agent_settings
 from app.agents.mcp.client import MCPRegistry, ToolHandle
 from app.agents.models.agent import Agent
 from app.agents.models.conversation import Conversation, Message
@@ -30,6 +32,22 @@ from app.agents.runtime.executor import AgentExecutor, ExecutorEvent
 
 
 pytestmark = pytest.mark.asyncio
+
+
+@contextmanager
+def _agent_env(values: dict[str, str]):
+    """Patch AGENTS_* env values without leaking the cached settings snapshot.
+
+    AgentSettings is intentionally cached in production. Tests that change the
+    process environment must invalidate that cache before and after the scoped
+    override so one test cannot determine another test's provider/model config.
+    """
+    with patch.dict("os.environ", values, clear=False):
+        get_agent_settings.cache_clear()
+        try:
+            yield
+        finally:
+            get_agent_settings.cache_clear()
 
 
 # --- Fakes -----------------------------------------------------------------
@@ -274,11 +292,7 @@ async def test_core_copilot_redacts_operator_provider_error_detail(
             return []
 
     executor = AgentExecutor(mcp=_FakeMCP(tools=[]))
-    with _patch_provider(_BoomProvider()), patch.dict(
-        "os.environ",
-        {"AGENTS_DEFAULT_MODEL": "core-model"},
-        clear=False,
-    ):
+    with _patch_provider(_BoomProvider()), _agent_env({"AGENTS_DEFAULT_MODEL": "core-model"}):
         events = await _drain(
             executor,
             session=session,
@@ -317,7 +331,7 @@ async def test_no_model_configured_yields_config_error(session, test_user, test_
     executor = AgentExecutor(mcp=_FakeMCP(tools=[]))
     # Provider doesn't matter here — should never be called.
     provider = _ScriptedProvider([])
-    with _patch_provider(provider), patch.dict("os.environ", {"AGENTS_DEFAULT_MODEL": ""}, clear=False):
+    with _patch_provider(provider), _agent_env({"AGENTS_DEFAULT_MODEL": ""}):
         events = await _drain(
             executor,
             session=session,
@@ -644,11 +658,7 @@ async def test_core_copilot_exposes_only_explicit_reads_and_proposals(
         ChatChunk(type="finish", finish_reason="stop"),
     ]])
     executor = AgentExecutor(mcp=fake_mcp)
-    with _patch_provider(provider), patch.dict(
-        "os.environ",
-        {"AGENTS_DEFAULT_MODEL": "core-model"},
-        clear=False,
-    ):
+    with _patch_provider(provider), _agent_env({"AGENTS_DEFAULT_MODEL": "core-model"}):
         await _drain(
             executor,
             session=session,

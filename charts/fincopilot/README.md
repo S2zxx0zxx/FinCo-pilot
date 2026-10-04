@@ -45,14 +45,52 @@ For a full list of available environment variables and API keys, please refer to
 
 ### Secrets Management (Production)
 
-For production deployments, we highly recommend managing your secrets securely by passing an existing Kubernetes `Secret` rather than putting plain text keys in your `values.yaml`:
+Production is fail-closed: set `config.deploymentEnvironment=production` **and**
+reference an operator-managed Kubernetes Secret. The chart will refuse to render
+production while `global.existingSecret` is empty.
 
 ```yaml
 global:
-  existingSecret: "my-fincopilot-secrets"
+  existingSecret: "fincopilot-production-secrets"
+config:
+  deploymentEnvironment: "production"
 ```
 
-The secret must contain the corresponding keys (e.g., `secretKey`, `databaseUrl`, `agentsOpenaiApiKey`).
+Because workloads consume the Secret with `envFrom`, an externally-created
+Secret uses the actual uppercase application environment names, for example
+`SECRET_KEY`, `CREDENTIAL_ENCRYPTION_KEY`, `CORE_COPILOT_SIGNING_KEY`,
+`LEGACY_DATA_KEYS` (during migration), `DATABASE_URL`, `SMTP_PASSWORD`,
+`AGENTS_MCP_JWT_SECRET`, and `AGENTS_OPENAI_COMPAT_API_KEY`. Do **not** use
+the camelCase `values.yaml` field names in an external Secret.
+
+Do not commit a Secret manifest containing real values, a decrypted secrets
+file, or a `--set secret.*=<value>` command. Provision the Secret out-of-band
+from your deployment secret manager. On the cluster, enable Kubernetes Secret
+encryption at rest, restrict `get/list/watch` with least-privilege RBAC, and
+prefer a supported external secret store/CSI integration when available.
+
+The full inventory, file/key names, rotation effects and compromise procedure
+are in `docs/trust/FINCO_PRODUCTION_SECRET_MANAGEMENT_V1.md`.
+
+### Production PostgreSQL
+
+Production deliberately does not use the chart's bundled PostgreSQL. Configure:
+
+```yaml
+global:
+  existingSecret: fincopilot-production-secrets
+config:
+  deploymentEnvironment: production
+  databaseExternalRequired: "true"
+  dbSslMode: "verify-full"
+postgresql:
+  enabled: false
+```
+
+The existing Secret must contain `DATABASE_URL`. Use PostgreSQL 15+ with
+pgvector available. The complete pooling, TLS, migration and safe acceptance
+contract is documented in
+`docs/trust/FINCO_PRODUCTION_POSTGRESQL_V1.md`.
 
 ## Uninstalling the Chart
 
@@ -63,3 +101,47 @@ helm uninstall fincopilot
 ```
 
 This command removes all the Kubernetes components associated with the chart and deletes the release. Note that Persistent Volume Claims (PVCs) created by the chart might not be deleted automatically to prevent accidental data loss.
+
+
+### Production Redis
+
+The bundled Redis StatefulSet is development-only. Production rendering requires
+`redis.enabled=false`, `config.redisExternalRequired=true`,
+`config.redisTlsRequired=true` and `config.redisAuthRequired=true`.
+Place the authenticated `rediss://` value in the operator-managed Secret under
+the key `REDIS_URL`; do not put it in `values.yaml`.
+
+Celery worker readiness/liveness probes use the real broker. Beat is a
+single-replica `Recreate` deployment with a PID probe so rollouts do not run
+two schedulers at once.
+
+### Revision startup gate
+
+Backend, worker, Beat and MCP pods run `scripts/prepare_release.py` in an init
+container before starting. Production requires schema and provider acceptance,
+plus a data-key migration dry run. API readiness uses `/api/health/ready`.
+The migration hook remains an idempotent post-install/upgrade confirmation;
+`helm --wait` no longer allows traffic before migrations. Existing installations
+must follow [the data-key rollout runbook](../../docs/trust/FINCO_REVISION_1_16_V1.md)
+and include their previous data keys in the externally managed Secret.
+
+
+### Production SMTP (#17)
+
+Local-auth production requires `config.emailDeliveryRequired=true`, verified TLS via
+`config.smtpUseSsl=true` (with `smtpStarttls=false`) or mandatory STARTTLS, actual
+`config.smtpHost`, `smtpPort`, `smtpUsername`, and a verified `smtpFromEmail`.
+Put `SMTP_PASSWORD` in `global.existingSecret`; never commit production Secret values.
+`config.smtpTimeoutSeconds` defaults to 10; `smtpMaxConcurrentSends` defaults to 4 per process.
+An optional `smtpSslCaFile` needs an operator-provided read-only mount. Follow
+`docs/trust/FINCO_PRODUCTION_SMTP_V1.md` for the no-send probe and inbox acceptance.
+
+
+### Roadmap #18 production FX
+
+Set `config.requireFxProvider=true`, `config.fxSyncMode=scheduled` and
+`config.fxAllowUnsafe1to1Fallback=false`. Production rendering rejects missing
+provider enforcement, fabricated-rate fallback and on-demand mode. Inject
+`OPENEXCHANGERATES_APP_ID` through `global.existingSecret`, consistently into API,
+worker and Beat. See `docs/trust/FINCO_PRODUCTION_FX_V1.md` for provider research,
+shared quotas, historical import behavior and separate live acceptance gates.

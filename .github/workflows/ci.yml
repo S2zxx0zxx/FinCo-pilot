@@ -7,6 +7,30 @@ on:
     branches: [main]
 
 jobs:
+  secret-hygiene:
+    name: Secret Hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Reject tracked credentials and unsafe production injection
+        run: python3 backend/scripts/check_secret_hygiene.py
+
+      - name: Validate production Compose without resolving secrets
+        env:
+          FINCOPILOT_VERSION: ci
+          FRONTEND_URL: https://fincopilot.example
+          FINCOPILOT_SECRETS_DIR: /tmp/fincopilot-ci-secrets
+          STORAGE_S3_BUCKET: synthetic-ci-private
+          STORAGE_S3_ENDPOINT_URL: https://abc123.r2.cloudflarestorage.com
+        run: |
+          set -euo pipefail
+          mkdir -p "$FINCOPILOT_SECRETS_DIR"
+          printf '%s' 'synthetic-ci-password' > "$FINCOPILOT_SECRETS_DIR/postgres_password"
+          printf '%s' 'synthetic-ci-tunnel-token' > "$FINCOPILOT_SECRETS_DIR/cloudflare_tunnel_token"
+          docker compose -f docker-compose.prod.yml config --quiet
+          docker compose -f docker-compose.prod.yml --profile cloudflare-edge config --quiet
+          rm -rf "$FINCOPILOT_SECRETS_DIR"
+
   backend-tests:
     name: Backend Tests
     runs-on: ubuntu-latest
@@ -106,6 +130,9 @@ jobs:
         working-directory: backend
     env:
       DATABASE_URL: postgresql+asyncpg://finco_ci:synthetic-ci-password@localhost:5432/finco_ci
+      DATABASE_EXTERNAL_REQUIRED: "false"
+      DB_SSL_MODE: disable
+      DB_POOL_MODE: queue
       SECRET_KEY: synthetic-ci-only-signing-key-not-for-deployment
       DEPLOYMENT_ENVIRONMENT: development
       AGENTS_ENABLED: "false"
@@ -128,6 +155,18 @@ jobs:
           alembic downgrade 093
           alembic upgrade head
           alembic current
+      - name: Verify production PostgreSQL runtime contract
+        env:
+          FINCO_DISPOSABLE_DB_TEST: "yes"
+        run: python -m scripts.verify_production_postgres --ci
+      - name: Verify encrypted MFA seed migration on PostgreSQL
+        env:
+          FINCO_DISPOSABLE_DB_TEST: "yes"
+        run: python -m scripts.verify_mfa_secret_postgres
+      - name: Verify concurrent first-admin bootstrap on PostgreSQL
+        env:
+          FINCO_DISPOSABLE_DB_TEST: "yes"
+        run: python -m scripts.verify_admin_bootstrap_postgres
       - name: Verify concurrent founder pricing boundary on PostgreSQL
         env:
           FINCO_DISPOSABLE_DB_TEST: "yes"
@@ -138,6 +177,89 @@ jobs:
           AGENTS_MCP_JWT_SECRET: synthetic-ci-only-mcp-signing-key-not-for-deployment
           FINCO_DISPOSABLE_DB_TEST: "yes"
         run: python -m scripts.verify_mcp_approval_postgres
+
+  redis-worker-smoke:
+    name: Redis + Worker Smoke
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 12
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      REDIS_URL: redis://localhost:6379/0
+      REDIS_EXTERNAL_REQUIRED: "false"
+      REDIS_TLS_REQUIRED: "false"
+      REDIS_AUTH_REQUIRED: "false"
+      REDIS_MAX_CONNECTIONS: "10"
+      REDIS_SOCKET_CONNECT_TIMEOUT_SECONDS: "3"
+      REDIS_SOCKET_TIMEOUT_SECONDS: "3"
+      REDIS_HEALTH_CHECK_INTERVAL_SECONDS: "5"
+      CELERY_RESULT_EXPIRES_SECONDS: "600"
+      CELERY_VISIBILITY_TIMEOUT_SECONDS: "300"
+      CELERY_WORKER_PREFETCH_MULTIPLIER: "1"
+      SECRET_KEY: synthetic-ci-only-signing-key-not-for-deployment
+      DEPLOYMENT_ENVIRONMENT: development
+      AGENTS_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version-file: backend/.python-version
+      - name: Install locked runtime dependencies
+        run: |
+          pip install -q uv==0.12.10
+          uv export --frozen --no-emit-project -o /tmp/finco-runtime.txt
+          pip install --require-hashes -r /tmp/finco-runtime.txt
+          pip install --no-deps -e .
+      - name: Verify Redis runtime round-trip
+        run: python -m scripts.verify_production_redis --ci --redis-only
+      - name: Verify atomic FX provider request budget
+        run: python -m scripts.verify_fx_budget_redis
+      - name: Verify atomic mixed-factor login challenges on Redis
+        run: python -m scripts.verify_mfa_challenge_redis
+      - name: Verify live Celery worker broker/result round-trip
+        run: |
+          set -euo pipefail
+          celery -A app.worker worker             --loglevel=warning             --concurrency=1             --hostname='ci@%h'             --without-gossip --without-mingle --without-heartbeat             >/tmp/finco-worker.log 2>&1 &
+          worker_pid=$!
+          trap 'kill -TERM "$worker_pid" 2>/dev/null || true; wait "$worker_pid" 2>/dev/null || true' EXIT
+
+          # The acceptance task itself is the readiness proof: broker publish,
+          # worker execution and result-backend retrieval must all succeed.
+          sleep 5
+          if ! kill -0 "$worker_pid" 2>/dev/null; then
+            echo "Celery worker exited before acceptance" >&2
+            cat /tmp/finco-worker.log >&2
+            exit 1
+          fi
+          if ! python -m scripts.verify_production_redis --ci --require-worker; then
+            echo "Celery end-to-end acceptance failed" >&2
+            cat /tmp/finco-worker.log >&2
+            exit 1
+          fi
+      - name: Verify Celery Beat starts as a singleton scheduler
+        run: |
+          set -euo pipefail
+          rm -f /tmp/finco-beat.pid /tmp/finco-beat-schedule*
+          celery -A app.worker beat             --loglevel=warning             --pidfile=/tmp/finco-beat.pid             --schedule=/tmp/finco-beat-schedule             >/tmp/finco-beat.log 2>&1 &
+          beat_pid=$!
+          trap 'kill -TERM "$beat_pid" 2>/dev/null || true; wait "$beat_pid" 2>/dev/null || true' EXIT
+          for _ in $(seq 1 15); do
+            if [ -s /tmp/finco-beat.pid ] && kill -0 "$beat_pid" 2>/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Celery Beat did not become healthy" >&2
+          cat /tmp/finco-beat.log >&2
+          exit 1
 
   migration-chain:
     name: Migration Chain
@@ -218,6 +340,160 @@ jobs:
         if: steps.helm-changes.outputs.run_helm == 'true'
         run: helm lint charts/fincopilot
 
+      - name: Verify production requires an external Secret
+        if: steps.helm-changes.outputs.run_helm == 'true'
+        run: |
+          set -euo pipefail
+          if helm template fincopilot-prod charts/fincopilot \
+            --set config.deploymentEnvironment=production \
+            >/tmp/should-not-render.yaml 2>/tmp/production-secret-gate.log; then
+            echo "Production unexpectedly rendered without global.existingSecret" >&2
+            exit 1
+          fi
+          grep -q "global.existingSecret" /tmp/production-secret-gate.log
+
+      - name: Verify production rejects bundled PostgreSQL
+        if: steps.helm-changes.outputs.run_helm == 'true'
+        run: |
+          set -euo pipefail
+          if helm template fincopilot-prod charts/fincopilot \
+            --set config.deploymentEnvironment=production \
+            --set global.existingSecret=synthetic-ci-existing-secret \
+            >/tmp/should-not-render-bundled-db.yaml 2>/tmp/production-db-gate.log; then
+            echo "Production unexpectedly rendered with bundled PostgreSQL enabled" >&2
+            exit 1
+          fi
+          grep -q "external PostgreSQL" /tmp/production-db-gate.log
+
+      - name: Verify production rejects insecure external PostgreSQL
+        if: steps.helm-changes.outputs.run_helm == 'true'
+        run: |
+          set -euo pipefail
+          if helm template fincopilot-prod charts/fincopilot \
+            --set config.deploymentEnvironment=production \
+            --set global.existingSecret=synthetic-ci-existing-secret \
+            --set postgresql.enabled=false \
+            --set config.databaseExternalRequired=true \
+            --set config.dbSslMode=disable \
+            >/tmp/should-not-render-insecure-db.yaml 2>/tmp/production-db-tls-gate.log; then
+            echo "Production unexpectedly rendered with unencrypted PostgreSQL" >&2
+            exit 1
+          fi
+          grep -q "encrypted PostgreSQL transport" /tmp/production-db-tls-gate.log
+
+      - name: Verify production rejects bundled Redis
+        if: steps.helm-changes.outputs.run_helm == 'true'
+        run: |
+          set -euo pipefail
+          if helm template fincopilot-prod charts/fincopilot \
+            --set config.deploymentEnvironment=production \
+            --set global.existingSecret=synthetic-ci-existing-secret \
+            --set postgresql.enabled=false \
+            --set config.databaseExternalRequired=true \
+            --set config.dbSslMode=verify-full \
+            >/tmp/should-not-render-bundled-redis.yaml 2>/tmp/production-redis-gate.log; then
+            echo "Production unexpectedly rendered with bundled Redis enabled" >&2
+            exit 1
+          fi
+          grep -q "external Redis" /tmp/production-redis-gate.log
+
+      - name: Verify production rejects non-TLS Redis contract
+        if: steps.helm-changes.outputs.run_helm == 'true'
+        run: |
+          set -euo pipefail
+          if helm template fincopilot-prod charts/fincopilot \
+            --set config.deploymentEnvironment=production \
+            --set global.existingSecret=synthetic-ci-existing-secret \
+            --set postgresql.enabled=false \
+            --set config.databaseExternalRequired=true \
+            --set config.dbSslMode=verify-full \
+            --set redis.enabled=false \
+            --set config.redisExternalRequired=true \
+            --set config.redisTlsRequired=false \
+            --set config.redisAuthRequired=true \
+            >/tmp/should-not-render-insecure-redis.yaml 2>/tmp/production-redis-tls-gate.log; then
+            echo "Production unexpectedly rendered without Redis TLS" >&2
+            exit 1
+          fi
+          grep -q "redisTlsRequired=true" /tmp/production-redis-tls-gate.log
+
+      - name: Verify production rejects unauthenticated Redis contract
+        if: steps.helm-changes.outputs.run_helm == 'true'
+        run: |
+          set -euo pipefail
+          if helm template fincopilot-prod charts/fincopilot \
+            --set config.deploymentEnvironment=production \
+            --set global.existingSecret=synthetic-ci-existing-secret \
+            --set postgresql.enabled=false \
+            --set config.databaseExternalRequired=true \
+            --set config.dbSslMode=verify-full \
+            --set redis.enabled=false \
+            --set config.redisExternalRequired=true \
+            --set config.redisTlsRequired=true \
+            --set config.redisAuthRequired=false \
+            >/tmp/should-not-render-unauth-redis.yaml 2>/tmp/production-redis-auth-gate.log; then
+            echo "Production unexpectedly rendered without Redis authentication" >&2
+            exit 1
+          fi
+          grep -q "redisAuthRequired=true" /tmp/production-redis-auth-gate.log
+
+      - name: Verify production rejects local object storage
+        if: steps.helm-changes.outputs.run_helm == 'true'
+        run: |
+          set -euo pipefail
+          if helm template fincopilot-prod charts/fincopilot \
+            --set config.deploymentEnvironment=production \
+            --set global.existingSecret=synthetic-ci-existing-secret \
+            --set postgresql.enabled=false \
+            --set config.databaseExternalRequired=true \
+            --set config.dbSslMode=verify-full \
+            --set redis.enabled=false \
+            --set config.redisExternalRequired=true \
+            --set config.redisTlsRequired=true \
+            --set config.redisAuthRequired=true \
+            --set config.storageProvider=local \
+            >/tmp/should-not-render-local-storage.yaml 2>/tmp/production-storage-gate.log; then
+            echo "Production unexpectedly rendered with local object storage" >&2
+            exit 1
+          fi
+          grep -q "external S3-compatible object storage" /tmp/production-storage-gate.log
+
+      - name: Lint production contract with external Secret
+        if: steps.helm-changes.outputs.run_helm == 'true'
+        run: |
+          production_args=(
+            --set config.deploymentEnvironment=production
+            --set global.existingSecret=synthetic-ci-existing-secret
+            --set postgresql.enabled=false
+            --set config.databaseExternalRequired=true
+            --set config.dbSslMode=verify-full
+            --set redis.enabled=false
+            --set config.redisExternalRequired=true
+            --set config.redisTlsRequired=true
+            --set config.redisAuthRequired=true
+            --set config.storageProvider=s3
+            --set config.requireObjectStorage=true
+            --set config.storageS3Vendor=cloudflare_r2
+            --set config.storageS3Bucket=synthetic-ci-private
+            --set config.storageS3Region=auto
+            --set config.storageS3EndpointUrl=https://abc123.r2.cloudflarestorage.com
+            --set config.requireFxProvider=true
+            --set config.fxAllowUnsafe1to1Fallback=false
+            --set config.fxSyncMode=scheduled
+          )
+          helm lint charts/fincopilot "${production_args[@]}"
+          helm template finco charts/fincopilot "${production_args[@]}" >/tmp/finco-production-contract.yaml
+          grep -q 'FX_ALLOW_UNSAFE_1TO1_FALLBACK: "false"' /tmp/finco-production-contract.yaml
+          grep -q 'REQUIRE_FX_PROVIDER: "true"' /tmp/finco-production-contract.yaml
+          grep -q 'FX_SYNC_MODE: "scheduled"' /tmp/finco-production-contract.yaml
+          for override in config.requireFxProvider=false config.fxAllowUnsafe1to1Fallback=true config.fxSyncMode=on_demand; do
+            if helm template finco charts/fincopilot "${production_args[@]}" --set "$override" >/tmp/finco-invalid-fx.yaml 2>/tmp/finco-fx-gate.log; then
+              echo "Production unexpectedly rendered with $override" >&2
+              exit 1
+            fi
+            grep -q "production requires ${override%=*}" /tmp/finco-fx-gate.log
+          done
+
       - name: Validate Helm Chart with Kubeconform
         if: steps.helm-changes.outputs.run_helm == 'true'
         run: |
@@ -225,3 +501,23 @@ jobs:
           sudo mv kubeconform /usr/local/bin/
 
           helm template fincopilot-test charts/fincopilot | kubeconform -summary -strict
+          helm template fincopilot-prod charts/fincopilot \
+            --set config.deploymentEnvironment=production \
+            --set global.existingSecret=synthetic-ci-existing-secret \
+            --set postgresql.enabled=false \
+            --set config.databaseExternalRequired=true \
+            --set config.dbSslMode=verify-full \
+            --set redis.enabled=false \
+            --set config.redisExternalRequired=true \
+            --set config.redisTlsRequired=true \
+            --set config.redisAuthRequired=true \
+            --set config.storageProvider=s3 \
+            --set config.requireObjectStorage=true \
+            --set config.storageS3Vendor=cloudflare_r2 \
+            --set config.storageS3Bucket=synthetic-ci-private \
+            --set config.storageS3Region=auto \
+            --set config.storageS3EndpointUrl=https://abc123.r2.cloudflarestorage.com \
+            --set config.requireFxProvider=true \
+            --set config.fxAllowUnsafe1to1Fallback=false \
+            --set config.fxSyncMode=scheduled \
+            | kubeconform -summary -strict

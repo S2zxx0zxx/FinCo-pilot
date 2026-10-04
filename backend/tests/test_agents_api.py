@@ -142,7 +142,7 @@ async def test_mcp_tokens_mint_returns_external_jwt(
 
     payload = jwt.decode(
         body["token"],
-        get_agent_settings().mcp_jwt_secret,
+        get_agent_settings().mcp_jwt_secret.get_secret_value(),
         algorithms=[JWT_ALGO],
         audience=JWT_AUDIENCE,
         issuer=JWT_ISSUER,

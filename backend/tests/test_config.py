@@ -184,15 +184,53 @@ def test_invalid_tax_display_mode_is_rejected(secrets: Path):
 def _production_settings_kwargs() -> dict:
     return {
         "deployment_environment": "production",
+        "credential_encryption_key": "synthetic-encryption-key-with-more-than-32-characters",
+        "core_copilot_signing_key": "synthetic-copilot-key-with-more-than-32-characters",
+        "database_external_required": True,
+        "db_ssl_mode": "require",
+        "redis_external_required": True,
+        "redis_tls_required": True,
+        "redis_auth_required": True,
+        "redis_url": "rediss://finco:synthetic@redis.example.test:6379/0",
         "secret_key": "synthetic-production-key-with-more-than-32-characters",
         "frontend_url": "https://app.example.test",
         "database_url": "postgresql+asyncpg://finco:synthetic@db.example.test:5432/finco",
         "setup_enabled": False,
+        "email_delivery_required": True,
+        "smtp_host": "smtp.example.test",
+        "smtp_from_email": "security@example.com",
+        "smtp_username": "synthetic-login",
+        "smtp_password": "synthetic-smtp-password",
         "fx_allow_unsafe_1to1_fallback": False,
         "trusted_proxy_hops": 1,
         "metrics_enabled": False,
         "billing_checkout_enabled": True,
+        "require_object_storage": True,
+        "storage_provider": "s3",
+        "storage_s3_vendor": "cloudflare_r2",
+        "storage_s3_bucket": "synthetic-private-bucket",
+        "storage_s3_region": "auto",
+        "storage_s3_access_key": "synthetic-access-key",
+        "storage_s3_secret_key": "synthetic-secret-key",
+        "storage_s3_endpoint_url": "https://abc123.r2.cloudflarestorage.com",
     }
+
+
+@pytest.mark.parametrize("override, expected", [
+    ({"database_external_required": False}, "DATABASE_EXTERNAL_REQUIRED"),
+    ({"db_ssl_mode": "prefer"}, "encrypted DB_SSL_MODE"),
+    ({"redis_external_required": False}, "external authenticated Redis"),
+    ({"redis_tls_required": False}, "external authenticated Redis"),
+    ({"redis_auth_required": False}, "external authenticated Redis"),
+    ({"credential_encryption_key": ""}, "independent CREDENTIAL_ENCRYPTION_KEY"),
+    ({"core_copilot_signing_key": "synthetic-production-key-with-more-than-32-characters"}, "independent CREDENTIAL_ENCRYPTION_KEY"),
+])
+def test_manual_production_configuration_cannot_bypass_release_security(secrets: Path, override, expected):
+    kwargs = _production_settings_kwargs()
+    kwargs.update(billing_checkout_enabled=False)
+    kwargs.update(override)
+    with pytest.raises(ValidationError, match=expected):
+        Settings(_secrets_dir=secrets, _env_file=None, **kwargs)
 
 
 def test_production_paid_checkout_refuses_unconfigured_tax_treatment(secrets: Path):
@@ -211,3 +249,82 @@ def test_production_paid_checkout_accepts_explicit_tax_display_contract(secrets:
         _secrets_dir=str(secrets),
     )
     assert settings.billing_tax_display_mode == "inclusive"
+
+
+
+def test_agent_secret_fields_read_from_prefixed_secret_files(secrets: Path, monkeypatch):
+    from app.agents.config import AgentSettings
+
+    write(secrets, "agents_mcp_jwt_secret", "m" * 40)
+    write(secrets, "agents_openai_compat_api_key", "operator-route-secret")
+    write(secrets, "agents_embedding_openai_api_key", "embedding-secret")
+
+    # Environment variables intentionally outrank file secrets. Remove the
+    # synthetic suite-wide MCP value so this test exercises the file source.
+    monkeypatch.delenv("AGENTS_MCP_JWT_SECRET", raising=False)
+    monkeypatch.delenv("AGENTS_OPENAI_COMPAT_API_KEY", raising=False)
+    monkeypatch.delenv("AGENTS_EMBEDDING_OPENAI_API_KEY", raising=False)
+    settings = AgentSettings(_env_file=None, _secrets_dir=str(secrets))
+
+    assert settings.mcp_jwt_secret.get_secret_value() == "m" * 40
+    assert settings.openai_compat_api_key.get_secret_value() == "operator-route-secret"
+    assert settings.embedding_openai_api_key.get_secret_value() == "embedding-secret"
+    assert "operator-route-secret" not in repr(settings)
+    assert "embedding-secret" not in repr(settings)
+
+
+def test_production_requires_object_storage_gate(secrets: Path):
+    kwargs = _production_settings_kwargs()
+    kwargs["require_object_storage"] = False
+    with pytest.raises(ValidationError, match="REQUIRE_OBJECT_STORAGE=true"):
+        Settings(
+            **kwargs,
+            billing_tax_display_mode="inclusive",
+            _secrets_dir=str(secrets),
+        )
+
+
+def test_production_requires_s3_provider(secrets: Path):
+    kwargs = _production_settings_kwargs()
+    kwargs["storage_provider"] = "local"
+    with pytest.raises(ValidationError, match="STORAGE_PROVIDER=s3"):
+        Settings(
+            **kwargs,
+            billing_tax_display_mode="inclusive",
+            _secrets_dir=str(secrets),
+        )
+
+
+def test_production_rejects_insecure_storage_endpoint(secrets: Path):
+    kwargs = _production_settings_kwargs()
+    kwargs["storage_s3_endpoint_url"] = "http://abc123.r2.cloudflarestorage.com"
+    with pytest.raises(ValidationError, match="must use https://"):
+        Settings(
+            **kwargs,
+            billing_tax_display_mode="inclusive",
+            _secrets_dir=str(secrets),
+        )
+
+
+@pytest.mark.parametrize('mode', ['disabled', '', 'schedule'])
+def test_invalid_fx_mode_rejected(mode):
+    with pytest.raises(ValidationError, match='FX_SYNC_MODE'):
+        Settings(fx_sync_mode=mode, _env_file=None)
+
+
+def test_required_production_fx_rejects_missing_app_id(secrets: Path):
+    kwargs = _production_settings_kwargs()
+    kwargs.update(require_fx_provider=True, openexchangerates_app_id='')
+    with pytest.raises(ValidationError, match='OPENEXCHANGERATES_APP_ID'):
+        Settings(**kwargs, _env_file=None, _secrets_dir=secrets)
+
+
+def test_supported_fx_currencies_normalized():
+    settings = Settings(supported_currencies='usd, INR,usd', _env_file=None)
+    assert settings.supported_currencies == 'USD,INR'
+
+
+@pytest.mark.parametrize('codes', ['', 'USD,,INR', 'USD,123', 'USD,EURO'])
+def test_invalid_supported_fx_currencies_rejected(codes):
+    with pytest.raises(ValidationError, match='SUPPORTED_CURRENCIES'):
+        Settings(supported_currencies=codes, _env_file=None)

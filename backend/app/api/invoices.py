@@ -516,7 +516,6 @@ async def upload_logo(
         )
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
-    await session.commit()
     await session.refresh(settings)
     return settings
 

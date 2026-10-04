@@ -43,3 +43,7 @@ Focused tests cover existing setup/wallet compatibility, seed failure rollback a
 - OWASP logging guidance: https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html
 
 Use explicit transaction ownership and database uniqueness rather than process-local locks. Avoid logging authentication secrets. Keep production identity and execution claims separate from implementation tests.
+
+## Post-bootstrap security acceptance
+
+Follow `FINCO_LIVE_ACCEPTANCE_HARDENING_V1.md` for migration 098, encrypted MFA seeds, bounded legacy conversion, one-use login challenges, factor-change session revocation and read-only final runtime gates. This does not claim that the live deployment has completed those steps.

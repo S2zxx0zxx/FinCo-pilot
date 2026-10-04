@@ -226,16 +226,17 @@ export const auth = {
     const { data } = await api.post('/auth/2fa/setup')
     return data
   },
-  enable2fa: async (code: string): Promise<{ recovery_codes: string[] }> => {
-    const { data } = await api.post('/auth/2fa/enable', { code })
+  enable2fa: async (code: string, password: string): Promise<{ recovery_codes: string[]; access_token: string }> => {
+    const { data } = await api.post('/auth/2fa/enable', { code, password })
     return data
   },
-  recoveryCodes: async (password: string, code: string): Promise<{ recovery_codes: string[] }> => {
+  recoveryCodes: async (password: string, code: string): Promise<{ recovery_codes: string[]; access_token: string }> => {
     const { data } = await api.post('/auth/2fa/recovery-codes', { password, code })
     return data
   },
-  disable2fa: async (password: string, code: string): Promise<void> => {
-    await api.post('/auth/2fa/disable', { password, code })
+  disable2fa: async (password: string, code: string): Promise<{ access_token: string }> => {
+    const { data } = await api.post('/auth/2fa/disable', { password, code })
+    return data
   },
   verify2fa: async (tempToken: string, code: string): Promise<{ access_token: string; token_type: string }> => {
     const { data } = await api.post('/auth/2fa/verify', { temp_token: tempToken, code })

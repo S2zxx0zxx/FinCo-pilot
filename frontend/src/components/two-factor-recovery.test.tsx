@@ -2,9 +2,10 @@ import { expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { TwoFactorSetup } from './two-factor-setup'
 
-const disable = vi.hoisted(() => vi.fn().mockResolvedValue({ detail: '2FA disabled' }))
+const rotated = vi.hoisted(() => vi.fn())
+const disable = vi.hoisted(() => vi.fn().mockResolvedValue({ detail: '2FA disabled', access_token: 'replacement-session' }))
 vi.mock('@/lib/api', () => ({ auth: { disable2fa: disable } }))
-vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ user: { is_2fa_enabled: true }, updateUser: vi.fn() }) }))
+vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ user: { is_2fa_enabled: true }, updateUser: vi.fn(), loginWithToken: rotated }) }))
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }))
 
 it('accepts a complete unused recovery code when replacing a lost authenticator', async () => {
@@ -16,4 +17,5 @@ it('accepts a complete unused recovery code when replacing a lost authenticator'
   expect(submit).toBeEnabled()
   fireEvent.click(submit)
   await waitFor(() => expect(disable).toHaveBeenCalledWith('My-password-123', code))
+  await waitFor(() => expect(rotated).toHaveBeenCalledWith('replacement-session'))
 })

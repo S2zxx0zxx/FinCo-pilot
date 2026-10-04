@@ -19,6 +19,7 @@ from app.agents.config import get_agent_settings
 from app.agents.models.agent import Agent
 from app.agents.models.knowledge import KnowledgeDoc
 from app.core.auth import UserManager, get_jwt_strategy
+from app.core.recovery_evidence import evaluate, initialise
 from fastapi_users.db import SQLAlchemyUserDatabase
 from app.core.config import get_settings
 from app.core.database_runtime import create_database_engine
@@ -221,6 +222,22 @@ async def main():
             assert (
                 report["status"] == "quarantined_restore_verified"
                 and report["automatic_release"] is False
+            )
+            case = root / "recovery-case"
+            initialise(
+                root / "recovery/restore-report.json",
+                case,
+                incident_id="ci-rehearsal",
+                app_commit=os.environ["GITHUB_SHA"],
+                incident_at=report["restore_started_at"],
+                exercise_kind="synthetic",
+            )
+            evidence = evaluate(case)
+            assert evidence["status"] == "incomplete" and len(evidence["missing_gates"]) == 10
+            assert evidence["automatic_release"] is False and evidence["rto_measured"] is False
+            assert report["restore_elapsed_seconds"] >= 0
+            print(
+                "PASS: recovery case binds actual restore report; ten missing gates block completion; no automatic promotion or RTO claim"
             )
             target_settings = settings.model_copy(
                 update={"database_url": target_url.render_as_string(hide_password=False)}

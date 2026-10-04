@@ -53,7 +53,7 @@ async def get_setup_status(session: AsyncSession = Depends(get_async_session)):
         has_users=count > 0,
         setup_available=bool(settings.setup_enabled and settings.local_auth_enabled and count == 0
                              and not await bootstrap_completed(session)
-                             and (settings.deployment_environment.lower() not in {"staging", "production"}
+                             and (settings.deployment_environment.strip().lower() not in {"staging", "production"}
                                   or len(settings.setup_token.get_secret_value().strip()) >= 32)),
         minimum_password_length=minimum_password_length(),
     )

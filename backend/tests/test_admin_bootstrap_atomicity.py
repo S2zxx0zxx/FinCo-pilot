@@ -100,3 +100,11 @@ def test_password_file_rejects_fifo_without_waiting(tmp_path):
     os.mkfifo(fifo, 0o600)
     with pytest.raises(ValueError):
         password_from_file(str(fifo))
+
+
+@pytest.mark.parametrize("environment", ["STAGING", " production ", "staging "])
+def test_protected_password_minimum_normalizes_environment(monkeypatch, environment):
+    from app.core.config import get_settings
+    from app.services.admin_bootstrap_service import minimum_password_length
+    monkeypatch.setattr(get_settings(), "deployment_environment", environment)
+    assert minimum_password_length() == 15

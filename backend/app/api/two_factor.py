@@ -100,7 +100,7 @@ async def enable_2fa(
     if not user.totp_secret:
         raise HTTPException(status_code=400, detail="Call /2fa/setup first")
 
-    if get_settings().deployment_environment in {"staging", "production"}:
+    if get_settings().deployment_environment.strip().lower() in {"staging", "production"}:
         from fastapi_users.db import SQLAlchemyUserDatabase
         from app.core.auth import UserManager
         manager = UserManager(SQLAlchemyUserDatabase(session, User))

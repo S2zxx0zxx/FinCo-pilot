@@ -38,7 +38,7 @@ class CreateAdminRequest(BaseModel):
 
 
 def minimum_password_length() -> int:
-    return 15 if get_settings().deployment_environment.lower() in {"staging", "production"} else 8
+    return 15 if get_settings().deployment_environment.strip().lower() in {"staging", "production"} else 8
 
 
 async def bootstrap_completed(session: AsyncSession) -> bool:

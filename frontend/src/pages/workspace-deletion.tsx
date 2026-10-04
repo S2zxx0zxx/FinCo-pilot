@@ -34,9 +34,9 @@ interface OperatorStatus extends Status {
 
 const copy = {
   en: {
-    title: 'Delete personal account', intro: 'Only private personal workspaces are removed. Shared records, payment evidence and an inactive pseudonymous reference may remain. Backups remain pending until their expiry is verified.',
+    members: 'Resolve collaborators explicitly before deletion', memberConfirm: 'Confirm member UUID to change or remove', remove: 'Remove member', promote: 'Make owner', demote: 'Make editor', workspace: 'Workspace', detach: 'Detach external manager', resolve: 'Confirm workspace UUID for governance action', archive: 'Archive workspace first', repair: 'Repair unresolved billing ownership (operator evidence required)', transfer: 'Transfer billing to requesting owner (current payer only)', title: 'Delete archived workspace', intro: 'Delete only the selected archived workspace after all collaborators, external management, billing ownership and holds are resolved. Your user account, global subscription and other workspaces remain. Backups remain pending until actual expiry is verified.',
     fresh: 'Sign in again with your full password and second factor, passkey, or OIDC authentication. Submit within five minutes.', login: 'Sign in again', oidc: 'Reauthenticate with OIDC',
-    preview: 'Private workspaces / preserved workspaces / required operator checks', request: 'Request deletion', confirmation: 'Type DELETE MY ACCOUNT to confirm', cancel: 'Cancel request',
+    preview: 'Private workspaces / preserved workspaces / required operator checks', request: 'Request deletion', confirmation: 'Type DELETE THIS WORKSPACE to confirm', cancel: 'Cancel request',
     saved: 'Save the request ID and secret receipt below before leaving. The secret is shown only once. Do not share it; it allows deletion status lookup after sign-out.',
     inventory: 'Protected cleanup inventory (operator only)',
     copy: 'Copy secret receipt', requests: 'Recent deletion requests',
@@ -45,9 +45,9 @@ const copy = {
     backup: 'Record verified backup expiry', cutoff: 'Earliest remaining recoverable-data timestamp (ISO 8601 with timezone)', requirement: 'Exact required check', load: 'Load request',
   },
   hi: {
-    title: 'व्यक्तिगत खाता हटाएँ', intro: 'केवल निजी व्यक्तिगत कार्यक्षेत्र हटाए जाएँगे। साझा रिकॉर्ड, भुगतान प्रमाण और निष्क्रिय छद्मनाम वाला संदर्भ रह सकते हैं। बैकअप की समाप्ति सत्यापित होने तक प्रक्रिया लंबित रहेगी।',
+    members: 'हटाने से पहले सहयोगियों का स्पष्ट समाधान करें', memberConfirm: 'बदलने या हटाने के लिए सदस्य UUID की पुष्टि', remove: 'सदस्य हटाएँ', promote: 'स्वामी बनाएँ', demote: 'संपादक बनाएँ', workspace: 'कार्यक्षेत्र', detach: 'बाहरी प्रबंधक अलग करें', resolve: 'कार्रवाई की पुष्टि के लिए कार्यक्षेत्र UUID', archive: 'पहले कार्यक्षेत्र संग्रहीत करें', repair: 'अस्पष्ट भुगतान स्वामित्व सुधारें (संचालक प्रमाण आवश्यक)', transfer: 'अनुरोधकर्ता को भुगतान स्वामित्व दें (केवल वर्तमान भुगतानकर्ता)', title: 'संग्रहीत कार्यक्षेत्र हटाएँ', intro: 'केवल चुना हुआ संग्रहीत कार्यक्षेत्र हटेगा। पहले सहयोगियों, बाहरी प्रबंधक, भुगतान स्वामित्व और रोक का समाधान करें। आपका खाता, वैश्विक सदस्यता और अन्य कार्यक्षेत्र सुरक्षित रहेंगे। बैकअप समाप्ति के वास्तविक प्रमाण तक प्रक्रिया लंबित रहेगी।',
     fresh: 'पासवर्ड और दूसरे कारक, पासकी या OIDC से फिर पूरा प्रमाणीकरण करें। पाँच मिनट के भीतर अनुरोध दें।', login: 'फिर साइन इन करें', oidc: 'OIDC से दोबारा प्रमाणीकरण',
-    preview: 'निजी कार्यक्षेत्र / सुरक्षित साझा कार्यक्षेत्र / आवश्यक संचालक जाँच', request: 'हटाने का अनुरोध दें', confirmation: 'पुष्टि के लिए DELETE MY ACCOUNT लिखें', cancel: 'अनुरोध रद्द करें',
+    preview: 'निजी कार्यक्षेत्र / सुरक्षित साझा कार्यक्षेत्र / आवश्यक संचालक जाँच', request: 'हटाने का अनुरोध दें', confirmation: 'पुष्टि के लिए DELETE THIS WORKSPACE लिखें', cancel: 'अनुरोध रद्द करें',
     saved: 'आगे बढ़ने से पहले अनुरोध पहचान और नीचे दी गई गुप्त रसीद सुरक्षित रखें। रसीद केवल एक बार दिखेगी। इसे साझा न करें; साइन आउट के बाद स्थिति देखने के लिए इसकी जरूरत होगी।',
     inventory: 'सुरक्षित सफ़ाई सूची (केवल संचालक)',
     copy: 'गुप्त रसीद कॉपी करें', requests: 'हाल के विलोपन अनुरोध',
@@ -57,10 +57,15 @@ const copy = {
   },
 }
 
-export default function AccountDeletionPage() {
+export default function WorkspaceDeletionPage() {
   const { user } = useAuth()
   const { i18n } = useTranslation()
   const c = i18n.language.startsWith('hi') ? copy.hi : copy.en
+  const [workspaces, setWorkspaces] = useState<Array<{ id: string; name: string; role: string; is_archived: boolean }>>([])
+  const [workspaceId, setWorkspaceId] = useState('')
+  const [members, setMembers] = useState<Array<{ user_id: string; email: string; role: string }>>([])
+  const [memberConfirmation, setMemberConfirmation] = useState('')
+  const [governanceConfirmation, setGovernanceConfirmation] = useState('')
   const [preview, setPreview] = useState<Preview | null>(null)
   const [status, setStatus] = useState<Status | null>(null)
   const [id, setId] = useState('')
@@ -78,14 +83,24 @@ export default function AccountDeletionPage() {
   useEffect(() => {
     let live = true
     if (user) {
-      if (user.is_superuser) api.get<Status[]>('/account-deletion/operator/requests').then(r => { if (live) setRequests(r.data) }).catch(() => { if (live) setError(true) })
+      if (user.is_superuser) api.get<Status[]>('/workspace-deletion/operator/requests').then(r => { if (live) setRequests(r.data) }).catch(() => { if (live) setError(true) })
       api.get<{ enabled: boolean }>('/auth/oidc/config').then(r => { if (live) setOidcEnabled(r.data.enabled === true) }).catch(() => {})
-      Promise.all([api.get<Preview>('/account-deletion/preview'), api.get<Status | null>('/account-deletion/mine')])
-        .then(([p, s]) => { if (live) { setPreview(p.data); setStatus(s.data); if (s.data) setId(s.data.id) } })
+      api.get<typeof workspaces>('/workspace-deletion/workspaces').then(r => { if (live) setWorkspaces(r.data) })
         .catch(() => { if (live) setError(true) })
     }
     return () => { live = false }
   }, [user])
+
+  useEffect(() => {
+    let live = true
+    setPreview(null); setStatus(null); setOperator(null); setId(''); setReceipt(''); setConfirmation(''); setMembers([]); setMemberConfirmation('')
+    if (user && workspaceId) Promise.all([
+      api.get<Preview>(`/workspace-deletion/preview/${encodeURIComponent(workspaceId)}`),
+      api.get<Status | null>(`/workspace-deletion/mine?workspace_id=${encodeURIComponent(workspaceId)}`),
+      api.get<typeof members>(`/workspaces/${encodeURIComponent(workspaceId)}/members`),
+    ]).then(([p, s, m]) => { if (live) { setPreview(p.data); setMembers(m.data); setStatus(s.data); if (s.data) setId(s.data.id) } }).catch(() => { if (live) setError(true) })
+    return () => { live = false }
+  }, [user, workspaceId])
 
   async function run(action: () => Promise<void>) {
     setBusy(true); setError(false)
@@ -93,20 +108,20 @@ export default function AccountDeletionPage() {
   }
   async function check() {
     // No application JWT, workspace selector, cookie or URL secret is sent.
-    const response = await fetch(`/api/account-deletion/${encodeURIComponent(id)}/status`, {
+    const response = await fetch(`/api/workspace-deletion/${encodeURIComponent(id)}/status`, {
       headers: { 'X-Deletion-Receipt': receipt }, credentials: 'omit', cache: 'no-store', redirect: 'error',
     })
     if (!response.ok) throw new Error('Status unavailable')
     setStatus(await response.json() as Status)
   }
   async function loadOperator(targetId = id) {
-    const response = await api.get<OperatorStatus>(`/account-deletion/operator/${encodeURIComponent(targetId)}`)
+    const response = await api.get<OperatorStatus>(`/workspace-deletion/operator/${encodeURIComponent(targetId)}`)
     setOperator(response.data); setStatus(response.data)
   }
   async function operate(action: string, body?: object) {
     if (!operator) throw new Error('Load the exact request first')
     const targetId = operator.id
-    await api.post(`/account-deletion/operator/${encodeURIComponent(targetId)}/${action}`, body)
+    await api.post(`/workspace-deletion/operator/${encodeURIComponent(targetId)}/${action}`, body)
     await loadOperator(targetId)
   }
   const validEvidence = /^[0-9a-f]{64}$/.test(evidence)
@@ -115,18 +130,53 @@ export default function AccountDeletionPage() {
     <p>{c.intro}</p>
     <p>{c.fresh}</p>
     <div className="flex gap-4"><Link className="underline" to="/login">{c.login}</Link>{oidcEnabled && <a className="underline" href="/api/auth/oidc/login?reauthenticate=true">{c.oidc}</a>}</div>
+    {user && <section className="space-y-3">
+      <label htmlFor="workspace-deletion-target">{c.workspace}</label>
+      <select id="workspace-deletion-target" className="w-full rounded border p-2" value={workspaceId} onChange={e => setWorkspaceId(e.target.value)} disabled={busy}>
+        <option value="">—</option>{workspaces.filter(w => w.role === 'owner').map(w => <option key={w.id} value={w.id}>{w.name} — {w.id}</option>)}
+      </select>
+      {workspaceId && workspaces.find(w => w.id === workspaceId)?.is_archived === false && <Button disabled={busy} variant="outline" onClick={() => void run(async () => {
+        await api.post(`/workspaces/${encodeURIComponent(workspaceId)}/archive`)
+        setWorkspaces(previous => previous.map(w => w.id === workspaceId ? { ...w, is_archived: true } : w))
+        const p = await api.get<Preview>(`/workspace-deletion/preview/${encodeURIComponent(workspaceId)}`); setPreview(p.data)
+      })}>{c.archive}</Button>}
+    </section>}
+    {user && workspaceId && members.length > 0 && <section className="space-y-3 rounded border p-4">
+      <h2 className="text-xl">{c.members}</h2>
+      <label htmlFor="deletion-member-confirmation">{c.memberConfirm}</label><Input id="deletion-member-confirmation" value={memberConfirmation} onChange={e => setMemberConfirmation(e.target.value)} />
+      {members.map(member => <div key={member.user_id} className="space-y-2 border-b p-2"><p>{member.email} — {member.role} — {member.user_id}</p>
+        <Button disabled={busy || memberConfirmation !== member.user_id || member.user_id === user.id} variant="outline" onClick={() => void run(async () => {
+          await api.delete(`/workspaces/${encodeURIComponent(workspaceId)}/members/${encodeURIComponent(member.user_id)}`)
+          const response = await api.get<typeof members>(`/workspaces/${encodeURIComponent(workspaceId)}/members`); setMembers(response.data)
+          const p = await api.get<Preview>(`/workspace-deletion/preview/${encodeURIComponent(workspaceId)}`); setPreview(p.data); setMemberConfirmation('')
+        })}>{c.remove}</Button>
+        <Button disabled={busy || memberConfirmation !== member.user_id || member.user_id === user.id} variant="outline" onClick={() => void run(async () => {
+          await api.patch(`/workspaces/${encodeURIComponent(workspaceId)}/members/${encodeURIComponent(member.user_id)}`, { role: member.role === 'owner' ? 'editor' : 'owner' })
+          const response = await api.get<typeof members>(`/workspaces/${encodeURIComponent(workspaceId)}/members`); setMembers(response.data)
+          const p = await api.get<Preview>(`/workspace-deletion/preview/${encodeURIComponent(workspaceId)}`); setPreview(p.data); setMemberConfirmation('')
+        })}>{member.role === 'owner' ? c.demote : c.promote}</Button>
+      </div>)}
+    </section>}
     {preview && <section className="space-y-2 rounded border p-4">
       <p>{c.preview}: {preview.private_workspace_count} / {preview.preserved_workspace_count} / {preview.required_operator_steps}</p>
       {!!preview.blockers.length && <p>{c.blocked}: {preview.blockers.join(', ')}</p>}
     </section>}
-    {user && (!status || status.state === 'cancelled') && <section className="space-y-3">
+    {user && workspaceId && (!status || status.state === 'cancelled') && <section className="space-y-3">
       <label htmlFor="deletion-confirmation">{c.confirmation}</label>
       <Input id="deletion-confirmation" value={confirmation} onChange={e => setConfirmation(e.target.value)} autoComplete="off" />
-      <Button disabled={busy || confirmation !== 'DELETE MY ACCOUNT'} onClick={() => void run(async () => {
-        const response = await api.post<Status>('/account-deletion', { confirmation })
+      <Button disabled={busy || !workspaceId || confirmation !== 'DELETE THIS WORKSPACE'} onClick={() => void run(async () => {
+        const response = await api.post<Status>('/workspace-deletion', { confirmation, workspace_id: workspaceId })
         setStatus(response.data); setId(response.data.id); setReceipt(response.data.tracking_token ?? '')
         setConfirmation('')
       })}>{c.request}</Button>
+    </section>}
+    {user && status && !operator && ['ready', 'blocked'].includes(status.state) && <section className="space-y-3 rounded border p-4">
+      <label htmlFor="workspace-governance-confirmation">{c.resolve}</label><Input id="workspace-governance-confirmation" value={governanceConfirmation} onChange={e => setGovernanceConfirmation(e.target.value)} />
+      <label htmlFor="workspace-governance-evidence">{c.evidence}</label><Input id="workspace-governance-evidence" value={evidence} onChange={e => setEvidence(e.target.value)} />
+      {(['detach-manager', 'transfer-billing'] as const).map(action => <Button key={action} disabled={busy || !validEvidence || governanceConfirmation !== workspaceId} variant="outline" onClick={() => void run(async () => {
+        await api.post(`/workspace-deletion/${encodeURIComponent(status.id)}/${action}`, { confirmation: workspaceId, evidence_sha256: evidence })
+        const p = await api.get<Preview>(`/workspace-deletion/preview/${encodeURIComponent(workspaceId)}`); setPreview(p.data)
+      })}>{action === 'detach-manager' ? c.detach : c.transfer}</Button>)}
     </section>}
     {status?.tracking_token && <p className="rounded border p-4">{c.saved}</p>}
     <section className="space-y-3 rounded border p-4">
@@ -138,7 +188,7 @@ export default function AccountDeletionPage() {
         <p>{c.status}: {status.state}</p><p>{c.pending}: {status.pending_external_count} / {status.pending_object_count}</p>
         {!!status.blockers.length && <p>{c.blocked}: {status.blockers.join(', ')}</p>}
         {user && (!operator || operator.id !== status.id || operator.user_id === user.id) && ['requested', 'ready', 'blocked'].includes(status.state) && <Button disabled={busy} variant="outline" onClick={() => void run(async () => {
-          const response = await api.post<Status>(`/account-deletion/${encodeURIComponent(status.id)}/cancel`)
+          const response = await api.post<Status>(`/workspace-deletion/${encodeURIComponent(status.id)}/cancel`)
           setStatus(response.data)
         })}>{c.cancel}</Button>}
       </div>}
@@ -153,6 +203,8 @@ export default function AccountDeletionPage() {
       {operator && <>
         <label htmlFor="deletion-inventory">{c.inventory}</label>
         <textarea id="deletion-inventory" readOnly className="w-full rounded border p-2" rows={6} value={JSON.stringify({ workspaces: operator.private_workspaces, objects: operator.objects }, null, 2)} />
+        <label htmlFor="operator-workspace-confirmation">{c.resolve}</label><Input id="operator-workspace-confirmation" value={governanceConfirmation} onChange={e => setGovernanceConfirmation(e.target.value)} />
+        <Button disabled={busy || !validEvidence || governanceConfirmation !== operator.private_workspaces[0]} onClick={() => void run(() => operate('repair-billing', { confirmation: governanceConfirmation, evidence_sha256: evidence }))}>{c.repair}</Button>
         <label htmlFor="deletion-evidence">{c.evidence}</label><Input id="deletion-evidence" value={evidence} onChange={e => setEvidence(e.target.value)} autoComplete="off" />
         <Button disabled={busy || !validEvidence} onClick={() => void run(() => operate('review', { evidence_sha256: evidence }))}>{c.review}</Button>
         <label htmlFor="deletion-requirement">{c.requirement}</label>

@@ -27,8 +27,8 @@ from app.models.workspace import Workspace, WorkspaceMember
 from app.services import account_deletion_service as service
 
 
-def migration(connection, direction):
-    path = Path(__file__).resolve().parents[1] / 'alembic/versions/099_account_deletion.py'
+def migration(connection, direction, revision='099_account_deletion.py'):
+    path = Path(__file__).resolve().parents[1] / 'alembic/versions' / revision
     spec = importlib.util.spec_from_file_location('deletion_migration', path)
     assert spec and spec.loader
     module = importlib.util.module_from_spec(spec)
@@ -52,9 +52,10 @@ async def main():
         async with engine.begin() as connection:
             await connection.execute(text(f'CREATE SCHEMA "{schema}"'))
         async with isolated.begin() as connection:
-            tables = [t for t in Base.metadata.sorted_tables if t.name not in {'account_deletions', 'account_deletion_holds', 'account_deletion_events'}]
+            tables = [t for t in Base.metadata.sorted_tables if t.name not in {'account_deletions', 'account_deletion_holds', 'account_deletion_events', 'workspace_deletions', 'workspace_deletion_holds', 'workspace_deletion_events'}]
             await connection.run_sync(lambda conn: Base.metadata.create_all(conn, tables=tables, checkfirst=False))
             await connection.run_sync(lambda conn: migration(conn, 'upgrade'))
+            await connection.run_sync(lambda conn: migration(conn, 'upgrade', '100_workspace_deletion.py'))
         with tempfile.TemporaryDirectory(prefix='finco-deletion-ci-') as directory:
             get_settings().storage_provider = 'local'
             get_settings().storage_local_path = directory

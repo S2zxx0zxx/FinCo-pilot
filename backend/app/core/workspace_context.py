@@ -124,8 +124,8 @@ async def current_writable_workspace(
     # table fence waits for this KEY SHARE reader before capturing file keys.
     workspace = await session.scalar(select(Workspace).where(Workspace.id == ctx.workspace.id)
         .with_for_update(read=True, key_share=True).execution_options(populate_existing=True))
-    if workspace is None:
-        raise HTTPException(404, "Workspace no longer exists")
+    if workspace is None or workspace.is_archived:
+        raise HTTPException(404, "Workspace no longer exists or is archived")
     ctx.workspace = workspace
     # Membership may have changed while this request waited behind deletion.
     member = await session.scalar(select(WorkspaceMember).where(

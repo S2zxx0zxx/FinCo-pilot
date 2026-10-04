@@ -19,6 +19,7 @@ import { PWAChrome } from '@/pwa/pwa-chrome'
 import { FinCoRouteLoader } from '@/transitions/finco-route-loader'
 import { FinCoNavigationTransition } from '@/transitions/finco-navigation-transition'
 
+const WorkspaceDeletionPage = lazy(() => import('@/pages/workspace-deletion'))
 const AccountDeletionPage = lazy(() => import('@/pages/account-deletion'))
 const AccountRecovery = lazy(() => import('@/pages/account-recovery'))
 const SetupPage = lazy(() => import('@/pages/setup'))
@@ -91,6 +92,7 @@ function App() {
                         <Route path="/pricing" element={<PricingPage />} />
                         <Route path="/support" element={<SupportPage />} />
                         <Route path="/privacy" element={<PrivacyPage />} />
+                        <Route path="/workspace-deletion" element={<WorkspaceDeletionPage />} />
                         <Route path="/account-deletion" element={<AccountDeletionPage />} />
                         <Route path="/terms" element={<TermsPage />} />
                         {/* A client opening a link the sender shared. Deliberately

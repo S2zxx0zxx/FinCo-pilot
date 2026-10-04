@@ -137,6 +137,7 @@ async def update_workspace(
     session: AsyncSession = Depends(get_async_session),
     user: User = Depends(current_active_user),
 ):
+    await workspace_service.lock_workspace_mutation(session, workspace_id)
     member = await workspace_service.require_membership(
         session, workspace_id, user.id, min_role="owner"
     )
@@ -195,6 +196,7 @@ async def invite_member(
     user: User = Depends(current_active_user),
     user_manager: UserManager = Depends(get_user_manager),
 ):
+    await workspace_service.lock_workspace_mutation(session, workspace_id)
     await workspace_service.require_membership(
         session, workspace_id, user.id, min_role="owner"
     )
@@ -282,6 +284,7 @@ async def change_member_role(
     session: AsyncSession = Depends(get_async_session),
     user: User = Depends(current_active_user),
 ):
+    await workspace_service.lock_workspace_mutation(session, workspace_id)
     await workspace_service.require_membership(
         session, workspace_id, user.id, min_role="owner"
     )
@@ -323,6 +326,7 @@ async def archive_workspace_endpoint(
 ):
     """Soft-delete: flips is_archived. Requires owner role. Refuses to
     archive the requester's last accessible workspace."""
+    await workspace_service.lock_workspace_mutation(session, workspace_id)
     await workspace_service.require_membership(
         session, workspace_id, user.id, min_role="owner"
     )
@@ -342,6 +346,7 @@ async def remove_workspace_member(
     user: User = Depends(current_active_user),
 ):
     # Owner can remove anyone; a non-owner can remove themselves only.
+    await workspace_service.lock_workspace_mutation(session, workspace_id)
     requester = await workspace_service.require_membership(session, workspace_id, user.id)
     if requester.role != "owner" and member_user_id != user.id:
         raise HTTPException(status_code=403, detail="Only the owner can remove other members")

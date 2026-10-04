@@ -1,3 +1,4 @@
+import { useLaunchText } from '@/lib/launch-copy'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -31,6 +32,7 @@ interface BackupDialogProps {
  * stored: lose it and the archive is gone, which the dialog says out loud.
  */
 export function BackupDialog({ open, onClose }: BackupDialogProps) {
+  const tr = useLaunchText()
   const { t } = useTranslation()
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -74,7 +76,7 @@ export function BackupDialog({ open, onClose }: BackupDialogProps) {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t('backup.dialogTitle')}</DialogTitle>
-          <DialogDescription>{t('backup.dialogDescription')}</DialogDescription>
+          <DialogDescription>{t('backup.dialogDescription')} {tr('This download contains selected workspace records. Attached files and account sign-in settings are not included.')}</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">

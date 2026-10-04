@@ -1,0 +1,11 @@
+[Unit]
+Description=Schedule encrypted backup
+
+[Timer]
+OnCalendar=*-*-* 02:00:00 UTC
+Persistent=true
+RandomizedDelaySec=5m
+Unit=finco-backup.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,11 @@
+[Unit]
+Description=Schedule absolute backup expiry
+
+[Timer]
+OnCalendar=*-*-* 03:00:00 UTC
+Persistent=true
+RandomizedDelaySec=5m
+Unit=finco-backup-expire.service
+
+[Install]
+WantedBy=timers.target

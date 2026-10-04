@@ -15,10 +15,9 @@ data:
         https https;
     }
 
-    map $uri $finco_recovery_cache_control {
+    map $request_uri $finco_recovery_cache_control {
         default "";
-        /reset-password "no-store";
-        /verify-email "no-store";
+        ~^/(reset-password|verify-email)([?]|$) "no-store";
     }
 
     server {

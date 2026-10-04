@@ -310,6 +310,9 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Verify recovery edge privacy on real Nginx
+        run: bash scripts/verify-recovery-edge.sh
+
   helm-checks:
     name: Helm Checks
     runs-on: ubuntu-latest

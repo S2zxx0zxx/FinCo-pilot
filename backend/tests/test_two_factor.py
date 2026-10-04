@@ -309,3 +309,15 @@ async def test_factor_enable_revokes_previous_session_and_returns_replacement(cl
     assert (await client.get("/api/users/me", headers=auth_headers)).status_code == 401
     replacement = {"Authorization": "Bearer " + enabled.json()["access_token"]}
     assert (await client.get("/api/users/me", headers=replacement)).status_code == 200
+
+
+async def test_protected_mfa_enrollment_requires_current_password(client, auth_headers, test_user, monkeypatch):
+    from app.core.config import get_settings
+    setup = await client.post("/api/auth/2fa/setup", headers=auth_headers)
+    code = pyotp.TOTP(setup.json()["secret"]).now()
+    monkeypatch.setattr(get_settings(), "deployment_environment", "staging")
+    for password in (None, "wrong-password"):
+        response = await client.post("/api/auth/2fa/enable", headers=auth_headers, json={"code": code, "password": password})
+        assert response.status_code == 400
+    response = await client.post("/api/auth/2fa/enable", headers=auth_headers, json={"code": code, "password": "testpass123"})
+    assert response.status_code == 200

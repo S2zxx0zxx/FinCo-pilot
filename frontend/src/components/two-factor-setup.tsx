@@ -30,6 +30,7 @@ export function TwoFactorSetup({ open, onClose }: TwoFactorSetupProps) {
   const [secret, setSecret] = useState('')
   const [otpauthUri, setOtpauthUri] = useState('')
   const [setupCode, setSetupCode] = useState('')
+  const [setupPassword, setSetupPassword] = useState('')
   const [setupLoading, setSetupLoading] = useState(false)
   const [setupStep, setSetupStep] = useState<'idle' | 'qr'>('idle')
   const [error, setError] = useState('')
@@ -59,8 +60,9 @@ export function TwoFactorSetup({ open, onClose }: TwoFactorSetupProps) {
     setSetupLoading(true)
     setError('')
     try {
-      const result = await auth.enable2fa(setupCode)
+      const result = await auth.enable2fa(setupCode, setupPassword)
       if (result.access_token) loginWithToken(result.access_token)
+      setSetupPassword('')
       setRecoveryCodes(result.recovery_codes)
       toast.success(t('auth.twoFactorEnabled'))
       if (user) updateUser({ ...user, is_2fa_enabled: true })
@@ -93,6 +95,7 @@ export function TwoFactorSetup({ open, onClose }: TwoFactorSetupProps) {
     setSecret('')
     setOtpauthUri('')
     setSetupCode('')
+    setSetupPassword('')
     setSetupStep('idle')
     setError('')
     setDisablePassword('')
@@ -193,6 +196,8 @@ export function TwoFactorSetup({ open, onClose }: TwoFactorSetupProps) {
               </div>
             </div>
             <div className="space-y-2">
+              <Label htmlFor="setup-password">{t('auth.password')}</Label>
+              <Input id="setup-password" type="password" autoComplete="current-password" value={setupPassword} onChange={e => setSetupPassword(e.target.value)} required />
               <Label htmlFor="setup-code">{t('auth.twoFactor')}</Label>
               <Input
                 id="setup-code"
@@ -212,7 +217,7 @@ export function TwoFactorSetup({ open, onClose }: TwoFactorSetupProps) {
               <Button type="button" variant="outline" onClick={handleClose}>
                 {t('common.cancel')}
               </Button>
-              <Button type="submit" disabled={setupLoading || setupCode.length !== 6}>
+              <Button type="submit" disabled={setupLoading || setupCode.length !== 6 || !setupPassword}>
                 {setupLoading ? t('common.loading') : t('auth.verify')}
               </Button>
             </DialogFooter>

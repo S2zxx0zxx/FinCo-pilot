@@ -226,8 +226,8 @@ export const auth = {
     const { data } = await api.post('/auth/2fa/setup')
     return data
   },
-  enable2fa: async (code: string): Promise<{ recovery_codes: string[]; access_token: string }> => {
-    const { data } = await api.post('/auth/2fa/enable', { code })
+  enable2fa: async (code: string, password: string): Promise<{ recovery_codes: string[]; access_token: string }> => {
+    const { data } = await api.post('/auth/2fa/enable', { code, password })
     return data
   },
   recoveryCodes: async (password: string, code: string): Promise<{ recovery_codes: string[]; access_token: string }> => {

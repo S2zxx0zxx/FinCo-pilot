@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, SecretStr
 
 
 class TwoFactorSetupResponse(BaseModel):
@@ -7,6 +7,7 @@ class TwoFactorSetupResponse(BaseModel):
 
 
 class TwoFactorEnableRequest(BaseModel):
+    password: SecretStr | None = None
     code: str = Field(..., min_length=6, max_length=6, pattern=r"^\d{6}$")
 
 

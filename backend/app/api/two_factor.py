@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.auth import current_active_user, get_jwt_strategy
 from app.core.auth_policy import require_local_auth_enabled
 from app.core.database import get_async_session
+from app.core.config import get_settings
 from app.core.rate_limit import login_rate_limit
 from app.core.redis import get_redis
 from app.core.mfa_challenge import consume_login_challenge
@@ -98,6 +99,15 @@ async def enable_2fa(
         raise HTTPException(409, "2FA is already enabled; use the protected recovery-code replacement flow")
     if not user.totp_secret:
         raise HTTPException(status_code=400, detail="Call /2fa/setup first")
+
+    if get_settings().deployment_environment in {"staging", "production"}:
+        from fastapi_users.db import SQLAlchemyUserDatabase
+        from app.core.auth import UserManager
+        manager = UserManager(SQLAlchemyUserDatabase(session, User))
+        password = body.password.get_secret_value() if body.password else ""
+        valid, _ = manager.password_helper.verify_and_update(password, user.hashed_password)
+        if not valid:
+            raise HTTPException(400, "Current password required to enable MFA")
 
     if not _verify_totp(user.totp_secret, body.code):
         raise HTTPException(status_code=400, detail="Invalid 2FA code")

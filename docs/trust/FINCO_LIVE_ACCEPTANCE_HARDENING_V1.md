@@ -15,6 +15,7 @@ Production admin creation, setup disablement on the real host, email ownership v
 | --- | --- |
 | TOTP verifier read a challenge and later deleted it; competing TOTP/passkey verifications could both use a stale read | Shared atomic Redis GETDEL consumes and revalidates identity, allowed method and current credential stamp before JWT issuance; only one factor can win |
 | A valid TOTP could sign in again through a different challenge | Atomic SET NX with a 120-second digest-only reservation spans the accepted time window; reused login codes are denied, outages fail closed |
+| Protected-environment enrollment relied only on an existing session | Require current password confirmation alongside the new authenticator code in staging/production; frontend never persists that password |
 | Enabling/disabling MFA or replacing recovery codes retained earlier sessions/challenges | Rotate the existing durable auth epoch after validated factor changes; return a replacement token to the completing caller and update the frontend session |
 | TOTP seeds were stored as plaintext | Purpose-separated Fernet encryption derived with HKDF from the independent credential encryption key, plus retained-key reads; new writes are encrypted transparently |
 | Existing short seed column cannot hold authenticated ciphertext | Add non-destructive migration 098 to Text, retaining existing seed bytes; bounded explicit legacy conversion; refuse a downgrade that would truncate ciphertext |

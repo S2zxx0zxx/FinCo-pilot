@@ -8,6 +8,10 @@ allocate position 5,000 at ₹19 and position 5,001 at ₹49 exactly once each.
 from __future__ import annotations
 
 import asyncio
+import threading
+from types import SimpleNamespace
+from fastapi import HTTPException
+from app.billing.checkout_orders import ensure_provider_order
 import os
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -45,7 +49,7 @@ async def _reserve(user_id: uuid.UUID) -> tuple[int | None, int, int | None]:
 
 
 async def main() -> None:
-    if os.environ.get("FINCO_DISPOSABLE_DB_TEST") != "yes":
+    if os.environ.get("FINCO_DISPOSABLE_DB_TEST") != "yes" or os.environ.get("CI") != "true":
         raise SystemExit(
             "Refusing destructive concurrency proof without "
             "FINCO_DISPOSABLE_DB_TEST=yes"
@@ -145,6 +149,44 @@ async def main() -> None:
         "PASS: concurrent founder boundary allocated position 5000 at ₹19 "
         "and position 5001 at ₹49 exactly once"
     )
+    started = threading.Event()
+    release = threading.Event()
+    calls = []
+    def remote_create(*, data):
+        calls.append(data)
+        started.set()
+        if not release.wait(10):
+            raise RuntimeError("Synthetic dispatch barrier timed out")
+        return {"id": "order_NativeSynthetic31", "entity": "order", "amount": data["amount"], "currency": data["currency"], "receipt": data["receipt"], "notes": data["notes"], "status": "created", "attempts": 0, "amount_paid": 0, "amount_due": data["amount"]}
+    provider = SimpleNamespace(order=SimpleNamespace(create=remote_create))
+    async def checkout():
+        async with async_session_maker() as session:
+            row = await reserve_checkout_offer(session, user_id=user_a_id, plan=PlanId.PRO, interval=BillingInterval.MONTHLY, reservation_ttl_seconds=600)
+            await session.commit()
+            return await ensure_provider_order(session, row, provider, key_id="rzp_test_native_synthetic")
+    first_dispatch = asyncio.create_task(checkout())
+    if not await asyncio.to_thread(started.wait, 10):
+        release.set()
+        await first_dispatch
+        raise RuntimeError("Provider call did not start")
+    try:
+        try:
+            await checkout()
+        except HTTPException as exc:
+            assert exc.status_code == 409
+        else:
+            raise RuntimeError("Concurrent checkout dispatched a second provider order")
+    finally:
+        release.set()
+    attached = await first_dispatch
+    assert len(calls) == 1 and attached.provider_order_state == "ready"
+    assert attached.provider_order_id == "order_NativeSynthetic31"
+    # Fresh persisted read, not the winning request's identity map.
+    async with async_session_maker() as session:
+        persisted = await session.get(CheckoutReservation, attached.id)
+        assert persisted is not None and persisted.provider_key_id == "rzp_test_native_synthetic"
+        assert persisted.provider_receipt == "fp-" + attached.id.hex
+    print("PASS: two native PostgreSQL checkout requests dispatch exactly one order; durable receipt/key claim persists without holding SQL locks during provider I/O")
     await engine.dispose()
 
 

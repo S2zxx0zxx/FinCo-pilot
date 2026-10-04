@@ -1,6 +1,7 @@
 import { TermsLink } from '@/components/terms-link'
 import { PrivacyLink } from '@/components/privacy-link'
 import { ensureRazorpaySdk } from '@/lib/razorpay-sdk'
+import { validCheckoutOrder } from '@/billing/checkout-order'
 import { useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
@@ -328,8 +329,9 @@ export default function PricingPage() {
   }
 
   const checkoutStarting = useRef(false)
+  const checkoutOpen = useRef(false)
   const continueWithPlan = async (plan: PlanId) => {
-    if (checkoutStarting.current) return
+    if (checkoutStarting.current || checkoutOpen.current) return
     checkoutStarting.current = true
     try { await startCheckout(plan) } finally { checkoutStarting.current = false }
   }
@@ -345,11 +347,6 @@ export default function PricingPage() {
 
     if (plan === 'free') return
 
-    const publicKey = import.meta.env.VITE_RAZORPAY_KEY_ID as string | undefined
-    if (!publicKey) {
-      toast.error('Payment checkout is not configured on this installation.')
-      return
-    }
     try {
       await ensureRazorpaySdk()
     } catch {
@@ -382,18 +379,29 @@ export default function PricingPage() {
       }
 
       const orderData = await orderRes.json() as CheckoutOrder
+      if (!validCheckoutOrder(orderData, plan, effectiveInterval)) {
+        toast.error('The payment order could not be validated. No payment was opened.')
+        return
+      }
 
+      let paymentReceived = false
       const cancelQuote = async () => {
+        if (paymentReceived) return
         try {
-          await fetch('/api/checkout/cancel-reservation', {
+          const result = await fetch('/api/checkout/cancel-reservation', {
             method: 'POST',
             headers: authHeaders,
             body: JSON.stringify({ reservation_id: orderData.reservation_id }),
           })
-          await refreshFounderCampaign()
+          if (result.ok) {
+            await refreshFounderCampaign()
+            toast.info('Checkout closed. Your temporary quote was released.')
+          } else {
+            toast.info('Checkout closed. The provider order remains pending reconciliation; no new payment was started.')
+          }
         } catch {
-          // Reservation expiry remains the server-side fallback if cancellation
-          // cannot be delivered (for example, the browser went offline).
+          toast.info('Checkout closed. Quote release could not be confirmed.')
+          // Provider outcomes stay durable; a dismissed modal cannot prove non-payment.
         }
       }
 
@@ -402,13 +410,15 @@ export default function PricingPage() {
         : plan.toUpperCase() + ' · ' + orderData.service_period_days + '-day first period'
 
       const options: RazorpayCheckoutOptions = {
-        key: publicKey,
+        key: orderData.key_id,
         amount: orderData.amount,
         currency: orderData.currency,
         name: 'FinCo-Pilot',
         description: offerDescription,
         order_id: orderData.order_id,
         handler: async (response: RazorpaySuccessResponse) => {
+          paymentReceived = true
+          checkoutOpen.current = false
           try {
             const verifyRes = await fetch('/api/checkout/verify-payment', {
               method: 'POST',
@@ -451,8 +461,8 @@ export default function PricingPage() {
         },
         modal: {
           ondismiss: () => {
+            checkoutOpen.current = false
             void cancelQuote()
-            toast.info('Checkout was cancelled. Your temporary price hold was released.')
           },
         },
         theme: { color: '#000000' },
@@ -470,8 +480,10 @@ export default function PricingPage() {
           },
         })
       })
+      checkoutOpen.current = true
       rzp.open()
     } catch {
+      checkoutOpen.current = false
       toast.error('Could not connect to the payment service. Please try again.')
     }
   }

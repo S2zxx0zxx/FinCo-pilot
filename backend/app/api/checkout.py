@@ -21,19 +21,22 @@ from datetime import datetime, timezone
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
+from starlette.concurrency import run_in_threadpool
+import requests
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.billing.enums import BillingInterval, PlanId
 from app.billing.offer_service import (
-    attach_provider_order,
     cancel_reservation,
     mark_reservation_verified,
     reservation_for_verification,
     reserve_checkout_offer,
 )
 from app.billing.offers import ReservationStatus
+from app.billing.checkout_orders import ensure_provider_order, validate_order
+from app.core.rate_limit import RateLimiter
 from app.core.auth import current_active_user
 from app.core.config import get_settings
 from app.core.database import get_async_session
@@ -42,7 +45,8 @@ from app.models.user import User
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/checkout", tags=["checkout"])
+checkout_limit = RateLimiter(max_requests=20, window_seconds=60)
+router = APIRouter(prefix="/api/checkout", tags=["checkout"], dependencies=[Depends(checkout_limit)])
 
 _CHECKOUT_DISABLED: dict[int | str, dict[str, Any]] = {
     503: {"description": "Checkout feature is disabled or unavailable"},
@@ -113,7 +117,16 @@ def _get_razorpay_client():
             detail="Live payment collection is not enabled in this build.",
         )
 
-    return razorpay.Client(auth=(key_id, key_secret))
+    if not key_id.startswith("rzp_test_"):
+        raise HTTPException(503, "A valid Test Mode payment key is required.")
+    class BoundedSession(requests.Session):
+        def request(self, method, url, *args, **kwargs):
+            kwargs["timeout"] = (5, 20)
+            kwargs["allow_redirects"] = False
+            return super().request(method, url, *args, **kwargs)
+    client = razorpay.Client(auth=(key_id, key_secret), session=BoundedSession(), max_retries=1)
+    client.enable_retry(False)
+    return client
 
 
 class CreateOrderRequest(BaseModel):
@@ -125,6 +138,7 @@ class CreateOrderResponse(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 
     order_id: str
+    key_id: str
     amount: int
     currency: str
     plan: PlanId
@@ -141,9 +155,9 @@ class CreateOrderResponse(BaseModel):
 
 
 class VerifyPaymentRequest(BaseModel):
-    razorpay_payment_id: str
-    razorpay_order_id: str
-    razorpay_signature: str
+    razorpay_payment_id: str = Field(pattern=r"^pay_[A-Za-z0-9]{1,80}$", max_length=84)
+    razorpay_order_id: str = Field(pattern=r"^order_[A-Za-z0-9]{1,80}$", max_length=86)
+    razorpay_signature: str = Field(pattern=r"^[a-fA-F0-9]{64}$", max_length=64)
 
 
 class VerifyPaymentResponse(BaseModel):
@@ -173,6 +187,7 @@ def _order_response(
 ) -> CreateOrderResponse:
     return CreateOrderResponse(
         order_id=provider_order_id,
+        key_id=reservation.provider_key_id or "",
         amount=reservation.amount_minor,
         currency=reservation.currency,
         plan=PlanId(reservation.plan),
@@ -227,101 +242,9 @@ async def create_order(
         await session.rollback()
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    # Idempotent retry: one active reservation reuses the already-created
-    # provider order instead of creating duplicate Razorpay orders.
-    if reservation.provider_order_id:
-        return _order_response(reservation, reservation.provider_order_id)
-
-    receipt = f"fp-{reservation.id.hex[:20]}"
-    notes = {
-        "fincopilot_reservation_id": str(reservation.id),
-        "fincopilot_user_id": str(user.id),
-        "fincopilot_plan": reservation.plan,
-        "fincopilot_interval": reservation.billing_interval,
-        "fincopilot_offer_code": reservation.offer_code,
-        "fincopilot_campaign_version": reservation.campaign_version,
-    }
-    if reservation.founder_wave is not None:
-        notes["fincopilot_founder_wave"] = str(reservation.founder_wave)
-
-    order_data = {
-        "amount": reservation.amount_minor,
-        "currency": reservation.currency,
-        "receipt": receipt,
-        "notes": notes,
-    }
-
-    try:
-        order = client.order.create(data=order_data)
-    except Exception as exc:
-        logger.error(
-            "Razorpay order creation failed (reservation=%s user=%s): %s",
-            reservation.id,
-            user.id,
-            type(exc).__name__,
-        )
-        try:
-            fresh = await session.get(
-                CheckoutReservation, reservation.id, with_for_update=True
-            )
-            if fresh is not None:
-                await cancel_reservation(
-                    session,
-                    reservation=fresh,
-                    reason="provider_order_creation_failed",
-                )
-                await session.commit()
-        except Exception:
-            await session.rollback()
-            logger.exception(
-                "Failed to release checkout reservation after provider failure"
-            )
-        raise HTTPException(
-            status_code=502,
-            detail="Could not create payment order. Please try again later.",
-        ) from exc
-
-    if not isinstance(order, dict):
-        raise HTTPException(
-            status_code=502,
-            detail="Payment provider returned an invalid order response.",
-        )
-
-    provider_order_id = str(order.get("id", ""))
-    if not provider_order_id:
-        raise HTTPException(
-            status_code=502,
-            detail="Payment provider did not return an order identifier.",
-        )
-    if order.get("amount") != reservation.amount_minor:
-        raise HTTPException(
-            status_code=502,
-            detail="Payment provider returned an unexpected order amount.",
-        )
-    if order.get("currency") != reservation.currency:
-        raise HTTPException(
-            status_code=502,
-            detail="Payment provider returned an unexpected order currency.",
-        )
-
-    try:
-        fresh = await session.get(
-            CheckoutReservation, reservation.id, with_for_update=True
-        )
-        if fresh is None:
-            raise ValueError("Checkout reservation no longer exists")
-        await attach_provider_order(
-            session,
-            reservation=fresh,
-            provider_order_id=provider_order_id,
-        )
-        await session.commit()
-        await session.refresh(fresh)
-    except ValueError as exc:
-        await session.rollback()
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
-
-    return _order_response(fresh, provider_order_id)
+    fresh = await ensure_provider_order(session, reservation, client, key_id=settings.razorpay_key_id.strip())
+    assert fresh.provider_order_id is not None
+    return _order_response(fresh, fresh.provider_order_id)
 
 
 @router.post(
@@ -334,7 +257,7 @@ async def cancel_checkout_reservation(
     user: Annotated[User, Depends(current_active_user)],
     session: AsyncSession = Depends(get_async_session),
 ) -> CancelReservationResponse:
-    """Release an unverified checkout reservation (for modal dismiss/change)."""
+    """Release only never-dispatched quotes; browser dismissal is not erasure."""
     _require_checkout_enabled()
     reservation = (
         await session.execute(
@@ -355,11 +278,11 @@ async def cancel_checkout_reservation(
             detail="A verified payment reservation cannot be cancelled.",
         )
 
-    await cancel_reservation(
-        session,
-        reservation=reservation,
-        reason="customer_cancelled_checkout",
-    )
+    try:
+        await cancel_reservation(session, reservation=reservation, reason="customer_cancelled_checkout")
+    except ValueError as exc:
+        await session.rollback()
+        raise HTTPException(409, "Provider order remains open for reconciliation; its quote was not released.") from exc
     await session.commit()
     return CancelReservationResponse(status="cancelled")
 
@@ -381,15 +304,10 @@ async def verify_payment(
     """
     _require_checkout_enabled()
 
-    if (
-        not req.razorpay_payment_id
-        or not req.razorpay_order_id
-        or not req.razorpay_signature
-    ):
-        raise HTTPException(
-            status_code=400, detail="Missing required payment fields."
-        )
-
+    reservation = await reservation_for_verification(session, user_id=user.id, provider_order_id=req.razorpay_order_id)
+    if reservation is None:
+        raise HTTPException(400, "No matching FinCopilot checkout reservation was found.")
+    await session.commit()  # no reservation lock during provider I/O
     settings = get_settings()
     key_secret = settings.razorpay_key_secret.get_secret_value().strip()
     if not key_secret:
@@ -398,7 +316,9 @@ async def verify_payment(
             detail="Payment provider is not configured on this instance.",
         )
 
-    body = f"{req.razorpay_order_id}|{req.razorpay_payment_id}"
+    if reservation.provider_key_id and reservation.provider_key_id != settings.razorpay_key_id.strip():
+        raise HTTPException(409, "Payment key changed; reconcile with the original provider.")
+    body = f"{reservation.provider_order_id}|{req.razorpay_payment_id}"
     generated_signature = hmac.new(
         key=key_secret.encode("utf-8"),
         msg=body.encode("utf-8"),
@@ -417,8 +337,8 @@ async def verify_payment(
 
     client = _get_razorpay_client()
     try:
-        rzp_order = client.order.fetch(req.razorpay_order_id)
-        rzp_payment = client.payment.fetch(req.razorpay_payment_id)
+        rzp_order = await run_in_threadpool(client.order.fetch, reservation.provider_order_id)
+        rzp_payment = await run_in_threadpool(client.payment.fetch, req.razorpay_payment_id)
     except Exception as exc:
         logger.error(
             "Razorpay verification fetch failed (user=%s order=%s payment=%s): %s",
@@ -449,9 +369,18 @@ async def verify_payment(
             detail="No matching FinCopilot checkout reservation was found.",
         )
 
+    if reservation.provider_receipt:
+        try:
+            validate_order(rzp_order, reservation)
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+    if rzp_payment.get("entity") != "payment" or rzp_payment.get("captured") is not True:
+        raise HTTPException(400, "Payment is not a captured provider payment.")
     if str(rzp_order.get("id", "")) != req.razorpay_order_id:
         raise HTTPException(status_code=400, detail="Provider order mismatch.")
-    if rzp_payment.get("order_id") != req.razorpay_order_id:
+    if rzp_payment.get("id") != req.razorpay_payment_id:
+        raise HTTPException(400, "Provider payment identifier mismatch.")
+    if rzp_payment.get("order_id") != reservation.provider_order_id:
         raise HTTPException(
             status_code=400,
             detail="Payment does not belong to this order.",
@@ -480,12 +409,12 @@ async def verify_payment(
                 detail="Payment order metadata does not match the checkout reservation.",
             )
 
-    if rzp_order.get("amount") != reservation.amount_minor:
+    if type(rzp_order.get("amount")) is not int or rzp_order.get("amount") != reservation.amount_minor:
         raise HTTPException(
             status_code=400,
             detail="Order amount does not match the reserved price.",
         )
-    if rzp_payment.get("amount") != reservation.amount_minor:
+    if type(rzp_payment.get("amount")) is not int or rzp_payment.get("amount") != reservation.amount_minor:
         raise HTTPException(
             status_code=400,
             detail="Payment amount does not match the reserved price.",

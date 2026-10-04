@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.billing.enums import BillingInterval, PlanId
@@ -83,7 +83,7 @@ async def get_campaign(
 ) -> PricingCampaign:
     stmt = select(PricingCampaign).where(PricingCampaign.code == CAMPAIGN_CODE)
     if for_update:
-        stmt = stmt.with_for_update()
+        stmt = stmt.with_for_update().execution_options(populate_existing=True)
     campaign = (await session.execute(stmt)).scalar_one_or_none()
     if campaign is not None:
         return campaign
@@ -130,8 +130,10 @@ async def _expire_stale_reservations(
             .where(
                 CheckoutReservation.status == ReservationStatus.RESERVED.value,
                 CheckoutReservation.expires_at <= now,
+                CheckoutReservation.provider_order_state == "unstarted",
+                CheckoutReservation.provider_order_id.is_(None),
             )
-            .with_for_update()
+            .with_for_update().execution_options(populate_existing=True)
         )
     ).scalars()
     for reservation in rows:
@@ -178,11 +180,15 @@ async def _active_reservation(
                 CheckoutReservation.plan == plan.value,
                 CheckoutReservation.billing_interval == interval.value,
                 CheckoutReservation.status == ReservationStatus.RESERVED.value,
-                CheckoutReservation.expires_at > now,
+                or_(
+                    CheckoutReservation.expires_at > now,
+                    CheckoutReservation.provider_order_state != "unstarted",
+                    CheckoutReservation.provider_order_id.is_not(None),
+                ),
             )
             .order_by(CheckoutReservation.created_at.desc())
             .limit(1)
-            .with_for_update()
+            .with_for_update().execution_options(populate_existing=True)
         )
     ).scalar_one_or_none()
 
@@ -202,7 +208,11 @@ async def _other_active_reservation(
             .where(
                 CheckoutReservation.user_id == user_id,
                 CheckoutReservation.status == ReservationStatus.RESERVED.value,
-                CheckoutReservation.expires_at > now,
+                or_(
+                    CheckoutReservation.expires_at > now,
+                    CheckoutReservation.provider_order_state != "unstarted",
+                    CheckoutReservation.provider_order_id.is_not(None),
+                ),
                 ~(
                     (CheckoutReservation.plan == plan.value)
                     & (CheckoutReservation.billing_interval == interval.value)
@@ -210,7 +220,7 @@ async def _other_active_reservation(
             )
             .order_by(CheckoutReservation.created_at.desc())
             .limit(1)
-            .with_for_update()
+            .with_for_update().execution_options(populate_existing=True)
         )
     ).scalar_one_or_none()
 
@@ -229,7 +239,11 @@ async def _founder_positions_in_use(
         await session.execute(
             select(CheckoutReservation.founder_position).where(
                 CheckoutReservation.status == ReservationStatus.RESERVED.value,
-                CheckoutReservation.expires_at > now,
+                or_(
+                    CheckoutReservation.expires_at > now,
+                    CheckoutReservation.provider_order_state != "unstarted",
+                    CheckoutReservation.provider_order_id.is_not(None),
+                ),
                 CheckoutReservation.founder_position.is_not(None),
             )
         )
@@ -256,7 +270,11 @@ async def _wave_counts(
                 select(func.count(CheckoutReservation.id)).where(
                     CheckoutReservation.founder_wave == wave.wave,
                     CheckoutReservation.status == ReservationStatus.RESERVED.value,
+                    or_(
                     CheckoutReservation.expires_at > now,
+                    CheckoutReservation.provider_order_state != "unstarted",
+                    CheckoutReservation.provider_order_id.is_not(None),
+                ),
                 )
             )
             or 0
@@ -473,6 +491,7 @@ async def attach_provider_order(
         raise ValueError("Checkout reservation is no longer active")
     if reservation.provider_order_id and reservation.provider_order_id != provider_order_id:
         raise ValueError("Checkout reservation already has a different provider order")
+    reservation.provider_order_state = "ready"
     reservation.provider_order_id = provider_order_id
     reservation.updated_at = utcnow()
     await _audit(
@@ -493,6 +512,8 @@ async def cancel_reservation(
 ) -> None:
     if reservation.status != ReservationStatus.RESERVED.value:
         return
+    if reservation.provider_order_state != "unstarted" or reservation.provider_order_id:
+        raise ValueError("Provider checkout has started; reconciliation is required before releasing its quote")
     reservation.status = ReservationStatus.CANCELLED.value
     reservation.founder_position = None
     reservation.updated_at = utcnow()
@@ -519,7 +540,7 @@ async def reservation_for_verification(
                 CheckoutReservation.user_id == user_id,
                 CheckoutReservation.provider_order_id == provider_order_id,
             )
-            .with_for_update()
+            .with_for_update().execution_options(populate_existing=True)
         )
     ).scalar_one_or_none()
 
@@ -541,7 +562,9 @@ async def mark_reservation_verified(
     if reservation.status != ReservationStatus.RESERVED.value:
         raise ValueError("Checkout reservation is no longer verifiable")
     expires_at = _stored_utc(reservation.expires_at)
-    if expires_at is not None and expires_at <= current:
+    if (expires_at is not None and expires_at <= current
+        and reservation.provider_order_state == "unstarted"
+        and not reservation.provider_order_id):
         reservation.status = ReservationStatus.EXPIRED.value
         reservation.founder_position = None
         raise ValueError("Checkout reservation expired before payment verification")

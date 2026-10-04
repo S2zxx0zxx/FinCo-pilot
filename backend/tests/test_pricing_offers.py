@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.billing.enums import BillingInterval, PlanId
 from app.billing.offer_service import (
     campaign_status,
+    _stored_utc,
     cancel_reservation,
     mark_reservation_verified,
     reserve_checkout_offer,
@@ -143,7 +144,7 @@ async def test_first_founder_quote_is_real_19_rupees_and_starts_at_launch(
     assert reservation.service_period_days == 60
     assert reservation.founder_wave == 1
     assert reservation.founder_position == 1
-    assert reservation.service_starts_at == campaign.public_launch_at
+    assert _stored_utc(reservation.service_starts_at) == _stored_utc(campaign.public_launch_at)
 
 
 @pytest.mark.asyncio
@@ -167,7 +168,7 @@ async def test_first_max_monthly_quote_gets_60_days_but_not_founder_price(
     assert reservation.renewal_amount_minor == 34_900
     assert reservation.service_period_days == 60
     assert reservation.founder_wave is None
-    assert reservation.service_starts_at == campaign.public_launch_at
+    assert _stored_utc(reservation.service_starts_at) == _stored_utc(campaign.public_launch_at)
 
 
 @pytest.mark.asyncio

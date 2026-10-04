@@ -74,6 +74,7 @@ export interface FounderCampaignStatus {
 }
 
 export interface CheckoutOrder {
+  key_id: string
   order_id: string
   amount: number
   currency: string

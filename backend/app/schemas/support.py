@@ -69,7 +69,6 @@ class SupportTicketCreate(BaseModel):
 
 class SupportTicketRead(BaseModel):
     reference: str
-    ticket_id: str
     ticket_number: str | None = None
     support_tier: str
     priority: str

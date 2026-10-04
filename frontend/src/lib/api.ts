@@ -1600,7 +1600,6 @@ export interface SupportTicketPayload {
 
 export interface SupportTicketResult {
   reference: string
-  ticket_id: string
   ticket_number: string | null
   support_tier: 'standard' | 'priority' | 'highest_priority' | string
   priority: string

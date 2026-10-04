@@ -97,6 +97,16 @@ PRODUCTION_SECRETS: dict[str, ProductionSecret] = {
         "METRICS_TOKEN", "metrics_token", SecretKind.PROVIDER_CREDENTIAL, ("backend",),
         "METRICS_ENABLED=true in production", RotationImpact.RESTART_CONSUMERS, False,
     ),
+    "RAZORPAY_WEBHOOK_SECRET": ProductionSecret(
+        "RAZORPAY_WEBHOOK_SECRET", "razorpay_webhook_secret", SecretKind.PROVIDER_CREDENTIAL,
+        ("backend", "celery-worker", "celery-beat", "migration", "mcp-server"),
+        "signed Razorpay webhook ingress is enabled", RotationImpact.PROVIDER_REVOKE_AND_REPLACE, True,
+    ),
+    "RAZORPAY_WEBHOOK_PREVIOUS_SECRET": ProductionSecret(
+        "RAZORPAY_WEBHOOK_PREVIOUS_SECRET", "razorpay_webhook_previous_secret", SecretKind.PROVIDER_CREDENTIAL,
+        ("backend", "celery-worker", "celery-beat", "migration", "mcp-server"),
+        "bounded webhook secret rotation overlap is enabled", RotationImpact.PROVIDER_REVOKE_AND_REPLACE, True,
+    ),
     "RAZORPAY_KEY_SECRET": ProductionSecret(
         "RAZORPAY_KEY_SECRET", "razorpay_key_secret", SecretKind.PROVIDER_CREDENTIAL,
         ("backend", "celery-worker"), "Razorpay checkout/webhook operations are enabled",

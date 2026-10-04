@@ -20,6 +20,7 @@ from app.api.billing import router as billing_router
 from app.api.budgets import router as budgets_router
 from app.api.categories import router as categories_router
 from app.api.checkout import router as checkout_router
+from app.api.payment_webhooks import router as payment_webhooks_router
 from app.api.category_groups import router as category_groups_router
 from app.api.collections import router as collections_router
 from app.api.connections import router as connections_router
@@ -196,6 +197,7 @@ app.include_router(
 # controls and direct HTTP requests share the same server-side policy.
 app.include_router(billing_router)
 app.include_router(checkout_router)
+app.include_router(payment_webhooks_router)
 app.include_router(categories_router)
 app.include_router(category_groups_router)
 app.include_router(rules_router, dependencies=[Depends(rules_guard)])
@@ -341,7 +343,7 @@ async def request_reference(request, call_next):
         )
 
     response.headers["X-Request-ID"] = reference
-    if request.url.path.startswith(("/api/account-deletion", "/api/workspace-deletion", "/api/checkout")):
+    if request.url.path.startswith(("/api/account-deletion", "/api/workspace-deletion", "/api/checkout", "/api/webhooks/razorpay")):
         response.headers["Cache-Control"] = "no-store"
     if response.status_code >= 500:
         logger.error(

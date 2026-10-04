@@ -2,6 +2,7 @@ from functools import lru_cache
 import json
 from os import getenv
 from pathlib import Path
+import time
 from urllib.parse import urlsplit
 
 from pydantic import SecretStr, model_validator
@@ -233,6 +234,11 @@ class Settings(BaseSettings):
     # Razorpay
     razorpay_key_id: str = ""
     razorpay_key_secret: SecretStr = SecretStr("")
+    razorpay_webhook_enabled: bool = False
+    razorpay_webhook_account_id: str = ""
+    razorpay_webhook_secret: SecretStr = SecretStr("")
+    razorpay_webhook_previous_secret: SecretStr = SecretStr("")
+    razorpay_webhook_previous_secret_expires_at: int = 0
     # Provider plan IDs are environment-specific identifiers for the immutable
     # base recurring catalog. Test and Live IDs must never be mixed.
     razorpay_plan_pro_monthly_id: str = ""
@@ -703,6 +709,25 @@ class Settings(BaseSettings):
                 "Production paid checkout requires BILLING_TAX_DISPLAY_MODE to be "
                 "explicitly set to inclusive or exclusive"
             )
+
+        current = self.razorpay_webhook_secret.get_secret_value()
+        previous = self.razorpay_webhook_previous_secret.get_secret_value()
+        for value in (current, previous):
+            if value and (len(value) < 32 or len(value) > 256 or not value.isascii()
+                          or any(not 33 <= ord(char) <= 126 for char in value)):
+                raise ValueError("Webhook secrets must be 32-256 printable ASCII characters without whitespace")
+            if value and value == self.razorpay_key_secret.get_secret_value():
+                raise ValueError("Webhook secret must be independent of API credentials")
+        if previous and (previous == current or self.razorpay_webhook_previous_secret_expires_at <= 0):
+            raise ValueError("Previous webhook secret requires a distinct key and explicit expiry")
+        if self.razorpay_webhook_previous_secret_expires_at > time.time() + 48 * 3600:
+            raise ValueError("Webhook secret overlap cannot exceed 48 hours from configuration load")
+        if not previous and self.razorpay_webhook_previous_secret_expires_at:
+            raise ValueError("Webhook rotation expiry requires previous secret")
+        if self.razorpay_webhook_enabled:
+            import re
+            if not current or not re.fullmatch(r"acc_[A-Za-z0-9]{1,64}", self.razorpay_webhook_account_id):
+                raise ValueError("Enabled webhook requires dedicated secret and exact merchant account ID")
 
         return self
 

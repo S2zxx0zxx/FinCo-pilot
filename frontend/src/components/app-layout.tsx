@@ -640,6 +640,9 @@ function UserMenu({
           <LifeBuoy size={14} />
           {t('support.helpLink')}
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => nav('/terms')}>
+          {i18n.language.startsWith('hi') ? 'सेवा की शर्तें' : 'Terms of service'}
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => nav('/privacy')}>
           {i18n.language.startsWith('hi') ? 'गोपनीयता नीति' : 'Privacy policy'}
         </DropdownMenuItem>

@@ -1,3 +1,4 @@
+import { TermsLink } from '@/components/terms-link'
 import { PrivacyLink } from '@/components/privacy-link'
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
@@ -389,6 +390,7 @@ export default function LoginPage() {
                 </Link>
               </div>
               <PrivacyLink />
+              <TermsLink />
             </CardFooter>
           </form>
         </Card>
@@ -505,6 +507,7 @@ export default function LoginPage() {
                 {t('support.helpLink')}
               </Link>
               <PrivacyLink />
+              <TermsLink />
             </CardFooter>
           )}
         </form>

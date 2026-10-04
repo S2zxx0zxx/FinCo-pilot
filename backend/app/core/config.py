@@ -70,6 +70,21 @@ class Settings(BaseSettings):
     privacy_processing_locations: str = ""
     privacy_infrastructure_providers: str = ""
 
+    # Intentionally public operator declarations; defaults remain a draft.
+    terms_published: bool = False
+    terms_reviewed_version: str = ""
+    terms_effective_date: str = ""
+    terms_contact_name: str = ""
+    terms_contact_email: str = ""
+    terms_contact_address: str = ""
+    terms_contact_phone: str = ""
+    terms_contact_designation: str = ""
+    terms_public_website: str = ""
+    terms_refund_policy_en: str = ""
+    terms_refund_policy_hi: str = ""
+    terms_cancellation_policy_en: str = ""
+    terms_cancellation_policy_hi: str = ""
+
     # One-time bootstrap endpoint.
     setup_enabled: bool = True
     setup_token: SecretStr = SecretStr("")
@@ -363,6 +378,8 @@ class Settings(BaseSettings):
 
         from app.core.privacy_policy import validate_publication_settings
         validate_publication_settings(self)
+        from app.core.terms import validate_publication_settings as validate_terms
+        validate_terms(self)
 
         currencies = [code.strip().upper() for code in self.supported_currencies.split(",")]
         if any(len(code) != 3 or not code.isascii() or not code.isalpha() for code in currencies):

@@ -1,3 +1,4 @@
+import { PrivacyLink } from '@/components/privacy-link'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
@@ -95,6 +96,7 @@ export default function SupportPage() {
 
   return <main className="min-h-screen bg-background px-4 py-6 text-foreground sm:px-6">
     <div className="mx-auto w-full max-w-4xl space-y-6">
+      <PrivacyLink />
       <header className="flex items-start gap-3">
         <Button type="button" variant="outline" size="icon" onClick={() => from ? navigate(from) : navigate(-1)} aria-label={t('support.back')}>
           <ArrowLeft size={16} />

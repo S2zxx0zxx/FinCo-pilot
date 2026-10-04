@@ -4,12 +4,19 @@ Tells the frontend which optional features are enabled so it can hide
 nav items, routes, etc. Lightweight — no auth required.
 """
 from fastapi import APIRouter
+from fastapi.responses import JSONResponse
 
 from app.api.support import public_support_info
 from app.core.config import get_settings
 from app.core.feature_flags import feature_flag
 
 router = APIRouter(prefix="/api", tags=["info"])
+
+
+@router.get("/privacy-policy")
+async def get_privacy_policy():
+    from app.core.privacy_policy import public_policy
+    return JSONResponse(public_policy(get_settings()), headers={"Cache-Control": "no-store"})
 
 
 @router.get("/info")

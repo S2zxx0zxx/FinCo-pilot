@@ -53,6 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (e.key === 'token' || e.key === null) {
         queryClient.clear()
         setUser(null)
+        setIsLoading(e.key !== null && e.newValue !== null)
         setToken(e.key === null ? null : e.newValue)
       }
     }

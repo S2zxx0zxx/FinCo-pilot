@@ -351,3 +351,18 @@ describe('session migration privacy', () => {
     expect(localStorage.getItem('token')).toBe('replacement-session')
   })
 })
+
+it('waits for a new cross-tab session identity instead of redirecting during its probe', async () => {
+  const { result } = await renderAuth()
+  let complete!: (user: User) => void
+  auth.me.mockReturnValueOnce(new Promise<User>((resolve) => { complete = resolve }))
+  act(() => {
+    localStorage.setItem('token', 'other-tab-session')
+    window.dispatchEvent(new StorageEvent('storage', { key: 'token', newValue: 'other-tab-session' }))
+  })
+  expect(result.current.isLoading).toBe(true)
+  expect(result.current.user).toBeNull()
+  await act(async () => complete(USER))
+  await waitFor(() => expect(result.current.user).toEqual(USER))
+  expect(result.current.isLoading).toBe(false)
+})

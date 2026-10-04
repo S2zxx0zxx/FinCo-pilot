@@ -30,7 +30,7 @@ def test_populated_claim_upgrade_preserves_records_and_refuses_loss():
             assert actual['amount_minor'] == before['amount']
             assert actual['status'] == before['status']
             assert actual['provider_order_id'] == before['order']
-            assert actual['provider_receipt'] == 'fp-'+before['id'][:20]
+            assert actual['provider_receipt'] == 'fp-' + str(before['id'])[:20]
             assert actual['provider_key_id'] is None
         with Operations.context(MigrationContext.configure(connection)), pytest.raises(RuntimeError, match='evidence'):
             module.downgrade()

@@ -2,6 +2,7 @@
 import hashlib
 import hmac
 import asyncio
+from contextlib import closing
 import importlib.util
 import json
 from pathlib import Path
@@ -198,8 +199,12 @@ def test_migration_upgrade_empty_rollback_and_evidence_refusal():
     assert spec and spec.loader
     migration = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(migration)
-    engine = create_engine("sqlite://")
-    with engine.begin() as connection:
+    # NullPool closes the DBAPI connection on context exit, including assertions.
+    # A pooled in-memory engine otherwise leaks until nondeterministic GC on 3.14.
+    from sqlalchemy.pool import NullPool
+
+    engine = create_engine("sqlite://", poolclass=NullPool)
+    with closing(engine.connect()) as connection, connection.begin():
         with Operations.context(MigrationContext.configure(connection)):
             migration.upgrade()
             migration.downgrade()

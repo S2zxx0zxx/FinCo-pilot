@@ -701,8 +701,9 @@ async def test_lost_reply_recovers_exact_remote_receipt_without_new_post(client,
 
 
 @pytest.mark.asyncio
-async def test_receipt_recovery_uses_exact_match_and_rejects_duplicate_exact_receipts(
-    client, auth_headers, checkout_enabled
+@pytest.mark.parametrize("duplicate_exact", [False, True])
+async def test_receipt_recovery_is_exact_and_duplicate_safe(
+    client, auth_headers, checkout_enabled, duplicate_exact
 ):
     provider = _creation_client()
     original = provider.order.create.side_effect
@@ -718,26 +719,26 @@ async def test_receipt_recovery_uses_exact_match_and_rejects_duplicate_exact_rec
     assert len(saved) == 1
 
     exact = saved[0]
-    lookalike = {**exact, "id": "order_LookalikeSynthetic", "receipt": exact["receipt"] + "x"}
+    second = {
+        **exact,
+        "id": "order_LookalikeSynthetic",
+        "receipt": exact["receipt"] if duplicate_exact else exact["receipt"] + "x",
+    }
     provider.order.all.return_value = {
         "entity": "collection",
         "count": 2,
-        "items": [lookalike, exact],
+        "items": [second, exact],
     }
     recovered, _ = await _start_order(client, auth_headers, provider_client=provider)
-    assert recovered.status_code == 200, recovered.text
-    assert recovered.json()["order_id"] == exact["id"]
-    assert provider.order.create.call_count == 1
 
-    # If the provider ever violates receipt uniqueness, never guess which remote
-    # order owns the money. Reconciliation must stop rather than choose one.
-    provider2 = _creation_client()
-    provider2.order.create.side_effect = TimeoutError("synthetic lost reply")
-    # Use a different account/plan to obtain an independent uncertain claim.
-    failed2, _ = await _start_order(
-        client, auth_headers, plan="max", provider_client=provider2
-    )
-    assert failed2.status_code == 400 or failed2.status_code == 502
+    if duplicate_exact:
+        assert recovered.status_code == 502
+        assert "unresolved" in recovered.json()["detail"].lower()
+    else:
+        assert recovered.status_code == 200, recovered.text
+        assert recovered.json()["order_id"] == exact["id"]
+
+    assert provider.order.create.call_count == 1
 
 
 @pytest.mark.asyncio

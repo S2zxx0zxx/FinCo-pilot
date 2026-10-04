@@ -159,6 +159,10 @@ jobs:
         env:
           FINCO_DISPOSABLE_DB_TEST: "yes"
         run: python -m scripts.verify_production_postgres --ci
+      - name: Verify populated migrations 094-096 without legacy data loss
+        env:
+          FINCO_DISPOSABLE_DB_TEST: "yes"
+        run: python -m scripts.verify_migrations_094_096_postgres
       - name: Verify concurrent first-admin bootstrap on PostgreSQL
         env:
           FINCO_DISPOSABLE_DB_TEST: "yes"

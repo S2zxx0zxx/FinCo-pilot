@@ -18,6 +18,8 @@ from app.main import app  # noqa: F401 registers models
 from app.agents.config import get_agent_settings
 from app.agents.models.agent import Agent
 from app.agents.models.knowledge import KnowledgeDoc
+from app.core.auth import UserManager, get_jwt_strategy
+from fastapi_users.db import SQLAlchemyUserDatabase
 from app.core.config import get_settings
 from app.core.database_runtime import create_database_engine
 from app.models.account import Account
@@ -204,6 +206,7 @@ async def main():
                     )
                 )
                 await session.commit()
+                old_session_token = await get_jwt_strategy().write_token(user)
             before = await dr.backup(storage)
             assert before["files"] == 3
             # Demonstrate point-in-time snapshot, never alter source to recover.
@@ -233,6 +236,12 @@ async def main():
                     and restored.is_2fa_enabled
                 )
                 assert restored.auth_epoch != "before-backup"
+                assert (
+                    await get_jwt_strategy().read_token(
+                        old_session_token, UserManager(SQLAlchemyUserDatabase(session, User))
+                    )
+                    is None
+                )
                 assert await session.scalar(
                     select(Account.balance).where(Account.id == account_id)
                 ) == Decimal("10000.42")

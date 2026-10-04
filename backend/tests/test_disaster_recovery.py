@@ -178,3 +178,18 @@ def test_subprocess_failure_never_echoes_secret(monkeypatch):
     with pytest.raises(dr.RecoveryError) as error:
         dr.run(["pg_dump"])
     assert "password" not in str(error.value) and "example.com" not in str(error.value)
+
+
+def test_libpq_uses_system_ca_or_explicit_ca_consistently(monkeypatch):
+    from app.core.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "db_ssl_mode", "verify-full")
+    monkeypatch.setattr(get_settings(), "db_ssl_ca_file", "")
+    assert dr.pg_env("postgresql://safe:synthetic@db/fresh")["PGSSLROOTCERT"] == "system"
+    monkeypatch.setattr(get_settings(), "db_ssl_mode", "verify-ca")
+    assert dr.pg_env("postgresql://safe:synthetic@db/fresh")["PGSSLMODE"] == "verify-full"
+    monkeypatch.setattr(get_settings(), "db_ssl_ca_file", "/private/provider-ca.pem")
+    assert (
+        dr.pg_env("postgresql://safe:synthetic@db/fresh")["PGSSLROOTCERT"]
+        == "/private/provider-ca.pem"
+    )

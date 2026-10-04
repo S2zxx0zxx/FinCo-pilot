@@ -116,6 +116,9 @@ def pg_env(database_url: str) -> dict[str, str]:
     )
     if settings.db_ssl_ca_file:
         env["PGSSLROOTCERT"] = settings.db_ssl_ca_file
+    elif settings.db_ssl_mode in {"verify-ca", "verify-full"}:
+        env["PGSSLROOTCERT"] = "system"
+        env["PGSSLMODE"] = "verify-full"
     return env
 
 

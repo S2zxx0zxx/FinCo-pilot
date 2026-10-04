@@ -13,6 +13,7 @@ LoadCredential=restic_password:/etc/fincopilot-backup/restic_password
 LoadCredential=database_url:/etc/fincopilot-backup/database_url
 LoadCredential=secret_key:/etc/fincopilot-backup/secret_key
 LoadCredential=credential_encryption_key:/etc/fincopilot-backup/credential_encryption_key
+LoadCredential=core_copilot_signing_key:/etc/fincopilot-backup/core_copilot_signing_key
 LoadCredential=legacy_data_keys:/etc/fincopilot-backup/legacy_data_keys
 Environment=RESTIC_PASSWORD_FILE=%d/restic_password
 Environment=FINCO_DR_LOCK_FILE=/var/lib/fincopilot-backup/operation.lock

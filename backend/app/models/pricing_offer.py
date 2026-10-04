@@ -102,6 +102,13 @@ class CheckoutReservation(Base):
             "founder_position IS NULL OR founder_position >= 1",
             name="ck_checkout_reservation_founder_position",
         ),
+        CheckConstraint(
+            "provider_order_state IN ('unstarted', 'creating', 'uncertain', 'ready')",
+            name="ck_checkout_reservation_provider_order_state",
+        ),
+        UniqueConstraint(
+            "provider_receipt", name="uq_checkout_reservation_provider_receipt"
+        ),
         UniqueConstraint(
             "provider_order_id", name="uq_checkout_reservation_provider_order"
         ),

@@ -22,6 +22,12 @@ def test_populated_claim_upgrade_preserves_records_and_refuses_loss():
             connection.execute(sa.text("INSERT INTO checkout_reservations VALUES (:id,:order,:status,'2026-09-01 00:00:00',:amount)"),row)
         with Operations.context(MigrationContext.configure(connection)):
             module.upgrade()
+        inspector = sa.inspect(connection)
+        unique_names = {item["name"] for item in inspector.get_unique_constraints("checkout_reservations")}
+        check_names = {item["name"] for item in inspector.get_check_constraints("checkout_reservations")}
+        assert "uq_checkout_reservation_provider_receipt" in unique_names
+        assert "ck_checkout_reservation_provider_order_state" in check_names
+
         rows = connection.execute(sa.text('SELECT * FROM checkout_reservations ORDER BY amount_minor')).mappings().all()
         assert rows[0]['provider_order_state'] == 'ready'
         assert rows[1]['provider_order_state'] == 'uncertain'

@@ -25,9 +25,37 @@ def upgrade():
         state = "ready" if row["provider_order_id"] else ("uncertain" if row["status"] == "reserved" else "unstarted")
         connection.execute(sa.text("UPDATE checkout_reservations SET provider_order_state=:state, provider_receipt=:receipt, provider_started_at=CASE WHEN :state='unstarted' THEN NULL ELSE reserved_at END WHERE id=:id"), {"state": state, "receipt": "fp-"+raw_id[:20], "id": row["id"]})
 
+    # Receipt is the recovery/reconciliation key. Enforce its uniqueness locally
+    # as well as at Razorpay so two reservations can never silently claim the
+    # same remote lookup identity. State corruption also fails at the database
+    # boundary rather than being interpreted by application code.
+    with op.batch_alter_table("checkout_reservations") as batch:
+        batch.create_check_constraint(
+            "ck_checkout_reservation_provider_order_state",
+            "provider_order_state IN ('unstarted', 'creating', 'uncertain', 'ready')",
+        )
+        batch.create_unique_constraint(
+            "uq_checkout_reservation_provider_receipt",
+            ["provider_receipt"],
+        )
+
 
 def downgrade():
     if op.get_bind().scalar(sa.text("SELECT count(*) FROM checkout_reservations WHERE provider_order_state <> 'unstarted'")):
         raise RuntimeError("Cannot discard provider order claim/reconciliation evidence")
-    for column in ("provider_started_at", "provider_receipt", "provider_key_id", "provider_order_state"):
-        op.drop_column("checkout_reservations", column)
+    with op.batch_alter_table("checkout_reservations") as batch:
+        batch.drop_constraint(
+            "uq_checkout_reservation_provider_receipt",
+            type_="unique",
+        )
+        batch.drop_constraint(
+            "ck_checkout_reservation_provider_order_state",
+            type_="check",
+        )
+        for column in (
+            "provider_started_at",
+            "provider_receipt",
+            "provider_key_id",
+            "provider_order_state",
+        ):
+            batch.drop_column(column)

@@ -1,0 +1,32 @@
+[Unit]
+Description=FinCo-Pilot encrypted backup
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=fincopilot-backup
+Group=fincopilot-backup
+WorkingDirectory=/opt/fincopilot/backend
+EnvironmentFile=/etc/fincopilot-backup.env
+LoadCredential=restic_password:/etc/fincopilot-backup/restic_password
+LoadCredential=database_url:/etc/fincopilot-backup/database_url
+LoadCredential=secret_key:/etc/fincopilot-backup/secret_key
+LoadCredential=credential_encryption_key:/etc/fincopilot-backup/credential_encryption_key
+LoadCredential=legacy_data_keys:/etc/fincopilot-backup/legacy_data_keys
+Environment=RESTIC_PASSWORD_FILE=%d/restic_password
+Environment=FINCO_DR_LOCK_FILE=/var/lib/fincopilot-backup/operation.lock
+Environment=TMPDIR=/var/lib/fincopilot-backup
+ExecStart=/opt/fincopilot/backend/.venv/bin/python -m scripts.disaster_recovery backup
+UMask=0077
+StateDirectory=fincopilot-backup
+StateDirectoryMode=0700
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+TimeoutStartSec=3h
+LimitFSIZE=110G
+ReadWritePaths=/var/lib/fincopilot-backup
+StandardOutput=journal
+StandardError=journal

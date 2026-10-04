@@ -22,6 +22,7 @@ export const launchHindi: Record<string, string> = {
   'Set a new password': 'नया पासवर्ड बनाएँ',
   'Verify your email': 'अपना ईमेल सत्यापित करें',
   'After signup, check your email for verification. You can request another link from the sign-in page.': 'साइन अप के बाद सत्यापन के लिए अपना ईमेल देखें। साइन-इन पेज से नया लिंक मँगाया जा सकता है।',
+  'This download contains selected workspace records. Attached files and account sign-in settings are not included.': 'इस डाउनलोड में वर्कस्पेस के चुनिंदा रिकॉर्ड हैं। अटैच की गई फ़ाइलें और अकाउंट की साइन-इन सेटिंग्स इसमें शामिल नहीं हैं।',
   'Request verification email': 'सत्यापन ईमेल मँगाएँ',
   'Passwords do not match.': 'दोनों पासवर्ड एक जैसे नहीं हैं।',
   'Password changed. Sign in again on your devices.': 'पासवर्ड बदल गया है। अपने डिवाइस पर फिर से साइन इन करें।',

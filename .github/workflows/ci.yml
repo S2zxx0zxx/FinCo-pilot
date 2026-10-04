@@ -175,6 +175,14 @@ jobs:
         env:
           FINCO_DISPOSABLE_DB_TEST: "yes"
         run: python -m scripts.verify_email_verification_postgres
+      - name: Install PostgreSQL backup client and encrypted repository tool
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client-16 restic
+      - name: Prove encrypted backup and quarantined restore on PostgreSQL
+        env:
+          FINCO_DISPOSABLE_DB_TEST: "yes"
+        run: python -m scripts.verify_backup_restore_postgres
       - name: Verify concurrent first-admin bootstrap on PostgreSQL
         env:
           FINCO_DISPOSABLE_DB_TEST: "yes"

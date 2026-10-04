@@ -71,6 +71,7 @@ def create_database_engine(
     settings: Settings | None = None,
     *,
     short_lived: bool = False,
+    isolated_restore: bool = False,
 ) -> AsyncEngine:
     """Create the canonical FinCo-Pilot async PostgreSQL engine.
 
@@ -95,7 +96,14 @@ def create_database_engine(
             pool_recycle=settings.db_pool_recycle_seconds,
         )
 
-    return create_async_engine(normalized_database_url(settings), **kwargs)
+    from app.core.restore_quarantine import assert_runtime_target, install_quarantine_guard
+    url = normalized_database_url(settings)
+    if not isolated_restore:
+        assert_runtime_target(url.database)
+    engine = create_async_engine(url, **kwargs)
+    if not isolated_restore:
+        install_quarantine_guard(engine)
+    return engine
 
 
 def safe_database_target(settings: Settings | None = None) -> str:

@@ -1,0 +1,11 @@
+[Unit]
+Description=Schedule encrypted repository read check
+
+[Timer]
+OnCalendar=Sun *-*-* 04:00:00 UTC
+Persistent=true
+RandomizedDelaySec=5m
+Unit=finco-backup-check.service
+
+[Install]
+WantedBy=timers.target

@@ -225,6 +225,18 @@ async def inventory(session: AsyncSession, user: User):
     private_pairs = select(transactions.c.transfer_pair_id).where(transactions.c.workspace_id.in_(private), transactions.c.transfer_pair_id.is_not(None))
     if await session.scalar(select(func.count()).select_from(transactions).where(transactions.c.transfer_pair_id.in_(private_pairs), ~transactions.c.workspace_id.in_(private))):
         blockers.append("cross_workspace_transfer")
+    # Recheck after the full graph is known, including self-referential invoice
+    # corrections and edges whose parent sorts later in the graph.
+    for table in tables:
+        if table.name not in conditions or "workspace_id" not in table.c:
+            continue
+        outside = or_(table.c.workspace_id.is_(None), ~table.c.workspace_id.in_(private))
+        for column in table.columns:
+            for fk in column.foreign_keys:
+                parent = fk.column.table
+                if parent.name in conditions and await session.scalar(select(func.count()).select_from(table).where(
+                    outside, column.in_(select(fk.column).where(conditions[parent.name])))):
+                    blockers.append("cross_workspace_reference")
     # External access may remain even for a shared connection whose records are preserved.
     banks = Base.metadata.tables["bank_connections"]
     bank_rows = list((await session.execute(select(banks).where(or_(banks.c.user_id == user.id, banks.c.workspace_id.in_(private))))).mappings())

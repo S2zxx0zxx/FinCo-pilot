@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 import app.models  # noqa: F401
 import app.agents.models  # noqa: F401
 from app.core.config import get_settings
-from app.core.database import Base, engine
+from app.core.database import Base, engine, async_session_maker
 from app.models.account_deletion import AccountDeletion, utcnow
 from app.models.account import Account
 from app.models.transaction import Transaction
@@ -40,6 +40,10 @@ def migration(connection, direction):
 async def main():
     if os.environ.get('CI') != 'true' or os.environ.get('FINCO_DISPOSABLE_DB_TEST') != 'yes':
         raise SystemExit('Refusing account deletion proof outside explicitly disposable CI')
+    # Prove the actual full Alembic chain is accepted, not only an ORM-created schema.
+    async with async_session_maker() as migrated:
+        await service.lock_inventory(migrated)
+        await migrated.rollback()
     schema = 'deletion_ci_' + uuid.uuid4().hex
     isolated = create_async_engine(engine.url, connect_args={'server_settings': {'search_path': schema + ',public'}})
     sessions = async_sessionmaker(isolated, expire_on_commit=False)

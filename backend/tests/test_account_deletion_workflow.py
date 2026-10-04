@@ -266,3 +266,21 @@ async def test_processor_and_version_receipts_cannot_be_filled_before_primary_pu
     assert service.public_status(job)['pending_external_count'] == 2
     await finish_execution(session, job, admin)
     assert job.state == 'backup_expiry_pending'
+
+
+@pytest.mark.asyncio
+async def test_shared_self_referential_invoice_is_a_preflight_blocker(session, test_user, test_workspace):
+    from app.models.invoice import Invoice
+    admin = await operator(session)
+    shared = Workspace(id=uuid.uuid4(), name='Shared invoice', kind='business', billing_owner_user_id=admin.id)
+    session.add(shared)
+    await session.flush()
+    session.add(WorkspaceMember(workspace_id=shared.id, user_id=admin.id, role='owner'))
+    private_invoice = Invoice(workspace_id=test_workspace.id, user_id=test_user.id, issue_date=date.today(), due_date=date.today(), status='draft')
+    session.add(private_invoice)
+    await session.flush()
+    session.add(Invoice(workspace_id=shared.id, user_id=admin.id, issue_date=date.today(), due_date=date.today(), status='draft', corrects_id=private_invoice.id))
+    await session.commit()
+    result = await service.request_deletion(session, test_user)
+    assert result['state'] == 'blocked' and 'cross_workspace_reference' in result['blockers']
+    assert test_user.is_active

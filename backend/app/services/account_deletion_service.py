@@ -24,7 +24,7 @@ from app.models.workspace import Workspace, WorkspaceMember
 from app.providers import get_storage_provider
 
 PERSONAL_TABLES = {"user_passkeys", "external_mcp_tokens", "mcp_approvals", "agent_llm_usage", "billing_usage_counters", "agent_llm_connections", "subscriptions"}
-PAYMENT_TABLES = {"checkout_reservations", "founding_members", "pricing_audit_events", "pricing_campaigns"}
+PAYMENT_TABLES = {"payment_webhook_events", "checkout_reservations", "founding_members", "pricing_audit_events", "pricing_campaigns"}
 RECEIPT_TABLES = {"account_deletions", "account_deletion_holds", "account_deletion_events", "workspace_deletions", "workspace_deletion_holds", "workspace_deletion_events"}
 
 
@@ -85,7 +85,7 @@ async def lock_inventory(session: AsyncSession):
     jobs. This transaction-wide lock waits for existing writers and fences new
     writers while the exact manifest and primary purge commit atomically.
     """
-    expected = set("app_settings fx_rates users agent_llm_connections billing_usage_counters checkout_reservations pricing_audit_events pricing_campaigns subscriptions user_passkeys workspaces agents bank_connections category_groups collections external_mcp_tokens founding_members groups invoice_settings loans payees reconciliation_rules rules workspace_members workspace_tax_ids agent_conversations agent_knowledge_docs agent_tools categories group_members institutions invoices mcp_approvals payee_mapping payee_tax_ids accounts agent_knowledge_chunks agent_messages asset_groups budgets invoice_attachments invoice_lines agent_llm_usage assets collection_accounts collection_asset_groups credit_card_bills import_logs recurring_transactions asset_transactions asset_values goals transactions group_settlements invoice_allocations reconciliation_events reconciliation_suggestions transaction_attachments transaction_splits account_deletions account_deletion_holds account_deletion_events workspace_deletions workspace_deletion_holds workspace_deletion_events".split())
+    expected = set("app_settings fx_rates users payment_webhook_events agent_llm_connections billing_usage_counters checkout_reservations pricing_audit_events pricing_campaigns subscriptions user_passkeys workspaces agents bank_connections category_groups collections external_mcp_tokens founding_members groups invoice_settings loans payees reconciliation_rules rules workspace_members workspace_tax_ids agent_conversations agent_knowledge_docs agent_tools categories group_members institutions invoices mcp_approvals payee_mapping payee_tax_ids accounts agent_knowledge_chunks agent_messages asset_groups budgets invoice_attachments invoice_lines agent_llm_usage assets collection_accounts collection_asset_groups credit_card_bills import_logs recurring_transactions asset_transactions asset_values goals transactions group_settlements invoice_allocations reconciliation_events reconciliation_suggestions transaction_attachments transaction_splits account_deletions account_deletion_holds account_deletion_events workspace_deletions workspace_deletion_holds workspace_deletion_events".split())
     if set(Base.metadata.tables) != expected:
         raise HTTPException(409, "New model tables require deletion policy review")
     bind = session.get_bind()

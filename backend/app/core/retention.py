@@ -157,7 +157,9 @@ RETENTION_RULES: dict[str, RetentionRule] = {
             "Current Razorpay Payments merchant terms require transaction/order records "
             "to be retained for 10 calendar years from the relevant order date when that "
             "contract applies. Retain only the minimum record set required by contract/law; "
-            "never use this exception to preserve card PAN/CVV or unrelated product data."
+            "never use this exception to preserve card PAN/CVV or unrelated product data. "
+            "Payment webhook receipts retain only allowlisted encrypted financial snapshots and "
+            "provider identifiers; raw bodies/contact/card/custom-note data are not retained."
         ),
     ),
     "abandoned_checkout_reservations": RetentionRule(

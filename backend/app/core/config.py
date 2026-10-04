@@ -235,6 +235,7 @@ class Settings(BaseSettings):
     razorpay_key_id: str = ""
     razorpay_key_secret: SecretStr = SecretStr("")
     razorpay_webhook_enabled: bool = False
+    razorpay_webhook_mode: str = "test"
     razorpay_webhook_account_id: str = ""
     razorpay_webhook_secret: SecretStr = SecretStr("")
     razorpay_webhook_previous_secret: SecretStr = SecretStr("")
@@ -710,6 +711,8 @@ class Settings(BaseSettings):
                 "explicitly set to inclusive or exclusive"
             )
 
+        if self.razorpay_webhook_mode not in {"test", "live"}:
+            raise ValueError("Webhook mode must be test or live")
         current = self.razorpay_webhook_secret.get_secret_value()
         previous = self.razorpay_webhook_previous_secret.get_secret_value()
         for value in (current, previous):

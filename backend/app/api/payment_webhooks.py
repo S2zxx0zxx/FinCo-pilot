@@ -11,12 +11,17 @@ import time
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from starlette.requests import ClientDisconnect
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.billing.webhook_inbox import persist_webhook
+from app.core.database import get_async_session
 
 from app.core.config import get_settings
 
 router = APIRouter(prefix="/api/webhooks", tags=["payment-webhooks"])
 MAX_BODY_BYTES = 262_144
 READ_TIMEOUT_SECONDS = 2
+PERSIST_TIMEOUT_SECONDS = 2.5
 
 
 @dataclass(frozen=True)
@@ -132,8 +137,22 @@ async def verified_razorpay_webhook(request: Request) -> VerifiedWebhook:
     return VerifiedWebhook(raw, event, delivery.decode("ascii") if delivery else None)
 
 
-@router.post("/razorpay", status_code=503)
-async def razorpay_webhook(verified: VerifiedWebhook = Depends(verified_razorpay_webhook)):
-    # A 2xx would discard a payment event before durable persistence exists.
-    # No billing mutation, background task, or external API call is permitted here.
-    raise _reject(503)
+@router.post("/razorpay")
+async def razorpay_webhook(
+    verified: VerifiedWebhook = Depends(verified_razorpay_webhook),
+    session: AsyncSession = Depends(get_async_session),
+):
+    try:
+        async with asyncio.timeout(PERSIST_TIMEOUT_SECONDS):
+            await persist_webhook(session, body=verified.body, event=verified.event,
+                                  delivery_id=verified.delivery_id,
+                                  mode=get_settings().razorpay_webhook_mode)
+    except Exception:
+        # Do not expose/log DB SQL parameters, payloads or cryptographic errors.
+        try:
+            async with asyncio.timeout(0.25):
+                await session.rollback()
+        except Exception:
+            pass
+        raise _reject(503) from None
+    return {"received": True}

@@ -51,7 +51,7 @@ PRODUCTION_SECRETS: dict[str, ProductionSecret] = {
         "CREDENTIAL_ENCRYPTION_KEY", "credential_encryption_key", SecretKind.DATA_ENCRYPTION_KEY,
         ("backend", "celery-worker", "celery-beat", "migration", "mcp-server"), "every production deployment",
         RotationImpact.COORDINATED_INFRA_CHANGE, False,
-        notes="Independent encryption key. Retain old keys in LEGACY_DATA_KEYS until all stored credentials are re-encrypted.",
+        notes="Independent encryption key. Retain old keys in LEGACY_DATA_KEYS until all stored credentials and minimized payment webhook snapshots are re-encrypted.",
     ),
     "CORE_COPILOT_SIGNING_KEY": ProductionSecret(
         "CORE_COPILOT_SIGNING_KEY", "core_copilot_signing_key", SecretKind.INTERNAL_SIGNING_KEY,

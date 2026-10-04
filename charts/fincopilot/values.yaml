@@ -70,6 +70,7 @@ secret:
 
 # Non-sensitive configuration
 config:
+  razorpayWebhookMode: "test"
   razorpayWebhookEnabled: false
   razorpayWebhookAccountId: ""
   razorpayWebhookPreviousSecretExpiresAt: "0"

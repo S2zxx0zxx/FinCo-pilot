@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { auth } from '@/lib/api'
+import { SESSION_INVALIDATED_EVENT } from '@/lib/session-state'
 import type { User } from '@/types'
 
 import { AuthContext, type LoginResult } from '@/contexts/auth-context'
@@ -18,6 +19,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'))
   const [isLoading, setIsLoading] = useState(true)
   const queryClient = useQueryClient()
+  const adoptToken = useCallback((accessToken: string) => {
+    queryClient.clear()
+    setUser(null)
+    setIsLoading(true)
+    localStorage.setItem('token', accessToken)
+    setToken(accessToken)
+  }, [queryClient])
 
   if (!token && (user !== null || isLoading)) {
     setUser(null)
@@ -28,26 +36,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!token) return
     let cancelled = false
     auth.me()
-      .then((me) => { if (!cancelled) setUser(normalizeUser(me)) })
+      .then((me) => { if (!cancelled && localStorage.getItem('token') === token) setUser(normalizeUser(me)) })
       .catch(() => {
-        if (cancelled) return
+        if (cancelled || localStorage.getItem('token') !== token) return
+        queryClient.clear()
         localStorage.removeItem('token')
         setToken(null)
       })
       .finally(() => { if (!cancelled) setIsLoading(false) })
     return () => { cancelled = true }
-  }, [token])
+  }, [token, queryClient])
 
   // Sync token across tabs via storage events
   useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'token') {
-        setToken(e.newValue)
+      if (e.key === 'token' || e.key === null) {
+        queryClient.clear()
+        setUser(null)
+        setIsLoading(e.key !== null && e.newValue !== null)
+        setToken(e.key === null ? null : e.newValue)
       }
     }
+    const handleInvalidation = () => {
+      queryClient.clear()
+      setUser(null)
+      setToken(null)
+    }
     window.addEventListener('storage', handleStorage)
-    return () => window.removeEventListener('storage', handleStorage)
-  }, [])
+    window.addEventListener(SESSION_INVALIDATED_EVENT, handleInvalidation)
+    return () => {
+      window.removeEventListener('storage', handleStorage)
+      window.removeEventListener(SESSION_INVALIDATED_EVENT, handleInvalidation)
+    }
+  }, [queryClient])
 
   const login = useCallback(async (email: string, password: string): Promise<LoginResult> => {
     const data = await auth.login(email, password)
@@ -57,26 +78,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const accessToken = data.access_token
-    localStorage.setItem('token', accessToken)
-    setToken(accessToken)
+    adoptToken(accessToken)
     const me = await auth.me()
-    setUser(normalizeUser(me))
+    if (localStorage.getItem('token') === accessToken) setUser(normalizeUser(me))
     return { requires_2fa: false }
-  }, [])
+  }, [adoptToken])
 
   const verify2fa = useCallback(async (tempToken: string, code: string) => {
     const data = await auth.verify2fa(tempToken, code)
-    localStorage.setItem('token', data.access_token)
-    setToken(data.access_token)
+    adoptToken(data.access_token)
     const me = await auth.me()
-    setUser(normalizeUser(me))
-  }, [])
+    if (localStorage.getItem('token') === data.access_token) setUser(normalizeUser(me))
+  }, [adoptToken])
 
-  const loginWithToken = useCallback((accessToken: string) => {
-    localStorage.setItem('token', accessToken)
-    setToken(accessToken)
-    auth.me().then((me) => setUser(normalizeUser(me))).catch(() => {})
-  }, [])
+  const loginWithToken = useCallback((accessToken: string, options?: { preserveCurrentUser: true }) => {
+    if (options?.preserveCurrentUser && user) {
+      // Only authenticated same-account MFA responses use this path. Keep the
+      // recovery-code screen mounted while the cancellable probe revalidates.
+      queryClient.clear()
+      localStorage.setItem('token', accessToken)
+      setToken(accessToken)
+    } else {
+      adoptToken(accessToken)
+    }
+  }, [adoptToken, queryClient, user])
 
   const updateUser = useCallback((updatedUser: User) => {
     setUser(normalizeUser(updatedUser))

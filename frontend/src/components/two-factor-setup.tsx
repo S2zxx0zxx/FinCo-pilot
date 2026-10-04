@@ -61,7 +61,7 @@ export function TwoFactorSetup({ open, onClose }: TwoFactorSetupProps) {
     setError('')
     try {
       const result = await auth.enable2fa(setupCode, setupPassword)
-      if (result.access_token) loginWithToken(result.access_token)
+      if (result.access_token) loginWithToken(result.access_token, { preserveCurrentUser: true })
       setSetupPassword('')
       setRecoveryCodes(result.recovery_codes)
       toast.success(t('auth.twoFactorEnabled'))
@@ -79,7 +79,7 @@ export function TwoFactorSetup({ open, onClose }: TwoFactorSetupProps) {
     setError('')
     try {
       const result = await auth.disable2fa(disablePassword, disableCode)
-      if (result?.access_token) loginWithToken(result.access_token)
+      if (result?.access_token) loginWithToken(result.access_token, { preserveCurrentUser: true })
       toast.success(t('auth.twoFactorDisabled'))
       if (user) updateUser({ ...user, is_2fa_enabled: false })
       handleClose()
@@ -119,7 +119,7 @@ export function TwoFactorSetup({ open, onClose }: TwoFactorSetupProps) {
             <Button type="button" variant="outline" disabled={disableLoading || !disablePassword || disableCode.length !== 6} onClick={async () => {
               setDisableLoading(true)
               setError('')
-              try { const result = await auth.recoveryCodes(disablePassword, disableCode); loginWithToken(result.access_token); setRecoveryCodes(result.recovery_codes) }
+              try { const result = await auth.recoveryCodes(disablePassword, disableCode); loginWithToken(result.access_token, { preserveCurrentUser: true }); setRecoveryCodes(result.recovery_codes) }
               catch { setError('Enter your password and current authenticator code to replace recovery codes.') }
               finally { setDisableLoading(false) }
             }}>Generate replacement recovery codes</Button>

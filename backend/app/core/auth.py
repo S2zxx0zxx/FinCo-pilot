@@ -1,10 +1,11 @@
 import logging
 import hashlib
 import hmac
+import re
 
 import jwt
 from fastapi_users import exceptions
-from fastapi_users.jwt import decode_jwt, generate_jwt
+from fastapi_users.jwt import generate_jwt
 import uuid
 from decimal import Decimal
 from typing import Optional
@@ -18,6 +19,7 @@ from fastapi_users.authentication import (
 )
 from fastapi_users.db import SQLAlchemyUserDatabase
 from sqlalchemy.ext.asyncio import AsyncSession
+from pydantic import SecretStr
 
 from app.core.auth_policy import require_local_auth_enabled
 from app.core.config import get_settings
@@ -140,19 +142,30 @@ class RevocableJWTStrategy(JWTStrategy):
         )
 
     async def read_token(self, token, user_manager):
-        user = await super().read_token(token, user_manager)
-        if user is None or token is None:
+        if token is None:
             return None
         try:
-            data = decode_jwt(token, self.decode_key, self.token_audience, algorithms=[self.algorithm])
-        except jwt.PyJWTError:
+            data = jwt.decode(
+                token, self.decode_key.get_secret_value() if isinstance(self.decode_key, SecretStr) else self.decode_key, audience=self.token_audience,
+                algorithms=[self.algorithm],
+                options={"require": ["sub", "aud", "exp", "credential_stamp"]},
+            )
+        except (jwt.PyJWTError, ValueError, OverflowError, TypeError):
+            return None
+        stamp = data.get("credential_stamp")
+        expiry = data.get("exp")
+        # Reject legacy/malformed stamps before DB lookup; non-ASCII strings
+        # otherwise raise from compare_digest instead of producing a safe 401.
+        if not isinstance(stamp, str) or re.fullmatch(r"[0-9a-f]{64}", stamp) is None:
+            return None
+        if isinstance(expiry, bool) or not isinstance(expiry, (int, float)):
+            return None
+        user = await super().read_token(token, user_manager)
+        if user is None:
             return None
         if isinstance(user_manager, UserManager):
-            # Read current credential state even when a session identity map was
-            # populated before a concurrent password change or logout.
             await user_manager.user_db.session.refresh(user, attribute_names=["hashed_password", "auth_epoch", "is_active"])
-        stamp = data.get("credential_stamp")
-        return user if isinstance(stamp, str) and hmac.compare_digest(stamp, self.stamp(user)) else None
+        return user if user.is_active and hmac.compare_digest(stamp, self.stamp(user)) else None
 
 
 def get_jwt_strategy() -> RevocableJWTStrategy:

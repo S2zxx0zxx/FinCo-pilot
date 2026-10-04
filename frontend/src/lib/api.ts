@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { rememberRequestId } from '@/lib/support'
+import { invalidateRejectedSession } from '@/lib/session-state'
 import type { NumberFormat, DateFormat } from '@/lib/format'
 import type {
   User,
@@ -99,7 +100,7 @@ export const WORKSPACE_STORAGE_KEY = 'workspace_id'
 // Add auth token + active workspace header to requests
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
-  if (token) {
+  if (token && !config.headers.has('Authorization')) {
     config.headers.Authorization = `Bearer ${token}`
   }
   const workspaceId = localStorage.getItem(WORKSPACE_STORAGE_KEY)
@@ -114,8 +115,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     rememberRequestId(error.response?.headers)
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token')
+    if (error.response?.status === 401 && invalidateRejectedSession(error.config?.headers?.Authorization)) {
       window.location.href = '/login'
     }
     return Promise.reject(error)

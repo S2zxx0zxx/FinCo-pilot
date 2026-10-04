@@ -13,7 +13,7 @@ interface AuthContextType {
   isLoading: boolean
   login: (email: string, password: string) => Promise<LoginResult>
   verify2fa: (tempToken: string, code: string) => Promise<void>
-  loginWithToken: (accessToken: string) => void
+  loginWithToken: (accessToken: string, options?: { preserveCurrentUser: true }) => void
   register: (email: string, password: string, preferences?: Record<string, string>) => Promise<void>
   updateUser: (user: User) => void
   logout: () => void

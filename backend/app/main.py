@@ -72,6 +72,7 @@ from app.core.auth_policy import require_local_auth_enabled
 from app.core.config import get_settings
 from app.core.database import async_session_maker
 from app.api.password_recovery import router as password_recovery_router
+from app.api.email_verification import router as email_verification_router, prepare_registration_mail
 from app.core.rate_limit import login_rate_limit, password_reset_rate_limit, register_rate_limit
 from app.core.redis import close_redis, get_redis
 from app.schemas.user import UserCreate, UserRead, UserUpdate
@@ -167,6 +168,7 @@ app.include_router(
         Depends(require_local_auth_enabled),
         Depends(check_registration_enabled),
         Depends(register_rate_limit),
+        Depends(prepare_registration_mail),
     ],
 )
 app.include_router(
@@ -176,7 +178,7 @@ app.include_router(
     dependencies=[Depends(require_local_auth_enabled), Depends(password_reset_rate_limit)],
 )
 app.include_router(
-    fastapi_users.get_verify_router(UserRead),
+    email_verification_router,
     prefix="/api/auth",
     tags=["auth"],
     dependencies=[Depends(require_local_auth_enabled), Depends(password_reset_rate_limit)],

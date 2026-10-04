@@ -41,3 +41,7 @@ Any result lacking real inbox/client evidence stays pending. No production accou
 - [OWASP Forgot Password Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html): consistent account-existence responses, expiring single-use credentials, rate limits, no-referrer, no automatic login and notification.
 - [OWASP WSTG reset testing](https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/04-Authentication/09-Weak_Password_Change_or_Reset_Functionalities): token privacy, replay and lifecycle testing.
 - Installed FastAPI Users manager/router source and its JWT decoder were inspected directly before retaining and strengthening the current fingerprint contract.
+
+## Roadmap #24 coordinator follow-up
+
+Verification now reuses the generic request coordinator with a separate `email_verification` recipient quota and the same eight-task per-process capacity. Reset response, legacy quota prefix, fingerprint validation and notification behavior are retained. See [verification checkpoint](FINCO_VERIFICATION_EMAIL_E2E_V1.md) for signup/ownership/compatibility decisions and live gates.

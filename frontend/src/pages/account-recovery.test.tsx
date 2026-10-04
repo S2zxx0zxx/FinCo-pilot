@@ -57,3 +57,22 @@ it('removes the token from navigation before submission while retaining it only 
   await waitFor(() => expect(api.resetPassword).toHaveBeenCalledWith('private-reset', 'New-password-123'))
   expect(await screen.findByRole('alert')).toHaveTextContent('Request a new email')
 })
+
+it('verifies a valid ownership link without creating a login session', async () => {
+  api.verifyEmail.mockResolvedValue({ id: 'verified-account', email: 'verified@example.com', is_verified: true })
+  localStorage.clear()
+  render(<MemoryRouter initialEntries={['/verify-email?token=ownership-link']}><AccountRecovery mode="verify" /></MemoryRouter>)
+  fireEvent.click(screen.getByRole('button', { name: 'Verify email' }))
+  expect(await screen.findByRole('status')).toHaveTextContent('Email verified')
+  expect(api.verifyEmail).toHaveBeenCalledWith('ownership-link')
+  expect(localStorage.getItem('token')).toBeNull()
+})
+
+it('requests verification with the same generic acceptance guidance', async () => {
+  api.requestVerification.mockResolvedValue(null)
+  render(<MemoryRouter><AccountRecovery mode="request-verification" /></MemoryRouter>)
+  fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'user@example.com' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Send email' }))
+  expect(await screen.findByRole('status')).toHaveTextContent('If this address is eligible')
+  expect(api.requestVerification).toHaveBeenCalledWith('user@example.com')
+})

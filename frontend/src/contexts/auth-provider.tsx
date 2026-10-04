@@ -107,6 +107,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(normalizeUser(updatedUser))
   }, [])
 
+  const confirmEmailVerification = useCallback((userId: string, email: string) => {
+    setUser(current => current?.id === userId && current.email === email && token && localStorage.getItem('token') === token
+      ? { ...current, is_verified: true } : current)
+  }, [token])
+
   const register = useCallback(async (email: string, password: string, preferences?: Record<string, string>) => {
     await auth.register(email, password, preferences)
     await login(email, password)
@@ -125,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [queryClient])
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, verify2fa, loginWithToken, register, updateUser, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, verify2fa, loginWithToken, register, updateUser, confirmEmailVerification, logout }}>
       {children}
     </AuthContext.Provider>
   )

@@ -21,6 +21,7 @@ export const launchHindi: Record<string, string> = {
   'Forgot your password?': 'पासवर्ड भूल गए?',
   'Set a new password': 'नया पासवर्ड बनाएँ',
   'Verify your email': 'अपना ईमेल सत्यापित करें',
+  'After signup, check your email for verification. You can request another link from the sign-in page.': 'साइन अप के बाद सत्यापन के लिए अपना ईमेल देखें। साइन-इन पेज से नया लिंक मँगाया जा सकता है।',
   'Request verification email': 'सत्यापन ईमेल मँगाएँ',
   'Passwords do not match.': 'दोनों पासवर्ड एक जैसे नहीं हैं।',
   'Password changed. Sign in again on your devices.': 'पासवर्ड बदल गया है। अपने डिवाइस पर फिर से साइन इन करें।',

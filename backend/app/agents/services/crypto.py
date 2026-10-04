@@ -12,7 +12,7 @@ import hashlib
 
 from cryptography.fernet import Fernet, InvalidToken
 
-from app.core.config import get_settings
+from app.core.credential_keys import data_keys
 
 
 _CURRENT_SALT = b"fincopilot-agents-llm-keys-v1"
@@ -21,16 +21,6 @@ _CURRENT_SALT = b"fincopilot-agents-llm-keys-v1"
 _COMPAT_SALT_V1 = bytes.fromhex(
     "73656375726f2d6167656e74732d6c6c6d2d6b6579732d7631"
 )
-
-
-def data_keys() -> tuple[str, ...]:
-    """Read-only compatibility keys; these never authenticate login tokens."""
-    settings = get_settings()
-    return tuple(dict.fromkeys(filter(None, (
-        settings.credential_encryption_key.get_secret_value().strip()
-        or settings.secret_key.get_secret_value(),
-        *settings.legacy_keys_for("credentials"),
-    ))))
 
 
 def _fernet_for_salt(salt: bytes, key: str | None = None) -> Fernet:

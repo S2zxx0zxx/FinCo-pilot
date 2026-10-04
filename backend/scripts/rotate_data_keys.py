@@ -12,6 +12,7 @@ import sys
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.attributes import flag_modified
 
 import app.models  # noqa: F401 - register SQLAlchemy relationships
 import app.agents.models  # noqa: F401
@@ -24,11 +25,12 @@ from app.agents.services.crypto import decrypt, encrypt
 from app.core.config import get_settings
 from app.core.database import async_session_maker
 from app.models.bank_connection import BankConnection
+from app.models.user import User
 
 
 async def rotate_data(session: AsyncSession, *, apply: bool = False) -> dict[str, int]:
     changes: list[tuple[object, str, object]] = []
-    counts = {"llm_credentials": 0, "bank_credentials": 0, "copilot_identities": 0}
+    counts = {"llm_credentials": 0, "bank_credentials": 0, "copilot_identities": 0, "mfa_seeds": 0}
     connections = (await session.execute(select(LlmConnection).with_for_update())).scalars().all()
     for row in connections:
         if row.api_key_encrypted:
@@ -64,10 +66,18 @@ async def rotate_data(session: AsyncSession, *, apply: bool = False) -> dict[str
         )
         changes.append((row, "extra", extra))
         counts["copilot_identities"] += 1
+    users = (await session.scalars(select(User).where(User.totp_secret.is_not(None)).with_for_update().execution_options(populate_existing=True))).all()
+    for user in users:
+        if not user.totp_secret:
+            raise ValueError("Unreadable authenticator; restore all previous data keys")
+        changes.append((user, "totp_secret", user.totp_secret))
+        counts["mfa_seeds"] += 1
     # Validate every stored value before changing any row.
     if apply:
         for row, field, value in changes:
             setattr(row, field, value)
+            if field == "totp_secret":
+                flag_modified(row, field)
         await session.flush()
     return counts
 

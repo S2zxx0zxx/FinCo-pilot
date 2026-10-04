@@ -12,7 +12,10 @@ const api = vi.hoisted(() => ({ forgotPassword: vi.fn(), list: vi.fn(), spending
 vi.mock('@/lib/recovery-api', () => ({ recoveryApi: api }))
 vi.mock('@/lib/api', () => ({ loans: { list: api.list }, dashboard: { spendingPlan: api.spendingPlan } }))
 vi.mock('@/contexts/workspace-context', () => ({ useWorkspace: () => ({ current: { id: 'one', default_currency: 'INR' }, canWrite: false }) }))
-vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ user: { preferences: { currency_display: 'INR' } } }) }))
+vi.mock('@/contexts/auth-context', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@/contexts/auth-context')>(),
+  useAuth: () => ({ user: { preferences: { currency_display: 'INR' } } }),
+}))
 
 beforeEach(async () => {
   vi.resetAllMocks()

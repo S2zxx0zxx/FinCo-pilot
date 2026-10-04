@@ -32,3 +32,15 @@ it('rejects without submitting approval', async () => {
   fireEvent.click(await screen.findByRole('button', { name: 'Reject' }))
   await waitFor(() => expect(api.mcpTokens.decide).toHaveBeenCalledWith('approval-one', 'reject'))
 })
+
+it('shows expired and credential-changed tokens truthfully with recreation guidance', async () => {
+  api.mcpTokens.list.mockResolvedValue([
+    { id: 'old', allow_writes: false, revoked: false, expires_at: '2099-01-01T00:00:00Z', status: 'credential_changed' },
+    { id: 'expired', allow_writes: false, revoked: false, expires_at: '2000-01-01T00:00:00Z', status: 'expired' },
+  ])
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  render(<QueryClientProvider client={client}><McpExternalPanel /></QueryClientProvider>)
+  expect(await screen.findByText(/Recreate required/)).toBeInTheDocument()
+  expect(screen.getByText(/· Expired/)).toBeInTheDocument()
+  expect(screen.getByText(/Old unregistered tokens must be replaced/)).toBeInTheDocument()
+})

@@ -119,7 +119,7 @@ def test_optional_conv_id_is_truly_optional():
 def test_external_token_round_trip():
     from mcp_server.auth import verify_request
 
-    token = mint_token(user_id=uuid.uuid4(), external=True)
+    token = mint_token(user_id=uuid.uuid4(), workspace_id=uuid.uuid4(), token_id=uuid.uuid4(), external=True)
 
     ctx = verify_request(_req_bearer(token))
     assert ctx.external is True

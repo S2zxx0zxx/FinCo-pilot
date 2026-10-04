@@ -2,7 +2,7 @@
 from datetime import datetime, timedelta, timezone
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, StrictBool
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.agents.config import get_agent_settings
@@ -16,7 +16,7 @@ router = APIRouter(prefix="/api/agents/mcp-tokens", tags=["agents"])
 
 
 class TokenRequest(BaseModel):
-    allow_writes: bool = False
+    allow_writes: StrictBool = False
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
@@ -33,9 +33,14 @@ async def create_mcp_token(
         expires_at=datetime.now(timezone.utc) + timedelta(days=days),
     )
     session.add(row)
-    await session.commit()
-    token = mint_token(user_id=ctx.user_id, workspace_id=ctx.id,
-                       ttl_seconds=days * 86400, external=True, token_id=row.id)
+    try:
+        await session.flush()
+        token = mint_token(user_id=ctx.user_id, workspace_id=ctx.id,
+                           ttl_seconds=days * 86400, external=True, token_id=row.id)
+        await session.commit()
+    except Exception:
+        await session.rollback()
+        raise
     return {"id": str(row.id), "token": token, "expires_in_seconds": days * 86400,
             "expires_in_days": days, "allow_writes": row.allow_writes,
             "workspace_id": str(ctx.id), "workspace_name": ctx.workspace.name}
@@ -49,7 +54,10 @@ async def list_mcp_tokens(
     rows = (await session.execute(select(ExternalMCPToken).where(
         ExternalMCPToken.user_id == ctx.user_id, ExternalMCPToken.workspace_id == ctx.id,
     ).order_by(ExternalMCPToken.created_at.desc()))).scalars().all()
+    from app.services.mcp_token_service import external_token_status
+    stamp = get_jwt_strategy().stamp(ctx.user)
     return [{"id": str(row.id), "allow_writes": row.allow_writes, "revoked": row.revoked,
+             "status": external_token_status(row, stamp, datetime.now(timezone.utc)),
              "created_at": row.created_at, "expires_at": row.expires_at} for row in rows]
 
 

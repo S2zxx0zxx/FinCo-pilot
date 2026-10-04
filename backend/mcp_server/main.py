@@ -73,6 +73,17 @@ async def mcp(request: Request) -> JSONResponse:
     if body.get("jsonrpc") != "2.0" or not isinstance(method, str):
         return JSONResponse(status_code=400, content=_err(req_id, -32600, "invalid request"))
 
+    if ctx.external and method != "tools/call":
+        from mcp_server.registry import authorize_tool
+        from fastapi import HTTPException
+        try:
+            async with async_session_maker() as session:
+                await authorize_tool(session, ctx, None, {})
+        except HTTPException as exc:
+            return JSONResponse(status_code=exc.status_code, content=_err(req_id, -32001, str(exc.detail)))
+        except Exception:
+            return JSONResponse(status_code=503, content=_err(req_id, -32001, "MCP authorization temporarily unavailable"))
+
     if method == "initialize":
         return JSONResponse(
             content=_ok(req_id, {

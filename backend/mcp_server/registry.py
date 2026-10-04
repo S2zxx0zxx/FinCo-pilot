@@ -110,7 +110,7 @@ async def call_tool(
 
 async def authorize_tool(session, ctx, spec, arguments):
     from datetime import datetime, timezone
-    import hmac
+    from app.services.mcp_token_service import external_token_status
     from fastapi import HTTPException
     from app.core.auth import get_jwt_strategy
     from app.core.workspace_context import current_workspace
@@ -120,7 +120,7 @@ async def authorize_tool(session, ctx, spec, arguments):
     from app.billing.enums import Capability, Metric
     from app.billing.usage import enforce_limit
 
-    user = await session.get(User, ctx.user_id)
+    user = await session.get(User, ctx.user_id, populate_existing=True)
     if user is None or not user.is_active:
         raise HTTPException(403, "Access denied")
     resolved = await current_workspace(
@@ -150,7 +150,7 @@ async def authorize_tool(session, ctx, spec, arguments):
 
     # Module visibility is also a server-side boundary for Copilot tools.
     # A business-only module must not become reachable merely through chat.
-    if spec.required_module:
+    if spec is not None and spec.required_module:
         from app.services.module_service import resolve_modules
 
         if spec.required_module not in resolve_modules(resolved.workspace):
@@ -158,7 +158,7 @@ async def authorize_tool(session, ctx, spec, arguments):
 
     # A core Copilot exception applies only to the AI surface itself. Tools
     # backed by separately paid product capabilities keep those entitlements.
-    if spec.required_capability:
+    if spec is not None and spec.required_capability:
         try:
             required_capability = Capability(spec.required_capability)
         except ValueError as exc:
@@ -170,14 +170,13 @@ async def authorize_tool(session, ctx, spec, arguments):
             session, resolved.workspace, required_capability
         )
 
-    writing = spec.is_proposal and arguments.get("apply") is True and ctx.external
+    writing = spec is not None and spec.is_proposal and arguments.get("apply") is True and ctx.external
     if ctx.external:
-        row = await session.get(ExternalMCPToken, ctx.token_id) if ctx.token_id else None
+        row = await session.get(ExternalMCPToken, ctx.token_id, populate_existing=True) if ctx.token_id else None
         if row is None or row.revoked or row.user_id != user.id or row.workspace_id != resolved.id:
             raise HTTPException(403, "External credential revoked or invalid; create a new token")
-        expiry = row.expires_at.replace(tzinfo=timezone.utc) if row.expires_at.tzinfo is None else row.expires_at
-        if expiry <= datetime.now(timezone.utc) or not hmac.compare_digest(row.credential_stamp, get_jwt_strategy().stamp(user)):
-            raise HTTPException(403, "External credential expired or invalid")
+        if external_token_status(row, get_jwt_strategy().stamp(user), datetime.now(timezone.utc)) != "active":
+            raise HTTPException(403, "External credential expired or invalid; create a new token")
         if writing and not row.allow_writes:
             raise HTTPException(403, "This external credential is read-only")
     if writing:

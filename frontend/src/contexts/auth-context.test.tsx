@@ -315,3 +315,39 @@ describe('useAuth', () => {
     )
   })
 })
+
+describe('session migration privacy', () => {
+  it.each(['storage', 'fincopilot:session-invalidated'])('clears financial cache on %s invalidation', async (kind) => {
+    localStorage.setItem('token', 'old-session')
+    auth.me.mockResolvedValue(USER)
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    function privacyWrapper({ children }: { children: ReactNode }) {
+      return <QueryClientProvider client={queryClient}><AuthProvider>{children}</AuthProvider></QueryClientProvider>
+    }
+    const { result } = renderHook(() => useAuth(), { wrapper: privacyWrapper })
+    await waitFor(() => expect(result.current.user).toEqual(USER))
+    queryClient.setQueryData(['private-balances'], [{ balance: 4200 }])
+    act(() => {
+      localStorage.removeItem('token')
+      window.dispatchEvent(kind === 'storage' ? new StorageEvent('storage', { key: 'token', newValue: null }) : new Event(kind))
+    })
+    expect(queryClient.getQueryData(['private-balances'])).toBeUndefined()
+    await waitFor(() => expect(result.current.user).toBeNull())
+    expect(result.current.token).toBeNull()
+  })
+
+  it('ignores an old account probe that resolves after replacement login', async () => {
+    localStorage.setItem('token', 'old-session')
+    let finishOld!: (user: User) => void
+    auth.me.mockReturnValueOnce(new Promise<User>((resolve) => { finishOld = resolve }))
+    const replacement = { ...USER, id: '2', email: 'replacement@example.com' }
+    auth.me.mockResolvedValue(replacement)
+    const { result } = renderHook(() => useAuth(), { wrapper })
+    await waitFor(() => expect(auth.me).toHaveBeenCalledTimes(1))
+    act(() => result.current.loginWithToken('replacement-session'))
+    await waitFor(() => expect(result.current.user).toEqual(replacement))
+    await act(async () => finishOld(USER))
+    expect(result.current.user).toEqual(replacement)
+    expect(localStorage.getItem('token')).toBe('replacement-session')
+  })
+})

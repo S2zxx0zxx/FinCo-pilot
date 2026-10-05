@@ -540,3 +540,94 @@ def test_migration103_empty_roundtrip_and_processed_evidence_refusal():
                 connection.scalar(text("SELECT processing_attempts FROM payment_webhook_events"))
                 == 1
             )
+
+
+@pytest.mark.parametrize("status", ["active", "grace", "canceled"])
+@pytest.mark.parametrize("term", ["missing", "future", "expired", "current_naive"])
+def test_every_provider_paid_state_requires_an_in_force_term(status, term):
+    start, end = NOW - timedelta(days=1), NOW + timedelta(days=1)
+    if term == "missing":
+        start = None
+    elif term == "future":
+        start = NOW + timedelta(seconds=1)
+    elif term == "expired":
+        end = NOW
+    else:
+        start, end = start.replace(tzinfo=None), end.replace(tzinfo=None)
+    sub = Subscription(
+        user_id=uuid.uuid4(),
+        provider="razorpay",
+        plan="pro",
+        status=status,
+        billing_interval="monthly",
+        current_period_start=start,
+        current_period_end=end,
+    )
+    assert effective_plan(sub, now=NOW).value == ("pro" if term == "current_naive" else "free")
+
+
+@pytest.mark.asyncio
+async def test_disabled_worker_never_constructs_provider_or_database(monkeypatch):
+    from app.tasks import payment_tasks
+    from app.api import checkout
+
+    monkeypatch.setattr(payment_tasks, "activation_enabled", lambda: False)
+    provider, database = MagicMock(), MagicMock()
+    monkeypatch.setattr(checkout, "_get_razorpay_client", provider)
+    monkeypatch.setattr(payment_tasks, "create_database_engine", database)
+    assert await payment_tasks.reconcile() == {"disabled": 1}
+    provider.assert_not_called()
+    database.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("failure", ["create", "scan", "dispose"])
+async def test_worker_closes_provider_session_even_on_database_failure(monkeypatch, failure):
+    from unittest.mock import AsyncMock
+    from app.tasks import payment_tasks
+    from app.api import checkout
+
+    monkeypatch.setattr(payment_tasks, "activation_enabled", lambda: True)
+    provider = MagicMock()
+    monkeypatch.setattr(checkout, "_get_razorpay_client", lambda: provider)
+    engine = MagicMock()
+    engine.dispose = AsyncMock(
+        side_effect=RuntimeError("synthetic") if failure == "dispose" else None
+    )
+    create = MagicMock(
+        return_value=engine, side_effect=RuntimeError("synthetic") if failure == "create" else None
+    )
+    scan = AsyncMock(
+        return_value={"activated": 1},
+        side_effect=RuntimeError("synthetic") if failure == "scan" else None,
+    )
+    monkeypatch.setattr(payment_tasks, "create_database_engine", create)
+    monkeypatch.setattr(payment_tasks, "scan_receipts", scan)
+    with pytest.raises(RuntimeError, match="synthetic"):
+        await payment_tasks.reconcile()
+    provider.session.close.assert_called_once()
+    if failure != "create":
+        engine.dispose.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_signed_order_paid_requires_matching_order_entity(purchase):
+    _, provider, _, payment = purchase
+    event = event_for(payment, kind="order.paid")
+    event["payload"]["order"]["entity"]["id"] = "order_DifferentSignedOrder"
+    body = json.dumps(event).encode()
+    async with TestSessionLocal() as session:
+        await persist_webhook(session, body=body, event=event, delivery_id=None, mode="test")
+        identity = await session.scalar(
+            select(PaymentWebhookEvent.id).where(
+                PaymentWebhookEvent.body_sha256 == hashlib.sha256(body).hexdigest()
+            )
+        )
+        assert identity is not None
+    assert (
+        await activation.process_receipt(TestSessionLocal, identity, provider, now=NOW)
+        == "quarantined"
+    )
+    provider.order.fetch.assert_not_called()
+    async with TestSessionLocal() as session:
+        assert await session.scalar(select(func.count()).select_from(PaymentActivation)) == 0

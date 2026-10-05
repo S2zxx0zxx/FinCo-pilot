@@ -297,7 +297,7 @@ async def verify_payment(
     """Verify signature + provider state + immutable offer reservation.
 
     A captured payment is recorded idempotently. Entitlements are deliberately
-    untouched; signed webhook/subscription activation is a later roadmap item.
+    untouched here; the durable signed-webhook reconciler grants subscription access.
     """
     _require_checkout_enabled()
 

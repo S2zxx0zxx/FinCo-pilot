@@ -93,9 +93,12 @@ async def verify(sessions, uid, settings, now, own_sessions):
         invoice.update(id="inv_CI" + uid.hex, entity="invoice", subscription_id=subscription["id"], payment_id="pay_CIRenewal" + uid.hex, status="paid", amount=9900, amount_paid=9900, amount_due=0, currency="INR", billing_start=int(start.timestamp()), billing_end=int(end.timestamp()))
         payment.update(id=invoice["payment_id"], entity="payment", invoice_id=invoice["id"], captured="1", status="captured", amount=9900, currency="INR", amount_refunded=0, refund_status=None)
         future = await receive(100)
-        assert await process_receipt(sessions, future, provider, now=now) == "pending"
+        outcome = await process_receipt(sessions, future, provider, now=now)
+        assert outcome == "retry", outcome
         async with sessions() as session:
             assert await session.scalar(select(Subscription.current_period_end).where(Subscription.user_id == uid)) == before
+            receipt = await session.get(PaymentWebhookEvent, future)
+            assert receipt and receipt.state == "pending" and receipt.next_attempt_at == start
         identities = [await receive(i) for i in range(101, 109)]
         results = await asyncio.gather(*(process_receipt(sessions, identity, provider, now=start) for identity in identities))
         assert results.count("renewed") == 1 and results.count("duplicate") == 7, results

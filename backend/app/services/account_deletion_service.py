@@ -261,6 +261,8 @@ async def inventory(session: AsyncSession, user: User, *, workspace_scope: list[
     renewals = Base.metadata.tables["renewal_mandates"]
     renewal_rows = list((await session.execute(select(renewals).where(renewals.c.user_id == user.id))).mappings()) if workspace_scope is None else []
     for row in renewal_rows:
+        if row["state"] in {"creating", "uncertain"}:
+            blockers.append("renewal_outcome_unresolved")
         if row["state"] in {"creating", "uncertain", "ready"}:
             requirements.append("billing_renewal_cancel:" + str(row["id"]))
     llm = Base.metadata.tables["agent_llm_connections"]

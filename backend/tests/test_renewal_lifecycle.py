@@ -412,12 +412,14 @@ async def test_deletion_requires_cleanup_of_unknown_provider_mandate(renewal):
         subscription.status = "canceled"
         subscription.provider_subscription_id = None
         await session.commit()
-        manifest, _, _ = await inventory(session, user)
+        manifest, blockers, _ = await inventory(session, user)
+        assert "renewal_outcome_unresolved" in blockers
         assert "billing_renewal_cancel:" + str(mandate.id) in manifest["requirements"]
         previous = manifest["provider_hash"]
         mandate.state = "unstarted"
         await session.commit()
-        fresh, _, _ = await inventory(session, user)
+        fresh, blockers, _ = await inventory(session, user)
+        assert "renewal_outcome_unresolved" not in blockers
         assert "billing_renewal_cancel:" + str(mandate.id) not in fresh["requirements"]
         assert fresh["provider_hash"] != previous
 
@@ -495,3 +497,36 @@ async def test_dispatch_rechecks_flags_and_scope_after_plan_get(purchase, enable
             await mandates.create_mandate(session, row.user_id, 3, provider, now=NOW)
         assert result.value.status_code == 409
     provider.subscription.create.assert_not_called()
+
+@pytest.mark.asyncio
+async def test_operator_review_cannot_bypass_unresolved_dispatch(renewal):
+    import uuid
+    from app.models.payment_renewal import RenewalMandate
+    from app.models.account_deletion import AccountDeletion
+    from app.models.user import User
+    from app.services import account_deletion_service as service
+
+    row, _, _, _, _, _, _ = renewal
+    async with TestSessionLocal() as session:
+        user = await session.get(User, row.user_id)
+        mandate = await session.scalar(select(RenewalMandate).where(RenewalMandate.user_id == row.user_id))
+        assert user and mandate
+        mandate.state = "creating"
+        actor = User(id=uuid.uuid4(), email="renewal-operator@example.invalid", hashed_password="synthetic", is_active=True, is_superuser=True, is_verified=True)
+        session.add(actor)
+        await session.commit()
+        result = await service.request_deletion(session, user)
+        job = await session.get(AccountDeletion, uuid.UUID(result["id"]))
+        assert job and job.state == "blocked"
+        await service.review_deletion(session, job, actor, "a" * 64)
+        for requirement in job.manifest["requirements"]:
+            if not service.post_primary_requirement(requirement):
+                with pytest.raises(HTTPException) as rejected:
+                    await service.record_receipt(session, job, actor, requirement, "b" * 64)
+                assert rejected.value.status_code == 409
+        with pytest.raises(HTTPException) as failure:
+            await service.purge_primary(session, job, str(actor.id))
+        assert failure.value.status_code == 409
+        assert "renewal_outcome_unresolved" in str(failure.value.detail)
+        await session.refresh(user)
+        assert user.is_active

@@ -50,7 +50,10 @@ Sources:
 2. Retained unique renewal invoice/payment/cycle evidence and indexed retry state.
    Personal deletion retains these minimal financial records and requires external
    cleanup proof for creating, uncertain and ready mandates, even if a provider ID
-   has not yet been recovered. All mandate states enter the provider fingerprint.
+   has not yet been recovered. Creating/uncertain outcomes block purge entirely:
+   a cleanup attestation cannot prove closure while a POST may still be in flight.
+   Cancel the deletion request and reconcile the original enrollment before
+   requesting fresh deletion review. All states enter the provider fingerprint.
    Populated downgrade refuses discarding financial or processing evidence.
 3. Reconcile signed subscription.charged using fresh authenticated subscription,
    plan, invoice and payment reads outside SQL locks. Exact typed amount, INR,

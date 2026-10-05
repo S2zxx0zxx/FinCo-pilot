@@ -17,6 +17,12 @@ _PAID_STATUSES = {
 }
 
 
+def _utc(value: datetime | None) -> datetime | None:
+    if value is not None and value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value
+
+
 def _safe_plan(value: str) -> PlanId:
     try:
         return PlanId(value)
@@ -55,9 +61,17 @@ def effective_plan(subscription: Subscription | None, *, now: datetime | None = 
     if plan is PlanId.FREE or status not in _PAID_STATUSES:
         return PlanId.FREE
 
+    # Provider grants are finite prepaid terms, including active/grace state.
+    if subscription.provider == "razorpay":
+        current = now or datetime.now(timezone.utc)
+        start, end = _utc(subscription.current_period_start), _utc(subscription.current_period_end)
+        if start is None or end is None or not start <= current < end:
+            return PlanId.FREE
+
     if status is SubscriptionStatus.CANCELED:
         current = now or datetime.now(timezone.utc)
-        if subscription.current_period_end is None or subscription.current_period_end <= current:
+        end = _utc(subscription.current_period_end)
+        if end is None or end <= current:
             return PlanId.FREE
 
     return plan

@@ -191,6 +191,10 @@ jobs:
         env:
           FINCO_DISPOSABLE_DB_TEST: "yes"
         run: python -m scripts.verify_webhook_inbox_postgres
+      - name: Verify concurrent signed-payment activation on PostgreSQL
+        env:
+          FINCO_DISPOSABLE_DB_TEST: "yes"
+        run: python -m scripts.verify_payment_activation_postgres
       - name: Verify concurrent founder pricing boundary on PostgreSQL
         env:
           FINCO_DISPOSABLE_DB_TEST: "yes"

@@ -102,15 +102,12 @@ def _get_razorpay_client():
             detail="Payment provider is not configured on this instance.",
         )
 
-    # Roadmap #4 is deliberately Test Mode only. Collecting real money before
-    # the signed webhook/subscription activation lifecycle exists could leave a
-    # customer charged without durable entitlement fulfilment if their browser
-    # disappears after payment. A later billing-lifecycle milestone must
-    # explicitly remove this gate after webhook reconciliation is implemented.
+    # Live collection remains gated until full lifecycle and real-provider
+    # operational acceptance; #34 proves initial activation in isolated Test Mode.
     if key_id.startswith("rzp_live_"):
         logger.error(
-            "Live Razorpay checkout refused: signed subscription/webhook "
-            "fulfilment is not implemented in this build."
+            "Live Razorpay checkout refused: full lifecycle/provider "
+            "operational acceptance is pending."
         )
         raise HTTPException(
             status_code=503,
@@ -300,7 +297,7 @@ async def verify_payment(
     """Verify signature + provider state + immutable offer reservation.
 
     A captured payment is recorded idempotently. Entitlements are deliberately
-    untouched; signed webhook/subscription activation is a later roadmap item.
+    untouched here; the durable signed-webhook reconciler grants subscription access.
     """
     _require_checkout_enabled()
 
@@ -458,8 +455,8 @@ async def verify_payment(
     return VerifyPaymentResponse(
         status="verified",
         message=(
-            "Payment captured and verified. Paid entitlement activation remains "
-            "pending the signed subscription/webhook lifecycle."
+            "Payment captured and verified. Access is granted after durable "
+            "signed-webhook reconciliation."
         ),
         reservation_id=str(reservation.id),
         offer_code=reservation.offer_code,

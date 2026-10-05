@@ -60,11 +60,28 @@ export interface RazorpayInstance {
 }
 
 export interface RazorpayConstructor {
-  new (options: RazorpayCheckoutOptions): RazorpayInstance;
+  new (options: RazorpayCheckoutOptions | RazorpaySubscriptionCheckoutOptions): RazorpayInstance;
 }
 
 declare global {
   interface Window {
     Razorpay?: RazorpayConstructor;
   }
+}
+
+/** Separate subscription authorization; an Order callback cannot authorize renewal. */
+export interface RazorpaySubscriptionSuccessResponse {
+  razorpay_payment_id: string;
+  razorpay_subscription_id: string;
+  razorpay_signature: string;
+}
+
+export interface RazorpaySubscriptionCheckoutOptions {
+  key: string;
+  subscription_id: string;
+  name: string;
+  description: string;
+  handler: (response: RazorpaySubscriptionSuccessResponse) => void;
+  modal?: RazorpayModalOptions;
+  retry?: { enabled: boolean };
 }

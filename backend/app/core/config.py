@@ -227,6 +227,7 @@ class Settings(BaseSettings):
     # paid checkout stays disabled rather than presenting a dead purchase flow.
     billing_checkout_enabled: bool = False
     billing_activation_enabled: bool = False
+    billing_renewal_enabled: bool = False
     billing_offer_reservation_ttl_seconds: int = 600
     # Tax display is deliberately explicit. Production paid checkout must not
     # guess whether the displayed price is tax-inclusive or tax-exclusive.

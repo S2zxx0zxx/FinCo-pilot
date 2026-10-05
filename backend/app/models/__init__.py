@@ -1,4 +1,5 @@
 from app.models.payment_activation import PaymentActivation
+from app.models.payment_renewal import RenewalMandate, RenewalCycle
 from app.models.payment_webhook import PaymentWebhookEvent
 from app.models.mcp_approval import MCPApproval
 from app.models.user import User
@@ -53,6 +54,8 @@ from app.core import workspace_autostamp  # noqa: F401, E402
 
 __all__ = [
     "PaymentActivation",
+    "RenewalMandate",
+    "RenewalCycle",
     "PaymentWebhookEvent",
     "MCPApproval",
     "User",

@@ -131,6 +131,7 @@ ALLOWLIST: dict[tuple[str, str], str] = {
     # decision rather than an oversight.
     ("POST", "/api/fx-rates/refresh"): "refreshes instance-wide FX rates, no workspace data",
     # Checkout routes are scoped to the user's own billing state.
+    ("POST", "/api/billing/renewal"): "authenticated requester's own finite mandate; explicit consent, fresh user/deletion fence, original paid grant and canonical price; never accepts a user/workspace target",
     ("POST", "/api/checkout/create-order"): "the requester's own checkout reservation",
     ("POST", "/api/checkout/verify-payment"): "the requester's own checkout reservation",
     ("POST", "/api/checkout/cancel-reservation"): "the requester's own checkout reservation",

@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 import re
 import uuid
 
-from sqlalchemy import or_, select, text
+from sqlalchemy import true, or_, select, text
 from starlette.concurrency import run_in_threadpool
 
 from app.billing.checkout_orders import validate_order
@@ -90,7 +90,7 @@ def processed(row: PaymentWebhookEvent, now: datetime) -> None:
 
 
 async def disposition(session_maker, identity: uuid.UUID, *, code: str, retry: bool,
-                      now: datetime) -> str:
+                      now: datetime, not_before: datetime | None = None) -> str:
     async with session_maker() as session:
         row = await session.scalar(select(PaymentWebhookEvent).where(PaymentWebhookEvent.id == identity)
                                    .with_for_update().execution_options(populate_existing=True))
@@ -99,7 +99,7 @@ async def disposition(session_maker, identity: uuid.UUID, *, code: str, retry: b
         row.processing_attempts += 1
         row.processing_error = code
         row.state = "pending" if retry else "quarantined"
-        row.next_attempt_at = now + timedelta(seconds=min(3600, 30 * 2**min(row.processing_attempts, 7))) if retry else None
+        row.next_attempt_at = (not_before or now + timedelta(seconds=min(3600, 30 * 2**min(row.processing_attempts, 7)))) if retry else None
         await session.commit()
         return "retry" if retry else "quarantined"
 
@@ -121,6 +121,10 @@ async def process_receipt(session_maker, identity: uuid.UUID, client, *, now: da
                 return "not_due"
             if receipt.mode != "test" or receipt.account_id != account:
                 raise RejectReceipt("provider_scope_mismatch")
+            if receipt.event_type == "subscription.charged":
+                await session.commit()
+                from app.billing.renewal_cycles import process_renewal
+                return await process_renewal(session_maker, identity, client, now=now)
             payment_id, order_id = payment_identity(receipt)
             reservation = await session.scalar(select(CheckoutReservation).where(
                 CheckoutReservation.provider_order_id == order_id))
@@ -212,7 +216,9 @@ async def scan_receipts(session_maker, client, *, now: datetime | None = None) -
     current = now or datetime.now(timezone.utc)
     async with session_maker() as session:
         identities = list((await session.scalars(select(PaymentWebhookEvent.id).where(
-            PaymentWebhookEvent.state == "pending", or_(PaymentWebhookEvent.next_attempt_at.is_(None),
+            PaymentWebhookEvent.state == "pending",
+            (true() if get_settings().billing_renewal_enabled else PaymentWebhookEvent.event_type != "subscription.charged"),
+            or_(PaymentWebhookEvent.next_attempt_at.is_(None),
                 PaymentWebhookEvent.next_attempt_at <= current)).order_by(PaymentWebhookEvent.received_at).limit(5))).all())
     counts = {}
     for identity in identities:

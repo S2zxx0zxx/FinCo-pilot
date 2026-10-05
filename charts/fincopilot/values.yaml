@@ -146,6 +146,7 @@ config:
   # Billing / founder offer engine. Paid checkout is fail-closed by default.
   billingCheckoutEnabled: "false"
   billingActivationEnabled: "false"
+  billingRenewalEnabled: "false"
   billingOfferReservationTtlSeconds: "600"
   billingTaxDisplayMode: "unconfigured"
   # Razorpay base recurring plan IDs. Test and Live installations use

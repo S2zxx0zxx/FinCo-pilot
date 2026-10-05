@@ -51,3 +51,34 @@ async def current_entitlements(
 ) -> EntitlementsRead:
     """Server-authoritative plan/capability view for the signed-in user."""
     return await get_entitlements(session, user.id)
+
+
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt  # noqa: E402
+
+
+class RenewalEnrollment(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    total_count: StrictInt = Field(ge=1, le=120)
+    authorize: StrictBool
+
+
+@router.get("/renewal")
+async def renewal_status(user: User = Depends(current_active_user), session: AsyncSession = Depends(get_async_session)):
+    from app.billing.renewal_mandates import preview
+    return await preview(session, user.id)
+
+
+@router.post("/renewal")
+async def renewal_enrollment(body: RenewalEnrollment, user: User = Depends(current_active_user), session: AsyncSession = Depends(get_async_session)):
+    from fastapi import HTTPException
+    from app.billing.renewal_mandates import create_mandate, enabled
+    if body.authorize is not True:
+        raise HTTPException(422, "Explicit finite renewal enrollment is required.")
+    if not enabled():
+        raise HTTPException(503, "Renewal enrollment is disabled.")
+    from app.api.checkout import _get_razorpay_client
+    client = _get_razorpay_client()
+    try:
+        return await create_mandate(session, user.id, body.total_count, client)
+    finally:
+        client.session.close()

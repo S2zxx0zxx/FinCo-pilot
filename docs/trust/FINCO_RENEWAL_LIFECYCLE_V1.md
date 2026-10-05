@@ -72,6 +72,8 @@ Sources:
 6. Default off and non-production Test Mode only. Provider failures and DB commit
    ambiguity recover from durable state; no provider/SQL/PII exception logging.
    Bound provider timeouts, scanner work and worker cleanup/budget explicitly.
+   When renewals are paused, skip their pending receipts before the five-row
+   scan limit so acquisition processing continues and renewal evidence survives.
 7. Validate authenticated API/ownership/explicit authorization, exact provider
    requests and one POST claim, introductory launch timing, real wire formats,
    wrong amounts/IDs/plans/refunds, duplicate/distinct receipts, out-of-order/missed

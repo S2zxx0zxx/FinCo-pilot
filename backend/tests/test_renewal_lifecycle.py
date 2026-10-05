@@ -530,3 +530,18 @@ async def test_operator_review_cannot_bypass_unresolved_dispatch(renewal):
         assert "renewal_outcome_unresolved" in str(failure.value.detail)
         await session.refresh(user)
         assert user.is_active
+
+@pytest.mark.asyncio
+async def test_paused_renewals_do_not_starve_acquisition_receipts(purchase, enabled, monkeypatch):
+    _, provider, _, first = purchase
+    monkeypatch.setattr(enabled, "billing_renewal_enabled", False)
+    paused = [await cycle_receipt({"id": "sub_Unknown", "entity": "subscription"}, {"id": "pay_Unknown", "entity": "payment", "invoice_id": "inv_Unknown", "status": "captured"}, counter) for counter in range(5)]
+    initial = await receipt_for(first, counter=99)
+    assert await activation.scan_receipts(TestSessionLocal, provider, now=NOW) == {"activated": 1}
+    provider.subscription.fetch.assert_not_called()
+    async with TestSessionLocal() as session:
+        for identity in paused:
+            receipt = await session.get(PaymentWebhookEvent, identity)
+            assert receipt and receipt.state == "pending" and receipt.processing_attempts == 0
+        receipt = await session.get(PaymentWebhookEvent, initial)
+        assert receipt and receipt.state == "processed"

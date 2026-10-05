@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 import re
 import uuid
 
-from sqlalchemy import or_, select, text
+from sqlalchemy import true, or_, select, text
 from starlette.concurrency import run_in_threadpool
 
 from app.billing.checkout_orders import validate_order
@@ -216,7 +216,9 @@ async def scan_receipts(session_maker, client, *, now: datetime | None = None) -
     current = now or datetime.now(timezone.utc)
     async with session_maker() as session:
         identities = list((await session.scalars(select(PaymentWebhookEvent.id).where(
-            PaymentWebhookEvent.state == "pending", or_(PaymentWebhookEvent.next_attempt_at.is_(None),
+            PaymentWebhookEvent.state == "pending",
+            (true() if get_settings().billing_renewal_enabled else PaymentWebhookEvent.event_type != "subscription.charged"),
+            or_(PaymentWebhookEvent.next_attempt_at.is_(None),
                 PaymentWebhookEvent.next_attempt_at <= current)).order_by(PaymentWebhookEvent.received_at).limit(5))).all())
     counts = {}
     for identity in identities:

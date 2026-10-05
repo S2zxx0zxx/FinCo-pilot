@@ -25,6 +25,6 @@ async def reconcile() -> dict[str, int]:
 
 
 @celery_app.task(name="app.tasks.payment_tasks.reconcile_payments", acks_late=True,
-                 reject_on_worker_lost=True, soft_time_limit=300, time_limit=330)
+                 reject_on_worker_lost=True, soft_time_limit=630, time_limit=660)
 def reconcile_payments() -> dict[str, int]:
     return asyncio.run(reconcile())

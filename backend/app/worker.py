@@ -49,6 +49,10 @@ if redis_target.tls:
     celery_app.conf.redis_backend_use_ssl = ssl_options
 
 celery_app.conf.beat_schedule = {
+    "reconcile-payment-inbox": {
+        "task": "app.tasks.payment_tasks.reconcile_payments",
+        "schedule": 30,
+    },
     "sync-all-connections-hourly": {
         "task": "app.tasks.sync_tasks.sync_all_connections",
         "schedule": 60 * 60,
@@ -80,6 +84,7 @@ celery_app.conf.beat_schedule = {
 }
 
 celery_app.conf.include = [
+    "app.tasks.payment_tasks",
     "app.tasks.sync_tasks",
     "app.tasks.recurring_tasks",
     "app.tasks.asset_tasks",

@@ -2,7 +2,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import CheckConstraint, DateTime, String, Text, UniqueConstraint
+from sqlalchemy import CheckConstraint, DateTime, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -12,6 +12,8 @@ from app.core.database import Base
 class PaymentWebhookEvent(Base):
     __tablename__ = "payment_webhook_events"
     __table_args__ = (
+        Index("ix_payment_webhook_due", "state", "next_attempt_at", "received_at"),
+        CheckConstraint("processing_attempts >= 0", name="ck_payment_webhook_attempts"),
         UniqueConstraint("provider", "mode", "account_id", "body_sha256", name="uq_payment_webhook_body"),
         CheckConstraint("provider = 'razorpay'", name="ck_payment_webhook_provider"),
         CheckConstraint("mode IN ('test','live')", name="ck_payment_webhook_mode"),
@@ -30,3 +32,7 @@ class PaymentWebhookEvent(Base):
     state: Mapped[str] = mapped_column(String(16), index=True)
     snapshot_ciphertext: Mapped[str] = mapped_column(Text)
     received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    processing_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    processing_error: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

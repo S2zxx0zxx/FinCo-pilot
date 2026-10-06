@@ -54,11 +54,12 @@ def validate_plan(row, plan):
         raise ValueError("Invalid configured renewal plan")
 
 
-def validate_subscription(row, subscription):
+def validate_subscription(row, subscription, *, statuses=None):
+    allowed = statuses if statuses is not None else {"created", "authenticated", "active", "completed", "expired"}
     if (not isinstance(subscription, dict) or subscription.get("entity") != "subscription"
             or not identifier(subscription.get("id"), "sub")
             or (row.provider_subscription_id and subscription["id"] != row.provider_subscription_id)
-            or subscription.get("status") not in {"created", "authenticated", "active", "completed", "expired"}
+            or subscription.get("status") not in allowed
             or type(subscription.get("paid_count")) is not int
             or not 0 <= subscription["paid_count"] <= row.total_count
             or subscription.get("plan_id") != row.provider_plan_id

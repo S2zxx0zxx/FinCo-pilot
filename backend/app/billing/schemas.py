@@ -26,6 +26,8 @@ class EntitlementsRead(BaseModel):
     billing_interval: BillingInterval
     current_period_end: datetime | None = None
     cancel_at_period_end: bool = False
+    recovery_due_at: datetime | None = None
+    grace_until: datetime | None = None
     capabilities: dict[str, bool]
     limits: dict[str, int]
     usage: dict[str, int]

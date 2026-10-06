@@ -148,7 +148,7 @@ async def process_renewal(session_maker, receipt_id: uuid.UUID, client, *, now=N
                 Subscription.user_id == user_id).with_for_update().execution_options(populate_existing=True))
             if (sub is None or sub.provider != "razorpay" or sub.provider_subscription_id != ids[0]
                     or (sub.plan, sub.billing_interval) != (row.plan, row.billing_interval)
-                    or sub.status != "active" or sub.cancel_at_period_end):
+                    or sub.status not in ("active", "grace", "past_due") or sub.cancel_at_period_end):
                 raise RejectReceipt("renewal_lifecycle_changed")
             last = await session.scalar(select(RenewalCycle).where(RenewalCycle.mandate_id == row.id)
                 .order_by(RenewalCycle.period_end.desc()).limit(1))
@@ -177,6 +177,18 @@ async def process_renewal(session_maker, receipt_id: uuid.UUID, client, *, now=N
             previous_end = _stored_utc(sub.current_period_end)
             if start > previous_end:
                 sub.current_period_start = start
+            from app.models.payment_recovery import PaymentRecovery
+            recovery = await session.scalar(select(PaymentRecovery).where(
+                PaymentRecovery.mandate_id == row.id, PaymentRecovery.period_start == start).with_for_update())
+            if recovery is not None:
+                if (recovery.user_id != user_id or recovery.mode != row.mode or recovery.account_id != account
+                        or _stored_utc(recovery.paid_through) != previous_end
+                        or recovery.invoice_id != ids[2] or _stored_utc(recovery.period_end) != end
+                        or recovery.resolved_at is not None):
+                    raise RejectReceipt("recovery_invoice_changed")
+                recovery.resolved_at = applied_at
+            sub.status = "active"
+            sub.recovery_due_at, sub.grace_until = None, None
             sub.current_period_end = end
             session.add(RenewalCycle(user_id=user_id, mandate_id=row.id, source_event_id=receipt_id,
                 mode="test", account_id=account, provider_subscription_id=ids[0], invoice_id=ids[2], payment_id=ids[1],

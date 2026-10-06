@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -48,25 +48,31 @@ def effective_plan(subscription: Subscription | None, *, now: datetime | None = 
     """Return the plan that may actually authorize paid capabilities.
 
     A missing/invalid row is always Free. A canceled paid subscription remains
-    effective only through its paid period. `past_due` is deliberately not
-    treated as paid here; payment-provider grace timing is a later billing
-    integration decision, while the explicit `grace` state already models a
-    provider-approved grace window.
+    effective only through its paid period. Razorpay past-due preserves already
+    paid coverage. Explicit bounded grace requires a recovery deadline anchored
+    to that paid-through boundary; provider retry state cannot grant access.
     """
     if subscription is None:
         return PlanId.FREE
 
     status = _safe_status(subscription.status)
     plan = _safe_plan(subscription.plan)
-    if plan is PlanId.FREE or status not in _PAID_STATUSES:
+    recovery = subscription.provider == "razorpay" and status is SubscriptionStatus.PAST_DUE
+    if plan is PlanId.FREE or (status not in _PAID_STATUSES and not recovery):
         return PlanId.FREE
 
     # Provider grants are finite prepaid terms, including active/grace state.
     if subscription.provider == "razorpay":
         current = now or datetime.now(timezone.utc)
         start, end = _utc(subscription.current_period_start), _utc(subscription.current_period_end)
-        if start is None or end is None or not start <= current < end:
+        if start is None or end is None or end <= start or current < start:
             return PlanId.FREE
+        if current >= end:
+            due, grace = _utc(subscription.recovery_due_at), _utc(subscription.grace_until)
+            if (status is not SubscriptionStatus.GRACE or subscription.cancel_at_period_end
+                    or due != end or grace is None or not end < grace <= end + timedelta(hours=72)
+                    or current >= grace):
+                return PlanId.FREE
 
     if status is SubscriptionStatus.CANCELED:
         current = now or datetime.now(timezone.utc)
@@ -117,6 +123,11 @@ async def get_entitlements(session: AsyncSession, user_id: uuid.UUID) -> Entitle
         cancel_at_period_end = False
     else:
         status = _safe_status(subscription.status)
+        grace = _utc(subscription.grace_until)
+        if (subscription.provider == "razorpay" and status is SubscriptionStatus.GRACE
+                and subscription.recovery_due_at is not None
+                and (grace is None or grace <= datetime.now(timezone.utc))):
+            status = SubscriptionStatus.PAST_DUE
         interval = _safe_interval(subscription.billing_interval)
         period_end = subscription.current_period_end
         cancel_at_period_end = subscription.cancel_at_period_end
@@ -128,6 +139,8 @@ async def get_entitlements(session: AsyncSession, user_id: uuid.UUID) -> Entitle
         billing_interval=interval,
         current_period_end=period_end,
         cancel_at_period_end=cancel_at_period_end,
+        recovery_due_at=subscription.recovery_due_at if subscription else None,
+        grace_until=subscription.grace_until if subscription else None,
         capabilities={cap.value: spec.has(cap) for cap in Capability},
         limits={metric.value: int(limit) for metric, limit in spec.limits.items()},
         usage=await usage_snapshot(session, user_id),

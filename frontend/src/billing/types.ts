@@ -97,6 +97,8 @@ export interface Entitlements {
   billing_interval: BillingInterval
   current_period_end: string | null
   cancel_at_period_end: boolean
+  recovery_due_at?: string | null
+  grace_until?: string | null
   capabilities: Record<Capability, boolean>
   limits: Record<Metric, number>
   usage: Partial<Record<Metric, number>>

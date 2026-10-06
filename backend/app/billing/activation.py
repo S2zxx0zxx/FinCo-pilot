@@ -121,6 +121,10 @@ async def process_receipt(session_maker, identity: uuid.UUID, client, *, now: da
                 return "not_due"
             if receipt.mode != "test" or receipt.account_id != account:
                 raise RejectReceipt("provider_scope_mismatch")
+            if receipt.event_type in {"subscription.pending", "subscription.halted"}:
+                await session.commit()
+                from app.billing.payment_recovery import process_failure
+                return await process_failure(session_maker, identity, client, now=now)
             if receipt.event_type == "subscription.charged":
                 await session.commit()
                 from app.billing.renewal_cycles import process_renewal
@@ -218,6 +222,8 @@ async def scan_receipts(session_maker, client, *, now: datetime | None = None) -
         identities = list((await session.scalars(select(PaymentWebhookEvent.id).where(
             PaymentWebhookEvent.state == "pending",
             (true() if get_settings().billing_renewal_enabled else PaymentWebhookEvent.event_type != "subscription.charged"),
+            (true() if get_settings().billing_renewal_enabled and get_settings().billing_recovery_enabled
+             else PaymentWebhookEvent.event_type.not_in(("subscription.pending", "subscription.halted"))),
             or_(PaymentWebhookEvent.next_attempt_at.is_(None),
                 PaymentWebhookEvent.next_attempt_at <= current)).order_by(PaymentWebhookEvent.received_at).limit(5))).all())
     counts = {}

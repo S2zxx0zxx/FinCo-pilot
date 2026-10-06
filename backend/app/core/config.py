@@ -5,7 +5,7 @@ from pathlib import Path
 import time
 from urllib.parse import urlsplit
 
-from pydantic import SecretStr, model_validator
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from app.core.redis_runtime import validate_redis_target
@@ -228,6 +228,9 @@ class Settings(BaseSettings):
     billing_checkout_enabled: bool = False
     billing_activation_enabled: bool = False
     billing_renewal_enabled: bool = False
+    billing_recovery_enabled: bool = False
+    # Application access policy, independent of provider payment-method retries.
+    billing_recovery_grace_hours: int = Field(default=0, ge=0, le=72)
     billing_offer_reservation_ttl_seconds: int = 600
     # Tax display is deliberately explicit. Production paid checkout must not
     # guess whether the displayed price is tax-inclusive or tax-exclusive.

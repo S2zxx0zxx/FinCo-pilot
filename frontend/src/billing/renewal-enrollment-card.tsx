@@ -36,7 +36,8 @@ export function RenewalEnrollmentCard() {
   const [consent, setConsent] = useState(false)
   const [busy, setBusy] = useState(false)
   const open = useRef(false)
-  const eligible = Boolean(token) && (plan !== 'free' || entitlements?.status === 'active')
+  const recovering = entitlements?.status === 'grace' || entitlements?.status === 'past_due'
+  const eligible = Boolean(token) && !recovering && (plan !== 'free' || entitlements?.status === 'active')
   const quoteQuery = useQuery({
     queryKey: ['billing', 'renewal', user?.id],
     enabled: eligible,
@@ -50,6 +51,13 @@ export function RenewalEnrollmentCard() {
     },
   })
   const quote = quoteQuery.data
+  if (token && recovering) {
+    return <section role="status" className="rounded-[26px] border bg-card p-5">
+      <h2 className="text-lg font-semibold">Renewal payment needs attention</h2>
+      <p className="mt-2 text-sm">Your data is preserved. Follow the payment provider’s verified email to update your payment method, or contact support. Do not create a second renewal setup.</p>
+      {entitlements.grace_until && <p className="mt-2 text-sm">Temporary access ends {new Date(entitlements.grace_until).toLocaleString()}. Access updates after a paid invoice is confirmed.</p>}
+    </section>
+  }
   if (!eligible || !quote) return null
   const selected = quote.total_count ?? Number(cycles)
   const finite = Number.isSafeInteger(selected) && selected >= 1 && selected <= 120

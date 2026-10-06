@@ -1,3 +1,4 @@
+from app.models.payment_recovery import PaymentRecovery
 from app.models.payment_activation import PaymentActivation
 from app.models.payment_renewal import RenewalMandate, RenewalCycle
 from app.models.payment_webhook import PaymentWebhookEvent
@@ -53,6 +54,7 @@ from app.models.pricing_offer import (
 from app.core import workspace_autostamp  # noqa: F401, E402
 
 __all__ = [
+    "PaymentRecovery",
     "PaymentActivation",
     "RenewalMandate",
     "RenewalCycle",

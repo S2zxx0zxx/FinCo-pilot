@@ -226,3 +226,46 @@ async def test_delayed_failure_of_paid_period_does_not_regress_or_starve(failure
     async with TestSessionLocal() as session:
         sub = await session.scalar(select(Subscription).where(Subscription.user_id == row.user_id))
         assert sub is not None and sub.status == "active" and sub.grace_until is None
+
+async def test_account_purge_retains_minimal_recovery_and_fences_worker(failure):
+    from app.models.user import User
+    from tests.test_account_deletion_workflow import operator, approved, finish_execution
+    row, provider, source, _, _, start = failure
+    rid = await failure_receipt(source)
+    assert await activation.process_receipt(TestSessionLocal, rid, provider, now=start) == "recovery_recorded"
+    async with TestSessionLocal() as session:
+        user = await session.get(User, row.user_id)
+        assert user is not None
+        admin = await operator(session)
+        job, _ = await approved(session, user, admin)
+        assert any(k.startswith("billing_renewal_cancel:") for k in job.manifest["requirements"])
+        await finish_execution(session, job, admin)
+        assert job.state == "backup_expiry_pending"
+        case = await session.scalar(select(PaymentRecovery))
+        assert case is not None and case.user_id == row.user_id
+        assert "email" not in case.__table__.c and not case.__table__.foreign_keys
+        assert await session.scalar(select(Subscription).where(Subscription.user_id == row.user_id)) is None
+    replay = await failure_receipt(source, 2)
+    assert await activation.process_receipt(TestSessionLocal, replay, provider, now=start + timedelta(days=1)) == "quarantined"
+
+@pytest.mark.parametrize("gap", [timedelta(microseconds=500000), timedelta(days=3)])
+async def test_provider_rounding_or_late_start_cannot_move_original_grace_boundary(failure, enabled, monkeypatch, gap):
+    from app.models.payment_activation import PaymentActivation
+    row, provider, source, _, _, start = failure
+    paid_through = start - gap
+    monkeypatch.setattr(enabled, "billing_recovery_grace_hours", 24)
+    async with TestSessionLocal() as session:
+        sub = await session.scalar(select(Subscription).where(Subscription.user_id == row.user_id))
+        grant = await session.scalar(select(PaymentActivation).where(PaymentActivation.user_id == row.user_id))
+        assert sub is not None and grant is not None
+        sub.current_period_end = grant.period_end = paid_through
+        await session.commit()
+    rid = await failure_receipt(source)
+    assert await activation.process_receipt(TestSessionLocal, rid, provider, now=start) == "recovery_recorded"
+    async with TestSessionLocal() as session:
+        sub = await session.scalar(select(Subscription).where(Subscription.user_id == row.user_id))
+        case = await session.scalar(select(PaymentRecovery))
+        assert sub is not None and case is not None
+        assert _stored_utc(sub.grace_until) == paid_through + timedelta(hours=24)
+        assert _stored_utc(case.period_start) == start and _stored_utc(case.paid_through) == paid_through
+        assert effective_plan(sub, now=paid_through + timedelta(hours=24)).value == "free"

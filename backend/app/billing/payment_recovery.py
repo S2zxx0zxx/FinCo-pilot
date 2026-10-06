@@ -171,11 +171,12 @@ async def process_failure(session_maker, receipt_id, client, *, now: datetime | 
             grant = await session.get(PaymentActivation, row.activation_id)
             quote = await session.get(CheckoutReservation, grant.reservation_id) if grant else None
             prior = await session.scalar(select(RenewalCycle).where(RenewalCycle.user_id == uid).order_by(RenewalCycle.period_end.desc()).limit(1))
+            paid_through = _stored_utc(sub.current_period_end)
             if (grant is None or grant.user_id != uid or grant.mode != row.mode or grant.account_id != account
                     or grant.provider_key_id != key or (grant.plan, grant.billing_interval) != (row.plan, row.billing_interval)
                     or quote is None or quote.renewal_amount_minor != row.amount_minor or quote.renewal_interval != row.billing_interval
-                    or _stored_utc(sub.current_period_end) != expected
-                    or expected != _stored_utc(prior.period_end if prior else grant.period_end)):
+                    or paid_through is None or paid_through > expected
+                    or paid_through != _stored_utc(prior.period_end if prior else grant.period_end)):
                 raise RejectReceipt("failure_paid_term_changed")
             invoice, end = unpaid_invoice(row, invoices, expected)
             if expected > applied:
@@ -188,17 +189,19 @@ async def process_failure(session_maker, receipt_id, client, *, now: datetime | 
                     raise RejectReceipt("failure_grace_policy_invalid")
                 case = PaymentRecovery(user_id=uid, mandate_id=mid, source_event_id=receipt_id, mode="test",
                     account_id=account, invoice_id=invoice["id"], provider_state=provider["status"], period_start=expected,
-                    period_end=end, grace_until=expected + timedelta(hours=hours), observed_at=applied)
+                    period_end=end, paid_through=paid_through,
+                    grace_until=paid_through + timedelta(hours=hours), observed_at=applied)
                 session.add(case)
             elif (case.user_id != uid or case.mode != "test" or case.account_id != account or case.invoice_id != invoice["id"]
-                    or _stored_utc(case.period_end) != end or case.resolved_at is not None):
+                    or _stored_utc(case.period_end) != end or _stored_utc(case.paid_through) != paid_through
+                    or case.resolved_at is not None):
                 raise RejectReceipt("failure_case_changed")
             elif provider["status"] == "halted":
                 case.provider_state = "halted"
             deadline = _stored_utc(case.grace_until)
-            if deadline is None or not expected <= deadline <= expected + timedelta(hours=72):
+            if deadline is None or not paid_through <= deadline <= paid_through + timedelta(hours=72):
                 raise RejectReceipt("failure_case_deadline_invalid")
-            sub.recovery_due_at, sub.grace_until = expected, deadline
+            sub.recovery_due_at, sub.grace_until = paid_through, deadline
             sub.status = "grace" if deadline > applied else "past_due"
             processed(receipt, applied)
             await session.commit()

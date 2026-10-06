@@ -12,7 +12,7 @@ class PaymentRecovery(Base):
         UniqueConstraint("mode", "account_id", "invoice_id", name="uq_recovery_invoice"),
         CheckConstraint("mode = 'test'", name="ck_recovery_mode"),
         CheckConstraint("provider_state IN ('pending','halted')", name="ck_recovery_state"),
-        CheckConstraint("period_end > period_start AND grace_until >= period_start", name="ck_recovery_period"),
+        CheckConstraint("period_end > period_start AND paid_through <= period_start AND grace_until >= paid_through", name="ck_recovery_period"),
     )
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(nullable=False, index=True)
@@ -24,6 +24,7 @@ class PaymentRecovery(Base):
     provider_state: Mapped[str] = mapped_column(String(16), nullable=False)
     period_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     period_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    paid_through: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     grace_until: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

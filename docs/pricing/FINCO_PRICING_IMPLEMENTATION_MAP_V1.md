@@ -87,7 +87,7 @@ V1 before checkout integration may keep provider fields null. Production must ne
 - `free`: Free catalog.
 - `active`: paid catalog for current plan.
 - `grace`: paid read/write access may remain temporarily available according to billing policy; UI shows payment warning.
-- `past_due`: do not destroy data; billing-recovery state is visible. Exact grace timing is deferred to payment integration.
+- `past_due`: do not destroy data; billing-recovery state is visible. Step36 implements default-zero, explicitly configured bounded Test grace anchored to the original unpaid invoice boundary; see `FINCO_PAYMENT_RECOVERY_36.md`. Live/legal policy remains an operational acceptance item.
 - `canceled`: plan remains active until paid period end when cancel-at-period-end applies.
 - `expired`: downgrade rules apply.
 

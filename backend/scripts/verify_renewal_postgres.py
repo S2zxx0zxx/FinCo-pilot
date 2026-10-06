@@ -108,20 +108,23 @@ async def verify(sessions, uid, settings, now, own_sessions):
         invoice.update(status="issued", amount_paid=0, amount_due=9900, payment_id=None)
         failed = [await receive(i, "subscription.pending") for i in range(80, 88)]
         outcomes = await asyncio.gather(*(process_receipt(sessions, i, provider, now=start) for i in failed))
-        assert outcomes == ["recovery_recorded"] * 8, outcomes
+        if outcomes != ["recovery_recorded"] * 8:
+            async with sessions() as session:
+                codes = list((await session.scalars(select(PaymentWebhookEvent.processing_error).where(PaymentWebhookEvent.id.in_(failed)))).all())
+            raise AssertionError((outcomes, codes))
         async with sessions() as session:
             assert await session.scalar(select(func.count()).select_from(PaymentRecovery).where(PaymentRecovery.user_id == uid)) == 1
             sub = await session.scalar(select(Subscription).where(Subscription.user_id == uid))
-            assert sub.current_period_end == before and sub.grace_until == start + timedelta(hours=24)
-            assert effective_plan(sub, now=start + timedelta(hours=24) - timedelta(microseconds=1)).value == "pro"
-            assert effective_plan(sub, now=start + timedelta(hours=24)).value == "free"
+            assert sub.current_period_end == before and sub.grace_until == before + timedelta(hours=24)
+            assert effective_plan(sub, now=before + timedelta(hours=24) - timedelta(microseconds=1)).value == "pro"
+            assert effective_plan(sub, now=before + timedelta(hours=24)).value == "free"
         settings.billing_recovery_grace_hours = 72
         subscription.update(status="halted")
         halted = await receive(89, "subscription.halted")
         assert await process_receipt(sessions, halted, provider, now=start + timedelta(hours=25)) == "recovery_recorded"
         async with sessions() as session:
             sub = await session.scalar(select(Subscription).where(Subscription.user_id == uid))
-            assert sub.status == "past_due" and sub.grace_until == start + timedelta(hours=24)
+            assert sub.status == "past_due" and sub.grace_until == before + timedelta(hours=24)
         subscription.update(status="completed", paid_count=1)
         invoice.update(status="paid", amount_paid=9900, amount_due=0, payment_id=payment["id"])
         future = await receive(100)

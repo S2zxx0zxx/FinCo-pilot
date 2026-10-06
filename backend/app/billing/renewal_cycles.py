@@ -182,6 +182,7 @@ async def process_renewal(session_maker, receipt_id: uuid.UUID, client, *, now=N
                 PaymentRecovery.mandate_id == row.id, PaymentRecovery.period_start == start).with_for_update())
             if recovery is not None:
                 if (recovery.user_id != user_id or recovery.mode != row.mode or recovery.account_id != account
+                        or _stored_utc(recovery.paid_through) != previous_end
                         or recovery.invoice_id != ids[2] or _stored_utc(recovery.period_end) != end
                         or recovery.resolved_at is not None):
                     raise RejectReceipt("recovery_invoice_changed")

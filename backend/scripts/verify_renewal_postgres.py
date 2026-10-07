@@ -50,7 +50,7 @@ async def verify(sessions, uid, settings, now, own_sessions):
         nonlocal posts
         assert all(not session.in_transaction() for session in own_sessions.get()), "provider POST held SQL transaction"
         posts += 1
-        subscription.update(copy.deepcopy(data), id="sub_CI" + uid.hex, entity="subscription", status="created", paid_count=0, has_scheduled_changes=False)
+        subscription.update(copy.deepcopy(data), id="sub_CI" + uid.hex + "N" + str(posts), entity="subscription", status="created", paid_count=0, has_scheduled_changes=False)
         posted.set()
         assert release.wait(10)
         return copy.deepcopy(subscription)
@@ -175,6 +175,67 @@ async def verify(sessions, uid, settings, now, own_sessions):
                         return
                     raise AssertionError("populated downgrade discarded failure evidence")
             await connection.run_sync(refuse_recovery)
+        # A separately authorized mandate after finite completion exercises cancellation.
+        from app.billing.cancellation import cancel
+        from app.models.payment_cancellation import PaymentCancellation
+        previous_cancellation = settings.billing_cancellation_enabled
+        settings.billing_cancellation_enabled = True
+        cancelled_posted, cancelled_release = threading.Event(), threading.Event()
+        cancellation_posts = 0
+        def stop(sid, data):
+            nonlocal cancellation_posts
+            assert all(not session.in_transaction() for session in own_sessions.get())
+            assert sid == subscription["id"] and data == {"cancel_at_cycle_end": False}
+            cancellation_posts += 1
+            cancelled_posted.set()
+            assert cancelled_release.wait(10)
+            subscription["status"] = "cancelled"
+            raise TimeoutError("synthetic ambiguous provider outcome")
+        provider.subscription.cancel = stop
+        try:
+            async with sessions() as session:
+                await create_mandate(session, uid, 2, provider, now=start)
+            async def stop_owned():
+                async with sessions() as session:
+                    return await cancel(session, uid, provider, now=start)
+            stopping = asyncio.create_task(stop_owned())
+            try:
+                assert await asyncio.to_thread(cancelled_posted.wait, 5)
+                assert (await stop_owned())["state"] == "sending"
+            finally:
+                cancelled_release.set()
+                stopped = await asyncio.wait_for(stopping, 10)
+            assert stopped["state"] == "uncertain" and cancellation_posts == 1
+            receipts = [await receive(i, "subscription.cancelled") for i in range(200,208)]
+            outcomes = await asyncio.gather(*(process_receipt(sessions, i, provider, now=start) for i in receipts))
+            assert outcomes == ["cancelled"] * 8, outcomes
+            async with sessions() as session:
+                claims = list((await session.scalars(select(PaymentCancellation).where(PaymentCancellation.user_id == uid))).all())
+                assert len(claims) == 1 and claims[0].state == "confirmed"
+                sub = await session.scalar(select(Subscription).where(Subscription.user_id == uid))
+                assert sub.status == "canceled" and sub.cancel_at_period_end and sub.current_period_end == end
+                assert effective_plan(sub, now=end-timedelta(microseconds=1)).value == "pro"
+                assert effective_plan(sub, now=end).value == "free"
+                await session.commit()
+                assert (await stop_owned())["state"] == "confirmed"
+            assert cancellation_posts == 1
+            spec106 = importlib.util.spec_from_file_location("cancellation106", Path(__file__).resolve().parents[1] / "alembic/versions/106_payment_cancellation.py")
+            assert spec106 and spec106.loader
+            migration106 = importlib.util.module_from_spec(spec106)
+            spec106.loader.exec_module(migration106)
+            async with engine.begin() as connection:
+                def refuse106(sync):
+                    with Operations.context(MigrationContext.configure(sync)):
+                        try:
+                            migration106.downgrade()
+                        except RuntimeError:
+                            return
+                        raise AssertionError("populated cancellation downgrade discarded evidence")
+                await connection.run_sync(refuse106)
+            print("PASS: native cancellation; one POST under concurrent requests; ambiguous outcome never reposted; eight signed HTTP cancellation receipts confirm one retained claim; paid service preserved with exact expiry; provider I/O outside SQL; populated106 downgrade refused")
+        finally:
+            cancelled_release.set()
+            settings.billing_cancellation_enabled = previous_cancellation
         print("PASS: native signed recovery HTTP; eight concurrent subscription-only failures create one recovery; immutable replay/halted grace; exact expiry; captured invoice atomically restores access; provider I/O outside SQL; populated recovery downgrade refused")
         print("PASS: native signed renewal HTTP; one POST under concurrent enrollment; authorization does not grant access; provider I/O outside SQL; eight concurrent paid receipts grant exactly once; future cycle deferred; finite completion; minimal retained evidence; populated renewal downgrade refused")
     finally:

@@ -1,4 +1,5 @@
 import { RenewalEnrollmentCard } from "@/billing/renewal-enrollment-card"
+import { CancellationCard } from "@/billing/cancellation-card"
 import { TermsLink } from '@/components/terms-link'
 import { PrivacyLink } from '@/components/privacy-link'
 import { ensureRazorpaySdk } from '@/lib/razorpay-sdk'
@@ -572,6 +573,7 @@ export default function PricingPage() {
         </section>
 
         <RenewalEnrollmentCard />
+        <CancellationCard />
 
         <section className="hidden gap-4 lg:grid lg:grid-cols-3">
           {(['free', 'pro', 'max'] as const).map((plan) => {

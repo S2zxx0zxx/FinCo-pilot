@@ -82,3 +82,30 @@ async def renewal_enrollment(body: RenewalEnrollment, user: User = Depends(curre
         return await create_mandate(session, user.id, body.total_count, client)
     finally:
         client.session.close()
+
+
+class CancellationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    authorize: StrictBool
+
+
+@router.get("/cancellation")
+async def cancellation_status(user: User = Depends(current_active_user), session: AsyncSession = Depends(get_async_session)):
+    from app.billing.cancellation import preview
+    return await preview(session, user.id)
+
+
+@router.post("/cancellation")
+async def cancellation_request(body: CancellationRequest, user: User = Depends(current_active_user), session: AsyncSession = Depends(get_async_session)):
+    from fastapi import HTTPException
+    from app.billing.cancellation import cancel, enabled
+    if body.authorize is not True:
+        raise HTTPException(422, "Explicit cancellation consent is required.")
+    if not enabled():
+        raise HTTPException(503, "Cancellation is disabled.")
+    from app.api.checkout import _get_razorpay_client
+    client = _get_razorpay_client()
+    try:
+        return await cancel(session, user.id, client)
+    finally:
+        client.session.close()

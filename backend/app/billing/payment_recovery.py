@@ -98,6 +98,9 @@ async def process_failure(session_maker, receipt_id, client, *, now: datetime | 
                 raise RetryReceipt("failure_binding_unavailable")
             if receipt.mode != "test" or receipt.account_id != account or row.provider_key_id != key or row.state != "ready":
                 raise RejectReceipt("failure_scope_mismatch")
+            from app.models.payment_cancellation import PaymentCancellation
+            if await session.scalar(select(PaymentCancellation.id).where(PaymentCancellation.mandate_id == row.id)):
+                raise RejectReceipt("cancellation_prevents_recovery")
             mid, uid, pid = row.id, row.user_id, row.provider_plan_id
             await session.commit()
         try:
@@ -120,6 +123,9 @@ async def process_failure(session_maker, receipt_id, client, *, now: datetime | 
             if await session.scalar(select(AccountDeletion.id).where(AccountDeletion.user_id == uid,
                 AccountDeletion.state != "cancelled").limit(1)):
                 raise RejectReceipt("account_deletion_pending")
+            from app.models.payment_cancellation import PaymentCancellation
+            if await session.scalar(select(PaymentCancellation.id).where(PaymentCancellation.mandate_id == mid)):
+                raise RejectReceipt("cancellation_prevents_recovery")
             row = await session.scalar(select(RenewalMandate).where(RenewalMandate.id == mid).with_for_update().execution_options(populate_existing=True))
             receipt = await session.scalar(select(PaymentWebhookEvent).where(PaymentWebhookEvent.id == receipt_id).with_for_update().execution_options(populate_existing=True))
             if receipt is None or receipt.state != "pending":

@@ -263,3 +263,5 @@ These are not guessed during implementation:
 - Team-seat pricing beyond any included Max workspace access: deferred until collaboration billing is designed.
 - AI overage/top-up price: deferred until real model/token cost data exists.
 - Launch coupons / first-two-month promotion: optional later campaign, not baked into base plan price.
+
+Roadmap #39 payment-failure recovery is implemented by owned fresh checkout status and non-granting failed/authorized signal reconciliation. See FINCO_PAYMENT_FAILURES_39.md for the source audit, late-authorization safety decision, callback fences, tests and acceptance boundaries. Production collection stays disabled; original #40–45 banking/AA/FIU remains deferred pending a compliant partner.

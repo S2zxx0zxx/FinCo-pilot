@@ -20,7 +20,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel, ConfigDict, Field
 from starlette.concurrency import run_in_threadpool
 import requests
@@ -462,3 +462,20 @@ async def verify_payment(
         offer_code=reservation.offer_code,
         founder_wave=reservation.founder_wave,
     )
+
+
+@router.get("/status")
+async def checkout_status(response: Response, user: Annotated[User, Depends(current_active_user)],
+                          session: AsyncSession = Depends(get_async_session)):
+    """Latest own checkout, fresh provider observation; no financial mutation."""
+    response.headers["Cache-Control"] = "no-store"
+    settings = get_settings()
+    if not settings.billing_checkout_enabled or settings.is_production:
+        return {"available": False, "checkout": None}
+    from app.billing.checkout_status import owned_status
+    from app.core.auth import get_jwt_strategy
+    client = _get_razorpay_client()
+    try:
+        return await owned_status(session, user.id, client, credential_stamp=get_jwt_strategy().stamp(user))
+    finally:
+        client.session.close()

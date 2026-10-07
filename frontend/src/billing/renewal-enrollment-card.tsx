@@ -84,12 +84,15 @@ export function RenewalEnrollmentCard() {
           || !body.starts_at || !Number.isFinite(Date.parse(body.starts_at))) {
         throw new Error('The renewal quote could not be validated. Contact support before retrying.')
       }
+      let responseSeen = false
       const options: RazorpaySubscriptionCheckoutOptions = {
         key: body.key_id!, subscription_id: body.subscription_id!, name: 'FinCo-Pilot',
         description: `${selected} renewals at ${amount}/${quote.interval === 'annual' ? 'year' : 'month'}. First cycle ${new Date(body.starts_at).toLocaleDateString()}.`,
-        retry: { enabled: false }, modal: { ondismiss: release },
+        retry: { enabled: false }, modal: { ondismiss: () => { if (!responseSeen) release() } },
         handler: async (response) => {
-          release()
+          if (responseSeen) return
+          responseSeen = true
+          try {
           if (response.razorpay_subscription_id !== body.subscription_id
               || !/^pay_[A-Za-z0-9]{1,100}$/.test(response.razorpay_payment_id)
               || !/^[a-fA-F0-9]{64}$/.test(response.razorpay_signature)) {
@@ -98,9 +101,15 @@ export function RenewalEnrollmentCard() {
           }
           toast.success('Authorization submitted. Access updates after a paid renewal is confirmed.')
           await Promise.allSettled([refreshEntitlements(), quoteQuery.refetch()])
+          } finally { release() }
         },
       }
-      new window.Razorpay(options).open()
+      const checkout = new window.Razorpay(options)
+      checkout.on('payment.failed', () => {
+        if (responseSeen) return
+        toast.error('Renewal authorization is unconfirmed. If debited, do not create another setup. Resume this existing setup or contact support after checking with the provider.')
+      })
+      checkout.open()
     } catch (error) {
       release()
       toast.error(error instanceof Error ? error.message : 'Renewal setup is unavailable.')

@@ -28,6 +28,7 @@ from app.main import app
 from app.models.payment_renewal import RenewalCycle, RenewalMandate
 from scripts.verify_renewal_postgres import verify as verify_renewal
 from scripts.verify_refunds_postgres import verify as verify_refunds
+from scripts.verify_checkout_failures_postgres import verify as verify_checkout_failures
 from app.models.payment_refund import PaymentRefund, RefundObservation
 from app.models.payment_activation import PaymentActivation
 from app.models.payment_webhook import PaymentWebhookEvent
@@ -150,6 +151,7 @@ async def main():
             assert effective_plan(sub, now=now + timedelta(days=1)).value == "pro"
             assert effective_plan(sub, now=now + timedelta(days=61)).value == "free"
             assert "private-ci-canary" not in str(grant.__dict__)
+        await verify_checkout_failures(sessions, uid, settings, now, own_sessions)
         await verify_renewal(sessions, uid, settings, now, own_sessions)
         await verify_refunds(sessions, uid, settings, now, own_sessions)
         async with sessions() as session:

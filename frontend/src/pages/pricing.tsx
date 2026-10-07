@@ -1,3 +1,5 @@
+import { useQueryClient } from '@tanstack/react-query'
+import { CheckoutStatusCard } from '@/billing/checkout-status-card'
 import { RenewalEnrollmentCard } from "@/billing/renewal-enrollment-card"
 import { RefundOperatorCard } from "@/billing/refund-operator-card"
 import { RefundsCard } from "@/billing/refunds-card"
@@ -306,6 +308,8 @@ export default function PricingPage() {
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const { user, token } = useAuth()
+  const queryClient = useQueryClient()
+  const refreshCheckoutStatus = () => queryClient.invalidateQueries({ queryKey: ['billing', 'checkout-status', user?.id] })
   const {
     catalog,
     founderCampaign,
@@ -389,6 +393,7 @@ export default function PricingPage() {
       }
 
       let paymentReceived = false
+      let verificationStarted = false
       const cancelQuote = async () => {
         if (paymentReceived) return
         try {
@@ -422,7 +427,9 @@ export default function PricingPage() {
         order_id: orderData.order_id,
         handler: async (response: RazorpaySuccessResponse) => {
           paymentReceived = true
-          checkoutOpen.current = false
+          if (verificationStarted) return
+          verificationStarted = true
+          checkoutOpen.current = true
           try {
             const verifyRes = await fetch('/api/checkout/verify-payment', {
               method: 'POST',
@@ -452,7 +459,7 @@ export default function PricingPage() {
               })
             }
           } catch {
-            toast.error('Could not verify payment. Please contact support.', {
+            toast.error('Payment confirmation is unresolved. Do not pay again; check payment status or contact support.', {
               action: {
                 label: 'Contact support',
                 onClick: () => navigate(buildSupportUrl({
@@ -461,25 +468,31 @@ export default function PricingPage() {
                 })),
               },
             })
+          } finally {
+            checkoutOpen.current = false
+            void refreshCheckoutStatus()
           }
         },
         modal: {
           ondismiss: () => {
+            if (paymentReceived) return
             checkoutOpen.current = false
             void cancelQuote()
+            void refreshCheckoutStatus()
           },
         },
-        // Razorpay's Orders guidance requires a fresh server Order for each
-        // payment attempt. Keep in-modal retry disabled so this Order can never
-        // be silently reused after a failed attempt. Full failed-attempt
-        // reconciliation/new-order issuance belongs to roadmap #39.
+        // Orders bind payment attempts to the server-owned purchase.
+        // Keep in-modal retries disabled. Failed or ambiguous attempts
+        // retain their original Order; fresh status checks do not collect money.
         retry: { enabled: false },
         theme: { color: '#000000' },
       }
 
       const rzp = new window.Razorpay(options)
       rzp.on('payment.failed', () => {
-        toast.error('Payment failed. No paid entitlement was activated.', {
+        if (paymentReceived) return
+        void refreshCheckoutStatus()
+        toast.error('Payment was not confirmed. If debited, do not pay again. Check payment status or contact support.', {
           action: {
             label: 'Contact support',
             onClick: () => navigate(buildSupportUrl({
@@ -493,7 +506,8 @@ export default function PricingPage() {
       rzp.open()
     } catch {
       checkoutOpen.current = false
-      toast.error('Could not connect to the payment service. Please try again.')
+      void refreshCheckoutStatus()
+      toast.error('Checkout could not be confirmed. Check payment status before paying again.')
     }
   }
 
@@ -577,6 +591,7 @@ export default function PricingPage() {
         <RenewalEnrollmentCard />
         <CancellationCard />
         <RefundsCard />
+        <CheckoutStatusCard />
         <RefundOperatorCard />
 
         <section className="hidden gap-4 lg:grid lg:grid-cols-3">

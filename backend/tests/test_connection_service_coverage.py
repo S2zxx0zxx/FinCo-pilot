@@ -14,6 +14,7 @@ from decimal import Decimal
 from unittest.mock import AsyncMock, patch
 
 import pytest
+import httpx
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -36,6 +37,7 @@ from app.providers.base import (
     SessionExpiredError,
     TransactionData,
 )
+from app.providers.enable_banking import EnableBankingProvider
 from app.services.connection_service import (
     _sync_holdings,
     get_oauth_url,
@@ -838,3 +840,89 @@ async def test_sync_holdings_updates_existing_asset(session: AsyncSession, test_
     assert rows[0].name == "New Name"
     assert rows[0].currency == "EUR"
     assert rows[0].units == Decimal("8")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("status,expected", [(401, "expired"), (500, "error")])
+async def test_provider_account_failure_preserves_money_history_and_freshness(
+    session: AsyncSession,
+    test_user,
+    test_workspace,
+    status,
+    expected,
+):
+    connection = await _make_connection(session, test_user.id)
+    connection.workspace_id = test_workspace.id
+    connection.provider = "enable_banking"
+    connection.credentials = {"session_id": "retained-session"}
+    connection.logo_url = "https://example.com/logo.png"
+    previous_sync = connection.last_sync_at
+    connection_id = connection.id
+    account = Account(
+        user_id=test_user.id,
+        workspace_id=test_workspace.id,
+        connection_id=connection_id,
+        external_id="account-1",
+        name="Retained account",
+        type="checking",
+        balance=Decimal("777.25"),
+        currency="EUR",
+    )
+    session.add(account)
+    await session.flush()
+    account_id = account.id
+    transaction = Transaction(
+        user_id=test_user.id,
+        workspace_id=test_workspace.id,
+        account_id=account_id,
+        external_id="retained-transaction",
+        description="Retained history",
+        amount=Decimal("12.50"),
+        date=date(2026, 1, 1),
+        type="debit",
+        source="sync",
+    )
+    session.add(transaction)
+    await session.commit()
+    user_id = test_user.id
+    workspace_id = test_workspace.id
+
+    def handler(request):
+        if request.url.path.startswith("/sessions/"):
+            return httpx.Response(200, json={"accounts": ["account-1", "account-2"]})
+        uid = request.url.path.split("/")[2]
+        if uid == "account-2" and request.url.path.endswith("balances"):
+            return httpx.Response(status, json={"private": "financial-canary"})
+        payload = {"uid": uid, "currency": "EUR", "display_name": "Changed name"}
+        if request.url.path.endswith("balances"):
+            payload = {"balances": [{"balance_amount": {"amount": "0", "currency": "EUR"}}]}
+        return httpx.Response(200, json=payload)
+
+    provider = EnableBankingProvider()
+    transport = httpx.MockTransport(handler)
+
+    def client():
+        return httpx.AsyncClient(base_url="https://api.enablebanking.com", transport=transport)
+
+    with (
+        patch("app.services.connection_service.get_provider", return_value=provider),
+        patch.object(provider, "_client", side_effect=client),
+    ):
+        with pytest.raises((SessionExpiredError, httpx.HTTPStatusError)):
+            await sync_connection(session, connection_id, workspace_id, user_id)
+
+    retained = await session.get(Account, account_id)
+    assert retained is not None
+    assert retained.balance == Decimal("777.25")
+    assert retained.name == "Retained account"
+    history = (
+        (await session.execute(select(Transaction).where(Transaction.account_id == account_id)))
+        .scalars()
+        .all()
+    )
+    assert len(history) == 1
+    assert history[0].description == "Retained history"
+    row = await session.get(BankConnection, connection_id)
+    assert row is not None
+    assert row.status == expected
+    assert row.last_sync_at == previous_sync

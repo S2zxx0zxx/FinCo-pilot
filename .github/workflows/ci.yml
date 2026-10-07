@@ -207,6 +207,10 @@ jobs:
         env:
           FINCO_DISPOSABLE_DB_TEST: "yes"
         run: python -m scripts.verify_pricing_offer_postgres
+      - name: Verify incomplete bank inventory preserves financial records
+        env:
+          FINCO_DISPOSABLE_DB_TEST: "yes"
+        run: python -m scripts.verify_bank_provider_postgres
       - name: Verify concurrent external MCP approvals on PostgreSQL
         env:
           AGENTS_ENABLED: "true"

@@ -41,9 +41,8 @@ export async function syncBankConnection(
   const timeoutMs = options.timeoutMs ?? 180_000
   const pollMs = options.pollMs ?? 1_500
 
-  // Runtime response is a dispatch receipt. The legacy API client return type
-  // still says BankConnection; we intentionally ignore its shape here and use
-  // the canonical connection row as the source of truth.
+  // A dispatch receipt confirms queuing only. The connection row supplies the
+  // worker's import outcome; queuing is never proof of a successful bank read.
   await connections.sync(connectionId)
 
   const deadline = Date.now() + timeoutMs

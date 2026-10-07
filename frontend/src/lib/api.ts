@@ -419,7 +419,11 @@ export const connections = {
     const { data } = await api.post(`/connections/${connectionId}/oauth/reauth-url`)
     return data.url
   },
-  sync: async (id: string): Promise<BankConnection> => {
+  sync: async (id: string): Promise<{
+    connection_id: string
+    task_id: string
+    status: 'queued' | 'already_running'
+  }> => {
     const { data } = await api.post(`/connections/${id}/sync`)
     return data
   },

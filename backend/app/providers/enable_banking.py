@@ -9,10 +9,12 @@ The flow requires the user to pick a country and bank before the
 authorization URL can be generated, so `get_oauth_url` takes
 `flow_params={"country", "institution_name"}`.
 """
+
 from __future__ import annotations
 
 import hashlib
 import logging
+import re
 import time
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
@@ -103,12 +105,18 @@ def _pick_balance(balances: list[dict]) -> Optional[dict]:
 
 def _balance_decimal(balance: Optional[dict]) -> Decimal:
     if not balance:
-        return Decimal("0")
+        raise RuntimeError("Enable Banking balance is unavailable")
     amount = balance.get("balance_amount") or balance.get("amount") or {}
     try:
-        return Decimal(str(amount.get("amount", "0")))
-    except (InvalidOperation, AttributeError):
-        return Decimal("0")
+        value = amount.get("amount")
+        if isinstance(value, bool) or not isinstance(value, (str, int, float, Decimal)):
+            raise ValueError
+        parsed = Decimal(str(value))
+        if not parsed.is_finite():
+            raise ValueError
+        return parsed
+    except (InvalidOperation, AttributeError, ValueError) as exc:
+        raise RuntimeError("Enable Banking balance is invalid") from exc
 
 
 def _balance_currency(balance: Optional[dict], fallback: str) -> str:
@@ -192,10 +200,7 @@ class EnableBankingProvider(BankProvider):
 
     @property
     def redirect_uri(self) -> str:
-        return (
-            get_settings().enable_banking_oauth_redirect_uri
-            or default_oauth_redirect_uri()
-        )
+        return get_settings().enable_banking_oauth_redirect_uri or default_oauth_redirect_uri()
 
     # ----- credentials -----
 
@@ -271,28 +276,29 @@ class EnableBankingProvider(BankProvider):
             resp = await client.request(method, path, params=params, json=json_body)
         if resp.status_code in (401, 410):
             raise SessionExpiredError(
-                f"Enable Banking returned {resp.status_code} for {path}"
+                "Enable Banking access is unavailable; reauthorize the connection"
             )
         if resp.status_code == 429:
             # The bank (ASPSP) is throttling us — transient, not a broken
             # connection. Surface a distinct type so sync can skip-and-retry
             # instead of erroring the connection.
             raise ProviderRateLimited(
-                f"Enable Banking {method} {path} → 429: {resp.text[:200]}"
+                "Enable Banking rate limit prevented this request; retry later"
             )
         if resp.status_code >= 400:
             raise httpx.HTTPStatusError(
-                f"Enable Banking {method} {path} → {resp.status_code}: {resp.text[:300]}",
+                f"Enable Banking request failed with HTTP {resp.status_code}",
                 request=resp.request,
                 response=resp,
             )
-        return resp.json()
+        payload = resp.json()
+        if not isinstance(payload, dict):
+            raise RuntimeError("Enable Banking response is invalid")
+        return payload
 
     # ----- institution listing -----
 
-    async def list_institutions(
-        self, country: Optional[str] = None
-    ) -> InstitutionListData:
+    async def list_institutions(self, country: Optional[str] = None) -> InstitutionListData:
         params: dict[str, Any] = {}
         if country:
             params["country"] = country.upper()
@@ -339,9 +345,7 @@ class EnableBankingProvider(BankProvider):
         valid_until_days = min(valid_until_days, MAX_VALID_UNTIL_DAYS)
         valid_until_dt = datetime.now(timezone.utc) + timedelta(days=valid_until_days)
         # EB wants RFC3339 with a trailing 'Z' for UTC.
-        valid_until = valid_until_dt.replace(microsecond=0).isoformat().replace(
-            "+00:00", "Z"
-        )
+        valid_until = valid_until_dt.replace(microsecond=0).isoformat().replace("+00:00", "Z")
         return {
             "access": {"valid_until": valid_until},
             "aspsp": {"name": institution_name, "country": country.upper()},
@@ -364,9 +368,7 @@ class EnableBankingProvider(BankProvider):
                 "Enable Banking requires flow_params with 'country' and 'institution_name'"
             )
         psu_type = (flow_params.get("psu_type") or DEFAULT_PSU_TYPE).strip()
-        valid_until_days = int(
-            flow_params.get("valid_until_days") or DEFAULT_VALID_UNTIL_DAYS
-        )
+        valid_until_days = int(flow_params.get("valid_until_days") or DEFAULT_VALID_UNTIL_DAYS)
         payload = self._build_auth_payload(
             country=country,
             institution_name=institution_name,
@@ -390,9 +392,7 @@ class EnableBankingProvider(BankProvider):
     ) -> str:
         stored = (settings or {}).get("flow_params") or {}
         if not stored.get("country") or not stored.get("institution_name"):
-            raise RuntimeError(
-                "Cannot reauth Enable Banking connection without stored flow_params"
-            )
+            raise RuntimeError("Cannot reauth Enable Banking connection without stored flow_params")
         return await self.get_oauth_url(redirect_uri, state, flow_params=stored)
 
     # ----- session exchange -----
@@ -420,7 +420,9 @@ class EnableBankingProvider(BankProvider):
         accounts: list[AccountData] = []
         for raw_acc in accounts_raw:
             if isinstance(raw_acc, str):
-                continue  # restricted clients can return account IDs as strings
+                raw_acc = await self._account_details(raw_acc)
+            elif not isinstance(raw_acc, dict):
+                raise RuntimeError("Enable Banking account inventory is invalid")
             accounts.append(await self._build_account(raw_acc))
 
         encrypted_session = encrypt(session_id) or session_id
@@ -456,24 +458,25 @@ class EnableBankingProvider(BankProvider):
 
     async def _build_account(self, raw: dict) -> AccountData:
         uid = raw.get("uid") or raw.get("account_uid") or ""
-        currency = raw.get("currency") or "EUR"
+        self._validate_account_uid(uid)
+        currency = raw.get("currency") or ""
         # EB doesn't include balances in the session payload; fetch separately.
-        balance = Decimal("0")
-        try:
-            bal_resp = await self._request("GET", f"/accounts/{uid}/balances")
-            picked = _pick_balance(bal_resp.get("balances") or [])
-            balance = _balance_decimal(picked)
-            currency = _balance_currency(picked, currency)
-        except (httpx.HTTPError, SessionExpiredError) as exc:
-            logger.warning(
-                "Failed to fetch balances for account %s: %s", uid, exc
-            )
-        name = (
-            raw.get("display_name")
-            or raw.get("product")
-            or raw.get("name")
-            or "Account"
-        )
+        bal_resp = await self._request("GET", f"/accounts/{uid}/balances")
+        balances = bal_resp.get("balances")
+        if not isinstance(balances, list):
+            raise RuntimeError("Enable Banking balance inventory is invalid")
+        picked = _pick_balance(balances)
+        balance = _balance_decimal(picked)
+        balance_currency = _balance_currency(picked, currency)
+        if (
+            not isinstance(balance_currency, str)
+            or not re.fullmatch(r"[A-Z]{3}", balance_currency)
+            or balance_currency == "XXX"
+            or (currency and currency != "XXX" and currency != balance_currency)
+        ):
+            raise RuntimeError("Enable Banking balance currency is unavailable or inconsistent")
+        currency = balance_currency
+        name = raw.get("display_name") or raw.get("product") or raw.get("name") or "Account"
         return AccountData(
             external_id=uid,
             name=name,
@@ -484,6 +487,21 @@ class EnableBankingProvider(BankProvider):
         )
 
     # ----- account / transaction fetches -----
+
+    @staticmethod
+    def _validate_account_uid(uid: str) -> None:
+        if not isinstance(uid, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,128}", uid):
+            raise RuntimeError("Enable Banking account identity is invalid")
+
+    async def _account_details(self, uid: str) -> dict:
+        self._validate_account_uid(uid)
+        details = await self._request("GET", f"/accounts/{uid}/details")
+        if (
+            not isinstance(details, dict)
+            or (details.get("uid") or details.get("account_uid")) != uid
+        ):
+            raise RuntimeError("Enable Banking account identity does not match the session")
+        return details
 
     def _session_id(self, credentials: dict) -> str:
         enc = credentials.get("session_id_enc")
@@ -504,16 +522,19 @@ class EnableBankingProvider(BankProvider):
         hashes only). The human-readable name/type/currency live behind
         /accounts/{uid}/details, fetched per account below.
         """
+        entries = session_data.get("accounts_data") or session_data.get("accounts")
+        if not isinstance(entries, list) or len(entries) > 1000:
+            raise RuntimeError("Enable Banking account inventory is invalid")
         uids: list[str] = []
-        for entry in session_data.get("accounts_data") or []:
-            if isinstance(entry, dict):
-                uid = entry.get("uid") or entry.get("account_uid")
-                if uid:
-                    uids.append(uid)
-        if uids:
-            return uids
-        # Fallback: `accounts` is a plain list of uid strings.
-        return [a for a in (session_data.get("accounts") or []) if isinstance(a, str)]
+        for entry in entries:
+            uid = (
+                (entry.get("uid") or entry.get("account_uid")) if isinstance(entry, dict) else entry
+            )
+            EnableBankingProvider._validate_account_uid(uid)
+            if uid in uids:
+                raise RuntimeError("Enable Banking account inventory contains duplicate identities")
+            uids.append(uid)
+        return uids
 
     async def get_accounts(self, credentials: dict) -> list[AccountData]:
         session_id = self._session_id(credentials)
@@ -522,16 +543,7 @@ class EnableBankingProvider(BankProvider):
         data = await self._request("GET", f"/sessions/{session_id}")
         result: list[AccountData] = []
         for uid in self._account_uids(data):
-            try:
-                details = await self._request("GET", f"/accounts/{uid}/details")
-            except (httpx.HTTPError, SessionExpiredError) as exc:
-                # Without details we can't safely name/type the account, and a
-                # bare-uid AccountData would overwrite the stored name with a
-                # placeholder. Skip this account for this run (non-destructive:
-                # the existing row and its transactions are left intact and the
-                # next sync retries) rather than corrupt it.
-                logger.warning("Failed to fetch details for account %s: %s", uid, exc)
-                continue
+            details = await self._account_details(uid)
             result.append(await self._build_account(details))
         return result
 
@@ -559,9 +571,7 @@ class EnableBankingProvider(BankProvider):
                 params=params,
             )
             for raw_txn, status in self._iter_transactions(page):
-                parsed = self._build_transaction(
-                    account_external_id, raw_txn, status, payee_source
-                )
+                parsed = self._build_transaction(account_external_id, raw_txn, status, payee_source)
                 # A broken pagination cursor can make Enable Banking return a
                 # page we have already consumed. Keep the result idempotent
                 # even before the repeated cursor is detected below.

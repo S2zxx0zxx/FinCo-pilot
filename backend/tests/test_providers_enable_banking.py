@@ -4,6 +4,7 @@ Covers: JWT signing/claims, transaction fingerprint stability, account-type
 mapping, nested vs flat transaction page shapes, restricted-mode handling.
 HTTP is mocked end-to-end via httpx.MockTransport.
 """
+
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta, timezone
@@ -17,16 +18,150 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from jose import jwt
 
 from app.providers.base import (
+    ProviderRateLimited,
     ProviderUserActionRequired,
     SessionExpiredError,
     mask_last4,
 )
+
 from app.providers.enable_banking import (
     EnableBankingProvider,
     _account_identifier,
     _map_cash_account_type,
     _txn_fingerprint,
 )
+
+
+def _account_response(uid="account-1", currency="EUR"):
+    return {"uid": uid, "display_name": "Bank account", "currency": currency}
+
+
+def _balance_response(amount="123.45", currency="EUR"):
+    return {
+        "balances": [
+            {
+                "balance_type": "CLBD",
+                "balance_amount": {
+                    "amount": amount,
+                    "currency": currency,
+                },
+            }
+        ]
+    }
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("endpoint", ["details", "balances"])
+@pytest.mark.parametrize(
+    "status,exception",
+    [
+        (401, SessionExpiredError),
+        (410, SessionExpiredError),
+        (429, ProviderRateLimited),
+        (500, httpx.HTTPStatusError),
+    ],
+)
+async def test_account_failure_aborts_inventory_without_private_diagnostics(
+    endpoint, status, exception
+):
+    provider = EnableBankingProvider()
+
+    def handler(request):
+        if request.url.path == "/sessions/private-session":
+            return httpx.Response(200, json={"accounts": ["account-1", "account-2"]})
+        if request.url.path == f"/accounts/account-2/{endpoint}":
+            return httpx.Response(status, json={"private": "bank-secret-canary"})
+        uid = request.url.path.split("/")[2]
+        body = (
+            _account_response(uid) if request.url.path.endswith("details") else _balance_response()
+        )
+        return httpx.Response(200, json=body)
+
+    with _patch_client(provider, handler), pytest.raises(exception) as error:
+        await provider.get_accounts({"session_id": "private-session"})
+    assert "bank-secret-canary" not in str(error.value)
+    assert "private-session" not in str(error.value)
+    assert "account-2" not in str(error.value)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {},
+        {"balances": []},
+        {"balances": {}},
+        {"balances": [{}]},
+        _balance_response(None),
+        _balance_response(True),
+        _balance_response("invalid"),
+        _balance_response("NaN"),
+        _balance_response("Infinity"),
+        _balance_response("-Infinity"),
+        _balance_response("100", "USD"),
+        _balance_response("100", "XXX"),
+    ],
+)
+async def test_unavailable_or_invalid_balance_cannot_become_zero(payload):
+    provider = EnableBankingProvider()
+    with _patch_client(provider, lambda request: httpx.Response(200, json=payload)):
+        with pytest.raises(RuntimeError):
+            await provider._build_account(_account_response())
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("amount", ["0", "-10.25", "123.45"])
+async def test_real_finite_balance_is_preserved(amount):
+    provider = EnableBankingProvider()
+    with _patch_client(
+        provider, lambda request: httpx.Response(200, json=_balance_response(amount))
+    ):
+        account = await provider._build_account(_account_response())
+    assert account.balance == Decimal(amount)
+    assert account.currency == "EUR"
+
+
+@pytest.mark.asyncio
+async def test_string_session_accounts_fetch_details_on_initial_connection():
+    provider = EnableBankingProvider()
+    paths = []
+
+    def handler(request):
+        paths.append(request.url.path)
+        if request.url.path == "/sessions":
+            return httpx.Response(200, json={"session_id": "session-1", "accounts": ["account-1"]})
+        body = _account_response() if request.url.path.endswith("details") else _balance_response()
+        return httpx.Response(200, json=body)
+
+    with _patch_client(provider, handler):
+        connection = await provider.handle_oauth_callback("test-code")
+    assert [account.external_id for account in connection.accounts] == ["account-1"]
+    assert paths == ["/sessions", "/accounts/account-1/details", "/accounts/account-1/balances"]
+
+
+@pytest.mark.asyncio
+async def test_details_cannot_substitute_another_account():
+    provider = EnableBankingProvider()
+    with _patch_client(
+        provider, lambda request: httpx.Response(200, json=_account_response("other-account"))
+    ):
+        with pytest.raises(RuntimeError, match="does not match"):
+            await provider._account_details("account-1")
+
+
+@pytest.mark.parametrize(
+    "inventory",
+    [
+        {"accounts": ["account-1", "account-1"]},
+        {"accounts": ["account-1", {}]},
+        {"accounts": ["../sessions/foreign"]},
+        {"accounts": "account-1"},
+        {},
+    ],
+)
+def test_incomplete_inventory_is_rejected(inventory):
+    with pytest.raises(RuntimeError):
+        EnableBankingProvider._account_uids(inventory)
 
 
 def _rsa_pem() -> tuple[str, str]:
@@ -37,10 +172,14 @@ def _rsa_pem() -> tuple[str, str]:
         format=serialization.PrivateFormat.PKCS8,
         encryption_algorithm=serialization.NoEncryption(),
     ).decode("utf-8")
-    public_pem = key.public_key().public_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PublicFormat.SubjectPublicKeyInfo,
-    ).decode("utf-8")
+    public_pem = (
+        key.public_key()
+        .public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,
+        )
+        .decode("utf-8")
+    )
     return private_pem, public_pem
 
 
@@ -75,9 +214,7 @@ def test_jwt_token_has_expected_claims_and_kid(eb_keys):
     assert header["kid"] == "test-app-id-123"
     assert header["typ"] == "JWT"
 
-    claims = jwt.decode(
-        token, public_pem, algorithms=["RS256"], audience="api.enablebanking.com"
-    )
+    claims = jwt.decode(token, public_pem, algorithms=["RS256"], audience="api.enablebanking.com")
     assert claims["iss"] == "enablebanking.com"
     assert claims["aud"] == "api.enablebanking.com"
     assert isinstance(claims["iat"], int)
@@ -225,9 +362,7 @@ async def test_get_oauth_url_returns_consent_url(eb_keys):
 async def test_get_oauth_url_rejects_missing_flow_params(eb_keys):
     provider = EnableBankingProvider()
     with pytest.raises(ValueError):
-        await provider.get_oauth_url(
-            "https://x/cb", "s", flow_params={"country": "DE"}
-        )
+        await provider.get_oauth_url("https://x/cb", "s", flow_params={"country": "DE"})
 
 
 @pytest.mark.asyncio
@@ -337,7 +472,11 @@ async def test_get_transactions_parses_nested_and_flat_shapes(eb_keys):
         assert request.url.path == "/accounts/acc-1/transactions"
         return httpx.Response(200, json=nested_page)
 
-    credentials = {"session_id_enc": None, "session_id": "sess-x", "valid_until": "2099-01-01T00:00:00Z"}
+    credentials = {
+        "session_id_enc": None,
+        "session_id": "sess-x",
+        "valid_until": "2099-01-01T00:00:00Z",
+    }
     with _patch_client(provider, handler):
         nested = await provider.get_transactions(credentials, "acc-1", date(2026, 5, 1))
 
@@ -407,9 +546,7 @@ async def test_get_transactions_stops_on_repeated_continuation_key(eb_keys, capl
         "valid_until": "2099-01-01T00:00:00Z",
     }
     with _patch_client(provider, handler), caplog.at_level("WARNING"):
-        transactions = await provider.get_transactions(
-            credentials, "acc-1", date(2026, 5, 1)
-        )
+        transactions = await provider.get_transactions(credentials, "acc-1", date(2026, 5, 1))
 
     assert len(requests) == 2
     assert requests[0].url.params.get("continuation_key") is None
@@ -421,9 +558,7 @@ async def test_get_transactions_stops_on_repeated_continuation_key(eb_keys, capl
 @pytest.mark.asyncio
 async def test_refresh_credentials_expired_raises(eb_keys):
     provider = EnableBankingProvider()
-    expired = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat().replace(
-        "+00:00", "Z"
-    )
+    expired = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat().replace("+00:00", "Z")
     with pytest.raises(SessionExpiredError):
         await provider.refresh_credentials({"valid_until": expired})
 
@@ -431,9 +566,7 @@ async def test_refresh_credentials_expired_raises(eb_keys):
 @pytest.mark.asyncio
 async def test_refresh_credentials_valid_passes(eb_keys):
     provider = EnableBankingProvider()
-    future = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat().replace(
-        "+00:00", "Z"
-    )
+    future = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat().replace("+00:00", "Z")
     creds = {"valid_until": future, "session_id_enc": "enc"}
     out = await provider.refresh_credentials(creds)
     assert out is creds

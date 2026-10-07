@@ -19,7 +19,9 @@ beforeEach(()=>{
 afterEach(()=>{vi.unstubAllGlobals();delete window.Razorpay})
 async function start(response=quote){
   const fetcher=vi.fn().mockResolvedValue(new Response(JSON.stringify(response),{status:200}))
-  vi.stubGlobal('fetch',fetcher)
+  vi.stubGlobal('fetch',(url: string, init?: RequestInit) => url === '/api/billing/cancellation'
+    ? Promise.resolve(new Response(JSON.stringify({ available: false }), { status: 200 }))
+    : fetcher(url, init))
   const {user}=renderWithProviders(<PricingPage/>,{route:'/pricing?plan=pro'})
   await user.click(screen.getByRole('button',{name:'Continue with Pro'}))
   return {user,fetcher}

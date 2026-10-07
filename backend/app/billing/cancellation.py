@@ -25,7 +25,7 @@ def enabled():
     return activation_enabled() and get_settings().billing_cancellation_enabled
 
 
-async def source(session, uid, *, lock=False):
+async def source(session, uid, *, lock=False, reconcile=False):
     if lock and session.get_bind().dialect.name == "postgresql":
         await session.execute(text("SET LOCAL lock_timeout = '5s'"))
         await session.execute(text("SET LOCAL statement_timeout = '10s'"))
@@ -35,8 +35,7 @@ async def source(session, uid, *, lock=False):
     user = await session.scalar(query(User, User.id == uid))
     if user is None or not user.is_active:
         raise HTTPException(409, "An active account is required.")
-    if await session.scalar(select(AccountDeletion.id).where(AccountDeletion.user_id == uid,
-            AccountDeletion.state != "cancelled").limit(1)):
+    if not reconcile and await deletion_pending(session, uid):
         raise HTTPException(409, "Account deletion requires operator reconciliation.")
     sub = await session.scalar(query(Subscription, Subscription.user_id == uid))
     if sub is None or sub.provider != "razorpay" or sub.status not in {"active", "grace", "past_due", "canceled"}:
@@ -62,6 +61,11 @@ async def source(session, uid, *, lock=False):
     return sub, row
 
 
+async def deletion_pending(session, uid):
+    return await session.scalar(select(AccountDeletion.id).where(AccountDeletion.user_id == uid,
+        AccountDeletion.state != "cancelled").limit(1)) is not None
+
+
 def response(sub, claim):
     return {"available": True, "state": claim.state if claim else "available",
         "paid_through": _stored_utc(sub.current_period_end)}
@@ -71,10 +75,12 @@ async def preview(session, uid):
     if not enabled():
         return {"available": False}
     try:
-        sub, row = await source(session, uid)
+        sub, row = await source(session, uid, reconcile=True)
     except HTTPException:
         return {"available": False}
     claim = await session.scalar(select(PaymentCancellation).where(PaymentCancellation.mandate_id == row.id))
+    if claim is None and await deletion_pending(session, uid):
+        return {"available": False}
     return response(sub, claim)
 
 
@@ -102,7 +108,10 @@ async def cancel(session, uid, client, *, now=None):
     if not enabled():
         raise HTTPException(503, "Cancellation is disabled.")
     current = now or datetime.now(timezone.utc)
-    sub, row = await source(session, uid, lock=True)
+    sub, row = await source(session, uid, lock=True, reconcile=True)
+    existing = await session.scalar(select(PaymentCancellation.id).where(PaymentCancellation.mandate_id == row.id))
+    if existing is None and await deletion_pending(session, uid):
+        raise HTTPException(409, "Account deletion requires operator reconciliation.")
     mid, sid, pid = row.id, row.provider_subscription_id, row.provider_plan_id
     await session.commit()
     try:
@@ -112,7 +121,7 @@ async def cancel(session, uid, client, *, now=None):
         validate(row, provider, plan)
     except Exception:
         raise HTTPException(502, "Cancellation cannot be verified. Contact support or check again.") from None
-    sub, row = await source(session, uid, lock=True)
+    sub, row = await source(session, uid, lock=True, reconcile=True)
     if not enabled() or row.id != mid or row.provider_plan_id != pid:
         raise HTTPException(409, "Cancellation binding changed.")
     validate(row, provider, plan)
@@ -120,6 +129,8 @@ async def cancel(session, uid, client, *, now=None):
     if claim and not claim_matches(claim, row):
         raise HTTPException(409, "Cancellation evidence requires review.")
     dispatch = claim is None and provider["status"] != "cancelled"
+    if dispatch and await deletion_pending(session, uid):
+        raise HTTPException(409, "Account deletion prevents a new cancellation dispatch.")
     if claim is None:
         claim = new_claim(row, current, "sending" if dispatch else "uncertain")
         session.add(claim)
@@ -141,7 +152,7 @@ async def cancel(session, uid, client, *, now=None):
         validate(row, provider, plan)
     except Exception:
         provider = None
-    sub, row = await source(session, uid, lock=True)
+    sub, row = await source(session, uid, lock=True, reconcile=True)
     claim = await session.scalar(select(PaymentCancellation).where(PaymentCancellation.id == cid).with_for_update())
     if (not enabled() or row.id != mid or row.provider_plan_id != pid
             or claim is None or not claim_matches(claim, row)):
@@ -197,7 +208,7 @@ async def process_cancellation(sessions, receipt_id, client, *, now=None):
             uid = row.user_id
             await session.commit()
             # Reconciliation only: signed cancellation never authorizes a provider POST.
-            sub, row = await source(session, uid)
+            sub, row = await source(session, uid, reconcile=True)
             pid, mid = row.provider_plan_id, row.id
             await session.commit()
             try:
@@ -212,7 +223,7 @@ async def process_cancellation(sessions, receipt_id, client, *, now=None):
                 raise RejectReceipt("cancellation_evidence_mismatch") from None
             if provider["status"] != "cancelled":
                 raise RetryReceipt("cancellation_not_confirmed")
-            sub, row = await source(session, uid, lock=True)
+            sub, row = await source(session, uid, lock=True, reconcile=True)
             receipt = await session.scalar(select(PaymentWebhookEvent).where(PaymentWebhookEvent.id == receipt_id)
                 .with_for_update().execution_options(populate_existing=True))
             if receipt is None or receipt.state != "pending":

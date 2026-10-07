@@ -32,4 +32,19 @@ Implementation and acceptance checklist:
 - Exact-head seven CI jobs, expected-head merge/tree equality, fresh main seven
   CI jobs and canonical acceptance. No production or zero-vulnerability claim.
 
-Status: implementation in progress; acceptance pending.
+Additional audit findings: deletion requested during an ambiguous dispatch must
+allow GET/webhook reconciliation of that existing request while prohibiting new
+POSTs. A regression covers that race. The checkout mock now routes the new status
+GET independently from first-purchase provider checkout responses.
+
+Fresh npm audit initially found 10 advisories (9 high, 1 critical). Compatible
+patch updates address jsdom's undici and source-map-js. The app imported only CSS
+from shadcn's CLI package; its unused executable dependency graph included
+unpatched braces. The exact MIT stylesheet and license are retained locally;
+the CLI dependency is removed. Generated CSS SHA256 is unchanged:
+`a9529d7eb5ca9265dcc84f8813fa14e3348f7b76b6f9e517467a5b743ed29894`.
+Fresh audit reports zero known advisories; CI now enforces npm audit. This is an
+observed advisory result, not a promise that unknown vulnerabilities do not exist.
+
+Status: local implementation and focused checks complete; exact-head CI and
+fresh-main acceptance pending.

@@ -14,7 +14,7 @@ from app.models.subscription import Subscription
 from tests.conftest import TestSessionLocal
 from tests.test_payment_activation import enabled as enabled, purchase as purchase
 from tests.test_renewal_lifecycle import renewal as renewal, cycle_receipt
-from tests.test_payment_recovery import failure_receipt
+from tests.test_payment_recovery import failure_receipt, failure as failure
 
 
 @pytest.fixture
@@ -155,6 +155,33 @@ async def test_unresolved_cancellation_blocks_deletion(cancellable, session, tes
     assert result["state"] == "blocked" and "cancellation_outcome_unresolved" in result["blockers"]
 
 
+async def test_pending_deletion_allows_existing_unknown_outcome_to_reconcile(cancellable, session, test_user):
+    from app.services import account_deletion_service as deletion
+    row, provider, source, _, _, _, _ = cancellable
+    provider.subscription.cancel.side_effect = TimeoutError("synthetic")
+    async with TestSessionLocal() as own:
+        await cancellation.cancel(own, row.user_id, provider)
+    result = await deletion.request_deletion(session, test_user)
+    assert "cancellation_outcome_unresolved" in result["blockers"]
+    source["status"] = "cancelled"
+    receipt = await failure_receipt(source, 9, "cancelled")
+    assert await activation.process_receipt(TestSessionLocal, receipt, provider) == "cancelled"
+    async with TestSessionLocal() as own:
+        assert (await cancellation.cancel(own, row.user_id, provider))["state"] == "confirmed"
+    provider.subscription.cancel.assert_called_once()
+
+
+async def test_deletion_prevents_new_provider_cancel_post(cancellable, session, test_user):
+    from app.services import account_deletion_service as deletion
+    row, provider, _, _, _, _, _ = cancellable
+    await deletion.request_deletion(session, test_user)
+    async with TestSessionLocal() as own:
+        with pytest.raises(HTTPException) as exc:
+            await cancellation.cancel(own, row.user_id, provider)
+        assert exc.value.status_code == 409
+    provider.subscription.cancel.assert_not_called()
+
+
 async def test_confirmed_cancellation_retained_after_real_account_purge(cancellable, session, test_user):
     from tests.test_account_deletion_workflow import operator, approved, finish_execution
     row, provider, source, _, _, _, _ = cancellable
@@ -187,3 +214,48 @@ async def test_unresolved_cancel_does_not_grant_paid_cycle(cancellable):
     source.update(paid_count=1)
     receipt = await cycle_receipt(source, payment)
     assert await activation.process_receipt(TestSessionLocal, receipt, provider, now=start) == "retry"
+
+
+async def test_canceling_unpaid_grace_preserves_evidence_without_forgiving_debt(failure, enabled, monkeypatch):
+    from app.models.payment_recovery import PaymentRecovery
+    row, provider, source, _, _, start = failure
+    monkeypatch.setattr(enabled, "billing_cancellation_enabled", True)
+    monkeypatch.setattr(enabled, "billing_recovery_grace_hours", 24)
+    receipt = await failure_receipt(source)
+    assert await activation.process_receipt(TestSessionLocal, receipt, provider, now=start) == "recovery_recorded"
+    def stop(*_):
+        source["status"] = "cancelled"
+        return copy.deepcopy(source)
+    provider.subscription.cancel.side_effect = stop
+    async with TestSessionLocal() as session:
+        await cancellation.cancel(session, row.user_id, provider, now=start)
+        sub = await session.scalar(select(Subscription).where(Subscription.user_id == row.user_id))
+        case = await session.scalar(select(PaymentRecovery))
+        assert sub is not None and case is not None
+        assert case.resolved_at is None and sub.grace_until is None
+        assert _stored_utc(sub.current_period_end) == start
+        assert effective_plan(sub, now=start).value == "free"
+
+
+async def test_disabled_cancel_events_cannot_starve_paid_receipt_scanner(cancellable, enabled, monkeypatch):
+    _, provider, source, _, _, payment, start = cancellable
+    for n in range(7):
+        await failure_receipt(source, n, "cancelled")
+    source["paid_count"] = 1
+    await cycle_receipt(source, payment)
+    monkeypatch.setattr(enabled, "billing_cancellation_enabled", False)
+    assert await activation.scan_receipts(TestSessionLocal, provider, now=start) == {"renewed":1}
+
+
+@pytest.mark.parametrize("changed,value", [("razorpay_key_id","rzp_test_Other"),
+    ("razorpay_webhook_account_id","acc_Other"),("billing_cancellation_enabled",False)])
+async def test_configuration_changed_during_get_prevents_dispatch(cancellable, enabled, monkeypatch, changed, value):
+    row, provider, _, plan, _, _, _ = cancellable
+    def fetched(_):
+        monkeypatch.setattr(enabled, changed, value)
+        return copy.deepcopy(plan)
+    provider.plan.fetch.side_effect = fetched
+    async with TestSessionLocal() as session:
+        with pytest.raises(HTTPException):
+            await cancellation.cancel(session, row.user_id, provider)
+    provider.subscription.cancel.assert_not_called()

@@ -1,4 +1,6 @@
 import { RenewalEnrollmentCard } from "@/billing/renewal-enrollment-card"
+import { RefundOperatorCard } from "@/billing/refund-operator-card"
+import { RefundsCard } from "@/billing/refunds-card"
 import { CancellationCard } from "@/billing/cancellation-card"
 import { TermsLink } from '@/components/terms-link'
 import { PrivacyLink } from '@/components/privacy-link'
@@ -574,6 +576,8 @@ export default function PricingPage() {
 
         <RenewalEnrollmentCard />
         <CancellationCard />
+        <RefundsCard />
+        <RefundOperatorCard />
 
         <section className="hidden gap-4 lg:grid lg:grid-cols-3">
           {(['free', 'pro', 'max'] as const).map((plan) => {

@@ -196,6 +196,9 @@ async def process_renewal(session_maker, receipt_id: uuid.UUID, client, *, now=N
                 recovery.resolved_at = applied_at
             sub.status = "canceled" if cancellation else "active"
             sub.recovery_due_at, sub.grace_until = None, None
+            if sub.paid_term_refunded:
+                sub.current_period_start = start
+            sub.paid_term_refunded = False
             sub.current_period_end = end
             session.add(RenewalCycle(user_id=user_id, mandate_id=row.id, source_event_id=receipt_id,
                 mode="test", account_id=account, provider_subscription_id=ids[0], invoice_id=ids[2], payment_id=ids[1],

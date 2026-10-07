@@ -95,7 +95,7 @@ async def source(session, user_id, *, lock=False):
     sub = await session.scalar(query.with_for_update().execution_options(populate_existing=True) if lock else query)
     grant = await session.scalar(select(PaymentActivation).where(PaymentActivation.user_id == user_id).limit(1))
     if (sub is None or grant is None or sub.provider != "razorpay" or sub.status != "active"
-            or sub.cancel_at_period_end or (sub.plan, sub.billing_interval) != (grant.plan, grant.billing_interval)
+            or sub.paid_term_refunded or sub.cancel_at_period_end or (sub.plan, sub.billing_interval) != (grant.plan, grant.billing_interval)
             or grant.mode != "test" or grant.account_id != settings.razorpay_webhook_account_id
             or grant.provider_key_id != settings.razorpay_key_id or _stored_utc(sub.current_period_end) is None):
         raise HTTPException(409, "Verified compatible paid service is required for renewal.")

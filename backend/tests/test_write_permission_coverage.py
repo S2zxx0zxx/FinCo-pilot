@@ -82,6 +82,7 @@ ALLOWLIST: dict[tuple[str, str], str] = {
     ("PATCH", "/{id}"): "fastapi-users' own user router, superuser-gated",
     ("DELETE", "/{id}"): "fastapi-users' own user router, superuser-gated",
     ("POST", "/api/setup/create-admin"): "first-run bootstrap, refuses once a user exists",
+    ("POST", "/api/billing/refunds/operator"): "fresh superuser, reviewed exact bound payment and evidence; durable at-most-once dispatch",
     # Instance administration: gated by `current_superuser`, not by workspace.
     ("POST", "/api/admin/users"): "superuser-gated instance administration",
     ("PATCH", "/api/admin/users/{user_id}"): "superuser-gated instance administration",
@@ -242,6 +243,8 @@ def test_a_mutating_route_declares_a_permission_decision(method, path):
             assert "require_fresh" in names, "destructive/evidence/governance workflows require fresh full authentication"
             if "/operator/" in path:
                 assert "current_superuser" in names, "operator workflow requires a superuser"
+        if path == "/api/billing/refunds/operator":
+            assert "current_superuser" in names and "require_fresh" in names
         if path.startswith("/api/admin/"):
             assert "current_superuser" in names, "instance administration requires a superuser"
         return

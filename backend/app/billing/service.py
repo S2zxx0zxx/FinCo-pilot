@@ -52,7 +52,7 @@ def effective_plan(subscription: Subscription | None, *, now: datetime | None = 
     paid coverage. Explicit bounded grace requires a recovery deadline anchored
     to that paid-through boundary; provider retry state cannot grant access.
     """
-    if subscription is None:
+    if subscription is None or subscription.paid_term_refunded:
         return PlanId.FREE
 
     status = _safe_status(subscription.status)

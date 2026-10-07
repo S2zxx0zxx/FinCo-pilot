@@ -121,6 +121,10 @@ async def process_receipt(session_maker, identity: uuid.UUID, client, *, now: da
                 return "not_due"
             if receipt.mode != "test" or receipt.account_id != account:
                 raise RejectReceipt("provider_scope_mismatch")
+            if receipt.event_type in {"refund.created", "refund.processed", "refund.failed", "refund.speed_changed"}:
+                await session.commit()
+                from app.billing.refunds import process_refund
+                return await process_refund(session_maker, identity, client, now=now)
             if receipt.event_type in {"subscription.pending", "subscription.halted"}:
                 await session.commit()
                 from app.billing.payment_recovery import process_failure
@@ -225,6 +229,8 @@ async def scan_receipts(session_maker, client, *, now: datetime | None = None) -
     async with session_maker() as session:
         identities = list((await session.scalars(select(PaymentWebhookEvent.id).where(
             PaymentWebhookEvent.state == "pending",
+            (true() if get_settings().billing_refunds_enabled else PaymentWebhookEvent.event_type.not_in(
+                ("refund.created", "refund.processed", "refund.failed", "refund.speed_changed"))),
             (true() if get_settings().billing_cancellation_enabled else PaymentWebhookEvent.event_type != "subscription.cancelled"),
             (true() if get_settings().billing_renewal_enabled else PaymentWebhookEvent.event_type != "subscription.charged"),
             (true() if get_settings().billing_renewal_enabled and get_settings().billing_recovery_enabled

@@ -68,7 +68,7 @@ async def deletion_pending(session, uid):
 
 def response(sub, claim):
     return {"available": True, "state": claim.state if claim else "available",
-        "paid_through": _stored_utc(sub.current_period_end)}
+        "paid_through": _stored_utc(sub.current_period_end), "paid_term_refunded": bool(sub.paid_term_refunded)}
 
 
 async def preview(session, uid):

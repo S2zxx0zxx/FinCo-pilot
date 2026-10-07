@@ -117,3 +117,5 @@ __all__ = [
 from app.models.account_deletion import AccountDeletion, AccountDeletionHold, AccountDeletionEvent  # noqa: F401
 
 from app.models.workspace_deletion import WorkspaceDeletion, WorkspaceDeletionHold, WorkspaceDeletionEvent  # noqa: F401,E402
+
+from app.models.payment_refund import PaymentRefund, RefundObservation  # noqa: F401,E402

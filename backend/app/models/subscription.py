@@ -40,6 +40,7 @@ class Subscription(Base):
     )
     recovery_due_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     grace_until: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    paid_term_refunded: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
     cancel_at_period_end: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default="false"
     )

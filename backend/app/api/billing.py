@@ -109,3 +109,67 @@ async def cancellation_request(body: CancellationRequest, user: User = Depends(c
         return await cancel(session, user.id, client)
     finally:
         client.session.close()
+
+
+@router.get("/refunds")
+async def refund_status(user: User = Depends(current_active_user), session: AsyncSession = Depends(get_async_session)):
+    from app.billing.refunds import preview
+    return await preview(session, user.id)
+
+
+from typing import Literal  # noqa: E402
+import uuid  # noqa: E402
+from app.core.auth import current_superuser  # noqa: E402
+from app.api.account_deletion import require_fresh  # noqa: E402
+
+
+class RefundDecision(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    source_kind: Literal["activation", "renewal"]
+    source_id: uuid.UUID
+    amount_minor: StrictInt = Field(ge=100, le=2147483647)
+    evidence_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    authorize: StrictBool
+
+
+@router.post("/refunds/operator", dependencies=[Depends(require_fresh)])
+async def issue_refund(body: RefundDecision, user: User = Depends(current_superuser), session: AsyncSession = Depends(get_async_session)):
+    from fastapi import HTTPException
+    from sqlalchemy.exc import SQLAlchemyError
+    from app.core.auth import get_jwt_strategy
+    from app.billing.refunds import dispatch, enabled
+    from app.billing.activation import RetryReceipt, RejectReceipt
+    if body.authorize is not True:
+        raise HTTPException(422, "Explicit reviewed refund authorization is required.")
+    if not enabled():
+        raise HTTPException(503, "Refunds are disabled.")
+    from app.api.checkout import _get_razorpay_client
+    client = _get_razorpay_client()
+    try:
+        return await dispatch(session, user.id, body.source_kind, body.source_id, body.amount_minor,
+            body.evidence_sha256, client, credential_stamp=get_jwt_strategy().stamp(user))
+    except (RetryReceipt, RejectReceipt):
+        raise HTTPException(502, "Refund evidence cannot be verified. Reconcile before continuing.") from None
+    except SQLAlchemyError:
+        await session.rollback()
+        raise HTTPException(503, "Refund requires reconciliation. Check the existing decision before continuing.") from None
+    finally:
+        client.session.close()
+
+
+@router.get("/refunds/operator/payments", dependencies=[Depends(require_fresh)])
+async def refundable_payments(user: User = Depends(current_superuser), session: AsyncSession = Depends(get_async_session)):
+    from sqlalchemy import select
+    from app.billing.refunds import enabled
+    from app.models.payment_activation import PaymentActivation
+    from app.models.payment_renewal import RenewalCycle
+    if not enabled():
+        return {"available": False, "payments": []}
+    rows = []
+    for kind, model in (("activation", PaymentActivation), ("renewal", RenewalCycle)):
+        records = (await session.scalars(select(model).where(model.mode == "test", model.account_id == get_settings().razorpay_webhook_account_id)
+            .order_by(model.applied_at.desc()).limit(100))).all()
+        rows.extend({"source_kind": kind, "source_id": str(item.id), "user_id": str(item.user_id),
+            "amount_minor": item.amount_minor, "currency": item.currency,
+            "period_end": item.period_end} for item in records)
+    return {"available": True, "payments": rows}

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/auth-context'
 import { useBilling } from '@/contexts/billing-context'
 
-interface Status { available: true; state: 'available' | 'sending' | 'uncertain' | 'confirmed'; paid_through: string }
+interface Status { available: true; state: 'available' | 'sending' | 'uncertain' | 'confirmed'; paid_through: string; paid_term_refunded?: boolean }
 function valid(value: unknown): value is Status {
   if (!value || typeof value !== 'object') return false
   const row = value as Status
@@ -48,8 +48,8 @@ export function CancellationCard() {
   }
   return <section className="rounded-[26px] border bg-card p-5" aria-labelledby="cancellation-title">
     <h2 id="cancellation-title" className="text-lg font-semibold">Stop renewals</h2>
-    <p className="mt-2 text-sm">Your confirmed paid service ends {new Date(row.paid_through).toLocaleString()}. Cancellation preserves that paid service and does not issue a refund.</p>
-    {row.state === 'confirmed' ? <p role="status" className="mt-3 text-sm">Renewals are canceled. Your paid service remains available until its end date.</p>
+    {row.paid_term_refunded ? <p className="mt-2 text-sm">This paid term was fully refunded. Refunds do not themselves stop future renewal collection.</p> : <p className="mt-2 text-sm">Your confirmed paid service ends {new Date(row.paid_through).toLocaleString()}. Cancellation preserves that paid service and does not issue a refund.</p>}
+    {row.state === 'confirmed' ? <p role="status" className="mt-3 text-sm">Renewals are canceled. {row.paid_term_refunded ? 'The fully refunded term no longer grants paid access.' : 'Your paid service remains available until its end date.'}</p>
       : <div className="mt-3 space-y-3">
         {pending ? <p role="status">Cancellation is awaiting provider confirmation. Check again or contact support.</p>
           : <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={consent} disabled={busy} onChange={event => setConsent(event.target.checked)} />I authorize stopping future renewals. This renewal setup cannot be reactivated.</label>}

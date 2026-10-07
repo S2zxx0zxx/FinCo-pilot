@@ -896,6 +896,8 @@
     "typeOverrideHint": "Überschreibt den von deiner Bank gemeldeten Kontotyp. Synchronisierungen werden dies nicht zurückändern.",
     "accountType": "Typ",
     "currency": "Währung",
+    "providerLoanHint": "Die Darlehenseinstufung wird von Ihrer Bank verwaltet. Dieser Saldo ist eine Schuld, kein verfügbares Geld.",
+    "typeLoan": "Darlehenskonto",
     "typeChecking": "Girokonto",
     "typeSavings": "Sparkonto",
     "typeCreditCard": "Kreditkarte",

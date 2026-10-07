@@ -935,6 +935,8 @@
     "typeOverrideHint": "Zastępuje typ konta zgłoszony przez bank. Synchronizacja go nie przywróci.",
     "accountType": "Typ",
     "currency": "Waluta",
+    "providerLoanHint": "Klasyfikacją kredytu zarządza Twój bank. To saldo jest długiem, a nie pieniędzmi do wydania.",
+    "typeLoan": "Rachunek kredytowy",
     "typeChecking": "Bieżące",
     "typeSavings": "Oszczędnościowe",
     "typeCreditCard": "Karta kredytowa",

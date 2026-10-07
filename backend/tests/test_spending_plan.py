@@ -130,3 +130,16 @@ async def test_fx_requires_same_publication_date(session, test_user, test_worksp
     plan = await calculate_spending_plan(session, test_workspace.id, test_user.id, SpendingPlanRequest(obligations_reviewed=True))
     assert plan.safe_to_spend is None
     assert any('exchange rate' in blocker for blocker in plan.blockers)
+
+
+@pytest.mark.asyncio
+async def test_provider_loan_is_never_spendable_cash(session, test_user, test_workspace):
+    cash = await account(session, test_user, test_workspace)
+    await transaction(session, test_user, test_workspace, cash, '1000', 'credit')
+    loan = await account(session, test_user, test_workspace, 'loan')
+    loan.balance = Decimal('-9000')
+    await session.commit()
+    plan = await calculate_spending_plan(session, test_workspace.id, test_user.id, SpendingPlanRequest(obligations_reviewed=True))
+    assert plan.cash_balance == 1000
+    assert plan.safe_to_spend is None
+    assert any('unsupported account type' in blocker for blocker in plan.blockers)

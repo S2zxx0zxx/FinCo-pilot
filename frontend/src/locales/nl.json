@@ -896,6 +896,8 @@
     "typeOverrideHint": "Overschrijft het door uw bank gerapporteerde rekeningtype. Synchronisaties kunnen dit niet terugdraaien.",
     "accountType": "Typ",
     "currency": "Valuta",
+    "providerLoanHint": "Uw bank beheert de classificatie van de lening. Dit saldo is schuld, geen besteedbaar geld.",
+    "typeLoan": "Leningrekening",
     "typeChecking": "Betaalrekening",
     "typeSavings": "Spaarrekening",
     "typeCreditCard": "Creditcard",

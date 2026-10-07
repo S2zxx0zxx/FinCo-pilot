@@ -947,6 +947,8 @@
     "typeOverrideHint": "Nahradí typ účtu, ktorý hlási tvoja banka. Synchronizácie ho nezmenia späť.",
     "accountType": "Typ",
     "currency": "Mena",
+    "providerLoanHint": "Klasifikáciu úveru spravuje vaša banka. Tento zostatok je dlh, nie peniaze na míňanie.",
+    "typeLoan": "Úverový účet",
     "typeChecking": "Bežný účet",
     "typeSavings": "Sporiaci účet",
     "typeCreditCard": "Kreditná karta",

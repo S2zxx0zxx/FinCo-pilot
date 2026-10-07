@@ -895,6 +895,8 @@
     "typeOverrideHint": "銀行から報告された口座種別を上書きします。同期でも元に戻されません。",
     "accountType": "種類",
     "currency": "通貨",
+    "providerLoanHint": "ローンの分類は銀行が管理します。この残高は負債であり、支出可能なお金ではありません。",
+    "typeLoan": "ローン口座",
     "typeChecking": "当座",
     "typeSavings": "普通預金",
     "typeCreditCard": "クレジットカード",

@@ -33,7 +33,12 @@ from app.providers.enable_banking import (
 
 
 def _account_response(uid="account-1", currency="EUR"):
-    return {"uid": uid, "display_name": "Bank account", "currency": currency}
+    return {
+        "uid": uid,
+        "display_name": "Bank account",
+        "currency": currency,
+        "cash_account_type": "CACC",
+    }
 
 
 def _balance_response(amount="123.45", currency="EUR"):
@@ -236,8 +241,8 @@ def test_cash_account_type_mapping():
     assert _map_cash_account_type("CACC") == "checking"
     assert _map_cash_account_type("SVGS") == "savings"
     assert _map_cash_account_type("CARD") == "credit_card"
-    assert _map_cash_account_type(None) == "checking"
-    assert _map_cash_account_type("UNKNOWN_TYPE") == "checking"
+    assert _map_cash_account_type("LOAN") == "loan"
+    assert _map_cash_account_type("CASH") == "checking"
 
 
 def test_txn_fingerprint_stable_for_same_payload():
@@ -620,3 +625,53 @@ def test_mask_last4_returns_none_when_unusable():
 
 def test_mask_last4_handles_exactly_four():
     assert mask_last4("1234") == "1234"
+
+
+@pytest.mark.parametrize("value", [None, "", "OTHR", "UNKNOWN", "loan", 12, {}, True])
+def test_unspecified_classification_never_becomes_cash(value):
+    with pytest.raises(RuntimeError, match="classification is unavailable"):
+        _map_cash_account_type(value)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("kind,expected", [("LOAN", "loan"), ("CARD", "credit_card")])
+@pytest.mark.parametrize("amount", ["125.50", "-125.50", "0"])
+async def test_liability_booked_magnitude_cannot_increase_cash(kind, expected, amount):
+    provider = EnableBankingProvider()
+    raw = _account_response()
+    raw["cash_account_type"] = kind
+    body = _balance_response(amount)
+    body["balances"].insert(
+        0, {"balance_type": "ITAV", "balance_amount": {"amount": "9999", "currency": "EUR"}}
+    )
+    with _patch_client(provider, lambda request: httpx.Response(200, json=body)):
+        row = await provider._build_account(raw)
+    assert row.type == expected
+    assert row.balance == (-abs(Decimal(amount)) if kind == "LOAN" else abs(Decimal(amount)))
+    assert row.credit_limit is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("kind", ["LOAN", "CARD"])
+@pytest.mark.parametrize("balance_type", ["ITAV", "CLAV", "OPAV", None])
+async def test_available_credit_is_not_a_liability_balance(kind, balance_type):
+    raw = _account_response()
+    raw["cash_account_type"] = kind
+    body = _balance_response("5000")
+    body["balances"][0]["balance_type"] = balance_type
+    provider = EnableBankingProvider()
+    with _patch_client(provider, lambda request: httpx.Response(200, json=body)):
+        with pytest.raises(RuntimeError, match="balance is unavailable"):
+            await provider._build_account(raw)
+
+
+@pytest.mark.asyncio
+async def test_interim_booked_loan_balance_is_supported():
+    raw = _account_response()
+    raw["cash_account_type"] = "LOAN"
+    body = _balance_response("200")
+    body["balances"][0]["balance_type"] = "ITBD"
+    provider = EnableBankingProvider()
+    with _patch_client(provider, lambda request: httpx.Response(200, json=body)):
+        row = await provider._build_account(raw)
+    assert row.balance == Decimal("-200")

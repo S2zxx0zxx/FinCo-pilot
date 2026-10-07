@@ -895,6 +895,8 @@
     "typeOverrideHint": "Overrides the account type reported by your bank. Syncs won't change it back.",
     "accountType": "Type",
     "currency": "Currency",
+    "providerLoanHint": "Loan classification is managed by your bank. This balance is debt, not spendable cash.",
+    "typeLoan": "Loan account",
     "typeChecking": "Checking",
     "typeSavings": "Savings",
     "typeCreditCard": "Credit Card",

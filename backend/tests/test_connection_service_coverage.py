@@ -893,7 +893,7 @@ async def test_provider_account_failure_preserves_money_history_and_freshness(
         uid = request.url.path.split("/")[2]
         if uid == "account-2" and request.url.path.endswith("balances"):
             return httpx.Response(status, json={"private": "financial-canary"})
-        payload = {"uid": uid, "currency": "EUR", "display_name": "Changed name"}
+        payload = {"uid": uid, "currency": "EUR", "display_name": "Changed name", "cash_account_type": "CACC"}
         if request.url.path.endswith("balances"):
             payload = {"balances": [{"balance_amount": {"amount": "0", "currency": "EUR"}}]}
         return httpx.Response(200, json=payload)
@@ -926,3 +926,38 @@ async def test_provider_account_failure_preserves_money_history_and_freshness(
     assert row is not None
     assert row.status == expected
     assert row.last_sync_at == previous_sync
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('old_type,new_type,balance', [('checking', 'loan', '-125.50'), ('checking', 'credit_card', '125.50'), ('loan', 'checking', '500')])
+async def test_enable_banking_repairs_legacy_liability_type_in_place(session, test_user, test_workspace, old_type, new_type, balance):
+    from app.services.account_service import update_account
+    from app.schemas.account import AccountUpdate
+    from app.services.dashboard_service import _account_balance_at
+    conn = await _make_connection(session, test_user.id)
+    conn.provider = 'enable_banking'
+    row = Account(user_id=test_user.id, workspace_id=test_workspace.id, connection_id=conn.id, external_id='loan-1', name='Legacy', type=old_type, currency='EUR', balance=Decimal('999'), credit_limit=Decimal('5000'))
+    session.add(row)
+    await session.commit()
+    row_id = row.id
+    provider = AsyncMock()
+    provider.refresh_credentials.return_value = {'token': 'synthetic'}
+    provider.get_accounts.return_value = [AccountData(external_id='loan-1', name='Observed', type=new_type, balance=Decimal(balance), currency='EUR')]
+    provider.get_transactions.return_value = []
+    provider.get_holdings.return_value = []
+    with patch('app.services.connection_service.get_provider', return_value=provider):
+        await sync_connection(session, conn.id, test_workspace.id, test_user.id)
+        first_count = len((await session.scalars(select(Transaction).where(Transaction.account_id == row_id))).all())
+        await sync_connection(session, conn.id, test_workspace.id, test_user.id)
+    rows = (await session.scalars(select(Account).where(Account.connection_id == conn.id))).all()
+    assert len(rows) == 1 and rows[0].id == row_id
+    assert rows[0].type == new_type and rows[0].balance == Decimal(balance)
+    assert len((await session.scalars(select(Transaction).where(Transaction.account_id == row_id))).all()) == first_count
+    aggregate = await _account_balance_at(session, rows[0], date.today())
+    assert aggregate == (-125.5 if new_type in {'loan', 'credit_card'} else 500)
+    if new_type == 'loan':
+        assert rows[0].credit_limit is None
+        with pytest.raises(ValueError, match='classification is managed'):
+            await update_account(session, row_id, test_workspace.id, AccountUpdate(type='checking'))
+        updated = await update_account(session, row_id, test_workspace.id, AccountUpdate(display_name='My loan'))
+        assert updated is not None and updated.type == 'loan'

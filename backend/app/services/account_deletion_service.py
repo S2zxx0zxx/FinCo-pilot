@@ -24,7 +24,7 @@ from app.models.workspace import Workspace, WorkspaceMember
 from app.providers import get_storage_provider
 
 PERSONAL_TABLES = {"user_passkeys", "external_mcp_tokens", "mcp_approvals", "agent_llm_usage", "billing_usage_counters", "agent_llm_connections", "subscriptions"}
-PAYMENT_TABLES = {"payment_recoveries", "renewal_mandates", "renewal_cycles", "payment_activations", "payment_webhook_events", "checkout_reservations", "founding_members", "pricing_audit_events", "pricing_campaigns"}
+PAYMENT_TABLES = {"payment_cancellations", "payment_recoveries", "renewal_mandates", "renewal_cycles", "payment_activations", "payment_webhook_events", "checkout_reservations", "founding_members", "pricing_audit_events", "pricing_campaigns"}
 RECEIPT_TABLES = {"account_deletions", "account_deletion_holds", "account_deletion_events", "workspace_deletions", "workspace_deletion_holds", "workspace_deletion_events"}
 
 
@@ -85,7 +85,7 @@ async def lock_inventory(session: AsyncSession):
     jobs. This transaction-wide lock waits for existing writers and fences new
     writers while the exact manifest and primary purge commit atomically.
     """
-    expected = set("app_settings fx_rates users payment_recoveries renewal_mandates renewal_cycles payment_activations payment_webhook_events agent_llm_connections billing_usage_counters checkout_reservations pricing_audit_events pricing_campaigns subscriptions user_passkeys workspaces agents bank_connections category_groups collections external_mcp_tokens founding_members groups invoice_settings loans payees reconciliation_rules rules workspace_members workspace_tax_ids agent_conversations agent_knowledge_docs agent_tools categories group_members institutions invoices mcp_approvals payee_mapping payee_tax_ids accounts agent_knowledge_chunks agent_messages asset_groups budgets invoice_attachments invoice_lines agent_llm_usage assets collection_accounts collection_asset_groups credit_card_bills import_logs recurring_transactions asset_transactions asset_values goals transactions group_settlements invoice_allocations reconciliation_events reconciliation_suggestions transaction_attachments transaction_splits account_deletions account_deletion_holds account_deletion_events workspace_deletions workspace_deletion_holds workspace_deletion_events".split())
+    expected = set("app_settings fx_rates users payment_cancellations payment_recoveries renewal_mandates renewal_cycles payment_activations payment_webhook_events agent_llm_connections billing_usage_counters checkout_reservations pricing_audit_events pricing_campaigns subscriptions user_passkeys workspaces agents bank_connections category_groups collections external_mcp_tokens founding_members groups invoice_settings loans payees reconciliation_rules rules workspace_members workspace_tax_ids agent_conversations agent_knowledge_docs agent_tools categories group_members institutions invoices mcp_approvals payee_mapping payee_tax_ids accounts agent_knowledge_chunks agent_messages asset_groups budgets invoice_attachments invoice_lines agent_llm_usage assets collection_accounts collection_asset_groups credit_card_bills import_logs recurring_transactions asset_transactions asset_values goals transactions group_settlements invoice_allocations reconciliation_events reconciliation_suggestions transaction_attachments transaction_splits account_deletions account_deletion_holds account_deletion_events workspace_deletions workspace_deletion_holds workspace_deletion_events".split())
     if set(Base.metadata.tables) != expected:
         raise HTTPException(409, "New model tables require deletion policy review")
     bind = session.get_bind()
@@ -265,6 +265,10 @@ async def inventory(session: AsyncSession, user: User, *, workspace_scope: list[
             blockers.append("renewal_outcome_unresolved")
         if row["state"] in {"creating", "uncertain", "ready"}:
             requirements.append("billing_renewal_cancel:" + str(row["id"]))
+    cancellations = Base.metadata.tables["payment_cancellations"]
+    cancellation_rows = list((await session.execute(select(cancellations).where(cancellations.c.user_id == user.id))).mappings()) if workspace_scope is None else []
+    if any(row["state"] != "confirmed" for row in cancellation_rows):
+        blockers.append("cancellation_outcome_unresolved")
     llm = Base.metadata.tables["agent_llm_connections"]
     llm_rows = list((await session.execute(select(llm).where(llm.c.user_id == user.id))).mappings()) if workspace_scope is None else []
     for row in llm_rows:
@@ -275,7 +279,7 @@ async def inventory(session: AsyncSession, user: User, *, workspace_scope: list[
     manifest = {"private_workspaces": [str(w) for w in private],
         "preserved_workspaces": [w.workspace_id for w in plan.workspaces if w.mode == WorkspaceExitMode.PRESERVE_SHARED_DATA],
         "objects": objects, "requirements": sorted(set(requirements)), "table_hashes": hashes,
-        "provider_hash": fingerprint([bank_rows, subs, renewal_rows, llm_rows]),
+        "provider_hash": fingerprint([bank_rows, subs, renewal_rows, cancellation_rows, llm_rows]),
         "identity_stamp": fingerprint([user.id, user.hashed_password, user.auth_epoch]),
         "workspace_hash": fingerprint([facts, [(m.workspace_id, m.user_id, m.role) for m in memberships if m.workspace_id in {w.id for w in workspaces}]]),
         "hold_hash": fingerprint(list((await session.execute(select(AccountDeletionHold.__table__).where(AccountDeletionHold.user_id == user.id))).mappings()))}

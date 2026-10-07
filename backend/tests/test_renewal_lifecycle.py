@@ -187,7 +187,6 @@ async def test_paid_future_invoice_preserves_existing_access_and_schedules_exact
         ("subscription", "plan_id", "plan_Foreign"),
         ("subscription", "quantity", True),
         ("subscription", "has_scheduled_changes", True),
-        ("subscription", "status", "cancelled"),
         ("plan", "interval", True),
     ],
 )
@@ -545,3 +544,13 @@ async def test_paused_renewals_do_not_starve_acquisition_receipts(purchase, enab
             assert receipt and receipt.state == "pending" and receipt.processing_attempts == 0
         receipt = await session.get(PaymentWebhookEvent, initial)
         assert receipt and receipt.state == "processed"
+
+
+async def test_cancelled_provider_waits_for_cancellation_proof_without_extension(renewal):
+    row, provider, subscription, _, _, payment, start = renewal
+    identity = await cycle_receipt(subscription, payment)
+    subscription["status"] = "cancelled"
+    assert await activation.process_receipt(TestSessionLocal, identity, provider, now=start) == "retry"
+    async with TestSessionLocal() as session:
+        sub = await session.scalar(select(Subscription).where(Subscription.user_id == row.user_id))
+        assert sub is not None and _stored_utc(sub.current_period_end) == start

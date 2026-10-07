@@ -227,6 +227,7 @@ class Settings(BaseSettings):
     # paid checkout stays disabled rather than presenting a dead purchase flow.
     billing_checkout_enabled: bool = False
     billing_activation_enabled: bool = False
+    billing_cancellation_enabled: bool = False
     billing_renewal_enabled: bool = False
     billing_recovery_enabled: bool = False
     # Application access policy, independent of provider payment-method retries.

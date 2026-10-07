@@ -99,6 +99,9 @@ async def source(session, user_id, *, lock=False):
             or grant.mode != "test" or grant.account_id != settings.razorpay_webhook_account_id
             or grant.provider_key_id != settings.razorpay_key_id or _stored_utc(sub.current_period_end) is None):
         raise HTTPException(409, "Verified compatible paid service is required for renewal.")
+    from app.models.payment_cancellation import PaymentCancellation
+    if await session.scalar(select(PaymentCancellation.id).where(PaymentCancellation.user_id == user_id).limit(1)):
+        raise HTTPException(409, "Cancellation requires reconciliation before new enrollment.")
     quote = await session.get(CheckoutReservation, grant.reservation_id)
     spec = PROVIDER_PLAN_SPECS.get((PlanId(sub.plan), BillingInterval(sub.billing_interval)))
     if quote is None or spec is None or quote.renewal_amount_minor != spec.amount_minor or quote.renewal_interval != sub.billing_interval:

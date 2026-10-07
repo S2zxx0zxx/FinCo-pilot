@@ -26,6 +26,8 @@ Inference/decision: do not replace or release an attempted/unknown order merely 
 7. Hold checkout fence through verification; duplicate success/failure/close callbacks cannot cancel a successful payment or start another concurrent checkout. Failure is unconfirmed, not proof of no debit.
 8. Preserve existing non-granting cancellation, unknown order dispatch, finite renewal consent/recovery, refund and account-deletion behavior. No mutable failure status ledger needed; existing receipts retain transport evidence and fresh GET owns observation semantics.
 9. Adversarial tests cover every state, financial type/identity/currency mismatch, incomplete/duplicate inventory, timeout/unknown dispatch, key/auth/source races, prior capture regression, own status/no-store, signed failed→authorized→captured behavior, no POST/no grant/no repeat callback.
-10. Native PostgreSQL/signed HTTP concurrent failure receipt proof and outside-SQL provider I/O; full backend/frontend and all seven exact-head CI. Guarded merge and fresh-main all-seven evidence precede final acceptance.
+10. Native PostgreSQL/real Redis/signed HTTP concurrent failure receipt proof and outside-SQL provider I/O; full backend/frontend and all seven exact-head CI. Guarded merge and fresh-main all-seven evidence precede final acceptance.
 
 Production/live financial acceptance remains pending. #39 does not enable collection, guarantee a terminal failure, invent an automatic new-order retry policy, or change OmniRoute/model/runtime policy. Original next #40–45 banking/AA/FIU requires the previously deferred compliant-partner eligibility decision; do not silently implement regulated production connectivity.
+
+The native PostgreSQL CI job includes a real disposable Redis service for authenticated checkout rate limiting. The application limiter is exercised rather than bypassed. Full backend lint/type checking includes tests.

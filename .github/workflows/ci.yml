@@ -114,6 +114,13 @@ jobs:
     name: PostgreSQL Migration Smoke
     runs-on: ubuntu-latest
     services:
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 12
       postgres:
         image: pgvector/pgvector:pg16
         env:
@@ -129,6 +136,7 @@ jobs:
       run:
         working-directory: backend
     env:
+      REDIS_URL: redis://localhost:6379/0
       DATABASE_URL: postgresql+asyncpg://finco_ci:synthetic-ci-password@localhost:5432/finco_ci
       DATABASE_EXTERNAL_REQUIRED: "false"
       DB_SSL_MODE: disable

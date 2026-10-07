@@ -353,3 +353,54 @@ async def test_pending_external_refund_can_later_process(refundable):
     async with TestSessionLocal() as session:
         sub=await session.scalar(select(Subscription).where(Subscription.user_id==grant.user_id))
         assert sub is not None and effective_plan(sub,now=NOW).value=="free"
+
+
+from tests.test_renewal_lifecycle import renewal as renewal, cycle_receipt  # noqa: E402
+
+
+async def test_new_paid_cycle_restores_only_its_own_service_after_refund(renewal,enabled,monkeypatch):
+    from app.models.payment_renewal import RenewalCycle
+    monkeypatch.setattr(enabled,"billing_refunds_enabled",True)
+    reservation,provider,subscription,_,invoice,payment,start=renewal
+    receipt=await cycle_receipt(subscription,payment)
+    assert await activation.process_receipt(TestSessionLocal,receipt,provider,now=start)=="renewed"
+    async with TestSessionLocal() as session:
+        cycle=await session.scalar(select(RenewalCycle).where(RenewalCycle.user_id==reservation.user_id))
+        assert cycle is not None
+    item=dict(id="rfnd_PaidCycle",entity="refund",payment_id=payment["id"],amount=9900,currency="INR",status="processed")
+    provider.payment.fetch_multiple_refund.return_value={"entity":"collection","count":1,"items":[item]}
+    payment.update(amount_refunded=9900,refund_status="full",status="refunded")
+    refunded=await refund_receipt(item)
+    assert await activation.process_receipt(TestSessionLocal,refunded,provider,now=start)=="refund_reconciled"
+    async with TestSessionLocal() as session:
+        sub=await session.scalar(select(Subscription).where(Subscription.user_id==reservation.user_id))
+        assert sub is not None and effective_plan(sub,now=start).value=="free"
+    next_start=start+timedelta(days=30)
+    invoice.update(id="inv_NextPaid",payment_id="pay_NextPaid",billing_start=int(next_start.timestamp()),billing_end=int((next_start+timedelta(days=30)).timestamp()))
+    payment.update(id=invoice["payment_id"],invoice_id=invoice["id"],amount_refunded=0,refund_status=None,status="captured")
+    subscription.update(paid_count=2)
+    paid=await cycle_receipt(subscription,payment,counter=8)
+    assert await activation.process_receipt(TestSessionLocal,paid,provider,now=next_start)=="renewed"
+    async with TestSessionLocal() as session:
+        sub=await session.scalar(select(Subscription).where(Subscription.user_id==reservation.user_id))
+        assert sub is not None and not sub.paid_term_refunded
+        assert effective_plan(sub,now=start).value=="free"
+        assert effective_plan(sub,now=next_start).value=="pro"
+
+
+async def test_unstopped_renewal_prevents_new_refund_dispatch(renewal,enabled,monkeypatch,test_superuser):
+    from app.models.payment_activation import PaymentActivation
+    monkeypatch.setattr(enabled,"billing_refunds_enabled",True)
+    reservation,provider,_,_,_,_,_=renewal
+    async with TestSessionLocal() as session:
+        grant=await session.scalar(select(PaymentActivation).where(PaymentActivation.reservation_id==reservation.id))
+        assert grant is not None
+    # Return the bound acquisition payment, not the fixture's later renewal payment.
+    provider.payment.fetch.side_effect=lambda _:dict(entity="payment",id=grant.payment_id,order_id=grant.order_id,
+        amount=grant.amount_minor,currency="INR",captured=True,status="captured",amount_refunded=0,refund_status=None)
+    provider.payment.fetch_multiple_refund.return_value={"entity":"collection","count":0,"items":[]}
+    async with TestSessionLocal() as session:
+        with pytest.raises(HTTPException) as error:
+            await refunds.dispatch(session,test_superuser.id,"activation",grant.id,9900,EVIDENCE,provider)
+        assert error.value.status_code==409
+    provider.payment.refund.assert_not_called()

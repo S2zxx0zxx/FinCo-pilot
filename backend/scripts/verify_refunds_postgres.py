@@ -93,7 +93,7 @@ async def verify(sessions, uid, settings, now, own_sessions):
             assert await session.scalar(select(func.count()).select_from(PaymentRefund).where(PaymentRefund.user_id==uid))==1
             assert await session.scalar(select(func.count()).select_from(RefundObservation).where(RefundObservation.user_id==uid))==1
             sub=await session.scalar(select(Subscription).where(Subscription.user_id==uid))
-            assert sub and sub.paid_term_refunded and effective_plan(sub,now=row.period_end).value=="free"
+            assert sub and sub.paid_term_refunded and effective_plan(sub,now=row.period_start).value=="free"
             assert sub.current_period_end==row.period_end
         spec=importlib.util.spec_from_file_location("refund107",Path(__file__).resolve().parents[1]/"alembic/versions/107_payment_refunds.py")
         assert spec and spec.loader

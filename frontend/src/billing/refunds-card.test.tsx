@@ -12,6 +12,7 @@ it('distinguishes processing and processed without promising bank credit', async
   renderWithProviders(<RefundsCard />)
   await screen.findByText(/Bank credit is not yet confirmed/)
   expect(screen.getByText(/Bank credit timing can vary/)).toBeInTheDocument()
+  expect(screen.getByText(/Test Mode records; this flow does not return real money/)).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Request review' })).toHaveAttribute('href', '/support')
   expect(fetcher.mock.calls[0][1].method).toBeUndefined()
 })

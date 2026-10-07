@@ -30,7 +30,7 @@ export function RefundsCard() {
   if (!token || query.isPending || query.data === null) return null
   return <section className="rounded-[26px] border bg-card p-5" aria-labelledby="refunds-title">
     <h2 id="refunds-title" className="text-lg font-semibold">Refunds</h2>
-    <p className="mt-2 text-sm">Contact support to request a refund review. Eligibility and the approved amount require review. A refund does not itself cancel renewals.</p>
+    <p className="mt-2 text-sm">These are Test Mode records; this flow does not return real money. Contact support to request a refund review. Eligibility and the approved amount require review. A refund does not itself cancel renewals.</p>
     {query.isError ? <p role="alert" className="mt-3 text-sm">Refund status is unavailable. Contact support.</p>
       : query.data?.length ? <ul className="mt-3 space-y-3">{query.data.map(row => <li key={row.id} className="text-sm">
         <strong>{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(row.amount_minor / 100)}</strong> — {states[row.state]}

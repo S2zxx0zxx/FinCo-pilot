@@ -45,8 +45,8 @@ export function RefundOperatorCard() {
     finally { sending.current = false; setBusy(false) }
   }
   return <section className="rounded-[26px] border bg-card p-5" aria-labelledby="operator-refund-title">
-    <h2 id="operator-refund-title" className="text-lg font-semibold">Operator refund review</h2>
-    <p className="mt-2 text-sm">Review actual eligibility evidence and confirm stopping renewals before authorizing a refund. Amounts below are in paise. Repeating an unchanged decision checks its existing outcome.</p>
+    <h2 id="operator-refund-title" className="text-lg font-semibold">Operator refund review — Test Mode</h2>
+    <p className="mt-2 text-sm">This Test Mode action does not return real money. Review actual eligibility evidence and confirm stopping renewals before authorizing a refund. Amounts below are in paise. Repeating an unchanged decision checks its existing outcome.</p>
     {query.isError ? <p role="alert">Sign in again with full authentication to review refunds.</p> : <div className="mt-3 space-y-3">
       <label className="block text-sm">Verified payment<select aria-label="Verified payment" className="mt-1 block w-full rounded-md border bg-background p-2" value={selection} disabled={busy}
         onChange={event => { setSelection(event.target.value); setConsent(false); setMessage('') }}>

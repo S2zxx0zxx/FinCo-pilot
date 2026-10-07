@@ -115,7 +115,7 @@ The entitlement foundation is now separated from the Razorpay checkout/provider 
 
 Current #4 work may create and verify a captured checkout purchase record and founder claim, but **does not activate Pro/Max entitlements**. The production mutation path for paid subscription state remains a later signed-webhook/subscription-lifecycle milestone.
 
-Steps34–36 implement finite Test acquisition, recurring mandate/paid-cycle reconciliation and bounded failed-payment recovery. Live acceptance, cancellation/refund execution and operational reconciliation remain later billing-lifecycle work. Browser callbacks never mint a paid plan.
+Steps34–37 implement finite Test acquisition, recurring mandate/paid-cycle reconciliation, bounded failed-payment recovery and explicitly authorized cancellation. Cancellation immediately stops future provider collection after fresh confirmation and preserves the proven paid term; unknown dispatch outcomes never automatically repost. Delayed exact captured invoices preserve canceled status. Live acceptance, refunds (#38) and broader payment-failure scenarios (#39) remain later billing-lifecycle work. Browser callbacks never mint a paid plan. See `FINCO_CANCELLATION_37.md` for the implementation and verification requirements.
 
 ## 7. Pricing-page UX — FinCo-native, reference-inspired, not a visual clone
 

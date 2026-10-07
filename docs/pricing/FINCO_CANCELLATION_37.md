@@ -46,5 +46,6 @@ the CLI dependency is removed. Generated CSS SHA256 is unchanged:
 Fresh audit reports zero known advisories; CI now enforces npm audit. This is an
 observed advisory result, not a promise that unknown vulnerabilities do not exist.
 
-Status: local implementation and focused checks complete; exact-head CI and
-fresh-main acceptance pending.
+Implementation is available behind the default-off Test gate. Exact-head CI,
+merge and fresh-main acceptance evidence are recorded in PR #50 and the canonical
+master continuity record; local passing checks alone do not establish acceptance.

@@ -19,7 +19,7 @@ beforeEach(()=>{
 afterEach(()=>{vi.unstubAllGlobals();delete window.Razorpay})
 async function start(response=quote){
   const fetcher=vi.fn().mockResolvedValue(new Response(JSON.stringify(response),{status:200}))
-  vi.stubGlobal('fetch',(url: string, init?: RequestInit) => (url === '/api/billing/cancellation' || url === '/api/billing/refunds')
+  vi.stubGlobal('fetch',(url: string, init?: RequestInit) => (url === '/api/billing/cancellation' || url === '/api/billing/refunds' || url === '/api/checkout/status')
     ? Promise.resolve(new Response(JSON.stringify({ available: false }), { status: 200 }))
     : fetcher(url, init))
   const {user}=renderWithProviders(<PricingPage/>,{route:'/pricing?plan=pro'})
@@ -52,4 +52,32 @@ it('never sends cancellation after success callback has begun',async()=>{
   expect(fetcher.mock.calls.map(call=>call[0])).toEqual(['/api/checkout/create-order','/api/checkout/verify-payment'])
   await act(async()=>{resolve(new Response('{}',{status:200}));await verification})
   expect(mocks.success).toHaveBeenCalledWith(expect.stringContaining('Activation is pending'))
+})
+
+it('holds checkout fence throughout verification and ignores duplicate success callbacks',async()=>{
+  const {user,fetcher}=await start()
+  let resolve!: (v:Response)=>void
+  fetcher.mockReturnValueOnce(new Promise<Response>(done=>{resolve=done}))
+  const response={razorpay_order_id:quote.order_id,razorpay_payment_id:'pay_Synthetic123',razorpay_signature:'0'.repeat(64)}
+  let verification!:Promise<void>|void
+  await act(async()=>{verification=options.handler(response);options.handler(response);options.modal?.ondismiss?.()})
+  await user.click(screen.getByRole('button',{name:'Continue with Pro'}))
+  expect(opens).toBe(1)
+  expect(fetcher.mock.calls.map(call=>call[0])).toEqual(['/api/checkout/create-order','/api/checkout/verify-payment'])
+  await act(async()=>{resolve(new Response('{}',{status:200}));await verification})
+  expect(mocks.success).toHaveBeenCalledTimes(1)
+})
+
+it('holds the verification fence when success arrives after modal dismissal',async()=>{
+  const {user,fetcher}=await start()
+  fetcher.mockResolvedValueOnce(new Response('{}',{status:409}))
+  await act(async()=>{options.modal?.ondismiss?.()})
+  let resolve!: (v:Response)=>void
+  fetcher.mockReturnValueOnce(new Promise<Response>(done=>{resolve=done}))
+  let verification!:Promise<void>|void
+  await act(async()=>{verification=options.handler({razorpay_order_id:quote.order_id,razorpay_payment_id:'pay_Synthetic123',razorpay_signature:'0'.repeat(64)})})
+  await user.click(screen.getByRole('button',{name:'Continue with Pro'}))
+  expect(opens).toBe(1)
+  expect(fetcher.mock.calls.filter(call=>call[0]==='/api/checkout/create-order')).toHaveLength(1)
+  await act(async()=>{resolve(new Response('{}',{status:200}));await verification})
 })

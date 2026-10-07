@@ -137,6 +137,10 @@ async def process_receipt(session_maker, identity: uuid.UUID, client, *, now: da
                 await session.commit()
                 from app.billing.renewal_cycles import process_renewal
                 return await process_renewal(session_maker, identity, client, now=now)
+            if receipt.event_type in {"payment.failed", "payment.authorized"}:
+                await session.commit()
+                from app.billing.checkout_status import process_signal
+                return await process_signal(session_maker, identity, client, now=now)
             payment_id, order_id = payment_identity(receipt)
             reservation = await session.scalar(select(CheckoutReservation).where(
                 CheckoutReservation.provider_order_id == order_id))

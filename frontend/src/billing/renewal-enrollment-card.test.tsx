@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import { screen, waitFor } from '@testing-library/react'
+import { act, screen, waitFor } from '@testing-library/react'
 import { renderWithProviders } from '@/test/utils'
 import { RenewalEnrollmentCard } from './renewal-enrollment-card'
 import type { RazorpayConstructor, RazorpaySubscriptionCheckoutOptions } from '@/types/razorpay'
@@ -12,9 +12,10 @@ const quote = { available: true, plan: 'pro', interval: 'monthly', amount_minor:
 const bound = { ...quote, key_id: 'rzp_test_Synthetic', subscription_id: 'sub_Synthetic', total_count: 3, starts_at: '2027-01-01T00:00:00Z' }
 let options: RazorpaySubscriptionCheckoutOptions
 let opens = 0
+let failed: () => void
 beforeEach(() => {
   vi.clearAllMocks(); opens = 0; mocks.entitlements = null
-  window.Razorpay = class { constructor(value: RazorpaySubscriptionCheckoutOptions) { options = value } open() { opens++ } on() {} } as unknown as RazorpayConstructor
+  window.Razorpay = class { constructor(value: RazorpaySubscriptionCheckoutOptions) { options = value } open() { opens++ } on(_event: string, callback: () => void) { failed = callback } } as unknown as RazorpayConstructor
 })
 afterEach(() => { vi.unstubAllGlobals(); delete window.Razorpay })
 async function start(response = bound) {
@@ -70,4 +71,32 @@ it.each(['grace', 'past_due'])('shows %s recovery without requesting another man
   expect(screen.queryByRole('button', { name: 'Authorize renewals' })).not.toBeInTheDocument()
   expect(fetcher).not.toHaveBeenCalled()
   expect(opens).toBe(0)
+})
+
+
+it('does not create another setup or claim paid access after a failed authorization signal', async () => {
+  const { user, fetcher } = await start()
+  await user.type(screen.getByRole('spinbutton'), '3')
+  await user.click(screen.getByRole('checkbox'))
+  await user.click(screen.getByRole('button', { name: 'Authorize renewals' }))
+  await waitFor(() => expect(opens).toBe(1))
+  await act(async () => { failed() })
+  expect(mocks.error).toHaveBeenCalledWith(expect.stringContaining('unconfirmed'))
+  expect(mocks.success).not.toHaveBeenCalled()
+  expect(mocks.refresh).not.toHaveBeenCalled()
+  expect(fetcher.mock.calls.filter(([, init]) => init?.method === 'POST')).toHaveLength(1)
+  expect(screen.getByRole('button', { name: 'Completing setup…' })).toBeDisabled()
+})
+
+it('handles a duplicate authorization callback once', async () => {
+  const { user } = await start()
+  await user.type(screen.getByRole('spinbutton'), '3')
+  await user.click(screen.getByRole('checkbox'))
+  await user.click(screen.getByRole('button', { name: 'Authorize renewals' }))
+  await waitFor(() => expect(opens).toBe(1))
+  const response = { razorpay_subscription_id: bound.subscription_id, razorpay_payment_id: 'pay_Synthetic', razorpay_signature: 'a'.repeat(64) }
+  await act(async () => { await options.handler(response); await options.handler(response); failed() })
+  expect(mocks.success).toHaveBeenCalledTimes(1)
+  expect(mocks.refresh).toHaveBeenCalledTimes(1)
+  expect(mocks.error).not.toHaveBeenCalled()
 })

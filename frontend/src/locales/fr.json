@@ -896,6 +896,8 @@
     "typeOverrideHint": "Remplace le type de compte signalé par votre banque. Les synchronisations ne le rétabliront pas.",
     "accountType": "Type",
     "currency": "Devise",
+    "providerLoanHint": "Votre banque gère la classification du prêt. Ce solde est une dette, pas de l’argent disponible.",
+    "typeLoan": "Compte de prêt",
     "typeChecking": "Compte courant",
     "typeSavings": "Épargne",
     "typeCreditCard": "Carte de crédit",

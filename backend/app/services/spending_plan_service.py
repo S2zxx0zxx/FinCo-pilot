@@ -92,8 +92,8 @@ async def calculate_spending_plan(session: AsyncSession, workspace_id: uuid.UUID
     connection_ids = {a.connection_id for a in relevant.values() if a.connection_id}
     connections = (await session.scalars(select(BankConnection).where(BankConnection.id.in_(connection_ids)))).all() if connection_ids else []
     for conn in connections:
-        # Existing adapters can label liabilities as checking: Enable Banking
-        # maps LOAN to checking and SimpleFIN exposes no account type at all.
+        # Legacy Enable Banking rows can still label liabilities as checking until
+        # a complete resync. SimpleFIN exposes no account type at all.
         # A fresh balance is not evidence that the balance is spendable cash.
         if conn.provider in {'enable_banking', 'simplefin'}:
             blockers.append(

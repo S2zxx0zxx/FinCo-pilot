@@ -896,6 +896,8 @@
     "typeOverrideHint": "Substitui o tipo de conta informado pelo teu banco. A sincronização não reverte.",
     "accountType": "Tipo",
     "currency": "Moeda",
+    "providerLoanHint": "O seu banco gere a classificação do empréstimo. Este saldo é dívida, não dinheiro disponível.",
+    "typeLoan": "Conta de empréstimo",
     "typeChecking": "Conta à ordem",
     "typeSavings": "Poupança",
     "typeCreditCard": "Cartão de Crédito",

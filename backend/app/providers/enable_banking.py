@@ -55,18 +55,17 @@ TRANSACTION_PAGE_LIMIT = 50  # safety cap
 
 
 def _map_cash_account_type(eb_type: Optional[str]) -> str:
-    """Map EB cash_account_type (ISO 20022) to FinCo-Pilot internal type."""
-    if not eb_type:
-        return "checking"
+    """Only explicit provider classification may identify cash or liabilities."""
     mapping = {
-        "CACC": "checking",  # current
+        "CACC": "checking",
         "SVGS": "savings",
-        "CARD": "credit_card",
         "CASH": "checking",
-        "LOAN": "checking",  # we don't model loan accounts yet
-        "OTHR": "checking",
+        "CARD": "credit_card",
+        "LOAN": "loan",
     }
-    return mapping.get(eb_type.upper(), "checking")
+    if not isinstance(eb_type, str) or eb_type not in mapping:
+        raise RuntimeError("Enable Banking account classification is unavailable")
+    return mapping[eb_type]
 
 
 def _account_identifier(raw: dict) -> Optional[str]:
@@ -459,14 +458,36 @@ class EnableBankingProvider(BankProvider):
     async def _build_account(self, raw: dict) -> AccountData:
         uid = raw.get("uid") or raw.get("account_uid") or ""
         self._validate_account_uid(uid)
+        account_type = _map_cash_account_type(raw.get("cash_account_type"))
         currency = raw.get("currency") or ""
         # EB doesn't include balances in the session payload; fetch separately.
         bal_resp = await self._request("GET", f"/accounts/{uid}/balances")
         balances = bal_resp.get("balances")
         if not isinstance(balances, list):
             raise RuntimeError("Enable Banking balance inventory is invalid")
-        picked = _pick_balance(balances)
+        if account_type in {"loan", "credit_card"}:
+            # Available balances can be unused credit. Only booked observations
+            # may enter the conservative liability representation.
+            booked = [
+                b
+                for b in balances
+                if isinstance(b, dict) and b.get("balance_type") in {"CLBD", "ITBD"}
+            ]
+            picked = next(
+                (b for b in booked if b.get("balance_type") == "CLBD"),
+                booked[0] if booked else None,
+            )
+        else:
+            picked = _pick_balance(balances)
         balance = _balance_decimal(picked)
+        # Conservatively treat liability magnitude as debt, never cash.
+        # Positive card debt is the existing internal convention; loan balances
+        # use the signed asset convention so all existing ledger consumers
+        # subtract them. This is not a provider-specific sign guarantee.
+        if account_type == "credit_card":
+            balance = abs(balance)
+        elif account_type == "loan":
+            balance = -abs(balance)
         balance_currency = _balance_currency(picked, currency)
         if (
             not isinstance(balance_currency, str)
@@ -480,7 +501,7 @@ class EnableBankingProvider(BankProvider):
         return AccountData(
             external_id=uid,
             name=name,
-            type=_map_cash_account_type(raw.get("cash_account_type")),
+            type=account_type,
             balance=balance,
             currency=currency,
             masked_number=mask_last4(_account_identifier(raw)),

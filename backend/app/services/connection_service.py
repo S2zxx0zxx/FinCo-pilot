@@ -1761,8 +1761,22 @@ async def sync_connection(
                 continue
 
             if account:
+                if connection.provider == "enable_banking" and (
+                    acc_data.type in {"loan", "credit_card"}
+                    or account.type in {"loan", "credit_card"}
+                ):
+                    # Repair legacy LOAN-as-checking rows using fresh complete
+                    # provider inventory, before balance/ledger reconciliation.
+                    account.type = acc_data.type
+                    if acc_data.type != "credit_card":
+                        account.credit_limit = None
+                        account.statement_close_day = None
+                        account.payment_due_day = None
+                        account.minimum_payment = None
+                        account.card_brand = None
+                        account.card_level = None
                 # Normalize the provider sign using the account's CURRENT type,
-                # which reflects any user override (sync never rewrites `type`).
+                # which reflects safe cash overrides and fresh liability classification.
                 # SimpleFIN reports card debt as negative under a "checking"
                 # label; once the user overrides the type to credit_card the
                 # downstream sites negate it, so store positive-for-debt to keep

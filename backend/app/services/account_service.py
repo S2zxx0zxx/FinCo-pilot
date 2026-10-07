@@ -337,6 +337,10 @@ async def update_account(
             raise ValueError("Cannot edit bank-connected accounts")
         old_type = account.type
         new_type = update_data.get("type", account.type)
+        if old_type != new_type and {old_type, new_type} & {"loan", "credit_card"}:
+            connection = await session.get(BankConnection, account.connection_id)
+            if connection is not None and connection.provider == "enable_banking":
+                raise ValueError("Enable Banking liability classification is managed by the provider")
         cc_fields = editable_fields - {"display_name", "type"}
         cc_update = {k: v for k, v in update_data.items() if k in cc_fields}
         if cc_update and new_type != "credit_card":

@@ -896,6 +896,8 @@
     "typeOverrideHint": "Sobrescribe el tipo de cuenta informado por tu banco. La sincronización no lo revierte.",
     "accountType": "Tipo",
     "currency": "Moneda",
+    "providerLoanHint": "Tu banco gestiona la clasificación del préstamo. Este saldo es deuda, no dinero disponible.",
+    "typeLoan": "Cuenta de préstamo",
     "typeChecking": "Cuenta corriente",
     "typeSavings": "Ahorros",
     "typeCreditCard": "Tarjeta de crédito",

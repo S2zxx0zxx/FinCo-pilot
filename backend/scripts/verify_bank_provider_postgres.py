@@ -113,7 +113,12 @@ async def main():
                 uid = request.url.path.split("/")[2]
                 if uid == "account-2" and request.url.path.endswith("balances"):
                     return httpx.Response(response_status, json={"private": "financial-canary"})
-                payload = {"uid": uid, "currency": "EUR", "display_name": "Changed name"}
+                payload = {
+                    "uid": uid,
+                    "currency": "EUR",
+                    "display_name": "Changed name",
+                    "cash_account_type": "CACC",
+                }
                 if request.url.path.endswith("balances"):
                     payload = {"balances": [{"balance_amount": {"amount": "0", "currency": "EUR"}}]}
                 return httpx.Response(200, json=payload)
@@ -154,6 +159,85 @@ async def main():
                     .all()
                 )
                 assert len(history) == 1 and history[0].description == "Retained history"
+
+        def loan_handler(request):
+            assert request.method == "GET"
+            path = request.url.path
+            if path.startswith("/sessions/"):
+                body = {"accounts": ["account-1"]}
+            elif path.endswith("/details"):
+                body = {
+                    "uid": "account-1",
+                    "currency": "EUR",
+                    "display_name": "Observed loan",
+                    "cash_account_type": "LOAN",
+                }
+            elif path.endswith("/balances"):
+                body = {
+                    "balances": [
+                        {
+                            "balance_type": "ITAV",
+                            "balance_amount": {"amount": "9999", "currency": "EUR"},
+                        },
+                        {
+                            "balance_type": "CLBD",
+                            "balance_amount": {"amount": "125.50", "currency": "EUR"},
+                        },
+                    ]
+                }
+            else:
+                body = {"transactions": []}
+            return httpx.Response(200, json=body)
+
+        def loan_client():
+            return httpx.AsyncClient(
+                base_url="https://api.enablebanking.com",
+                transport=httpx.MockTransport(loan_handler),
+            )
+
+        from app.schemas.account import AccountUpdate
+        from app.services.account_service import update_account
+        from app.services.dashboard_service import _account_balance_at
+
+        async with sessions() as session:
+            with (
+                patch("app.services.connection_service.get_provider", return_value=provider),
+                patch.object(provider, "_client", side_effect=loan_client),
+            ):
+                await sync_connection(session, connection_id, workspace_id, user_id)
+                first_history = (
+                    await session.scalars(
+                        select(Transaction).where(Transaction.account_id == account_id)
+                    )
+                ).all()
+                await sync_connection(session, connection_id, workspace_id, user_id)
+            account = await session.get(Account, account_id)
+            assert (
+                account is not None
+                and account.type == "loan"
+                and account.balance == Decimal("-125.50")
+            )
+            assert await _account_balance_at(session, account, date.today()) == -125.50
+            accounts = (
+                await session.scalars(select(Account).where(Account.connection_id == connection_id))
+            ).all()
+            history = (
+                await session.scalars(
+                    select(Transaction).where(Transaction.account_id == account_id)
+                )
+            ).all()
+            assert len(accounts) == 1 and len(history) == len(first_history)
+            try:
+                await update_account(
+                    session, account_id, workspace_id, AccountUpdate(type="checking")
+                )
+            except ValueError:
+                pass
+            else:
+                raise AssertionError("Provider liability cannot be edited into cash")
+        print(
+            "PASS: native Enable Banking liability mapping; booked loan repairs legacy checking in place; repeated sync preserves identity/history; aggregate subtracts debt; cash override blocked; synthetic HTTP"
+        )
         print(
             "PASS: native bank inventory failure; synthetic HTTP second-account expiry/outage never replaces retained balance/history or stamps fresh sync; typed reconnect; safe diagnostics"
         )

@@ -68,3 +68,5 @@ refunds do not reopen founder offers or delete original accounting evidence. Ref
 execution does not itself cancel provider collection: confirmed cancellation is a
 separate prerequisite for new dispatch where a mandate exists. Chargebacks and
 unverified refunds must not be called confirmed. Live keys remain refused.
+
+An unknown dispatch with no bound provider refund closes as `external` only when a fresh complete inventory proves the entire captured payment was processed as refunds. This permits deletion without claiming the original dispatch succeeded or issuing another POST. User status shows actual provider refunds once, excluding the superseded decision amount. Known provider-bound pending decisions still require reconciliation.

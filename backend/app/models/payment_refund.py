@@ -11,7 +11,7 @@ class PaymentRefund(Base):
     __table_args__ = (
         UniqueConstraint("mode", "account_id", "payment_id", name="uq_refund_dispatch_payment"),
         CheckConstraint("mode = 'test' AND currency = 'INR' AND amount_minor >= 100", name="ck_refund_dispatch_scope"),
-        CheckConstraint("state IN ('sending','uncertain','pending','processed','failed')", name="ck_refund_dispatch_state"),
+        CheckConstraint("state IN ('sending','uncertain','pending','processed','failed','external')", name="ck_refund_dispatch_state"),
         CheckConstraint("source_kind IN ('activation','renewal')", name="ck_refund_dispatch_source"),
     )
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)

@@ -404,3 +404,26 @@ async def test_unstopped_renewal_prevents_new_refund_dispatch(renewal,enabled,mo
             await refunds.dispatch(session,test_superuser.id,"activation",grant.id,9900,EVIDENCE,provider)
         assert error.value.status_code==409
     provider.payment.refund.assert_not_called()
+
+
+async def test_external_full_refund_closes_unknown_dispatch_without_faking_its_success(refundable,session,test_user):
+    from app.services import account_deletion_service as deletion
+    grant,provider,payment,items,_=refundable
+    provider.payment.refund.side_effect=TimeoutError("synthetic unknown dispatch")
+    assert (await issue(refundable,1000))["state"]=="uncertain"
+    # Reviewed provider-side refund lacks the app's receipt and refunds the whole payment.
+    item=dict(id="rfnd_ExternalFull",entity="refund",payment_id=grant.payment_id,amount=9900,currency="INR",status="processed",receipt=None)
+    items.append(item)
+    payment.update(amount_refunded=9900,refund_status="full",status="refunded")
+    identity=await refund_receipt(item)
+    assert await activation.process_receipt(TestSessionLocal,identity,provider)=="refund_reconciled"
+    async with TestSessionLocal() as own:
+        intent=await own.scalar(select(PaymentRefund))
+        assert intent is not None and intent.state=="external" and intent.refund_id is None
+        status=await refunds.preview(own,grant.user_id)
+        assert status["refunds"]==[]
+        assert len(status["provider_refunds"])==1 and status["provider_refunds"][0]["amount_minor"]==9900
+    decision=await deletion.request_deletion(session,test_user)
+    assert "refund_outcome_unresolved" not in decision["blockers"]
+    assert (await issue(refundable,1000))["state"]=="external"
+    provider.payment.refund.assert_called_once()

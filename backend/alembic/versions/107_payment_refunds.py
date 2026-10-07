@@ -30,7 +30,7 @@ def upgrade():
         sa.Column("refund_id", sa.String(104)),
         sa.UniqueConstraint("mode", "account_id", "payment_id", name="uq_refund_dispatch_payment"),
         sa.CheckConstraint("mode = 'test' AND currency = 'INR' AND amount_minor >= 100", name="ck_refund_dispatch_scope"),
-        sa.CheckConstraint("state IN ('sending','uncertain','pending','processed','failed')", name="ck_refund_dispatch_state"),
+        sa.CheckConstraint("state IN ('sending','uncertain','pending','processed','failed','external')", name="ck_refund_dispatch_state"),
         sa.CheckConstraint("source_kind IN ('activation','renewal')", name="ck_refund_dispatch_source"))
     op.create_index("ix_payment_refunds_user_id", "payment_refunds", ["user_id"])
     op.create_table("refund_observations",

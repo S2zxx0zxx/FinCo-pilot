@@ -17,6 +17,7 @@ from app.billing.refunds import dispatch
 from app.billing.service import effective_plan
 from app.core.database import engine
 from app.main import app
+from app.models.payment_activation import PaymentActivation
 from app.models.payment_refund import PaymentRefund, RefundObservation
 from app.models.payment_renewal import RenewalCycle
 from app.models.payment_webhook import PaymentWebhookEvent
@@ -95,6 +96,33 @@ async def verify(sessions, uid, settings, now, own_sessions):
             sub=await session.scalar(select(Subscription).where(Subscription.user_id==uid))
             assert sub and sub.paid_term_refunded and effective_plan(sub,now=row.period_start).value=="free"
             assert sub.current_period_end==row.period_end
+        # A separate acquisition payment proves closure of a genuinely unknown POST.
+        async with sessions() as session:
+            row = await session.scalar(select(PaymentActivation).where(PaymentActivation.user_id == uid))
+            assert row
+        payment = dict(id=row.payment_id, entity="payment", order_id=row.order_id,
+            amount=row.amount_minor, currency="INR", captured=True, status="captured", amount_refunded=0, refund_status=None)
+        items = []
+        external_posts = 0
+        def unknown_refund(pid, data, **kwargs):
+            nonlocal external_posts
+            outside_sql()
+            external_posts += 1
+            assert external_posts == 1 and pid == row.payment_id and data["amount"] == 100
+            raise TimeoutError("synthetic unknown dispatch")
+        external_provider = SimpleNamespace(payment=SimpleNamespace(fetch=fetch, fetch_multiple_refund=inventory, refund=unknown_refund))
+        async def reconcile_external():
+            async with sessions() as session:
+                return await dispatch(session, uid, "activation", row.id, 100, "b"*64, external_provider, now=now)
+        assert (await reconcile_external())["state"] == "uncertain"
+        items.append(dict(id="rfnd_EXTERNAL"+uid.hex, entity="refund", payment_id=row.payment_id,
+            amount=row.amount_minor, currency="INR", receipt=None, status="processed"))
+        payment.update(amount_refunded=row.amount_minor, refund_status="full", status="refunded")
+        assert (await reconcile_external())["state"] == "external"
+        assert (await reconcile_external())["state"] == "external" and external_posts == 1
+        async with sessions() as session:
+            intent = await session.scalar(select(PaymentRefund).where(PaymentRefund.payment_id == row.payment_id))
+            assert intent and intent.state == "external" and intent.refund_id is None
         spec=importlib.util.spec_from_file_location("refund107",Path(__file__).resolve().parents[1]/"alembic/versions/107_payment_refunds.py")
         assert spec and spec.loader
         migration=importlib.util.module_from_spec(spec)
@@ -108,7 +136,7 @@ async def verify(sessions, uid, settings, now, own_sessions):
                         return
                     raise AssertionError("populated refund downgrade discarded evidence")
             await connection.run_sync(refuse)
-        print("PASS: native refund; one durable POST under concurrent decisions; idempotency header/receipt exact; lost response confirmed only by fresh GET; eight signed HTTP refund receipts converge to one retained observation; full refund revokes only its paid term; no SQL during SDK; populated107 downgrade refused")
+        print("PASS: native refund; one durable POST under concurrent decisions; idempotency header/receipt exact; lost response confirmed only by fresh GET; eight signed HTTP refund receipts converge to one retained observation; full refund revokes only its paid term; no SQL during SDK; unknown dispatch closed by verified full external refund without another POST or fabricated success; populated107 downgrade refused")
     finally:
         release.set()
         async with sessions() as session:

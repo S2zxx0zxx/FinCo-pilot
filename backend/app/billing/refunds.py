@@ -183,6 +183,9 @@ async def observe(session, row, key, payment, refunds, current):
     if total > row.amount_minor:
         raise RejectReceipt("refund_total_exceeded")
     if total == row.amount_minor:
+        # A full external refund closes an unknown decision without claiming its POST succeeded.
+        if intent is not None and intent.state in {"sending", "uncertain"} and intent.refund_id is None and not candidates:
+            intent.state = "external"
         sub = await session.scalar(select(Subscription).where(Subscription.user_id == row.user_id).with_for_update()
             .execution_options(populate_existing=True))
         # Revoke only this paid term; an older refund cannot erase a newer paid cycle.
@@ -273,7 +276,7 @@ async def dispatch(session, actor_id, kind, source_id, amount, evidence, client,
 async def preview(session, uid):
     if not enabled():
         return {"available": False}
-    intents = list((await session.scalars(select(PaymentRefund).where(PaymentRefund.user_id == uid)
+    intents = list((await session.scalars(select(PaymentRefund).where(PaymentRefund.user_id == uid, PaymentRefund.state != "external")
         .order_by(PaymentRefund.requested_at.desc()).limit(100))).all())
     observations = list((await session.scalars(select(RefundObservation).where(RefundObservation.user_id == uid)
         .order_by(RefundObservation.observed_at.desc()).limit(100))).all())

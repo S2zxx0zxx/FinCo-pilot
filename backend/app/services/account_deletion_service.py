@@ -273,7 +273,7 @@ async def inventory(session: AsyncSession, user: User, *, workspace_scope: list[
     refund_rows = list((await session.execute(select(refunds).where(refunds.c.user_id == user.id))).mappings()) if workspace_scope is None else []
     observations = Base.metadata.tables["refund_observations"]
     refund_observations = list((await session.execute(select(observations).where(observations.c.user_id == user.id))).mappings()) if workspace_scope is None else []
-    if any(row["state"] not in {"processed", "failed"} for row in refund_rows) or any(row["state"] == "pending" for row in refund_observations):
+    if any(row["state"] not in {"processed", "failed", "external"} for row in refund_rows) or any(row["state"] == "pending" for row in refund_observations):
         blockers.append("refund_outcome_unresolved")
     llm = Base.metadata.tables["agent_llm_connections"]
     llm_rows = list((await session.execute(select(llm).where(llm.c.user_id == user.id))).mappings()) if workspace_scope is None else []

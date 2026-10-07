@@ -37,7 +37,7 @@ export function RefundOperatorCard() {
         body: JSON.stringify({ source_kind: payment.source_kind, source_id: payment.source_id, amount_minor: Number(amount), evidence_sha256: evidence, authorize: true }) })
       if (!response.ok) throw new Error('Refund could not be verified. Sign in again if needed, then reconcile the same decision before continuing.')
       const row = await response.json() as { state?: string }
-      const messages: Record<string, string> = { sending: 'Dispatch recorded; awaiting confirmation.', uncertain: 'Outcome unknown. Reconcile the same decision; do not issue another refund.',
+      const messages: Record<string, string> = { external: 'Decision closed: a full external refund was independently verified. This does not confirm the original dispatch succeeded.', sending: 'Dispatch recorded; awaiting confirmation.', uncertain: 'Outcome unknown. Reconcile the same decision; do not issue another refund.',
         pending: 'Provider refund is pending.', processed: 'Provider refund is processed. Bank credit timing can vary.', failed: 'Provider refund failed. Review the existing decision with support.' }
       if (!row.state || !Object.hasOwn(messages, row.state)) throw new Error('Refund outcome requires reconciliation.')
       setMessage(messages[row.state])

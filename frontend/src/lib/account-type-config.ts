@@ -7,6 +7,7 @@ export const ACCOUNT_TYPE_CONFIG: Record<
   string,
   { icon: ElementType; color: string; bg: string; label: string }
 > = {
+  unknown:     { icon: Building2, color: 'text-muted-foreground', bg: 'bg-muted', label: 'accounts.typeUnknown' },
   checking:    { icon: Building2,   color: 'text-indigo-600',  bg: 'bg-indigo-100',  label: 'accounts.typeChecking' },
   savings:     { icon: PiggyBank,   color: 'text-emerald-600', bg: 'bg-emerald-100', label: 'accounts.typeSavings' },
   credit_card: { icon: CreditCard,  color: 'text-violet-600',  bg: 'bg-violet-100',  label: 'accounts.typeCreditCard' },

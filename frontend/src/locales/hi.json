@@ -1012,7 +1012,9 @@
         "description": "SimpleFIN Bridge के ज़रिए अमेरिकी और अंतरराष्ट्रीय बैंक"
       }
     },
-    "reconnected": "बैंक सफलतापूर्वक फिर से कनेक्ट हुआ"
+    "reconnected": "बैंक सफलतापूर्वक फिर से कनेक्ट हुआ",
+    "typeUnknown": "अवर्गीकृत",
+    "simplefinClassificationHint": "SimpleFIN खाता प्रकार नहीं देता। वास्तविक प्रकार चुनें; बैलेंस का चिह्न सुरक्षित रहता है। इससे Safe-to-Spend चालू नहीं होगा।"
   },
   "connections": {
     "settings": "कनेक्शन सेटिंग्स",

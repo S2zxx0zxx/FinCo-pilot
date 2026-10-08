@@ -1777,8 +1777,8 @@ async def sync_connection(
                         account.card_level = None
                 # Normalize the provider sign using the account's CURRENT type,
                 # which reflects safe cash overrides and fresh liability classification.
-                # SimpleFIN reports card debt as negative under a "checking"
-                # label; once the user overrides the type to credit_card the
+                # SimpleFIN imports an unknown type with its signed balance;
+                # once the user chooses credit_card the
                 # downstream sites negate it, so store positive-for-debt to keep
                 # them provider-agnostic and avoid double-counting.
                 account.balance = _simplefin_to_internal_balance(

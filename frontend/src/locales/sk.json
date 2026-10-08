@@ -1076,7 +1076,9 @@
         "description": "Americké a medzinárodné banky cez SimpleFIN Bridge"
       }
     },
-    "reconnected": "Banka úspešne znovu prepojená"
+    "reconnected": "Banka úspešne znovu prepojená",
+    "typeUnknown": "Nezaradené",
+    "simplefinClassificationHint": "SimpleFIN neposkytuje typy účtov. Vyberte skutočný typ; znamienko zostatku sa zachová. Safe-to-Spend zostáva blokované."
   },
   "connections": {
     "settings": "Nastavenia prepojenia",

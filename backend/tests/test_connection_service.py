@@ -2696,12 +2696,12 @@ async def test_sync_normalizes_simplefin_card_balance_to_positive_for_debt(
 
     mock_provider = AsyncMock()
     mock_provider.refresh_credentials = AsyncMock(return_value={"token": "t"})
-    # SimpleFIN provider parses every account as type="checking" and reports
+    # SimpleFIN provider parses every account as type="unknown" and reports
     # the raw negative debt balance.
     mock_provider.get_accounts = AsyncMock(return_value=[
         AccountData(
             external_id="sf-cc-1", name="SimpleFIN Card",
-            type="checking", balance=Decimal("-650.00"), currency="USD",
+            type="unknown", balance=Decimal("-650.00"), currency="USD",
         ),
     ])
     mock_provider.get_transactions = AsyncMock(return_value=[])
@@ -2742,7 +2742,7 @@ async def test_sync_leaves_simplefin_checking_balance_unchanged(
     mock_provider.get_accounts = AsyncMock(return_value=[
         AccountData(
             external_id="sf-chk-1", name="SimpleFIN Checking",
-            type="checking", balance=Decimal("1234.56"), currency="USD",
+            type="unknown", balance=Decimal("1234.56"), currency="USD",
         ),
     ])
     mock_provider.get_transactions = AsyncMock(return_value=[])

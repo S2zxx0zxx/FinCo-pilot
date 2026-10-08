@@ -31,9 +31,10 @@ def get_account_name(account: Account) -> str:
 def _simplefin_to_internal_balance(provider: str, account_type: str, balance: Decimal) -> Decimal:
     """Normalize a SimpleFIN balance to FinCo-Pilot's positive-for-debt convention.
 
-    SimpleFIN reports a credit card's balance as negative debt and exposes no
-    account type, so the provider stores it raw and labels every account
-    "checking". Pluggy/Enable report card debt as a positive number, which is
+    SimpleFIN exposes no account type. Preserve its signed balance; an explicit
+    user card classification reverses the storage convention, not the signed
+    economic position. The protocol does not guarantee every card's sign.
+    Pluggy/Enable report card debt as a positive number, which is
     the convention every downstream site (serialize_account, _account_balance_at,
     sync_opening_balance_for_connected_account, ...) assumes. Flip SimpleFIN card
     balances to match so those sites stay provider-agnostic.
@@ -171,6 +172,7 @@ def serialize_account(
 
     institution_name, institution_logo_url = _institution(acc, connection)
     payload = {
+        "provider": connection.provider if connection else None,
         "id": acc.id,
         "user_id": acc.user_id,
         "connection_id": acc.connection_id,
@@ -307,6 +309,11 @@ async def update_account(
     update_data = data.model_dump(exclude_unset=True)
     balance_date = update_data.pop("balance_date", None)
 
+    if update_data.get("type") == "loan":
+        connection = await session.get(BankConnection, account.connection_id) if account.connection_id else None
+        if connection is None or connection.provider != "simplefin":
+            raise ValueError("Loan classification is only editable for SimpleFIN accounts")
+
     # Track whether we need to recompute effective_date for all transactions.
     # Changes to the CC cycle days shift which bill each historical purchase
     # belongs to, so stored effective_dates need to be rebuilt.
@@ -347,8 +354,8 @@ async def update_account(
             raise ValueError("Credit card fields can only be set on credit card accounts")
         for key, value in update_data.items():
             setattr(account, key, value)
-        # SimpleFIN stores a card's balance with the raw provider sign (negative
-        # for debt) under type="checking". When the user flips the type across
+        # SimpleFIN stores an unclassified balance with its raw provider sign.
+        # When the user changes the type across
         # the credit_card boundary, the downstream display sites start (or stop)
         # applying the positive-for-debt negation, so the stored value must flip
         # too — otherwise the card double-counts. Mirror the ingestion-time
@@ -363,6 +370,9 @@ async def update_account(
             )
             if conn is not None and conn.provider == "simplefin":
                 account.balance = -account.balance
+                # Classification changes must also undo/apply card cycle
+                # bucketing on retained transactions, even without day edits.
+                cycle_fields_changed = True
         # If the override moves the account away from credit_card, drop any
         # stale card metadata so it isn't left half credit-card.
         if new_type != "credit_card":

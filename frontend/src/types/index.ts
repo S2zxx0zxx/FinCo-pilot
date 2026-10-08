@@ -146,6 +146,7 @@ export interface ConnectionSettings {
 }
 
 export interface Account {
+  provider?: string | null
   id: string
   user_id: string
   connection_id: string | null

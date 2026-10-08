@@ -1012,7 +1012,9 @@
         "description": "US and international banks via SimpleFIN Bridge"
       }
     },
-    "reconnected": "Bank reconnected successfully"
+    "reconnected": "Bank reconnected successfully",
+    "typeUnknown": "Unclassified",
+    "simplefinClassificationHint": "SimpleFIN does not supply account types. Choose the actual type; balances keep their signed position. This does not enable Safe-to-Spend."
   },
   "connections": {
     "settings": "Connection settings",

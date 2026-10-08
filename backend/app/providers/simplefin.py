@@ -406,18 +406,25 @@ class SimpleFinProvider(BankProvider):
 
     @staticmethod
     def _parse_accounts(payload: dict) -> tuple[str, list[AccountData]]:
+        inventory = payload.get("accounts")
+        if not isinstance(inventory, list) or any(not isinstance(raw, dict) for raw in inventory):
+            raise RuntimeError("SimpleFIN account inventory unavailable")
         connections = payload.get("connections") or []
         institution_name = (
             connections[0].get("name") if connections else "SimpleFIN Connection"
         )
         by_conn_id = SimpleFinProvider._institutions_by_conn_id(payload)
         accounts: list[AccountData] = []
-        for raw in payload.get("accounts") or []:
-            balance = _to_decimal(raw.get("balance")) or Decimal("0")
+        seen_ids: set[str] = set()
+        for raw in inventory:
+            balance = _to_decimal(raw.get("balance"))
+            if balance is None or not balance.is_finite():
+                raise RuntimeError("SimpleFIN account balance unavailable")
             currency = _iso_currency(raw.get("currency"), "USD") or "USD"
-            account_id = str(raw.get("id") or "")
-            if not account_id:
-                continue
+            account_id = raw.get("id")
+            if not isinstance(account_id, str) or not account_id.strip() or len(account_id) > 255 or account_id in seen_ids:
+                raise RuntimeError("SimpleFIN account identity unavailable or duplicated")
+            seen_ids.add(account_id)
             name = raw.get("name") or "Account"
             inst_ext, inst_name, inst_logo = SimpleFinProvider._account_institution_hint(
                 raw, by_conn_id
@@ -427,7 +434,7 @@ class SimpleFinProvider(BankProvider):
                 AccountData(
                     external_id=account_id,
                     name=name,
-                    type="checking",  # SimpleFIN doesn't expose an account type
+                    type="unknown",  # No type contract: require explicit user classification.
                     balance=balance,
                     currency=currency,
                     institution_external_id=inst_ext,

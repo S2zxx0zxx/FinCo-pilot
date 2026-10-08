@@ -1,13 +1,17 @@
 """Disposable native PostgreSQL proof of incomplete provider inventory safety."""
 
 import asyncio
+import importlib.util
 import os
 import uuid
+from pathlib import Path
 from datetime import date, datetime, timezone
 from decimal import Decimal
 from unittest.mock import patch
 
 import httpx
+from alembic.migration import MigrationContext
+from alembic.operations import Operations
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
@@ -20,6 +24,7 @@ from app.models.user import User
 from app.models.workspace import Workspace
 from app.providers.base import SessionExpiredError
 from app.providers.enable_banking import EnableBankingProvider
+from app.providers.simplefin import SimpleFinProvider
 from app.services.connection_service import sync_connection
 
 
@@ -238,6 +243,77 @@ async def main():
         print(
             "PASS: native Enable Banking liability mapping; booked loan repairs legacy checking in place; repeated sync preserves identity/history; aggregate subtracts debt; cash override blocked; synthetic HTTP"
         )
+        # Real SQL migration and explicit classification with the actual adapter.
+        async with sessions() as session:
+            connection = await session.get(BankConnection, connection_id)
+            account = await session.get(Account, account_id)
+            assert connection is not None and account is not None
+            connection.provider = "simplefin"
+            connection.credentials = {"access_url": "https://synthetic:unused@simplefin.example/simplefin"}
+            account.type = "checking"
+            await session.commit()
+
+        def migration(sync):
+            spec = importlib.util.spec_from_file_location(
+                "classification108", Path(__file__).resolve().parents[1] / "alembic/versions/108_simplefin_classification.py"
+            )
+            assert spec is not None and spec.loader is not None
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            with Operations.context(MigrationContext.configure(sync)):
+                module.upgrade()
+                try:
+                    module.downgrade()
+                except RuntimeError:
+                    pass
+                else:
+                    raise AssertionError("Unresolved classification rollback must be refused")
+
+        async with isolated.begin() as sql:
+            await sql.run_sync(migration)
+        observed = {"balance": "-250.77"}
+
+        def sf_handler(request):
+            assert request.method == "GET" and request.url.path == "/simplefin/accounts"
+            return httpx.Response(200, json={"errlist": [], "accounts": [{
+                "id": "account-1", "name": "Misleading Savings", "currency": "EUR",
+                "balance": observed["balance"], "available-balance": "99999", "transactions": [],
+            }]})
+
+        sf_provider = SimpleFinProvider()
+        real_client = httpx.AsyncClient
+        async with sessions() as session:
+            account = await session.get(Account, account_id)
+            assert account is not None
+            assert account.type == "unknown" and account.balance == Decimal("-125.50")
+            assert await session.scalar(select(Account.id).where(Account.type == "checking")) is not None
+            with (
+                patch("app.services.connection_service.get_provider", return_value=sf_provider),
+                patch("app.providers.simplefin.httpx.AsyncClient", side_effect=lambda **kwargs: real_client(transport=httpx.MockTransport(sf_handler), **kwargs)),
+            ):
+                await sync_connection(session, connection_id, workspace_id, user_id)
+                assert account.type == "unknown" and account.balance == Decimal("-250.77")
+                for kind in ("credit_card", "loan", "checking"):
+                    await update_account(session, account_id, workspace_id, AccountUpdate(type=kind))
+                    await sync_connection(session, connection_id, workspace_id, user_id)
+                    await sync_connection(session, connection_id, workspace_id, user_id)
+                    assert account.type == kind
+                    assert account.balance == Decimal("250.77" if kind == "credit_card" else "-250.77")
+                    assert await _account_balance_at(session, account, date.today()) == -250.77
+                history = (await session.scalars(select(Transaction).where(Transaction.account_id == account_id))).all()
+                count = len(history)
+                observed["balance"] = "NaN"
+                try:
+                    await sync_connection(session, connection_id, workspace_id, user_id)
+                except RuntimeError:
+                    pass
+                else:
+                    raise AssertionError("Unavailable balance must fail")
+            await session.refresh(account)
+            assert account.balance == Decimal("-250.77") and account.type == "checking"
+            assert len((await session.scalars(select(Transaction).where(Transaction.account_id == account_id))).all()) == count
+            assert len((await session.scalars(select(Account).where(Account.connection_id == connection_id))).all()) == 1
+        print("PASS: native SimpleFIN classification; migration scopes ambiguous defaults and protects unresolved rollback; explicit card/loan/cash choices survive repeated sync with unchanged signed aggregate; identity/history retained; available credit ignored; invalid balance preserves retained state; synthetic HTTP")
         print(
             "PASS: native bank inventory failure; synthetic HTTP second-account expiry/outage never replaces retained balance/history or stamps fresh sync; typed reconnect; safe diagnostics"
         )

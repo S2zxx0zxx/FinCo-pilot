@@ -1025,7 +1025,9 @@
         "description": "Банки США та інших країн через SimpleFIN Bridge"
       }
     },
-    "reconnected": "Банк успішно перепідключено"
+    "reconnected": "Банк успішно перепідключено",
+    "typeUnknown": "Не класифіковано",
+    "simplefinClassificationHint": "SimpleFIN не надає типи рахунків. Оберіть фактичний тип; знак балансу зберігається. Safe-to-Spend залишається заблокованим."
   },
   "connections": {
     "settings": "Налаштування підключення",

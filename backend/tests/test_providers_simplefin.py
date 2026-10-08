@@ -522,6 +522,38 @@ def test_get_oauth_url_raises_for_token_flow():
 
 # ----- multi-institution payloads (issue #345) --------------------------------
 
+@pytest.mark.parametrize("name,balance", [("Checking", "500"), ("Credit Card", "-500"), ("Loan", "0"), ("Savings", "500")])
+def test_classification_never_guesses_from_name_balance_or_extra(name, balance):
+    _, accounts = SimpleFinProvider._parse_accounts({"accounts": [{
+        "id": "a1", "name": name, "balance": balance, "currency": "USD",
+        "available-balance": "999999", "extra": {"type": "checking"},
+    }]})
+    assert accounts[0].type == "unknown"
+    assert accounts[0].balance == Decimal(balance)
+
+
+@pytest.mark.parametrize("balance", [None, "", "invalid", "NaN", "Infinity", "-Infinity"])
+def test_unavailable_balance_cannot_be_zero_cash(balance):
+    with pytest.raises(RuntimeError, match="balance unavailable"):
+        SimpleFinProvider._parse_accounts({"accounts": [{"id": "a1", "balance": balance}]})
+
+
+@pytest.mark.parametrize("account_id", [None, "", "  ", 123, "x" * 256])
+def test_invalid_identity_cannot_be_skipped(account_id):
+    with pytest.raises(RuntimeError, match="identity"):
+        SimpleFinProvider._parse_accounts({"accounts": [{"id": account_id, "balance": "1"}]})
+
+
+def test_duplicate_accounts_cannot_form_complete_inventory():
+    with pytest.raises(RuntimeError, match="duplicated"):
+        SimpleFinProvider._parse_accounts({"accounts": [{"id": "a1", "balance": "1"}] * 2})
+
+
+@pytest.mark.parametrize("payload", [{}, {"accounts": None}, {"accounts": {}}, {"accounts": [None]}])
+def test_malformed_inventory_is_not_an_empty_success(payload):
+    with pytest.raises(RuntimeError, match="inventory unavailable"):
+        SimpleFinProvider._parse_accounts(payload)
+
 
 def test_parse_accounts_maps_each_account_to_its_own_institution():
     """connections[] entries are matched to accounts by conn_id, so a Setup

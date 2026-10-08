@@ -133,11 +133,12 @@ async def test_fx_requires_same_publication_date(session, test_user, test_worksp
 
 
 @pytest.mark.asyncio
-async def test_provider_loan_is_never_spendable_cash(session, test_user, test_workspace):
+@pytest.mark.parametrize('kind,balance', [('loan', '-9000'), ('unknown', '9000')])
+async def test_unclassified_or_loan_is_never_spendable_cash(session, test_user, test_workspace, kind, balance):
     cash = await account(session, test_user, test_workspace)
     await transaction(session, test_user, test_workspace, cash, '1000', 'credit')
-    loan = await account(session, test_user, test_workspace, 'loan')
-    loan.balance = Decimal('-9000')
+    loan = await account(session, test_user, test_workspace, kind)
+    loan.balance = Decimal(balance)
     await session.commit()
     plan = await calculate_spending_plan(session, test_workspace.id, test_user.id, SpendingPlanRequest(obligations_reviewed=True))
     assert plan.cash_balance == 1000

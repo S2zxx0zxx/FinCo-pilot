@@ -1061,7 +1061,9 @@
         "description": "Banki w USA i międzynarodowe przez SimpleFIN Bridge"
       }
     },
-    "reconnected": "Bank połączony ponownie"
+    "reconnected": "Bank połączony ponownie",
+    "typeUnknown": "Niesklasyfikowane",
+    "simplefinClassificationHint": "SimpleFIN nie udostępnia typów kont. Wybierz rzeczywisty typ; znak salda zostaje zachowany. Safe-to-Spend pozostaje zablokowane."
   },
   "connections": {
     "settings": "Ustawienia połączenia",

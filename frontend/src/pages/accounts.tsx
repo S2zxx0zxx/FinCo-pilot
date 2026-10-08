@@ -489,7 +489,7 @@ export default function AccountsPage() {
   )
 }
 
-function AccountDialog({ open, onClose, account, onSave, loading }: {
+export function AccountDialog({ open, onClose, account, onSave, loading }: {
   open: boolean
   onClose: () => void
   account: Account | null
@@ -550,7 +550,7 @@ function AccountDialog({ open, onClose, account, onSave, loading }: {
             const isConnected = !!account?.connection_id
             onSave({
               ...(!isConnected && { name, balance: parseFloat(balance), balance_date: balanceDate, currency }),
-              ...(type !== 'loan' && { type }),
+              ...(type !== 'unknown' && (type !== 'loan' || account?.provider === 'simplefin') && { type }),
               display_name: displayName.trim() || null,
               ...(isCC && {
                 credit_limit: creditLimit !== '' ? parseFloat(creditLimit) : null,
@@ -568,11 +568,13 @@ function AccountDialog({ open, onClose, account, onSave, loading }: {
           {account?.connection_id && (
             <div className="space-y-2">
               <Label>{t('accounts.accountType')}</Label>
-              <select className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary" value={type} disabled={type === 'loan'} onChange={(e) => setType(e.target.value)}>
-                {type === 'loan' && <option value="loan" disabled>{t('accounts.typeLoan')}</option>}
+              <select className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary" value={type} disabled={type === 'loan' && account.provider !== 'simplefin'} onChange={(e) => setType(e.target.value)}>
+                {type === 'unknown' && <option value="unknown" disabled>{t('accounts.typeUnknown')}</option>}
+                {account.provider === 'simplefin' && <option value="loan">{t('accounts.typeLoan')}</option>}
+                {type === 'loan' && account.provider !== 'simplefin' && <option value="loan" disabled>{t('accounts.typeLoan')}</option>}
                 {ACCOUNT_TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{t(o.labelKey)}</option>)}
               </select>
-              <p className="text-xs text-muted-foreground">{t(type === 'loan' ? 'accounts.providerLoanHint' : 'accounts.typeOverrideHint')}</p>
+              <p className="text-xs text-muted-foreground">{t(account.provider === 'simplefin' || type === 'unknown' ? 'accounts.simplefinClassificationHint' : type === 'loan' ? 'accounts.providerLoanHint' : 'accounts.typeOverrideHint')}</p>
             </div>
           )}
           {!account?.connection_id && (

@@ -1013,7 +1013,9 @@
         "description": "Banques américaines et internationales via SimpleFIN Bridge"
       }
     },
-    "reconnected": "Banque reconnectée avec succès"
+    "reconnected": "Banque reconnectée avec succès",
+    "typeUnknown": "Non classé",
+    "simplefinClassificationHint": "SimpleFIN ne fournit pas les types de comptes. Choisissez le type réel ; le signe du solde est conservé. Safe-to-Spend reste bloqué."
   },
   "connections": {
     "settings": "Paramètres de connexion",

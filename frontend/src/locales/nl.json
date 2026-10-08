@@ -1014,7 +1014,9 @@
       }
     },
     "reconnected": "Bank heeft opnieuw verbinding gemaakt",
-    "multiInstitutionLink": "{{provider}} · {{count}} institutions"
+    "multiInstitutionLink": "{{provider}} · {{count}} institutions",
+    "typeUnknown": "Niet geclassificeerd",
+    "simplefinClassificationHint": "SimpleFIN levert geen rekeningtypen. Kies het werkelijke type; het teken van het saldo blijft behouden. Safe-to-Spend blijft geblokkeerd."
   },
   "connections": {
     "settings": "Verbindingsinstellingen",

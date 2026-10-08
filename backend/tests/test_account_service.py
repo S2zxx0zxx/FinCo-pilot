@@ -1192,6 +1192,36 @@ def test_simplefin_to_internal_balance_flips_card():
     ) == Decimal("500.00")
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize("position", ["-500.00", "500.00", "0.00"])
+async def test_simplefin_unknown_classification_preserves_signed_position(session, test_user, test_workspace, position):
+    conn_id = await _make_provider_connection(session, test_user.id, "simplefin")
+    account = await _make_account(session, test_user.id, "Unclassified", acc_type="unknown", balance=position, connection_id=conn_id, external_id="sf-unknown")
+    for kind in ("credit_card", "loan", "checking", "credit_card"):
+        updated = await update_account(session, account.id, test_workspace.id, AccountUpdate(type=kind))
+        assert updated is not None
+        assert updated.type == kind
+        assert updated.balance == (-Decimal(position) if kind == "credit_card" else Decimal(position))
+        assert serialize_account(updated, None, None)["current_balance"] == float(position)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("provider", ["pluggy", "enable_banking"])
+async def test_loan_edit_is_scoped_to_simplefin(session, test_user, test_workspace, provider):
+    conn_id = await _make_provider_connection(session, test_user.id, provider)
+    account = await _make_account(session, test_user.id, "Cash", acc_type="checking", balance="500.00", connection_id=conn_id)
+    with pytest.raises(ValueError, match="only editable for SimpleFIN"):
+        await update_account(session, account.id, test_workspace.id, AccountUpdate(type="loan"))
+    assert account.type == "checking" and account.balance == Decimal("500.00")
+
+
+@pytest.mark.asyncio
+async def test_manual_account_cannot_receive_provider_loan_type(session, test_user, test_workspace):
+    account = await _make_account(session, test_user.id, "Manual", acc_type="checking", balance="500.00")
+    with pytest.raises(ValueError, match="only editable for SimpleFIN"):
+        await update_account(session, account.id, test_workspace.id, AccountUpdate(type="loan"))
+
+
 def test_simplefin_to_internal_balance_checking_unchanged():
     """A SimpleFIN non-card balance is already in the right convention."""
     assert _simplefin_to_internal_balance(

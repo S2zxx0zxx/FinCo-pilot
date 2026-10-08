@@ -1012,7 +1012,9 @@
         "description": "SimpleFIN Bridge経由の米国および国際的な銀行"
       }
     },
-    "reconnected": "銀行に再接続しました"
+    "reconnected": "銀行に再接続しました",
+    "typeUnknown": "未分類",
+    "simplefinClassificationHint": "SimpleFINは口座種別を提供しません。実際の種別を選択してください。残高の符号は維持され、Safe-to-Spendは有効になりません。"
   },
   "connections": {
     "settings": "接続設定",

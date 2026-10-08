@@ -1013,7 +1013,9 @@
         "description": "Bancos de EE. UU. e internacionales vía SimpleFIN Bridge"
       }
     },
-    "reconnected": "Banco reconectado correctamente"
+    "reconnected": "Banco reconectado correctamente",
+    "typeUnknown": "Sin clasificar",
+    "simplefinClassificationHint": "SimpleFIN no proporciona tipos de cuenta. Elige el tipo real; se conserva el signo del saldo. Safe-to-Spend sigue bloqueado."
   },
   "connections": {
     "settings": "Configuración de la conexión",

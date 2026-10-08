@@ -34,7 +34,7 @@ class AccountCreate(BaseModel):
 class AccountUpdate(BaseModel):
     name: Optional[AccountName] = None
     display_name: Optional[AccountName] = None
-    type: Optional[AccountType] = None
+    type: Optional[Literal["checking", "savings", "credit_card", "wallet", "investment", "loan"]] = None
     balance: Optional[Decimal] = None
     balance_date: Optional[date] = None
     credit_limit: Optional[Decimal] = Field(default=None, ge=0)
@@ -46,6 +46,7 @@ class AccountUpdate(BaseModel):
 
 
 class AccountRead(AccountBase):
+    provider: Optional[str] = None
     id: uuid.UUID
     user_id: uuid.UUID
     connection_id: Optional[uuid.UUID] = None

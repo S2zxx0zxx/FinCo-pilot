@@ -1222,6 +1222,24 @@ async def test_manual_account_cannot_receive_provider_loan_type(session, test_us
         await update_account(session, account.id, test_workspace.id, AccountUpdate(type="loan"))
 
 
+@pytest.mark.asyncio
+async def test_simplefin_card_to_loan_recomputes_retained_reporting_dates(session, test_user, test_workspace):
+    conn_id = await _make_provider_connection(session, test_user.id, "simplefin")
+    account = await _make_account(session, test_user.id, "Card", acc_type="credit_card", balance="500", connection_id=conn_id)
+    account.statement_close_day = 20
+    account.payment_due_day = 28
+    posted = date(2026, 1, 5)
+    tx = Transaction(user_id=test_user.id, workspace_id=test_workspace.id, account_id=account.id, description="Retained purchase", amount=Decimal("10"), currency="BRL", date=posted, effective_date=date(2026, 1, 28), type="debit", source="sync")
+    session.add(tx)
+    await session.commit()
+    tx_id = tx.id
+    await update_account(session, account.id, test_workspace.id, AccountUpdate(type="loan"))
+    await session.refresh(tx)
+    assert tx.id == tx_id and tx.date == posted and tx.effective_date == posted
+    assert tx.amount == Decimal("10") and account.balance == Decimal("-500")
+    assert account.statement_close_day is None and account.payment_due_day is None
+
+
 def test_simplefin_to_internal_balance_checking_unchanged():
     """A SimpleFIN non-card balance is already in the right convention."""
     assert _simplefin_to_internal_balance(

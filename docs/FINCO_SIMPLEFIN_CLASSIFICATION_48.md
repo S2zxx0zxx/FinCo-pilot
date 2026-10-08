@@ -22,6 +22,8 @@ No undocumented `extra` or name heuristics are trusted.
 3. Existing workspace-authorized edit path confirms a type; subsequent sync
    preserves it. Add SimpleFIN-only loan edits, signed like ordinary accounts;
    card edits reverse storage sign while preserving signed economic position.
+   Crossing the card boundary also recomputes retained transaction reporting
+   dates, removing stale cycle bucketing when returning to loan/cash.
    Do not invent credit limit, APR, installment or loan repayment records.
 4. Display Unclassified and a classification explanation in all 15 locales.
    Loan edits remain available only for SimpleFIN; Enable Banking loans remain

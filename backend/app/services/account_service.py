@@ -354,8 +354,8 @@ async def update_account(
             raise ValueError("Credit card fields can only be set on credit card accounts")
         for key, value in update_data.items():
             setattr(account, key, value)
-        # SimpleFIN stores a card's balance with the raw provider sign (negative
-        # for debt) under type="checking". When the user flips the type across
+        # SimpleFIN stores an unclassified balance with its raw provider sign.
+        # When the user changes the type across
         # the credit_card boundary, the downstream display sites start (or stop)
         # applying the positive-for-debt negation, so the stored value must flip
         # too — otherwise the card double-counts. Mirror the ingestion-time
@@ -370,6 +370,9 @@ async def update_account(
             )
             if conn is not None and conn.provider == "simplefin":
                 account.balance = -account.balance
+                # Classification changes must also undo/apply card cycle
+                # bucketing on retained transactions, even without day edits.
+                cycle_fields_changed = True
         # If the override moves the account away from credit_card, drop any
         # stale card metadata so it isn't left half credit-card.
         if new_type != "credit_card":

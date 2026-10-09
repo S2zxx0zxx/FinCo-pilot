@@ -1,31 +1,31 @@
 # FinCo-Pilot → Clerk Auth Migration — Architecture & Release Contract (v1)
-Status: **DESIGN + FOUNDATION ONLY**. Branch: \`feature/clerk-auth-migration\`. Do not deploy, switch auth providers, import user records, or disable legacy auth without the cutover gates below.
+Status: **DESIGN + FOUNDATION ONLY**. Branch: `feature/clerk-auth-migration`. Do not deploy, switch auth providers, import user records, or disable legacy auth without the cutover gates below.
 
 ## Decision / boundaries
 - Clerk owns authentication: primary sign-in/sign-up, credentials, recovery, MFA, passkeys, and session lifecycle.
 - Existing FinCo-Pilot branded React UI remains the visual contract. Use supported Clerk React custom-flow APIs after confirming versions and complete MFA/first-factor requirements; do not paste or store passwords in FinCo-Pilot APIs.
 - FastAPI owns resource authorization, role/tenant/workspace membership, subscription entitlements, account deletion/retention, fraud/abuse policy, bank permissions, and financial data.
-- PostgreSQL \`users.id\` (UUID) **never changes**. Financial foreign keys stay intact. Clerk \`sub\` is an external identity, not a local user ID.
-- **Never link by email alone**. Neither unverified Clerk email, frontend userId, JWT custom \`external_id\`, nor a webhook payload is sufficient ownership proof.
+- PostgreSQL `users.id` (UUID) **never changes**. Financial foreign keys stay intact. Clerk `sub` is an external identity, not a local user ID.
+- **Never link by email alone**. Neither unverified Clerk email, frontend userId, JWT custom `external_id`, nor a webhook payload is sufficient ownership proof.
 - **No production behavior changes on this foundation commit.** Existing password/passkey/TOTP routes remain intact until deliberate, tested cutover.
 
 ## Reviewed repository architecture (main at 3718e3f3249d41c5be7120b3cdca09bbac7aed89)
-- \`frontend/src/App.tsx\`: React Router, \`AuthProvider\`, protected routes, account recovery.
-- \`frontend/src/contexts/auth-provider.tsx\`: localStorage bearer JWT; \`frontend/src/lib/api.ts\`: central Axios bearer interceptor.
-- \`backend/app/core/auth.py\`: FastAPI Users \`current_active_user\` + credential-stamped, revocable JWT. Used across many domain endpoints.
-- \`backend/app/api/custom_auth.py\`, \`two_factor.py\`, \`passkeys.py\`, \`oidc_auth.py\`: local password, MFA, WebAuthn, external OIDC.
-- \`backend/app/models/user.py\`: UUID user PK, financial/workspace links, existing OIDC issuer+subject. One OIDC identity slot is not sufficient as a universal multi-provider map.
-- \`backend/app/core/config.py\`: legacy auth and OIDC settings. Do not set \`LOCAL_AUTH_ENABLED=false\` with missing OIDC configuration: current validation rejects it.
-- \`backend/app/main.py\`: routes and FastAPI Users routes (including user updates/deletions) need separate cutover review.
+- `frontend/src/App.tsx`: React Router, `AuthProvider`, protected routes, account recovery.
+- `frontend/src/contexts/auth-provider.tsx`: localStorage bearer JWT; `frontend/src/lib/api.ts`: central Axios bearer interceptor.
+- `backend/app/core/auth.py`: FastAPI Users `current_active_user` + credential-stamped, revocable JWT. Used across many domain endpoints.
+- `backend/app/api/custom_auth.py`, `two_factor.py`, `passkeys.py`, `oidc_auth.py`: local password, MFA, WebAuthn, external OIDC.
+- `backend/app/models/user.py`: UUID user PK, financial/workspace links, existing OIDC issuer+subject. One OIDC identity slot is not sufficient as a universal multi-provider map.
+- `backend/app/core/config.py`: legacy auth and OIDC settings. Do not set `LOCAL_AUTH_ENABLED=false` with missing OIDC configuration: current validation rejects it.
+- `backend/app/main.py`: routes and FastAPI Users routes (including user updates/deletions) need separate cutover review.
 - Key issue outside Clerk migration: demo Docker config previously used development debug/default secret, published DB/backend, and Vite dev server. Clerk does NOT fix these deployment issues.
 
 ## Target data-plane / control-plane
-React original UI → Clerk React SDK (asynchronous session token; no localStorage bearer persistence) → Axios auth-adapter / dynamic \`getToken()\` → FastAPI JWT verification (RS256, known issuer, explicit authorized-parties, exp/iat/nbf, Clerk session) → **server-side external-identity map** → \`users.id\` → current authorization guards → workspace-scoped data.
-Clerk backend operations (admin imports, revocations, webhooks) use server-side credentials **only** and never expose \`CLERK_SECRET_KEY\` to browser/GitHub.
+React original UI → Clerk React SDK (asynchronous session token; no localStorage bearer persistence) → Axios auth-adapter / dynamic `getToken()` → FastAPI JWT verification (RS256, known issuer, explicit authorized-parties, exp/iat/nbf, Clerk session) → **server-side external-identity map** → `users.id` → current authorization guards → workspace-scoped data.
+Clerk backend operations (admin imports, revocations, webhooks) use server-side credentials **only** and never expose `CLERK_SECRET_KEY` to browser/GitHub.
 Do not trust Clerk Organizations, profile public metadata, email, or subscriptions as authority for FinCo-Pilot financial tenant permissions; use local workspace membership and billing entitlements.
 
 ## Identity mapping
-New table \`external_auth_identities\`:
+New table `external_auth_identities`:
 - provider='clerk', issuer, provider_subject, user_id (FK users.id), timestamps.
 - UNIQUE(provider, issuer, provider_subject); UNIQUE(provider, issuer, user_id).
 - Enforce case-sensitive external subjects and exact issuer separation between dev/prod.
@@ -50,14 +50,14 @@ New table \`external_auth_identities\`:
 ## Test matrix / release gates
 - Success: password and social sign-in, signup, forgot/reset password, verification, MFA enrollment and recovery, passkey flows where supported, logout-all-devices, inactive/locked user refusal, user profile update, signup-disabled, new-user defaults, account re-link denial, role and workspace access, financial data unchanged.
 - Security: wrong issuer, invalid signature/alg, missing/invalid azp, expired/future tokens, wrong audience, pending session, impersonation, attacker-chosen subject, expired nonce, replayed linkage, forged webhooks, two simultaneous provision requests, 401/403 distinction.
-- Regression: routes protected by \`current_active_user\`; BI/reporting/AI tasks, MCP, account deletion, payment webhook and billing roles; tests unchanged in legacy mode.
+- Regression: routes protected by `current_active_user`; BI/reporting/AI tasks, MCP, account deletion, payment webhook and billing roles; tests unchanged in legacy mode.
 - Operational: explicit rollback drill in staging; feature flag OFF defaults to legacy behavior; backup/restore proof; no unencrypted secrets in repository; no public database/backend ports; suitable environment URLs, CORS and CSRF guards.
 - **GO** only after all critical security tests pass, migration reconciliation matches expected records, owner authorizes final rollout, and production environment is separately hardened. Any missing prerequisite = **NO-GO**.
 
 ## Integration configuration (future phase; DO NOT set in main/production yet)
-Frontend publishable key: \`VITE_CLERK_PUBLISHABLE_KEY\` (public).
-Backend: \`CLERK_JWT_PUBLIC_KEY\` (PEM public; never signing private key); \`CLERK_ISSUER\` (exact HTTPS issuer); \`CLERK_AUTHORIZED_PARTIES\` explicit origins; optional \`CLERK_AUDIENCE\`; \`CLERK_SECRET_KEY\` (server only for backend management/import).
-Mode flag \`AUTH_PROVIDER=legacy|clerk\` requires explicit validated full-stack implementation; **not yet wired**.
+Frontend publishable key: `VITE_CLERK_PUBLISHABLE_KEY` (public).
+Backend: `CLERK_JWT_PUBLIC_KEY` (PEM public; never signing private key); `CLERK_ISSUER` (exact HTTPS issuer); `CLERK_AUTHORIZED_PARTIES` explicit origins; optional `CLERK_AUDIENCE`; `CLERK_SECRET_KEY` (server only for backend management/import).
+Mode flag `AUTH_PROVIDER=legacy|clerk` requires explicit validated full-stack implementation; **not yet wired**.
 Development and production must have separate Clerk instances and keys.
 Current foundation token verifier is deliberately unconnected to live routes until tested.
 

@@ -102,13 +102,23 @@ def test_rejects_wrong_audience(signing_keys):
 
 def test_rejects_hs256_algorithm(signing_keys):
     _, public = signing_keys
+    now = int(time.time())
     token = jwt.encode(
-        {"iss": ISSUER, "sub": "user_x", "sid": "sess_x", "azp": PARTIES[0]},
-        "attacker-secret",
+        {
+            "iss": ISSUER,
+            "sub": "user_x",
+            "sid": "sess_x",
+            "azp": PARTIES[0],
+            "iat": now,
+            "nbf": now - 2,
+            "exp": now + 120,
+        },
+        "synthetic-attacker-secret-at-least-32-bytes",
         algorithm="HS256",
     )
-    with pytest.raises(ClerkTokenError):
+    with pytest.raises(ClerkTokenError) as rejected:
         verify(token, public)
+    assert isinstance(rejected.value.__cause__, jwt.InvalidAlgorithmError)
 
 
 def test_rejects_missing_configuration(signing_keys):

@@ -23,7 +23,7 @@ def upgrade():
     for row in rows:
         raw_id = str(row["id"]).replace("-", "")
         state = "ready" if row["provider_order_id"] else ("uncertain" if row["status"] == "reserved" else "unstarted")
-        connection.execute(sa.text("UPDATE checkout_reservations SET provider_order_state=:state, provider_receipt=:receipt, provider_started_at=CASE WHEN :state::VARCHAR='unstarted'::VARCHAR THEN NULL ELSE reserved_at END WHERE id=:id"), {"state": state, "receipt": "fp-"+raw_id[:20], "id": row["id"]})
+        connection.execute(sa.text("UPDATE checkout_reservations SET provider_order_state=:state, provider_receipt=:receipt, provider_started_at=CASE WHEN CAST(:state AS VARCHAR)='unstarted' THEN NULL ELSE reserved_at END WHERE id=:id"), {"state": state, "receipt": "fp-"+raw_id[:20], "id": row["id"]})
 
     # Receipt is the recovery/reconciliation key. Enforce its uniqueness locally
     # as well as at Razorpay so two reservations can never silently claim the

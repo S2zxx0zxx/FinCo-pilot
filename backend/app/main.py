@@ -2,8 +2,8 @@ import asyncio
 import logging
 import os
 import secrets
-from time import perf_counter
 from contextlib import asynccontextmanager
+from time import perf_counter
 
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware

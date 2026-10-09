@@ -44,3 +44,15 @@ it('shows expired and credential-changed tokens truthfully with recreation guida
   expect(screen.getByText(/· Expired/)).toBeInTheDocument()
   expect(screen.getByText(/Old unregistered tokens must be replaced/)).toBeInTheDocument()
 })
+
+it('creates an explicit HTTP client config with a read-only token', async () => {
+  api.mcpTokens.create.mockResolvedValue({ token: 'synthetic-external-token', expires_in_days: 30 })
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const { container } = render(<QueryClientProvider client={client}><McpExternalPanel /></QueryClientProvider>)
+  fireEvent.click(await screen.findByRole('button', { name: 'Generate token' }))
+  await waitFor(() => expect(api.mcpTokens.create).toHaveBeenCalledWith(false))
+  await waitFor(() => expect(container.textContent).toContain('"type": "http"'))
+  const configuration = [...container.querySelectorAll('pre')].find(node => node.textContent?.includes('"mcpServers"'))
+  const parsed = JSON.parse(configuration!.textContent!)
+  expect(parsed.mcpServers.fincopilot).toEqual({ type: 'http', url: 'https://example.com/mcp', headers: { Authorization: 'Bearer synthetic-external-token' } })
+})

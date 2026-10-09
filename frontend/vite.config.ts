@@ -14,6 +14,7 @@ export default defineConfig(async ({ mode }) => {
   const env = loadEnv(mode, import.meta.dirname, '')
   const frontendUrl = env.FRONTEND_URL || process.env.FRONTEND_URL
   const backendUrl = env.BACKEND_URL || process.env.BACKEND_URL
+  const mcpUrl = env.MCP_SERVER_URL || process.env.MCP_SERVER_URL || 'http://localhost:8765'
   const appVersionRoot = env.APP_VERSION_ROOT || process.env.APP_VERSION_ROOT
   const appVersion = await resolveAppVersion(
     appVersionRoot || import.meta.dirname,
@@ -46,6 +47,10 @@ export default defineConfig(async ({ mode }) => {
       host: '0.0.0.0',
       allowedHosts: getFrontendHost(frontendUrl),
       proxy: {
+        '^/mcp$': {
+          target: mcpUrl,
+          changeOrigin: true,
+        },
         '/api': {
           target: backendUrl ?? 'http://localhost:8000',
           changeOrigin: true,

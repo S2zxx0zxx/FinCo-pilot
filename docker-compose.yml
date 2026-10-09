@@ -206,6 +206,7 @@ services:
       - "${FRONTEND_PORT:-3000}:5173"
     environment:
       BACKEND_URL: http://backend:8000
+      MCP_SERVER_URL: http://mcp-server:8765
       # Also drives Vite's allowedHosts, so a proxied domain is not blocked.
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:${FRONTEND_PORT:-3000}}
       APP_VERSION_ROOT: /workspace

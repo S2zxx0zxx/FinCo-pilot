@@ -106,7 +106,7 @@ async def test_mcp_initialize_returns_protocol_handshake(test_user):
         )
     assert r.status_code == 200
     result = r.json()["result"]
-    assert result["protocolVersion"] == "2024-11-05"
+    assert result["protocolVersion"] == "2025-11-25"
     assert result["serverInfo"]["name"] == "fincopilot-builtin"
     assert "tools" in result["capabilities"]
 

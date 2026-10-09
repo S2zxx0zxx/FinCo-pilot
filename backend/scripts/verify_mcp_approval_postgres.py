@@ -69,6 +69,39 @@ async def main() -> None:
         assert approval and approval.status == 'executed'
     print('PASS: real PostgreSQL concurrent approval executed exactly once; replay denied')
 
+    # Real registered external credential through both HTTP protocol eras.
+    # Still an in-process transport and disposable SQL, not public TLS proof.
+    from app.agents.mcp.auth import mint_token
+    from mcp_server.main import app as mcp_app
+    from mcp_server.transport import MODERN_VERSION, META_PREFIX
+    external = mint_token(user_id=uid, workspace_id=wid, external=True, token_id=tid)
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=mcp_app), base_url='http://ci') as client:
+        for method, params in [('server/discover', {}), ('tools/list', {}),
+                               ('tools/call', {'name': 'list_categories', 'arguments': {}})]:
+            params['_meta'] = {META_PREFIX + 'protocolVersion': MODERN_VERSION,
+                               META_PREFIX + 'clientCapabilities': {}}
+            headers = {'Authorization': 'Bearer ' + external,
+                       'MCP-Protocol-Version': MODERN_VERSION, 'Mcp-Method': method}
+            if method == 'tools/call':
+                headers['Mcp-Name'] = str(params['name'])
+            response = await client.post('/mcp', headers=headers,
+                json={'jsonrpc': '2.0', 'id': 1, 'method': method, 'params': params})
+            assert response.status_code == 200, response.status_code
+            result = response.json()['result']
+            assert result['resultType'] == 'complete'
+            if method == 'tools/call':
+                assert result['isError'] is False
+                assert name in str(result['structuredContent'])
+        async with async_session_maker() as session:
+            row = await session.get(ExternalMCPToken, tid)
+            assert row is not None
+            row.revoked = True
+            await session.commit()
+        response = await client.post('/mcp', headers={'Authorization': 'Bearer ' + external},
+            json={'jsonrpc': '2.0', 'id': 2, 'method': 'tools/list'})
+        assert response.status_code == 403
+    print('PASS: real PostgreSQL external modern discovery/list/read and legacy revocation denial')
+
 
 if __name__ == '__main__':
     asyncio.run(main())

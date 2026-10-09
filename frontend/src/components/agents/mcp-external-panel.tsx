@@ -49,7 +49,7 @@ function CodeBlock({ value }: { value: string }) {
 // shapes stay co-located with their labels and easy to extend.
 function clientConfigFor(client: ClientId, url: string, token: string): string {
   if (client === 'claude') {
-    // Works for Claude Desktop, Claude Code (.mcp.json), and Cursor.
+    // Claude Code (.mcp.json) and header-capable HTTP clients.
     return JSON.stringify(
       {
         mcpServers: {
@@ -131,7 +131,7 @@ function McpExternalPanelContent() {
     : []
 
   const clientTabs: { id: ClientId; label: string }[] = [
-    { id: 'claude', label: t('agents.mcpExternal.clients.claude', 'Claude Desktop / Code / Cursor') },
+    { id: 'claude', label: t('agents.mcpExternal.clients.claude', 'Claude Code / HTTP') },
     { id: 'openai', label: t('agents.mcpExternal.clients.openai', 'OpenAI Responses API') },
   ]
 

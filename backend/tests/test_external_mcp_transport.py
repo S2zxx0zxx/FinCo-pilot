@@ -165,3 +165,13 @@ async def test_encoded_tool_name_is_validated_before_dispatch(test_user, header)
         else:
             assert response.status_code == 200
             tool.assert_awaited_once()
+
+
+async def test_duplicate_protocol_headers_are_rejected(test_user):
+    body, headers = modern("ping")
+    pairs = [*headers.items(), ("Mcp-Method", "tools/call"),
+             ("Authorization", "Bearer " + mint_token(user_id=test_user.id))]
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://mcp.test") as cli:
+        response = await cli.post("/mcp", json=body, headers=pairs)
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == -32020

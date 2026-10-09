@@ -36,6 +36,11 @@ account change is required. External MCP remains Advanced Agents gated.
 
 ## Research sources
 
+The full regression suite also exposed an inherited main migration regression:
+101 used PostgreSQL `:state::VARCHAR` text next to a SQLAlchemy bind parameter.
+Replace that expression with portable `CAST(:state AS VARCHAR)`, preserving
+ready/uncertain/unstarted semantics and all existing receipt/identity data.
+
 - https://modelcontextprotocol.io/specification/2026-07-28/basic/transports/streamable-http
 - https://modelcontextprotocol.io/specification/2026-07-28/basic/versioning
 - https://modelcontextprotocol.io/specification/2026-07-28/server/discover

@@ -2278,7 +2278,7 @@
         "clientConfig": "Інтеграція клієнта"
       },
       "clients": {
-        "claude": "Claude Desktop / Code / Cursor",
+        "claude": "Claude Code / HTTP",
         "openai": "OpenAI Responses API"
       }
     },

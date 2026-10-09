@@ -23,7 +23,7 @@ from app.models.user import User
 from app.models.workspace import Workspace, WorkspaceMember
 from app.providers import get_storage_provider
 
-PERSONAL_TABLES = {"user_passkeys", "external_mcp_tokens", "mcp_approvals", "agent_llm_usage", "billing_usage_counters", "agent_llm_connections", "subscriptions"}
+PERSONAL_TABLES = {"external_auth_identities", "user_passkeys", "external_mcp_tokens", "mcp_approvals", "agent_llm_usage", "billing_usage_counters", "agent_llm_connections", "subscriptions"}
 PAYMENT_TABLES = {"payment_refunds", "refund_observations", "payment_cancellations", "payment_recoveries", "renewal_mandates", "renewal_cycles", "payment_activations", "payment_webhook_events", "checkout_reservations", "founding_members", "pricing_audit_events", "pricing_campaigns"}
 RECEIPT_TABLES = {"account_deletions", "account_deletion_holds", "account_deletion_events", "workspace_deletions", "workspace_deletion_holds", "workspace_deletion_events"}
 
@@ -85,7 +85,7 @@ async def lock_inventory(session: AsyncSession):
     jobs. This transaction-wide lock waits for existing writers and fences new
     writers while the exact manifest and primary purge commit atomically.
     """
-    expected = set("app_settings fx_rates users payment_refunds refund_observations payment_cancellations payment_recoveries renewal_mandates renewal_cycles payment_activations payment_webhook_events agent_llm_connections billing_usage_counters checkout_reservations pricing_audit_events pricing_campaigns subscriptions user_passkeys workspaces agents bank_connections category_groups collections external_mcp_tokens founding_members groups invoice_settings loans payees reconciliation_rules rules workspace_members workspace_tax_ids agent_conversations agent_knowledge_docs agent_tools categories group_members institutions invoices mcp_approvals payee_mapping payee_tax_ids accounts agent_knowledge_chunks agent_messages asset_groups budgets invoice_attachments invoice_lines agent_llm_usage assets collection_accounts collection_asset_groups credit_card_bills import_logs recurring_transactions asset_transactions asset_values goals transactions group_settlements invoice_allocations reconciliation_events reconciliation_suggestions transaction_attachments transaction_splits account_deletions account_deletion_holds account_deletion_events workspace_deletions workspace_deletion_holds workspace_deletion_events".split())
+    expected = set("app_settings fx_rates users payment_refunds refund_observations payment_cancellations payment_recoveries renewal_mandates renewal_cycles payment_activations payment_webhook_events agent_llm_connections billing_usage_counters checkout_reservations pricing_audit_events pricing_campaigns subscriptions user_passkeys external_auth_identities workspaces agents bank_connections category_groups collections external_mcp_tokens founding_members groups invoice_settings loans payees reconciliation_rules rules workspace_members workspace_tax_ids agent_conversations agent_knowledge_docs agent_tools categories group_members institutions invoices mcp_approvals payee_mapping payee_tax_ids accounts agent_knowledge_chunks agent_messages asset_groups budgets invoice_attachments invoice_lines agent_llm_usage assets collection_accounts collection_asset_groups credit_card_bills import_logs recurring_transactions asset_transactions asset_values goals transactions group_settlements invoice_allocations reconciliation_events reconciliation_suggestions transaction_attachments transaction_splits account_deletions account_deletion_holds account_deletion_events workspace_deletions workspace_deletion_holds workspace_deletion_events".split())
     if set(Base.metadata.tables) != expected:
         raise HTTPException(409, "New model tables require deletion policy review")
     bind = session.get_bind()
@@ -132,6 +132,15 @@ async def inventory(session: AsyncSession, user: User, *, workspace_scope: list[
     blockers = [b.value for b in plan.blockers] if workspace_scope is None else []
     if workspace_hold:
         blockers.append("verified_workspace_hold")
+    # A linked external IdP remains capable of authenticating after local purge.
+    # Until signed Clerk revocation/deprovisioning is implemented, deliberately
+    # block personal deletion rather than leaving an orphaned active identity.
+    if workspace_scope is None:
+        external_table = Base.metadata.tables.get("external_auth_identities")
+        if external_table is not None and await session.scalar(
+            select(external_table.c.id).where(external_table.c.user_id == user.id).limit(1)
+        ):
+            blockers.append("external_identity_revocation_not_configured")
     if workspace_scope is None:
         from app.models.workspace_deletion import WorkspaceDeletion
         pending = await session.scalar(select(WorkspaceDeletion.id).where(WorkspaceDeletion.requester_id == user.id, WorkspaceDeletion.state.not_in(["cancelled", "complete", "backup_expiry_pending"])).limit(1))

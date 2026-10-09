@@ -5,6 +5,7 @@ from app.models.payment_renewal import RenewalMandate, RenewalCycle
 from app.models.payment_webhook import PaymentWebhookEvent
 from app.models.mcp_approval import MCPApproval
 from app.models.user import User
+from app.models.external_auth_identity import ExternalAuthIdentity
 from app.models.mcp_token import ExternalMCPToken
 from app.models.passkey import UserPasskey
 from app.models.workspace import Workspace, WorkspaceMember, WorkspaceTaxId
@@ -63,6 +64,7 @@ __all__ = [
     "PaymentWebhookEvent",
     "MCPApproval",
     "User",
+    "ExternalAuthIdentity",
     "ExternalMCPToken",
     "UserPasskey",
     "Workspace",

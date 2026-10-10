@@ -355,6 +355,12 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Install Chromium for real PWA acceptance
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify PWA offline privacy and update lifecycle in real Chromium
+        run: npm run test:pwa
+
       - name: Verify recovery edge privacy on real Nginx
         run: bash scripts/verify-recovery-edge.sh
 

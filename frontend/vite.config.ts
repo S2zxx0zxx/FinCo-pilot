@@ -1,6 +1,8 @@
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import path from 'node:path'
+import { createHash } from 'node:crypto'
+import { readFile, readdir, writeFile } from 'node:fs/promises'
 import { defineConfig, loadEnv } from 'vite'
 import { resolveAppVersion } from './build/version.ts'
 
@@ -35,7 +37,35 @@ export default defineConfig(async ({ mode }) => {
       // page instead of booting the app (issue #295).
       assetsDir: 'static',
     },
-    plugins: [react(), tailwindcss()],
+    plugins: [react(), tailwindcss(), {
+      name: 'finco-pwa-release-version',
+      apply: 'build',
+      async closeBundle() {
+        // A changed shell must produce a changed worker and isolated caches.
+        // Otherwise browsers never discover frontend-only releases, and a
+        // waiting worker can overwrite the active release's offline shell.
+        const dist = path.resolve(import.meta.dirname, 'dist')
+        const workerPath = path.join(dist, 'sw.js')
+        const worker = await readFile(workerPath, 'utf8')
+        if (!worker.includes("const VERSION = 'finco-pwa-v5'")) throw new Error('PWA version template is missing')
+        const digest = createHash('sha256').update(worker)
+        // Include public icons/manifest too: their URLs are stable but their
+        // bytes can change between releases without changing index.html.
+        async function hashDirectory(directory: string) {
+          const entries = await readdir(directory, { withFileTypes: true })
+          for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+            const file = path.join(directory, entry.name)
+            if (entry.isDirectory()) await hashDirectory(file)
+            else if (file !== workerPath) {
+              digest.update(path.relative(dist, file)).update('\0').update(await readFile(file)).update('\0')
+            }
+          }
+        }
+        await hashDirectory(dist)
+        const release = digest.digest('hex').slice(0, 20)
+        await writeFile(workerPath, worker.replace("const VERSION = 'finco-pwa-v5'", `const VERSION = 'finco-pwa-v5-${release}'`))
+      },
+    }],
     resolve: {
       alias: {
         '@': path.resolve(import.meta.dirname, './src'),

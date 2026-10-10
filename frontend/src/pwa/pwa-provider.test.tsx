@@ -43,4 +43,31 @@ describe('PWAProvider', () => {
     await waitFor(() => expect(prompt).toHaveBeenCalledTimes(1))
     await waitFor(() => expect(screen.getByTestId('installable')).toHaveTextContent('no'))
   })
+
+  it('consumes dismissed prompts and prevents concurrent native prompts', async () => {
+    let finish!: () => void
+    const prompt = vi.fn(() => new Promise<void>(resolve => { finish = resolve }))
+    const event = Object.assign(new Event('beforeinstallprompt'), {
+      prompt,
+      userChoice: Promise.resolve({ outcome: 'dismissed', platform: 'web' }),
+    })
+    render(<PWAProvider><Probe /></PWAProvider>)
+    fireEvent(window, event)
+    fireEvent.click(screen.getByRole('button', { name: 'install' }))
+    fireEvent.click(screen.getByRole('button', { name: 'install' }))
+    expect(prompt).toHaveBeenCalledTimes(1)
+    finish()
+    await waitFor(() => expect(screen.getByTestId('installable')).toHaveTextContent('no'))
+  })
+
+  it('handles browser prompt rejection without retaining a dead install action', async () => {
+    const event = Object.assign(new Event('beforeinstallprompt'), {
+      prompt: vi.fn().mockRejectedValue(new Error('Browser denied prompt')),
+      userChoice: Promise.resolve({ outcome: 'dismissed', platform: 'web' }),
+    })
+    render(<PWAProvider><Probe /></PWAProvider>)
+    fireEvent(window, event)
+    fireEvent.click(screen.getByRole('button', { name: 'install' }))
+    await waitFor(() => expect(screen.getByTestId('installable')).toHaveTextContent('no'))
+  })
 })

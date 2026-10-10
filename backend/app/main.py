@@ -3,6 +3,7 @@ import logging
 import os
 import secrets
 from contextlib import asynccontextmanager
+from time import perf_counter
 
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -358,10 +359,11 @@ async def request_reference(request, call_next):
 
 @app.middleware("http")
 async def request_metrics(request, call_next):
+    started = perf_counter()
     try:
         response = await call_next(request)
     except Exception:
-        record_request(request.method, 500)
+        record_request(request.method, 500, perf_counter() - started)
         raise
-    record_request(request.method, response.status_code)
+    record_request(request.method, response.status_code, perf_counter() - started)
     return response

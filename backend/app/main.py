@@ -26,6 +26,7 @@ from app.api.collections import router as collections_router
 from app.api.connections import router as connections_router
 from app.api.currencies import router as currencies_router
 from app.api.custom_auth import router as custom_auth_router
+from app.api.clerk_bridge import router as clerk_bridge_router
 from app.api.dashboard import router as dashboard_router
 from app.api.export import router as export_router
 from app.api.fiscal import router as fiscal_router
@@ -163,6 +164,8 @@ app.include_router(
 app.include_router(two_factor_router, prefix="/api/auth", tags=["auth"])
 app.include_router(passkeys_router, prefix="/api/auth", tags=["auth"])
 app.include_router(oidc_auth_router)
+# Auth bridge is separately gated and does not change legacy sign-in.
+app.include_router(clerk_bridge_router)
 app.include_router(
     fastapi_users.get_register_router(UserRead, UserCreate),
     prefix="/api/auth",

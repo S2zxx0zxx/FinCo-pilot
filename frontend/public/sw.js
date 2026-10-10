@@ -8,7 +8,7 @@
  * - updates wait for explicit user approval before taking control.
  */
 
-const VERSION = 'finco-pwa-v4'
+const VERSION = 'finco-pwa-v5'
 const SHELL_CACHE = `${VERSION}:shell`
 const STATIC_CACHE = `${VERSION}:static`
 const CACHE_PREFIX = 'finco-pwa-'
@@ -30,6 +30,17 @@ const APP_SHELL = [
 ]
 
 const PUBLIC_ASSETS = new Set(APP_SHELL.filter((url) => url !== '/'))
+
+function publicResponse(response) {
+  return response.ok && !response.redirected && response.type !== 'opaque'
+}
+
+async function isAppShell(response) {
+  if (!publicResponse(response) || !response.headers.get('content-type')?.includes('text/html')) return false
+  const url = new URL(response.url)
+  if (url.origin !== self.location.origin || url.pathname !== '/' || url.search) return false
+  return /<meta\s+name=["']finco-app-shell["']\s+content=["']v1["']\s*\/?\s*>/.test(await response.clone().text())
+}
 
 async function trimCache(cache, maxEntries) {
   const keys = await cache.keys()
@@ -58,7 +69,7 @@ async function warmStaticAssetsFromDocument(response) {
         const cached = await cache.match(url)
         if (cached) return
         const asset = await fetch(url, { cache: 'reload' })
-        if (asset.ok) await cache.put(url, asset)
+        if (publicResponse(asset)) await cache.put(url, asset)
       }),
     )
     await trimCache(cache, MAX_STATIC_ENTRIES)
@@ -70,17 +81,21 @@ async function warmStaticAssetsFromDocument(response) {
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(SHELL_CACHE).then(async (cache) => {
+      const shellResponse = await fetch('/', { cache: 'no-store' })
+      // Access login HTML, redirects and recovery documents are never shells.
+      // Reject the install rather than replace a working offline release.
+      if (!(await isAppShell(shellResponse))) throw new Error('Public application shell unavailable')
+      await cache.put('/', shellResponse.clone())
+      await warmStaticAssetsFromDocument(shellResponse)
       // addAll is intentionally avoided so one optional icon cannot prevent the
       // whole worker from installing on an older deployment.
       await Promise.allSettled(
-        APP_SHELL.map(async (url) => {
+        [...PUBLIC_ASSETS].map(async (url) => {
           const response = await fetch(url, { cache: 'no-cache' })
-          if (response.ok) await cache.put(url, response)
+          if (publicResponse(response)) await cache.put(url, response)
         }),
       )
 
-      const shell = await cache.match('/')
-      if (shell) await warmStaticAssetsFromDocument(shell)
     }),
   )
 })
@@ -101,21 +116,16 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'SKIP_WAITING') {
-    void self.skipWaiting()
+    event.waitUntil(self.skipWaiting())
   }
 })
 
 async function networkFirstNavigation(request) {
   const cache = await caches.open(SHELL_CACHE)
   try {
-    const response = await fetch(request)
-    if (response.ok) {
-      // Store the SPA document under / so every client-side route has one safe
-      // offline fallback without persisting any route-specific API response.
-      await cache.put('/', response.clone())
-      void warmStaticAssetsFromDocument(response)
-    }
-    return response
+    // Only installation writes the canonical shell. Route documents, recovery
+    // URLs and proxy sign-in pages must never replace the offline document.
+    return await fetch(request)
   } catch {
     const cached = await cache.match('/')
     if (cached) return cached
@@ -133,7 +143,7 @@ async function cacheFirstStatic(request) {
   if (cached) return cached
 
   const response = await fetch(request)
-  if (response.ok) {
+  if (publicResponse(response) && !/no-store|private/i.test(response.headers.get('cache-control') || '')) {
     await cache.put(request, response.clone())
     await trimCache(cache, MAX_STATIC_ENTRIES)
   }
@@ -146,7 +156,7 @@ async function cacheFirstPublicAsset(request) {
   if (cached) return cached
 
   const response = await fetch(request)
-  if (response.ok) await cache.put(request, response.clone())
+  if (publicResponse(response)) await cache.put(request, response.clone())
   return response
 }
 
@@ -155,18 +165,19 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return
 
   const url = new URL(request.url)
+  if (url.origin !== self.location.origin) return
 
   // Financial/user data is intentionally left entirely to the network and the
   // application's authenticated data layer. Never put /api responses in the
   // browser Cache Storage.
-  if (url.origin === self.location.origin && url.pathname.startsWith('/api/')) return
+  if (url.pathname === '/api' || url.pathname.startsWith('/api/') || url.pathname === '/mcp' || url.pathname.startsWith('/mcp/')) return
+  if (url.search || request.headers.has('authorization') || ['/reset-password', '/verify-email', '/oauth/callback'].includes(url.pathname)) return
 
   if (request.mode === 'navigate') {
     event.respondWith(networkFirstNavigation(request))
     return
   }
 
-  if (url.origin !== self.location.origin) return
 
   if (url.pathname.startsWith('/static/')) {
     event.respondWith(cacheFirstStatic(request))

@@ -63,6 +63,7 @@ export function PWAProvider({ children }: { children: ReactNode }) {
   const [updateReady, setUpdateReady] = useState(false)
   const registrationRef = useRef<ServiceWorkerRegistration | null>(null)
   const reloadForUpdateRef = useRef(false)
+  const installInFlightRef = useRef(false)
 
   useEffect(() => {
     const online = () => setIsOnline(true)
@@ -132,7 +133,7 @@ export function PWAProvider({ children }: { children: ReactNode }) {
         // for installability on Chromium/WebAPK flows and avoids presenting a
         // browser-home-screen shortcut as if it were an installed app.
         await navigator.serviceWorker.ready
-        if (!disposed) void registration.update()
+        if (!disposed) void registration.update().catch(() => { /* Retry on next reconnect. */ })
       })
       .catch(() => {
         // PWA enhancement must never stop the finance app from booting.
@@ -145,7 +146,7 @@ export function PWAProvider({ children }: { children: ReactNode }) {
 
     const refreshWorker = () => {
       if (document.visibilityState === 'visible' && navigator.onLine) {
-        void registrationRef.current?.update()
+        void registrationRef.current?.update().catch(() => { /* An offline update must not break the app. */ })
       }
     }
     document.addEventListener('visibilitychange', refreshWorker)
@@ -160,11 +161,18 @@ export function PWAProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const install = useCallback(async (): Promise<InstallOutcome> => {
-    if (!installPrompt) return 'unavailable'
-    await installPrompt.prompt()
-    const choice = await installPrompt.userChoice
-    if (choice.outcome === 'accepted') setInstallPrompt(null)
-    return choice.outcome
+    if (!installPrompt || installInFlightRef.current) return 'unavailable'
+    installInFlightRef.current = true
+    try {
+      await installPrompt.prompt()
+      return (await installPrompt.userChoice).outcome
+    } catch {
+      return 'unavailable'
+    } finally {
+      // Native prompt events are single-use, including dismissal/failure.
+      setInstallPrompt(null)
+      installInFlightRef.current = false
+    }
   }, [installPrompt])
 
   const applyUpdate = useCallback(() => {

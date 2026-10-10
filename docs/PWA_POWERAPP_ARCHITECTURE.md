@@ -43,7 +43,8 @@ The service worker is deliberately conservative:
 - Only the public app shell, launcher assets and content-hashed Vite `/static/` files are cached.
 - The built index is inspected at install time to warm its hashed JS/CSS entry assets so the shell can start offline after installation.
 - Previously visited lazy chunks are cached naturally when requested through `/static/`.
-- Navigation is network-first with the cached SPA document as the offline shell fallback.
+- Navigation is network-first with the installation-validated public SPA document as the offline fallback. Navigation responses never replace the shell; recovery/query/API/MCP traffic remains network-only.
+- Each production build hashes its full output into a distinct worker/cache version so waiting releases cannot overwrite active release caches.
 
 This means an offline user can launch the application shell and receive a clear connection state, while authenticated finance data remains governed by the application's normal API/authentication layer.
 
@@ -70,6 +71,10 @@ The runtime tracks online/offline events and displays a compact offline indicato
 The existing Vite `assetsDir: 'static'` setting must remain unchanged because `/assets` is an application route in FinCo-Pilot.
 
 ## Release gate
+
+Original roadmap #57 evidence and the still-open physical-device/live acceptance
+matrix are recorded in [FINCO_PWA_DEVICE_ACCEPTANCE_57.md](FINCO_PWA_DEVICE_ACCEPTANCE_57.md).
+CI now runs `npm run test:pwa` against the production build in real Chromium.
 
 Before merge, validate all of the following on the final branch:
 

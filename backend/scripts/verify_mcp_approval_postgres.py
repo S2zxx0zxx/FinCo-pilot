@@ -32,6 +32,34 @@ async def main() -> None:
     if (os.environ.get('FINCO_DISPOSABLE_DB_TEST') != 'yes' or settings.is_production
             or make_url(settings.database_url).database != 'finco_ci'):
         raise RuntimeError('This test requires explicit opt-in and the disposable finco_ci database')
+    # Shadow only this connection's checkout table; prove populated 101 on
+    # PostgreSQL without downgrading or modifying the CI application schema.
+    import importlib.util
+    from pathlib import Path
+    from alembic.migration import MigrationContext
+    from alembic.operations import Operations
+    from sqlalchemy import text
+    spec = importlib.util.spec_from_file_location('claim101', Path(__file__).resolve().parents[1] / 'alembic/versions/101_checkout_order_claim.py')
+    assert spec and spec.loader
+    migration = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(migration)
+    async with async_session_maker() as session:
+        await session.execute(text('CREATE TEMP TABLE checkout_reservations (id UUID PRIMARY KEY, provider_order_id VARCHAR, status VARCHAR, reserved_at TIMESTAMPTZ, amount_minor INTEGER) ON COMMIT DROP'))
+        for state, order, status in [('ready', 'order_Synthetic', 'verified'), ('uncertain', None, 'reserved'), ('unstarted', None, 'quoted')]:
+            await session.execute(text("INSERT INTO checkout_reservations VALUES (:id,:order,:status,'2026-09-01T00:00:00Z',1900)"), {'id': uuid.uuid4(), 'order': order, 'status': status})
+        connection = await session.connection()
+        def populated_upgrade(sync_connection):
+            with Operations.context(MigrationContext.configure(sync_connection)):
+                migration.upgrade()
+        await connection.run_sync(populated_upgrade)
+        rows = (await session.execute(text('SELECT * FROM checkout_reservations'))).mappings().all()
+        assert {row['provider_order_state'] for row in rows} == {'ready', 'uncertain', 'unstarted'}
+        for row in rows:
+            assert row['amount_minor'] == 1900
+            assert row['provider_receipt'] == 'fp-' + str(row['id']).replace('-', '')[:20]
+            assert (row['provider_started_at'] is None) == (row['provider_order_state'] == 'unstarted')
+        await session.commit()  # ON COMMIT DROP removes only the temporary table.
+    print('PASS: populated PostgreSQL 101 bind cast preserves ready/uncertain/unstarted evidence')
     now = datetime.now(timezone.utc)
     uid, wid, tid = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
     name = f'Concurrent approval {uuid.uuid4()}'
@@ -68,6 +96,39 @@ async def main() -> None:
         approval = await session.get(MCPApproval, uuid.UUID(proposal['approval_id']))
         assert approval and approval.status == 'executed'
     print('PASS: real PostgreSQL concurrent approval executed exactly once; replay denied')
+
+    # Real registered external credential through both HTTP protocol eras.
+    # Still an in-process transport and disposable SQL, not public TLS proof.
+    from app.agents.mcp.auth import mint_token
+    from mcp_server.main import app as mcp_app
+    from mcp_server.transport import MODERN_VERSION, META_PREFIX
+    external = mint_token(user_id=uid, workspace_id=wid, external=True, token_id=tid)
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=mcp_app), base_url='http://ci') as client:
+        for method, params in [('server/discover', {}), ('tools/list', {}),
+                               ('tools/call', {'name': 'list_categories', 'arguments': {}})]:
+            params['_meta'] = {META_PREFIX + 'protocolVersion': MODERN_VERSION,
+                               META_PREFIX + 'clientCapabilities': {}}
+            headers = {'Authorization': 'Bearer ' + external,
+                       'MCP-Protocol-Version': MODERN_VERSION, 'Mcp-Method': method}
+            if method == 'tools/call':
+                headers['Mcp-Name'] = str(params['name'])
+            response = await client.post('/mcp', headers=headers,
+                json={'jsonrpc': '2.0', 'id': 1, 'method': method, 'params': params})
+            assert response.status_code == 200, response.status_code
+            result = response.json()['result']
+            assert result['resultType'] == 'complete'
+            if method == 'tools/call':
+                assert result['isError'] is False
+                assert name in str(result['structuredContent'])
+        async with async_session_maker() as session:
+            row = await session.get(ExternalMCPToken, tid)
+            assert row is not None
+            row.revoked = True
+            await session.commit()
+        response = await client.post('/mcp', headers={'Authorization': 'Bearer ' + external},
+            json={'jsonrpc': '2.0', 'id': 2, 'method': 'tools/list'})
+        assert response.status_code == 403
+    print('PASS: real PostgreSQL external modern discovery/list/read and legacy revocation denial')
 
 
 if __name__ == '__main__':

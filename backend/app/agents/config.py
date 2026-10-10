@@ -89,6 +89,23 @@ class AgentSettings(BaseSettings):
     def validate_production_secret(self):
         from app.core.config import get_settings
 
+        if self.external_mcp_url:
+            from urllib.parse import urlsplit
+            value = self.external_mcp_url.strip()
+            self.external_mcp_url = value
+            try:
+                parsed = urlsplit(value)
+                valid = (parsed.scheme in ("https", "http") and parsed.hostname
+                         and not parsed.username and not parsed.password
+                         and not parsed.query and not parsed.fragment
+                         and parsed.path
+                         and all(32 < ord(c) < 127 and c not in "'\"`$\\<>|{}" for c in value))
+                _ = parsed.port
+            except ValueError:
+                valid = False
+            if not valid or (get_settings().is_production and parsed.scheme != "https"):
+                raise ValueError("AGENTS_EXTERNAL_MCP_URL must be a credential-free endpoint URL; production requires HTTPS")
+
         if self.enabled and get_settings().is_production:
             mcp_secret = self.mcp_jwt_secret.get_secret_value()
             if mcp_secret == "change-me-in-production" or len(mcp_secret) < 32:

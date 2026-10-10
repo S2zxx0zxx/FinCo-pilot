@@ -108,6 +108,23 @@ async def call_tool(
     return await spec.handler(session=session, ctx=ctx, **(arguments or {}))
 
 
+async def list_authorized_tools(session, ctx):
+    """Expose only current entitlements; unexpected authorization failures abort."""
+    from fastapi import HTTPException
+    await authorize_tool(session, ctx, None, {})
+    visible = []
+    for definition in list_tools():
+        spec = REGISTRY[definition["name"]]
+        try:
+            await authorize_tool(session, ctx, spec, {})
+        except HTTPException as exc:
+            if exc.status_code not in (403, 404):
+                raise
+            continue
+        visible.append(definition)
+    return visible
+
+
 async def authorize_tool(session, ctx, spec, arguments):
     from datetime import datetime, timezone
     from app.services.mcp_token_service import external_token_status
@@ -123,6 +140,8 @@ async def authorize_tool(session, ctx, spec, arguments):
     user = await session.get(User, ctx.user_id, populate_existing=True)
     if user is None or not user.is_active:
         raise HTTPException(403, "Access denied")
+    if ctx.external and spec is not None and not (spec.is_proposal or ("read" in spec.tags and "write" not in spec.tags)):
+        raise HTTPException(403, "Tool not available for external access")
     resolved = await current_workspace(
         x_workspace_id=str(ctx.workspace_id) if ctx.workspace_id else None,
         user=user, session=session,

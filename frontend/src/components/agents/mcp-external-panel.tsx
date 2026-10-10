@@ -49,11 +49,12 @@ function CodeBlock({ value }: { value: string }) {
 // shapes stay co-located with their labels and easy to extend.
 function clientConfigFor(client: ClientId, url: string, token: string): string {
   if (client === 'claude') {
-    // Works for Claude Desktop, Claude Code (.mcp.json), and Cursor.
+    // Claude Code (.mcp.json) and header-capable HTTP clients.
     return JSON.stringify(
       {
         mcpServers: {
           fincopilot: {
+            type: 'http',
             url,
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -109,11 +110,13 @@ function McpExternalPanelContent() {
 
   // Prefer the backend-configured URL (AGENTS_EXTERNAL_MCP_URL) so deployments
   // behind an ingress/reverse proxy can point at a custom host/subpath/port.
-  // Fall back to the direct :8765 endpoint derived from the browser location,
-  // which matches the default Docker Compose setup.
+  // HTTPS deployments route /mcp through the same edge, never an invented
+  // public TLS listener on the private container port.
   const url =
     info.external_mcp_url ||
-    `${window.location.protocol}//${window.location.hostname}:8765/mcp`
+    (window.location.protocol === 'https:'
+      ? `${window.location.origin}/mcp`
+      : `http://${window.location.hostname}:8765/mcp`)
 
   // The first three snippets are universal regardless of client choice.
   const universalSnippets: Snippet[] = result
@@ -128,7 +131,7 @@ function McpExternalPanelContent() {
     : []
 
   const clientTabs: { id: ClientId; label: string }[] = [
-    { id: 'claude', label: t('agents.mcpExternal.clients.claude', 'Claude Desktop / Code / Cursor') },
+    { id: 'claude', label: t('agents.mcpExternal.clients.claude', 'Claude Code / HTTP') },
     { id: 'openai', label: t('agents.mcpExternal.clients.openai', 'OpenAI Responses API') },
   ]
 

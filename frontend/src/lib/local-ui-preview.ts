@@ -4,7 +4,7 @@
  * normal login, registration and dashboard routes without further code changes.
  * This does NOT bypass any backend authentication or expose financial data.
  */
-export const loginPaused = import.meta.env.VITE_LOGIN_PAUSED !== 'false'
+export const loginPaused = import.meta.env.PROD && import.meta.env.VITE_LOGIN_PAUSED !== 'false'
 
 /** Standalone visual preview may also be reached on Vite's loopback dev server. */
 export const localUiPreview = import.meta.env.DEV &&

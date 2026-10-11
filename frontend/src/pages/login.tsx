@@ -39,6 +39,7 @@ type OIDCConfig = {
   enabled: boolean
   provider_name: string
   local_auth_enabled: boolean
+  temporary_demo_login_enabled?: boolean
 }
 
 export default function LoginPage() {
@@ -67,6 +68,7 @@ export default function LoginPage() {
 
   const localAuthEnabled = resolveLocalAuthEnabled(oidcConfig, oidcConfigFailed)
   const oidcEnabled = oidcConfig?.enabled === true
+  const temporaryDemoLogin = oidcConfig?.temporary_demo_login_enabled === true
   const authConfigLoading = oidcConfig === null && !oidcConfigFailed
   const noAuthMethodConfigured = oidcConfig !== null && !localAuthEnabled && !oidcEnabled
   const showPasskeyLogin = localAuthEnabled && passkeySupported
@@ -430,6 +432,11 @@ export default function LoginPage() {
           )}
           {localAuthEnabled && (
             <CardContent className="space-y-4 px-8 pt-4">
+              {temporaryDemoLogin && (
+                <p role="status" className="rounded-lg border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
+                  Local development demo only: enter any non-empty username and password to open an isolated, non-admin demo account. No real financial account is unlocked.
+                </p>
+              )}
               {error && (
                 <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-lg">
                   {error}
@@ -439,10 +446,10 @@ export default function LoginPage() {
                 <Label htmlFor="email" className="text-sm">{t('auth.email')}</Label>
                 <Input
                   id="email"
-                  type="email"
+                  type={temporaryDemoLogin ? "text" : "email"}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
+                  placeholder={temporaryDemoLogin ? 'Any username' : 'you@example.com'}
                   autoComplete="username webauthn"
                   required
                 />

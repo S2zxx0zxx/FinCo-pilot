@@ -19,3 +19,6 @@ docker-compose.override.yml
 # downloaded ONNX embedding models, transaction attachments). User data
 # — never commit.
 backend/data/
+
+# Local isolated QA test account credentials — never commit.
+.finco-qa.env

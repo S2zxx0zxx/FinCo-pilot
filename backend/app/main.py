@@ -78,6 +78,7 @@ from app.api.password_recovery import router as password_recovery_router
 from app.api.email_verification import router as email_verification_router, prepare_registration_mail
 from app.core.rate_limit import login_rate_limit, password_reset_rate_limit, register_rate_limit
 from app.core.redis import close_redis, get_redis
+from app.core.schema_safety import verify_runtime_schema
 from app.schemas.user import UserCreate, UserRead, UserUpdate
 from app.services.fx_rate_service import FxRateUnavailableError
 
@@ -276,6 +277,8 @@ async def readiness_check():
     try:
         async with async_session_maker() as session:
             await session.execute(text("SELECT 1"))
+            if settings.is_production:
+                await verify_runtime_schema(session)
         checks["database"] = {"ok": True}
     except Exception as exc:
         logger.exception("Readiness database check failed")

@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 # are mounted and the agent models are reachable. Provide deterministic
 # JWT/MCP secrets so test fixtures can mint tokens.
 os.environ.setdefault("AGENTS_ENABLED", "true")
-os.environ.setdefault("AGENTS_MCP_JWT_SECRET", "test-secret-not-for-production")
+os.environ.setdefault("AGENTS_MCP_JWT_SECRET", "synthetic-mcp-test-secret-at-least-32-bytes")
 os.environ.setdefault("AGENTS_BUILTIN_MCP_URL", "http://test-mcp:8765/mcp")
 # Tests use synthetic credentials, never local deployment secrets. Explicit
 # Settings(_secrets_dir=...) tests still exercise secret-file loading.

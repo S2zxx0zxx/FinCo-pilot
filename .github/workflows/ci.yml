@@ -1,5 +1,8 @@
 name: CI
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main]
@@ -11,7 +14,7 @@ jobs:
     name: Secret Hygiene
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Reject tracked credentials and unsafe production injection
         run: python3 backend/scripts/check_secret_hygiene.py
 
@@ -39,7 +42,7 @@ jobs:
         working-directory: backend
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 2
 
@@ -71,7 +74,7 @@ jobs:
 
       - name: Set up Python
         if: steps.backend-changes.outputs.run_backend == 'true'
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version-file: backend/.python-version
           cache: pip
@@ -105,7 +108,7 @@ jobs:
 
       - name: Upload coverage report
         if: ${{ always() && steps.backend-changes.outputs.run_backend == 'true' }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: coverage-report
           path: backend/coverage.xml
@@ -145,8 +148,8 @@ jobs:
       DEPLOYMENT_ENVIRONMENT: development
       AGENTS_ENABLED: "false"
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version-file: backend/.python-version
       - name: Install locked runtime dependencies
@@ -167,6 +170,10 @@ jobs:
         env:
           FINCO_DISPOSABLE_DB_TEST: "yes"
         run: python -m scripts.verify_production_postgres --ci
+      - name: Prove schema safety against native PostgreSQL
+        env:
+          FINCO_DISPOSABLE_DB_TEST: "yes"
+        run: python -m scripts.verify_schema_safety_postgres
       - name: Verify populated migrations 094-096 without legacy data loss
         env:
           FINCO_DISPOSABLE_DB_TEST: "yes"
@@ -258,8 +265,8 @@ jobs:
       DEPLOYMENT_ENVIRONMENT: development
       AGENTS_ENABLED: "false"
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version-file: backend/.python-version
       - name: Install locked runtime dependencies
@@ -318,7 +325,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Check the Alembic revision chain
         run: python3 backend/scripts/check_migration_chain.py
@@ -331,10 +338,10 @@ jobs:
         working-directory: frontend
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: "22"
           cache: npm
@@ -368,7 +375,7 @@ jobs:
     name: Helm Checks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 2
 
@@ -396,7 +403,7 @@ jobs:
 
       - name: Set up Helm
         if: steps.helm-changes.outputs.run_helm == 'true'
-        uses: azure/setup-helm@v5
+        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5
         with:
           version: v4.2.4
 

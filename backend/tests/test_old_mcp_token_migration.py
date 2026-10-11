@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import httpx
 import pytest
-from jose import jwt
+import jwt
 from sqlalchemy import func, select
 
 from app.agents.config import get_agent_settings

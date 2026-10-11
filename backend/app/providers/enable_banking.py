@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 import httpx
-from jose import jwt
+import jwt
 
 from app.agents.services.crypto import decrypt, encrypt
 from app.core.config import get_settings

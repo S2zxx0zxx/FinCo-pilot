@@ -4,7 +4,7 @@ import time
 import uuid
 from typing import Optional
 
-from jose import jwt
+import jwt
 
 from app.agents.config import get_agent_settings
 

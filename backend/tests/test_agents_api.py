@@ -131,7 +131,7 @@ async def test_mcp_tokens_mint_returns_external_jwt(
     to the calling user, and the advertised TTL matches the response."""
     from app.agents.mcp.auth import JWT_ALGO, JWT_AUDIENCE, JWT_ISSUER
     from app.agents.config import get_agent_settings
-    from jose import jwt
+    import jwt
 
     r = await client.post("/api/agents/mcp-tokens", headers=auth_headers)
     assert r.status_code == 201, r.text

@@ -12,7 +12,8 @@ from dataclasses import dataclass
 from typing import Optional
 
 from fastapi import HTTPException, Request, status
-from jose import JWTError, jwt
+import jwt
+from jwt import PyJWTError as JWTError
 
 from app.agents.config import get_agent_settings
 
@@ -50,8 +51,8 @@ def verify_request(request: Request) -> CallContext:
         payload = jwt.decode(
             token, _settings().mcp_jwt_secret.get_secret_value(),
             algorithms=[JWT_ALGO], audience=JWT_AUDIENCE, issuer=JWT_ISSUER,
-            options={"require_exp": True, "require_iat": True, "require_sub": True,
-                     "require_aud": True, "require_iss": True},
+            options={"require": ["exp", "iat", "sub", "aud", "iss"],
+                     "verify_iat": False},
         )
         if type(payload["exp"]) is not int or type(payload["iat"]) is not int:
             raise ValueError("Invalid dates")

@@ -48,19 +48,22 @@ def oidc_settings(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_decode_id_token_accepts_google_style_at_hash(monkeypatch, oidc_settings):
+@pytest.mark.parametrize("supplied_token,valid", [
+    ("ya29.google-access-token", True),
+    ("different-access-token", False),
+    (None, False),
+])
+async def test_decode_id_token_accepts_google_style_at_hash(monkeypatch, oidc_settings, supplied_token, valid):
     """Google id_token carrying at_hash must validate (regression for the
     'Invalid OIDC id_token' failure: jwt.decode got no access_token)."""
     import time
 
     from cryptography.hazmat.primitives.asymmetric import rsa
-    from jose import jwt as jose_jwt
-    from jose.backends.cryptography_backend import CryptographyRSAKey
-    from jose.constants import ALGORITHMS
+    import jwt as jose_jwt
+    from jwt.algorithms import RSAAlgorithm
 
     private = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-    priv_jwk = CryptographyRSAKey(private, ALGORITHMS.RS256).to_dict()
-    pub_jwk = CryptographyRSAKey(private.public_key(), ALGORITHMS.RS256).to_dict()
+    pub_jwk = json.loads(RSAAlgorithm.to_jwk(private.public_key()))
     pub_jwk.update({"kid": "test-key", "alg": "RS256", "use": "sig"})
 
     access_token = "ya29.google-access-token"
@@ -76,13 +79,13 @@ async def test_decode_id_token_accepts_google_style_at_hash(monkeypatch, oidc_se
             "nonce": "nonce123",
             "iat": now,
             "exp": now + 600,
+            "at_hash": base64.urlsafe_b64encode(hashlib.sha256(access_token.encode()).digest()[:16]).rstrip(b"=").decode(),
         },
-        priv_jwk,
+        private,
         algorithm="RS256",
         headers={"kid": "test-key"},
-        access_token=access_token,
     )
-    assert "at_hash" in jose_jwt.get_unverified_claims(id_token)
+    assert "at_hash" in jose_jwt.decode(id_token, options={"verify_signature": False})
 
     class _Resp:
         def raise_for_status(self):
@@ -107,7 +110,14 @@ async def test_decode_id_token_accepts_google_style_at_hash(monkeypatch, oidc_se
     monkeypatch.setattr(oidc_auth.httpx, "AsyncClient", _FakeAsyncClient)
 
     discovery = {"jwks_uri": "https://accounts.google.com/jwks", "issuer": issuer}
-    claims = await oidc_auth._decode_id_token(discovery, id_token, "nonce123", access_token)
+    if not valid:
+        from fastapi import HTTPException
+        with pytest.raises(HTTPException) as error:
+            await oidc_auth._decode_id_token(discovery, id_token, "nonce123", supplied_token)
+        assert error.value.status_code == 400
+        assert error.value.detail == "Invalid OIDC id_token"
+        return
+    claims = await oidc_auth._decode_id_token(discovery, id_token, "nonce123", supplied_token)
     assert claims["sub"] == "google-sub-123"
     assert claims["email"] == "user@gmail.com"
 

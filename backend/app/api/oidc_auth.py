@@ -11,7 +11,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import RedirectResponse
 from fastapi_users import schemas
 from fastapi_users.exceptions import UserAlreadyExists
-from jose import JWTError, jwt
+import jwt
+from jwt import PyJWTError as JWTError
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import func, select, update as sql_update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -149,15 +150,30 @@ async def _decode_id_token(
     if key is None:
         raise HTTPException(status_code=400, detail="OIDC signing key not found")
     try:
+        algorithm = key.get("alg", "RS256")
+        # Provider keys must remain asymmetric: never reinterpret an RSA/EC
+        # public key as an HMAC secret, including DER and oct JWK variants.
+        if algorithm not in {"RS256", "RS384", "RS512", "PS256", "PS384", "PS512", "ES256", "ES384", "ES512", "EdDSA"}:
+            raise JWTError("Unsupported OIDC signing algorithm")
+        signing_key = jwt.PyJWK.from_dict(key, algorithm=algorithm)
         claims = jwt.decode(
             id_token,
-            key,
-            algorithms=[key.get("alg", "RS256")],
+            signing_key.key,
+            algorithms=[algorithm],
             audience=settings.oidc_client_id,
             issuer=issuer,
-            access_token=access_token,
         )
-    except JWTError as exc:
+        # PyJWT does not verify OIDC at_hash automatically. Bind the access
+        # token explicitly, preserving the previous Google-style flow.
+        if "at_hash" in claims:
+            hash_bits = algorithm[-3:]
+            if not access_token or hash_bits not in {"256", "384", "512"}:
+                raise JWTError("Cannot verify OIDC access token hash")
+            digest = hashlib.new("sha" + hash_bits, access_token.encode("ascii")).digest()
+            expected_hash = base64.urlsafe_b64encode(digest[:len(digest) // 2]).rstrip(b"=").decode("ascii")
+            if not isinstance(claims["at_hash"], str) or not secrets.compare_digest(claims["at_hash"], expected_hash):
+                raise JWTError("Invalid OIDC access token hash")
+    except (JWTError, ValueError, TypeError) as exc:
         raise HTTPException(status_code=400, detail="Invalid OIDC id_token") from exc
     if claims.get("nonce") != nonce:
         raise HTTPException(status_code=400, detail="Invalid OIDC nonce")

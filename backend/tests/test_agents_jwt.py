@@ -11,7 +11,7 @@ import time
 import uuid
 
 import pytest
-from jose import jwt
+import jwt
 from starlette.requests import Request
 
 from app.agents.config import get_agent_settings
@@ -62,7 +62,7 @@ def test_wrong_secret_rejected():
             "iat": int(time.time()),
             "exp": int(time.time()) + 60,
         },
-        "totally-different-secret",
+        "totally-different-synthetic-secret-at-least-32-bytes",
         algorithm=JWT_ALGO,
     )
 

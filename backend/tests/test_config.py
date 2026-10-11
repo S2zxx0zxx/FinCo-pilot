@@ -328,3 +328,41 @@ def test_supported_fx_currencies_normalized():
 def test_invalid_supported_fx_currencies_rejected(codes):
     with pytest.raises(ValidationError, match='SUPPORTED_CURRENCIES'):
         Settings(supported_currencies=codes, _env_file=None)
+
+
+@pytest.mark.parametrize(
+    ("environment", "frontend", "database"),
+    [
+        ("production", "http://localhost:5173", "postgresql+asyncpg://localhost/finco_dev"),
+        ("staging", "http://localhost:5173", "postgresql+asyncpg://localhost/finco_dev"),
+        ("test", "http://localhost:5173", "postgresql+asyncpg://localhost/finco_dev"),
+        ("development", "https://fincopilot.example", "postgresql+asyncpg://localhost/finco_dev"),
+        ("development", "http://localhost:5173", "postgresql+asyncpg://prod.example/finco_dev"),
+    ],
+)
+def test_temporary_demo_login_rejects_nonlocal_and_nondevelopment_config(
+    secrets: Path, environment: str, frontend: str, database: str,
+):
+    with pytest.raises(ValidationError, match="TEMPORARY_DEMO_LOGIN_ENABLED"):
+        Settings(
+            deployment_environment=environment,
+            frontend_url=frontend,
+            database_url=database,
+            temporary_demo_login_enabled=True,
+            _env_file=None,
+            _secrets_dir=str(secrets),
+        )
+
+
+def test_temporary_demo_login_requires_explicit_opt_in(secrets: Path):
+    settings = Settings(_env_file=None, _secrets_dir=str(secrets))
+    assert not settings.temporary_demo_login_available
+    enabled = Settings(
+        deployment_environment="development",
+        frontend_url="http://localhost:5173",
+        database_url="postgresql+asyncpg://localhost/finco_dev",
+        temporary_demo_login_enabled=True,
+        _env_file=None,
+        _secrets_dir=str(secrets),
+    )
+    assert enabled.temporary_demo_login_available

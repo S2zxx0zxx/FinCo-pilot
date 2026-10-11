@@ -106,6 +106,7 @@ export default function LoginPage() {
       if (
         active &&
         !has_users && setup_available !== false &&
+        !oidcConfig?.temporary_demo_login_enabled &&
         resolveLocalAuthEnabled(oidcConfig, oidcConfigFailed)
       ) {
         navigate('/setup', { replace: true })

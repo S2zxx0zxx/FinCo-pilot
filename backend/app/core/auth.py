@@ -245,6 +245,11 @@ class RevocableJWTStrategy(JWTStrategy):
             return None
         if isinstance(user_manager, UserManager):
             await user_manager.user_db.session.refresh(user, attribute_names=["hashed_password", "auth_epoch", "is_active"])
+        # A development demo JWT stops working immediately when the demo flag
+        # is disabled, even before its normal token expiry.
+        if user.email == "finco-temporary-demo@example.com" and (user.auth_epoch or "").startswith("devdemo-"):
+            if not get_settings().temporary_demo_login_available:
+                return None
         return user if user.is_active and hmac.compare_digest(stamp, self.stamp(user)) else None
 
 

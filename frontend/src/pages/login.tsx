@@ -13,6 +13,7 @@ import { FinCoLogo } from '@/components/finco-logo'
 import type { AxiosError } from 'axios'
 import { isServerUnreachable } from '@/lib/auth-errors'
 import { resolveLocalAuthEnabled } from '@/lib/auth-config-utils'
+import { localUiPreview } from '@/lib/local-ui-preview'
 import { useTheme } from 'next-themes'
 import { setThemeBasedOnSystem } from '@/lib/theme-utils'
 import {
@@ -46,6 +47,9 @@ export default function LoginPage() {
   const { login, verify2fa, loginWithToken, token } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  // On the Vite localhost dev server the sign-in button only opens a UI preview.
+  // /login?auth=real always preserves the normal backend authentication flow.
+  const localPreviewMode = localUiPreview && searchParams.get('auth') !== 'real'
   const { resolvedTheme } = useTheme()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -65,11 +69,11 @@ export default function LoginPage() {
   const [selected2faMethod, setSelected2faMethod] = useState<'totp' | 'passkey'>('totp')
   const conditionalPasskeyAbortRef = useRef<AbortController | null>(null)
 
-  const localAuthEnabled = resolveLocalAuthEnabled(oidcConfig, oidcConfigFailed)
-  const oidcEnabled = oidcConfig?.enabled === true
-  const authConfigLoading = oidcConfig === null && !oidcConfigFailed
+  const localAuthEnabled = localPreviewMode || resolveLocalAuthEnabled(oidcConfig, oidcConfigFailed)
+  const oidcEnabled = !localPreviewMode && oidcConfig?.enabled === true
+  const authConfigLoading = !localPreviewMode && oidcConfig === null && !oidcConfigFailed
   const noAuthMethodConfigured = oidcConfig !== null && !localAuthEnabled && !oidcEnabled
-  const showPasskeyLogin = localAuthEnabled && passkeySupported
+  const showPasskeyLogin = !localPreviewMode && localAuthEnabled && passkeySupported
   const showAuthDivider = localAuthEnabled && (showPasskeyLogin || oidcEnabled)
   const requestedNext = searchParams.get('next')
   const safeNext = requestedNext?.startsWith('/') && !requestedNext.startsWith('//') && !requestedNext.includes('://')
@@ -77,6 +81,7 @@ export default function LoginPage() {
     : '/'
 
   useEffect(() => {
+    if (localPreviewMode) return
     setPasskeySupported(isPasskeySupported())
     if (token) {
       navigate('/', { replace: true })
@@ -94,10 +99,10 @@ export default function LoginPage() {
     adminApi.defaultColors().then(({ light, dark }) => {
       setThemeBasedOnSystem(light, dark, resolvedTheme)
     }).catch(() => {})
-  }, [navigate, token, resolvedTheme])
+  }, [navigate, token, resolvedTheme, localPreviewMode])
 
   useEffect(() => {
-    if (token || (oidcConfig === null && !oidcConfigFailed)) return
+    if (localPreviewMode || token || (oidcConfig === null && !oidcConfigFailed)) return
 
     let active = true
     setup.status().then(({ has_users, setup_available }) => {
@@ -113,10 +118,11 @@ export default function LoginPage() {
     return () => {
       active = false
     }
-  }, [navigate, oidcConfig, oidcConfigFailed, token])
+  }, [navigate, oidcConfig, oidcConfigFailed, token, localPreviewMode])
 
   useEffect(() => {
     if (
+      localPreviewMode ||
       token ||
       requires2fa ||
       authConfigLoading ||
@@ -164,6 +170,7 @@ export default function LoginPage() {
     }
   }, [
     authConfigLoading,
+    localPreviewMode,
     isLoading,
     isPasskeyLoading,
     localAuthEnabled,
@@ -177,6 +184,10 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (localPreviewMode) {
+      navigate('/preview')
+      return
+    }
     conditionalPasskeyAbortRef.current?.abort()
     setError('')
     setIsLoading(true)
@@ -430,6 +441,12 @@ export default function LoginPage() {
           )}
           {localAuthEnabled && (
             <CardContent className="space-y-4 px-8 pt-4">
+              {localPreviewMode && (
+                <div role="status" className="rounded-lg border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+                  Local UI preview: click Sign In with any text or empty fields. No real login is performed.
+                  <Link to="/login?auth=real" className="ml-1 underline">Use real sign in</Link>
+                </div>
+              )}
               {error && (
                 <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-lg">
                   {error}
@@ -439,12 +456,12 @@ export default function LoginPage() {
                 <Label htmlFor="email" className="text-sm">{t('auth.email')}</Label>
                 <Input
                   id="email"
-                  type="email"
+                  type={localPreviewMode ? 'text' : 'email'}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
+                  placeholder={localPreviewMode ? 'Anything (optional)' : 'you@example.com'}
                   autoComplete="username webauthn"
-                  required
+                  required={!localPreviewMode}
                 />
               </div>
               <div className="space-y-1.5">
@@ -455,7 +472,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete="current-password"
-                  required
+                  required={!localPreviewMode}
                 />
               </div>
             </CardContent>

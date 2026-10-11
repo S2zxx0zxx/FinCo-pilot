@@ -14,9 +14,15 @@ const normalizeUser = (value: User): User => ({
   },
 })
 
+// Exclusive to the isolated Docker QA compose stack; never active in production.
+const loopbackQa = import.meta.env.DEV && import.meta.env.VITE_LOCAL_QA === 'true' &&
+  typeof window !== 'undefined' &&
+  window.location.hostname === 'localhost' && window.location.port === '3300'
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'))
+  const [token, setToken] = useState<string | null>(() => loopbackQa ? null : localStorage.getItem('token'))
+  const [qaPending, setQaPending] = useState(loopbackQa)
   const [isLoading, setIsLoading] = useState(true)
   const queryClient = useQueryClient()
   const adoptToken = useCallback((accessToken: string) => {
@@ -27,10 +33,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(accessToken)
   }, [queryClient])
 
-  if (!token && (user !== null || isLoading)) {
+  if (!token && !qaPending && (user !== null || isLoading)) {
     setUser(null)
     setIsLoading(false)
   }
+
+  // The QA-only Node dev server authenticates against the actual, isolated
+  // FastAPI instance. Only an ordinary JWT from the existing /auth/login
+  // endpoint is accepted; original routes and financial APIs are unchanged.
+  useEffect(() => {
+    if (!loopbackQa) return
+    const controller = new AbortController()
+    void fetch('/__qa/session', {
+      method: 'POST',
+      headers: { 'X-FinCo-QA-Session': '1' },
+      cache: 'no-store',
+      signal: controller.signal,
+    }).then(async response => {
+      if (!response.ok) throw new Error('QA session unavailable')
+      const payload: unknown = await response.json()
+      if (!payload || typeof payload !== 'object' || !('access_token' in payload) ||
+        typeof payload.access_token !== 'string' || !payload.access_token) {
+        throw new Error('QA session unavailable')
+      }
+      if (!controller.signal.aborted) adoptToken(payload.access_token)
+    }).catch(() => {
+      if (!controller.signal.aborted) setIsLoading(false)
+    }).finally(() => {
+      if (!controller.signal.aborted) setQaPending(false)
+    })
+    return () => controller.abort()
+  }, [adoptToken])
 
   useEffect(() => {
     if (!token) return

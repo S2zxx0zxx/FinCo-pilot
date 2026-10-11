@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto'
 import { readFile, readdir, writeFile } from 'node:fs/promises'
 import { defineConfig, loadEnv } from 'vite'
 import { resolveAppVersion } from './build/version.ts'
+import { localQaSessionPlugin } from './build/local-qa-session.ts'
 
 function getFrontendHost(frontendUrl?: string) {
   if (!frontendUrl) return []
@@ -37,7 +38,14 @@ export default defineConfig(async ({ mode }) => {
       // page instead of booting the app (issue #295).
       assetsDir: 'static',
     },
-    plugins: [react(), tailwindcss(), {
+    plugins: [react(), tailwindcss(), localQaSessionPlugin({
+      mode,
+      enabled: (env.FINCO_LOCAL_QA_ENABLED || process.env.FINCO_LOCAL_QA_ENABLED) === 'true',
+      frontendUrl,
+      backendUrl,
+      email: env.FINCO_QA_EMAIL || process.env.FINCO_QA_EMAIL,
+      password: env.FINCO_QA_PASSWORD || process.env.FINCO_QA_PASSWORD,
+    }), {
       name: 'finco-pwa-release-version',
       apply: 'build',
       async closeBundle() {

@@ -91,7 +91,13 @@ try {
     await page.waitForFunction(() => navigator.serviceWorker.controller !== null)
     await page.reload()
     await page.waitForFunction(() => document.querySelector('#root')?.childElementCount > 0)
-    await page.locator('input[type="password"]').first().waitFor()
+    // A production release can intentionally pause sign-in and show the public
+    // preview instead. Both states must boot correctly in actual Chromium.
+    await page.locator('input[type="password"], h1:has-text("Overview")').first().waitFor()
+    if (await page.locator('input[type="password"]').count() === 0) {
+      assert(await page.getByRole('heading', { name: 'Overview' }).isVisible(),
+        'Paused-login builds must show the public UI instead of a login form')
+    }
     const manifest = await page.evaluate(async () => (await fetch('/manifest.webmanifest')).json())
     assert.equal(manifest.display, 'standalone')
     assert.equal(manifest.scope, '/')

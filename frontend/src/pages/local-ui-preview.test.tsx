@@ -9,7 +9,7 @@ vi.mock('react-router-dom', async (importOriginal) => ({
   ...(await importOriginal<typeof import('react-router-dom')>()),
   useNavigate: () => navigate,
 }))
-vi.mock('@/lib/local-ui-preview', () => ({ localUiPreview: true }))
+vi.mock('@/lib/local-ui-preview', () => ({ localUiPreview: true, loginPaused: false, uiPreviewAvailable: true }))
 const authContext = vi.hoisted(() => ({
   login: vi.fn(),
   verify2fa: vi.fn(),

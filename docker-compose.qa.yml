@@ -1,0 +1,84 @@
+# Dedicated loopback-only QA stack, completely separate from the default Compose project.
+# Use scripts/qa-local-up.sh; do not deploy this file to a public server.
+name: finco-private-qa
+
+services:
+  db:
+    image: docker.io/pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: fincoqa
+      POSTGRES_PASSWORD: ${FINCO_QA_DB_PASSWORD:?Run scripts/qa-local-up.sh}
+      POSTGRES_DB: fincopa
+    volumes:
+      - qa_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U fincoqa -d fincopa']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    # No host port: the QA DB is not reachable over the network.
+
+  redis:
+    image: docker.io/library/redis:8-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    # No host port.
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    environment:
+      DEPLOYMENT_ENVIRONMENT: development
+      DATABASE_URL: postgresql+asyncpg://fincoqa:${FINCO_QA_DB_PASSWORD:?}@db:5432/fincopa
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${FINCO_QA_SECRET_KEY:?}
+      DEBUG: "false"
+      FRONTEND_URL: http://localhost:3300
+      LOCAL_AUTH_ENABLED: "true"
+      EMAIL_DELIVERY_REQUIRED: "false"
+      SETUP_ENABLED: "true"
+      AGENTS_ENABLED: "false"
+      STORAGE_PROVIDER: local
+      STORAGE_LOCAL_PATH: /app/data/attachments
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    volumes:
+      - qa_attachments:/app/data/attachments
+      - qa_agent_knowledge:/app/data/agent_knowledge
+      - qa_embeddings:/app/data/embedding_models
+    # Only accessible through the frontend's same-origin /api proxy.
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3300:5173"
+    environment:
+      BACKEND_URL: http://backend:8000
+      FRONTEND_URL: http://localhost:3300
+      APP_VERSION_ROOT: /workspace
+      VITE_LOCAL_QA: "true"
+      FINCO_LOCAL_QA_ENABLED: "true"
+      FINCO_QA_EMAIL: ${FINCO_QA_EMAIL:?}
+      FINCO_QA_PASSWORD: ${FINCO_QA_PASSWORD:?}
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - ./:/workspace:ro
+      - /app/node_modules
+
+volumes:
+  qa_pgdata:
+  qa_attachments:
+  qa_agent_knowledge:
+  qa_embeddings:

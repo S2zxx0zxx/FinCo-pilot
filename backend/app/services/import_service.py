@@ -4,11 +4,12 @@ import io
 import re
 import uuid
 import warnings
-import xml.etree.ElementTree as ET
 from datetime import datetime
 from decimal import Decimal
 
 from bs4 import XMLParsedAsHTMLWarning
+from defusedxml import ElementTree as ET
+from defusedxml.common import DefusedXmlException
 from ofxparse import OfxParser
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -66,7 +67,8 @@ def _patch_empty_fitids(text: str) -> str:
         if has_value:
             return block
 
-        seed = hashlib.sha1(block.encode("utf-8", errors="replace")).hexdigest()[:16].upper()
+        # Legacy compatibility ID only; preserve dedupe keys across reimports.
+        seed = hashlib.sha1(block.encode("utf-8", errors="replace"), usedforsecurity=False).hexdigest()[:16].upper()
         synthetic = f"SYNTH-{seed}"
         if fitid_match:
             return block[: fitid_match.start(1)] + synthetic + block[fitid_match.end(1):]
@@ -297,7 +299,10 @@ def parse_qif(content: bytes, date_format: str | None = None) -> list[Transactio
 
 def parse_camt(content: bytes) -> list[TransactionImport]:
     """Parse CAMT.052/CAMT.053 (ISO 20022) XML file content and return transactions."""
-    root = ET.fromstring(content)
+    try:
+        root = ET.fromstring(content, forbid_dtd=True, forbid_entities=True, forbid_external=True)
+    except DefusedXmlException:
+        raise ValueError("Unsafe CAMT XML") from None
 
     # Detect namespace dynamically
     ns_match = re.match(r'\{(.+?)\}', root.tag)

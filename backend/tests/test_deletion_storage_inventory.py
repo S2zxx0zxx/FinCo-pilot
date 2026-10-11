@@ -79,3 +79,18 @@ async def test_local_inventory_includes_orphans_only_in_requested_workspace(monk
     (tmp_path/'outer-link').symlink_to(tmp_path/'shared')
     with pytest.raises(ValueError):
         await provider.list_keys('outer-link/nested/')
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("declaration", [
+    '<!DOCTYPE ListBucketResult [<!ENTITY key "tenant/workspace/phantom.png">]>',
+    '<!DOCTYPE ListBucketResult [<!ENTITY key SYSTEM "file:///synthetic-private-file">]>',
+])
+async def test_utf16_inventory_cannot_bypass_entity_rejection(monkeypatch, declaration):
+    document = ('<?xml version="1.0" encoding="utf-16"?>' + declaration +
+                '<ListBucketResult><EncodingType>url</EncodingType>'
+                '<IsTruncated>false</IsTruncated><Contents><Key>&key;</Key></Contents>'
+                '</ListBucketResult>').encode('utf-16')
+    transport(monkeypatch, lambda request: httpx.Response(200, content=document))
+    with pytest.raises(StorageIntegrityError, match='Invalid object inventory XML'):
+        await S3StorageProvider().list_keys('workspace/')

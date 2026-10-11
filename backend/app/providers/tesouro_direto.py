@@ -36,7 +36,8 @@ def tesouro_symbol_for(title_type: str, maturity_date: date) -> str:
     title. The short hash is derived from the normalized title and resolved
     against the official CSV together with maturity date.
     """
-    digest = hashlib.sha1(_normalize(title_type).encode("utf-8")).hexdigest()[:8].upper()
+    # Stable legacy symbol, never an authentication/integrity proof.
+    digest = hashlib.sha1(_normalize(title_type).encode("utf-8"), usedforsecurity=False).hexdigest()[:8].upper()
     return f"{TESOURO_SYMBOL_PREFIX}:{digest}:{maturity_date.isoformat()}"
 
 def is_tesouro_symbol(symbol: str | None) -> bool:

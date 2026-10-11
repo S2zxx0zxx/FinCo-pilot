@@ -1,6 +1,7 @@
 import hashlib
 import hmac
-import xml.etree.ElementTree as ET
+from defusedxml import ElementTree as ET
+from defusedxml.common import DefusedXmlException
 from datetime import datetime, timezone
 from urllib.parse import parse_qsl, quote, unquote, urlsplit, urlunsplit
 
@@ -201,14 +202,14 @@ class S3StorageProvider(StorageProvider):
                 async with client.stream("GET", url, headers=headers) as response:
                     response.raise_for_status()
                     async for chunk in response.aiter_bytes():
-                        payload.extend(chunk)
-                        if len(payload) > 2 * 1024 * 1024:
+                        if len(payload) + len(chunk) > 2 * 1024 * 1024:
                             raise StorageIntegrityError("Object inventory response exceeds limit")
+                        payload.extend(chunk)
                 if b"<!DOCTYPE" in payload.upper() or b"<!ENTITY" in payload.upper():
                     raise StorageIntegrityError("Unsafe object inventory XML")
                 try:
-                    document = ET.fromstring(payload)
-                except ET.ParseError:
+                    document = ET.fromstring(payload, forbid_dtd=True, forbid_entities=True, forbid_external=True)
+                except (ET.ParseError, DefusedXmlException):
                     raise StorageIntegrityError("Invalid object inventory XML") from None
                 if document.tag.split("}")[-1] != "ListBucketResult":
                     raise StorageIntegrityError("Invalid inventory root")

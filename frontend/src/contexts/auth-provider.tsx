@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { auth } from '@/lib/api'
 import { SESSION_INVALIDATED_EVENT } from '@/lib/session-state'
-import { loginPaused } from '@/lib/local-ui-preview'
 import type { User } from '@/types'
 
 import { AuthContext, type LoginResult } from '@/contexts/auth-context'
@@ -17,7 +16,7 @@ const normalizeUser = (value: User): User => ({
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
-  const [token, setToken] = useState<string | null>(() => loginPaused ? null : localStorage.getItem('token'))
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'))
   const [isLoading, setIsLoading] = useState(true)
   const queryClient = useQueryClient()
   const adoptToken = useCallback((accessToken: string) => {

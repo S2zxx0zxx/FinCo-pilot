@@ -18,14 +18,12 @@ import { PWAProvider } from '@/pwa/pwa-provider'
 import { PWAChrome } from '@/pwa/pwa-chrome'
 import { FinCoRouteLoader } from '@/transitions/finco-route-loader'
 import { FinCoNavigationTransition } from '@/transitions/finco-navigation-transition'
-import { loginPaused, uiPreviewAvailable } from '@/lib/local-ui-preview'
 
 const WorkspaceDeletionPage = lazy(() => import('@/pages/workspace-deletion'))
 const AccountDeletionPage = lazy(() => import('@/pages/account-deletion'))
 const AccountRecovery = lazy(() => import('@/pages/account-recovery'))
 const SetupPage = lazy(() => import('@/pages/setup'))
 const LoginPage = lazy(() => import('@/pages/login'))
-const LocalUiPreviewPage = lazy(() => import('@/pages/local-ui-preview'))
 const RegisterPage = lazy(() => import('@/pages/register'))
 const PricingPage = lazy(() => import('@/pages/pricing'))
 const SupportPage = lazy(() => import('@/pages/support'))
@@ -82,17 +80,15 @@ function App() {
                   <WorkspaceProvider>
                     <Suspense fallback={<FinCoRouteLoader />}>
                       <Routes>
-                        <Route path="/setup" element={loginPaused ? <Navigate to="/" replace /> : <SetupPage />} />
-                        <Route path="/forgot-password" element={loginPaused ? <Navigate to="/" replace /> : <AccountRecovery key="forgot" mode="forgot" />} />
-                        <Route path="/reset-password" element={loginPaused ? <Navigate to="/" replace /> : <AccountRecovery key="reset" mode="reset" />} />
-                        <Route path="/verify-email" element={loginPaused ? <Navigate to="/" replace /> : <AccountRecovery key="verify" mode="verify" />} />
-                        <Route path="/request-verification" element={loginPaused ? <Navigate to="/" replace /> : <AccountRecovery key="request-verification" mode="request-verification" />} />
-                        <Route path="*" element={loginPaused ? <Navigate to="/" replace /> : <main className="p-10 space-y-4"><h1 className="text-xl">Page not found</h1><a className="underline" href="/">Return home</a></main>} />
-                        <Route path="/login" element={loginPaused ? <Navigate to="/" replace /> : <LoginPage />} />
-                        {loginPaused && <Route path="/" element={<LocalUiPreviewPage />} />}
-                        {uiPreviewAvailable && <Route path="/preview" element={<LocalUiPreviewPage />} />}
-                        <Route path="/auth/oidc/callback" element={loginPaused ? <Navigate to="/" replace /> : <OIDCCallbackPage />} />
-                        <Route path="/register" element={loginPaused ? <Navigate to="/" replace /> : <RegisterPage />} />
+                        <Route path="/setup" element={<SetupPage />} />
+                        <Route path="/forgot-password" element={<AccountRecovery key="forgot" mode="forgot" />} />
+                        <Route path="/reset-password" element={<AccountRecovery key="reset" mode="reset" />} />
+                        <Route path="/verify-email" element={<AccountRecovery key="verify" mode="verify" />} />
+                        <Route path="/request-verification" element={<AccountRecovery key="request-verification" mode="request-verification" />} />
+                        <Route path="*" element={<main className="p-10 space-y-4"><h1 className="text-xl">Page not found</h1><a className="underline" href="/">Return home</a></main>} />
+                        <Route path="/login" element={<LoginPage />} />
+                        <Route path="/auth/oidc/callback" element={<OIDCCallbackPage />} />
+                        <Route path="/register" element={<RegisterPage />} />
                         <Route path="/pricing" element={<PricingPage />} />
                         <Route path="/support" element={<SupportPage />} />
                         <Route path="/privacy" element={<PrivacyPage />} />
@@ -104,7 +100,6 @@ function App() {
                             recipient has no account, and the token is the whole
                             credential. */}
                         <Route path="/i/:token" element={<SharedInvoicePage />} />
-                        {!loginPaused && (
                         <Route
                           element={
                             <ProtectedRoute>
@@ -114,7 +109,7 @@ function App() {
                             </ProtectedRoute>
                           }
                         >
-                          {!loginPaused && <Route path="/" element={<DashboardPage />} />}
+                          <Route path="/" element={<DashboardPage />} />
                           <Route path="/loans" element={<ModuleRoute module="accounts"><LoansPage /></ModuleRoute>} />
                           <Route path="/spending-plan" element={<ModuleRoute module="accounts"><SpendingPlanPage /></ModuleRoute>} />
                           <Route path="/transactions" element={<ModuleRoute module="transactions"><TransactionsPage /></ModuleRoute>} />
@@ -146,7 +141,6 @@ function App() {
                           <Route path="/agents/connections" element={<AgentsRoute><EntitlementRoute capability="agents_automation" title="Agent Connections are a Max feature" description="Upgrade to Max to configure advanced agent connections and automation."><AgentConnectionsPage /></EntitlementRoute></AgentsRoute>} />
                           <Route path="/agents/:id" element={<AgentsRoute><EntitlementRoute capability="agents_automation" title="Advanced Agents are a Max feature" description="Upgrade to Max to use agent workflows and MCP automation."><AgentDetailPage /></EntitlementRoute></AgentsRoute>} />
                         </Route>
-                        )}
                       </Routes>
                     </Suspense>
                     <Toaster />

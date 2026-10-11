@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/auth-context'
+import { loginPaused } from '@/lib/local-ui-preview'
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { token, isLoading } = useAuth()
@@ -13,7 +14,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!token) {
-    return <Navigate to="/login" replace />
+    return <Navigate to={loginPaused ? "/" : "/login"} replace />
   }
 
   return <>{children}</>

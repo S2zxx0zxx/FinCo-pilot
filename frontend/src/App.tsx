@@ -18,12 +18,14 @@ import { PWAProvider } from '@/pwa/pwa-provider'
 import { PWAChrome } from '@/pwa/pwa-chrome'
 import { FinCoRouteLoader } from '@/transitions/finco-route-loader'
 import { FinCoNavigationTransition } from '@/transitions/finco-navigation-transition'
+import { localUiPreview } from '@/lib/local-ui-preview'
 
 const WorkspaceDeletionPage = lazy(() => import('@/pages/workspace-deletion'))
 const AccountDeletionPage = lazy(() => import('@/pages/account-deletion'))
 const AccountRecovery = lazy(() => import('@/pages/account-recovery'))
 const SetupPage = lazy(() => import('@/pages/setup'))
 const LoginPage = lazy(() => import('@/pages/login'))
+const LocalUiPreviewPage = lazy(() => import('@/pages/local-ui-preview'))
 const RegisterPage = lazy(() => import('@/pages/register'))
 const PricingPage = lazy(() => import('@/pages/pricing'))
 const SupportPage = lazy(() => import('@/pages/support'))
@@ -87,6 +89,7 @@ function App() {
                         <Route path="/request-verification" element={<AccountRecovery key="request-verification" mode="request-verification" />} />
                         <Route path="*" element={<main className="p-10 space-y-4"><h1 className="text-xl">Page not found</h1><a className="underline" href="/">Return home</a></main>} />
                         <Route path="/login" element={<LoginPage />} />
+                        {localUiPreview && <Route path="/preview" element={<LocalUiPreviewPage />} />}
                         <Route path="/auth/oidc/callback" element={<OIDCCallbackPage />} />
                         <Route path="/register" element={<RegisterPage />} />
                         <Route path="/pricing" element={<PricingPage />} />

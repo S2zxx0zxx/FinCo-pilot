@@ -19,6 +19,9 @@ const authContext = vi.hoisted(() => ({
 }))
 vi.mock('@/contexts/auth-context', () => ({ useAuth: () => authContext }))
 
+// These tests exercise real authentication; local UI preview is tested separately.
+vi.mock('@/lib/local-ui-preview', () => ({ localUiPreview: false }))
+
 const api = vi.hoisted(() => ({
   setup: { status: vi.fn() },
   auth: { oidcConfig: vi.fn() },

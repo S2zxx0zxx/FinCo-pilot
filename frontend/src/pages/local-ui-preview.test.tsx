@@ -79,7 +79,7 @@ describe('localhost-only UI preview', () => {
     const { user } = renderWithProviders(<LocalUiPreviewPage />, { route: '/preview' })
     expect(screen.getByText('Preview only.')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Overview' })).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Budgets' }))
+    await user.click(screen.getAllByRole('button', { name: 'Budgets' })[0])
     expect(screen.getByRole('heading', { name: 'Budgets' })).toBeInTheDocument()
     expect(api.auth.oidcConfig).not.toHaveBeenCalled()
   })

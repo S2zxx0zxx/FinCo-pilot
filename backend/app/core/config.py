@@ -115,6 +115,8 @@ class Settings(BaseSettings):
     core_copilot_signing_key: SecretStr = SecretStr("")
     legacy_data_keys: SecretStr = SecretStr("")
     local_auth_enabled: bool = True
+    # Opt-in disposable local development login. Never use against real financial data.
+    temporary_demo_login_enabled: bool = False
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 60 * 24
 
@@ -295,6 +297,17 @@ class Settings(BaseSettings):
     def is_production(self) -> bool:
         return self.deployment_environment.strip().lower() == "production"
 
+    @property
+    def temporary_demo_login_available(self) -> bool:
+        """Only on an explicitly enabled local development frontend and database."""
+        return bool(
+            self.temporary_demo_login_enabled
+            and self.deployment_environment.strip().lower() == "development"
+            and urlsplit(self.frontend_url).scheme == "http"
+            and (urlsplit(self.frontend_url).hostname or "").lower() in {"localhost", "127.0.0.1", "::1"}
+            and (urlsplit(self.database_url).hostname or "").lower() in {"localhost", "127.0.0.1", "::1"}
+        )
+
     def legacy_keys_for(self, purpose: str) -> tuple[str, ...]:
         raw = self.legacy_data_keys.get_secret_value().strip()
         if not raw:
@@ -348,6 +361,12 @@ class Settings(BaseSettings):
         if environment not in {"development", "test", "staging", "production"}:
             raise ValueError(
                 "DEPLOYMENT_ENVIRONMENT must be one of development, test, staging, production"
+            )
+
+        if self.temporary_demo_login_enabled and not self.temporary_demo_login_available:
+            raise ValueError(
+                "TEMPORARY_DEMO_LOGIN_ENABLED requires development, a local HTTP frontend, "
+                "and a local database; never enable it for staging or production"
             )
 
         if not self.local_auth_enabled and not self.oidc_login_available:

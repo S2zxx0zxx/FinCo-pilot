@@ -75,6 +75,24 @@ describe('LoginPage', () => {
     ).toBeInTheDocument()
   })
 
+  it('shows an explicit local demo notice and accepts an arbitrary username only when enabled', async () => {
+    api.auth.oidcConfig.mockResolvedValue({
+      enabled: false,
+      provider_name: 'OIDC',
+      local_auth_enabled: true,
+      temporary_demo_login_enabled: true,
+    })
+    authContext.login.mockResolvedValue({ requires_2fa: false })
+    const { user } = await renderLogin()
+    expect(screen.getByRole('status')).toHaveTextContent('Local development demo only')
+    const username = screen.getByLabelText(t('auth.email'))
+    expect(username).toHaveAttribute('type', 'text')
+    await user.type(username, 'anything')
+    await user.type(screen.getByLabelText(t('auth.password')), 'anything')
+    await user.click(screen.getByRole('button', { name: t('auth.login') }))
+    await waitFor(() => expect(authContext.login).toHaveBeenCalledWith('anything', 'anything'))
+  })
+
   it('signs in and lands on the dashboard', async () => {
     authContext.login.mockResolvedValue({ requires_2fa: false })
     const { user } = await renderLogin()

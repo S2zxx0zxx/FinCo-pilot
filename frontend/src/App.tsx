@@ -83,15 +83,15 @@ function App() {
                     <Suspense fallback={<FinCoRouteLoader />}>
                       <Routes>
                         <Route path="/setup" element={loginPaused ? <Navigate to="/" replace /> : <SetupPage />} />
-                        <Route path="/forgot-password" element={<AccountRecovery key="forgot" mode="forgot" />} />
-                        <Route path="/reset-password" element={<AccountRecovery key="reset" mode="reset" />} />
-                        <Route path="/verify-email" element={<AccountRecovery key="verify" mode="verify" />} />
-                        <Route path="/request-verification" element={<AccountRecovery key="request-verification" mode="request-verification" />} />
-                        <Route path="*" element={<main className="p-10 space-y-4"><h1 className="text-xl">Page not found</h1><a className="underline" href="/">Return home</a></main>} />
+                        <Route path="/forgot-password" element={loginPaused ? <Navigate to="/" replace /> : <AccountRecovery key="forgot" mode="forgot" />} />
+                        <Route path="/reset-password" element={loginPaused ? <Navigate to="/" replace /> : <AccountRecovery key="reset" mode="reset" />} />
+                        <Route path="/verify-email" element={loginPaused ? <Navigate to="/" replace /> : <AccountRecovery key="verify" mode="verify" />} />
+                        <Route path="/request-verification" element={loginPaused ? <Navigate to="/" replace /> : <AccountRecovery key="request-verification" mode="request-verification" />} />
+                        <Route path="*" element={loginPaused ? <Navigate to="/" replace /> : <main className="p-10 space-y-4"><h1 className="text-xl">Page not found</h1><a className="underline" href="/">Return home</a></main>} />
                         <Route path="/login" element={loginPaused ? <Navigate to="/" replace /> : <LoginPage />} />
                         {loginPaused && <Route path="/" element={<LocalUiPreviewPage />} />}
                         {uiPreviewAvailable && <Route path="/preview" element={<LocalUiPreviewPage />} />}
-                        <Route path="/auth/oidc/callback" element={<OIDCCallbackPage />} />
+                        <Route path="/auth/oidc/callback" element={loginPaused ? <Navigate to="/" replace /> : <OIDCCallbackPage />} />
                         <Route path="/register" element={loginPaused ? <Navigate to="/" replace /> : <RegisterPage />} />
                         <Route path="/pricing" element={<PricingPage />} />
                         <Route path="/support" element={<SupportPage />} />
@@ -104,6 +104,7 @@ function App() {
                             recipient has no account, and the token is the whole
                             credential. */}
                         <Route path="/i/:token" element={<SharedInvoicePage />} />
+                        {!loginPaused && (
                         <Route
                           element={
                             <ProtectedRoute>
@@ -145,6 +146,7 @@ function App() {
                           <Route path="/agents/connections" element={<AgentsRoute><EntitlementRoute capability="agents_automation" title="Agent Connections are a Max feature" description="Upgrade to Max to configure advanced agent connections and automation."><AgentConnectionsPage /></EntitlementRoute></AgentsRoute>} />
                           <Route path="/agents/:id" element={<AgentsRoute><EntitlementRoute capability="agents_automation" title="Advanced Agents are a Max feature" description="Upgrade to Max to use agent workflows and MCP automation."><AgentDetailPage /></EntitlementRoute></AgentsRoute>} />
                         </Route>
+                        )}
                       </Routes>
                     </Suspense>
                     <Toaster />

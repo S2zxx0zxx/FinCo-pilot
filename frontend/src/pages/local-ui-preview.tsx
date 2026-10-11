@@ -5,10 +5,10 @@ import {
   LockKeyhole, PiggyBank, Settings, ShieldCheck, Target, Wallet,
 } from 'lucide-react'
 import { FinCoLogo } from '@/components/finco-logo'
-import { localUiPreview } from '@/lib/local-ui-preview'
+import { loginPaused, uiPreviewAvailable } from '@/lib/local-ui-preview'
 
 /**
- * Offline UI-only shell for local frontend development.
+ * Public-facing UI-only shell while sign-in is temporarily paused.
  * No auth tokens are issued, no actual app route is unlocked, and no API is called.
  */
 const screens = [
@@ -24,7 +24,7 @@ const screens = [
 export default function LocalUiPreviewPage() {
   const [screen, setScreen] = useState<(typeof screens)[number]['title']>('Overview')
 
-  if (!localUiPreview) return <Navigate to="/login" replace />
+  if (!uiPreviewAvailable) return <Navigate to="/login" replace />
 
   const active = screens.find((item) => item.title === screen) ?? screens[0]
 
@@ -37,18 +37,20 @@ export default function LocalUiPreviewPage() {
           </div>
           <div>
             <div className="font-semibold leading-tight">FinCo-Pilot</div>
-            <div className="text-xs text-muted-foreground">Local UI preview</div>
+            <div className="text-xs text-muted-foreground">{loginPaused ? 'UI Preview · Sign-in paused' : 'Local UI preview'}</div>
           </div>
         </div>
-        <Link to="/login?auth=real" className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-muted">
-          <LockKeyhole size={15} /> Real sign in
-        </Link>
+        {!loginPaused && (
+          <Link to="/login?auth=real" className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-muted">
+            <LockKeyhole size={15} /> Real sign in
+          </Link>
+        )}
       </header>
 
       <div className="border-b bg-muted/40 px-5 py-3 text-sm md:px-8" role="status">
         <div className="flex items-start gap-2">
           <ShieldCheck className="mt-0.5 shrink-0 text-primary" size={17} />
-          <span><strong>Preview only.</strong> No login or verification was performed. No real users, accounts, or financial records can be accessed here.</span>
+          <span><strong>Preview only.</strong> {loginPaused ? 'Sign-in is temporarily paused. ' : ''}No login or verification was performed. No real users, accounts, or financial records can be accessed here.</span>
         </div>
       </div>
 
@@ -140,7 +142,7 @@ export default function LocalUiPreviewPage() {
           </div>
 
           <p className="mt-7 text-center text-xs text-muted-foreground">
-            Local development preview • Backend authentication and all financial APIs remain protected.
+            UI preview only • Backend authentication and all financial APIs remain protected.
           </p>
         </main>
       </div>

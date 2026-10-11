@@ -5,6 +5,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 import pytest
+from tests.conftest import IS_POSTGRES_TEST
 
 from app.models.transaction import Transaction
 
@@ -271,7 +272,7 @@ async def test_recurring_projection_respects_end_date(
 
 
 @pytest.mark.asyncio
-@pytest.mark.skip(reason="to_char() is PostgreSQL-specific; tests use SQLite")
+@pytest.mark.skipif(not IS_POSTGRES_TEST, reason="to_char() is PostgreSQL-specific; tests use SQLite")
 async def test_monthly_trend_numeric_fields(client, auth_headers, test_transactions):
     """Monthly trend returns numeric values, not strings."""
     response = await client.get("/api/dashboard/monthly-trend", headers=auth_headers)

@@ -19,6 +19,7 @@ from datetime import date, datetime, timezone
 from decimal import Decimal
 
 import pytest
+from tests.conftest import IS_POSTGRES_TEST
 import pytest_asyncio
 from sqlalchemy import select
 
@@ -30,6 +31,7 @@ from app.services import (
     admin_service,
     budget_service,
     dashboard_service,
+    report_service,
 )
 from app.services.credit_card_service import (
     apply_effective_date,
@@ -689,12 +691,50 @@ class TestIncomeExpensesReport:
     async def test_monthly_report_follows_mode(
         self, session, test_user, cc_account, test_categories
     ):
-        # This path uses Postgres-specific `to_char`, which SQLite (the test DB)
-        # doesn't implement. Rather than duplicate the query, we skip here and
-        # rely on the fact that `get_income_expenses_report` uses the exact
-        # same `report_date` expression as the dashboard queries above — if
-        # those tests pass, this one is wired identically.
-        pytest.skip("get_income_expenses_report uses Postgres to_char — SQLite test DB doesn't support it")
+        if not IS_POSTGRES_TEST:
+            pytest.skip("Monthly reporting requires native PostgreSQL")
+        from app.services import report_service as reports
+
+        # Freeze the service clock so both posted and effective dates are
+        # fully elapsed, independently of the real runner's day-of-month.
+        from unittest.mock import patch
+
+        class ReportDate(date):
+            @classmethod
+            def today(cls):
+                return cls(2026, 4, 30)
+
+        await _make_tx(
+            session, test_user.id, cc_account.id, date(2026, 3, 20),
+            Decimal("150"), effective_date=date(2026, 4, 16),
+        )
+        await _make_tx(
+            session, test_user.id, cc_account.id, date(2026, 4, 5),
+            Decimal("30"), effective_date=date(2026, 4, 16),
+        )
+        await session.commit()
+        with patch.object(reports, "date", ReportDate):
+            await _set_mode(session, "cash")
+            cash = await report_service.get_income_expenses_report(
+                session, cc_account.workspace_id, test_user.id, months=1, currency="BRL",
+            )
+            await _set_mode(session, "accrual")
+            accrual = await report_service.get_income_expenses_report(
+                session, cc_account.workspace_id, test_user.id, months=1, currency="BRL",
+            )
+        cash_values = {item.key: item.value for item in cash.summary.breakdowns}
+        accrual_values = {item.key: item.value for item in accrual.summary.breakdowns}
+        # The report includes the preceding month plus the current month.
+        # Mode changes buckets, never the total amount of money reported.
+        assert cash_values["expenses"] == accrual_values["expenses"] == 180.0
+        assert cash_values["netIncome"] == accrual_values["netIncome"] == -180.0
+        cash_months = {point.date: point.breakdowns for point in cash.trend}
+        accrual_months = {point.date: point.breakdowns for point in accrual.trend}
+        assert cash_months["2026-04"]["expenses"] == 30.0
+        assert accrual_months["2026-04"]["expenses"] == 180.0
+        assert cash_months["2026-03"]["expenses"] == 150.0
+        assert accrual_months["2026-03"]["expenses"] == 0.0
+
 
 
 # ---------------------------------------------------------------------------

@@ -8,6 +8,7 @@ the full numeric correctness of those services.
 import uuid
 
 import pytest
+from tests.conftest import IS_POSTGRES_TEST
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -396,13 +397,15 @@ async def test_aggregate_by_category(
     assert "Transporte" in labels or "Alimentação" in labels
 
 
-@pytest.mark.skip(reason="aggregate by month uses PostgreSQL to_char, not portable to SQLite test DB")
+@pytest.mark.skipif(not IS_POSTGRES_TEST, reason="aggregate by month uses PostgreSQL to_char, not portable to SQLite test DB")
 async def test_aggregate_by_month(
     session: AsyncSession, ctx: CallContext, test_transactions
 ):
     handler = REGISTRY["aggregate"].handler
     result = await handler(session=session, ctx=ctx, metric="count", group_by="month")
     assert "items" in result
+    assert result["items"]
+    assert sum(item["count"] for item in result["items"]) == len(test_transactions)
     for item in result["items"]:
         if item["bucket"]:
             assert len(item["bucket"]) == 7 and item["bucket"][4] == "-"

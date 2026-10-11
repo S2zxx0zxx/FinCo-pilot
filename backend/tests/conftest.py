@@ -17,6 +17,15 @@ os.environ.setdefault("AGENTS_BUILTIN_MCP_URL", "http://test-mcp:8765/mcp")
 os.environ["SECRET_KEY"] = "synthetic-test-signing-key-not-for-production"
 os.environ["CREDENTIALS_DIRECTORY"] = ""
 
+# Native acceptance is opt-in and rejects external/non-disposable targets before
+# importing application code or opening any connection.
+TEST_DATABASE_URL = os.environ.get("FINCO_TEST_DATABASE_URL", "sqlite+aiosqlite:///:memory:")
+IS_POSTGRES_TEST = "FINCO_TEST_DATABASE_URL" in os.environ
+if IS_POSTGRES_TEST:
+    from scripts.native_test_database import validate_native_test_target
+
+    validate_native_test_target(TEST_DATABASE_URL, os.environ)
+
 # pgvector's Vector type only compiles on PostgreSQL. Tests use SQLite, so
 # we shim it with JSON before any model module imports it. Production runs
 # pgvector unchanged.
@@ -49,7 +58,8 @@ class _VectorJSON(sqlalchemy.types.JSON):
         return literal(0.5)
 
 
-setattr(_pgv, "Vector", _VectorJSON)
+if not IS_POSTGRES_TEST:
+    setattr(_pgv, "Vector", _VectorJSON)
 # ---------------------------------------------------------------------------
 
 import pytest  # noqa: E402
@@ -95,15 +105,13 @@ from app.agents.models import (  # noqa: E402,F401
 # tmpfs inside the container. StaticPool + a single shared connection
 # is required so async fixtures and tests running on the shared
 # session-scoped event loop see the same in-memory schema state.
-from sqlalchemy.pool import StaticPool  # noqa: E402
-
-TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+from sqlalchemy.pool import NullPool, StaticPool  # noqa: E402
 
 engine = create_async_engine(
     TEST_DATABASE_URL,
     echo=False,
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
+    connect_args={} if IS_POSTGRES_TEST else {"check_same_thread": False},
+    poolclass=NullPool if IS_POSTGRES_TEST else StaticPool,
 )
 TestSessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
@@ -127,11 +135,26 @@ def reset_agent_settings_cache_between_tests():
 @pytest_asyncio.fixture(scope="session", loop_scope="session", autouse=True)
 async def setup_database():
     """Create all tables once for the test session."""
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    if IS_POSTGRES_TEST:
+        # Use the actual Alembic-migrated schema and native pgvector. Never
+        # create/drop/stamp tables to make a broken migration appear to pass.
+        from sqlalchemy import text
+        from app.core.schema_safety import verify_runtime_schema
+
+        async with engine.connect() as conn:
+            identity = (await conn.execute(text("SELECT current_database(), current_user"))).one()
+            if tuple(identity) != ("finco_ci", "finco_ci"):
+                raise RuntimeError("Native test server identity does not match disposable CI")
+            async with AsyncSession(bind=conn) as session:
+                await verify_runtime_schema(session)
+    else:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
     yield
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+    if not IS_POSTGRES_TEST:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.drop_all)
+    await engine.dispose()
     # Clean up test db file
     import os
     try:

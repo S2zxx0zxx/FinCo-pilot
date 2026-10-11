@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
+from tests.conftest import IS_POSTGRES_TEST
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -467,7 +468,7 @@ async def test_net_worth_api_requires_auth(client):
 
 
 @pytest.mark.asyncio
-@pytest.mark.skip(reason="to_char() is PostgreSQL-specific; tests use SQLite")
+@pytest.mark.skipif(not IS_POSTGRES_TEST, reason="to_char() is PostgreSQL-specific; tests use SQLite")
 async def test_income_expenses_api_endpoint(client, auth_headers, test_transactions):
     """GET /reports/income-expenses returns valid response."""
     response = await client.get(
@@ -494,6 +495,8 @@ async def test_income_expenses_api_endpoint(client, auth_headers, test_transacti
     # Verify math: net income = income - expenses
     breakdowns = {b["key"]: b["value"] for b in data["summary"]["breakdowns"]}
     assert abs(breakdowns["netIncome"] - (breakdowns["income"] - breakdowns["expenses"])) < 0.01
+    assert breakdowns["income"] == float(sum(tx.amount for tx in test_transactions if tx.type == "credit"))
+    assert breakdowns["expenses"] == float(sum(tx.amount for tx in test_transactions if tx.type == "debit"))
 
     # Each trend point has income/expenses breakdowns
     for dp in data["trend"]:
@@ -505,7 +508,7 @@ async def test_income_expenses_api_endpoint(client, auth_headers, test_transacti
 
 
 @pytest.mark.asyncio
-@pytest.mark.skip(reason="to_char() is PostgreSQL-specific; tests use SQLite")
+@pytest.mark.skipif(not IS_POSTGRES_TEST, reason="to_char() is PostgreSQL-specific; tests use SQLite")
 async def test_income_expenses_excludes_opening_balance(client, auth_headers):
     """Income expenses report excludes opening balance transactions."""
     # Create account with opening balance
@@ -530,16 +533,29 @@ async def test_income_expenses_excludes_opening_balance(client, auth_headers):
 
 
 @pytest.mark.asyncio
-@pytest.mark.skip(reason="to_char() is PostgreSQL-specific; tests use SQLite")
-async def test_income_expenses_excludes_transfers(client, auth_headers):
+@pytest.mark.skipif(not IS_POSTGRES_TEST, reason="to_char() is PostgreSQL-specific; tests use SQLite")
+async def test_income_expenses_excludes_transfers(client, auth_headers, session, test_user, test_account):
     """Income expenses report excludes transfer pair transactions."""
+    # A posted debit/credit transfer must contribute neither income nor expense.
+    pair = uuid.uuid4()
+    for kind in ("debit", "credit"):
+        session.add(Transaction(
+            id=uuid.uuid4(), user_id=test_user.id, account_id=test_account.id,
+            description="synthetic transfer", amount=Decimal("25000"),
+            amount_primary=Decimal("25000"), currency="BRL", date=date.today(),
+            type=kind, source="manual", status="posted", transfer_pair_id=pair,
+        ))
+    await session.commit()
     response = await client.get(
         "/api/reports/income-expenses",
         params={"months": 12, "interval": "monthly"},
         headers=auth_headers,
     )
     assert response.status_code == 200
-    # Just verify the endpoint works — transfer exclusion is enforced by the SQL filter
+    values = {item["key"]: item["value"] for item in response.json()["summary"]["breakdowns"]}
+    assert values["income"] == 0.0
+    assert values["expenses"] == 0.0
+    assert values["netIncome"] == 0.0
 
 
 @pytest.mark.asyncio
@@ -807,7 +823,7 @@ async def test_net_worth_report_has_empty_category_trend(session: AsyncSession, 
 
 
 @pytest.mark.asyncio
-@pytest.mark.skip(reason="to_char() is PostgreSQL-specific; tests use SQLite")
+@pytest.mark.skipif(not IS_POSTGRES_TEST, reason="to_char() is PostgreSQL-specific; tests use SQLite")
 async def test_income_expenses_has_category_trend(client, auth_headers, test_transactions):
     """GET /reports/income-expenses response includes category_trend array."""
     response = await client.get(
@@ -820,6 +836,7 @@ async def test_income_expenses_has_category_trend(client, auth_headers, test_tra
 
     assert "category_trend" in data
     assert isinstance(data["category_trend"], list)
+    assert data["category_trend"]
 
     # Each item should have the expected shape
     for item in data["category_trend"]:

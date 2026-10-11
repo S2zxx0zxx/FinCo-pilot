@@ -54,7 +54,7 @@ dev = [
 include = ["app*"]
 
 [tool.vercel]
-entrypoint = "app.vercel_entry:app"
+entrypoint = "app.native_rehearsal_probe:app"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

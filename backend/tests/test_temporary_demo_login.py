@@ -45,7 +45,8 @@ async def test_arbitrary_credentials_only_open_an_isolated_nonadmin_demo_user(
         headers={"Origin": "http://localhost:5173"},
     )
     assert first.status_code == second.status_code == 200
-    assert first.json()["access_token"] != second.json()["access_token"] or first.json()["access_token"]
+    assert first.json()["access_token"]
+    assert second.json()["access_token"]
 
     me = await client.get(
         "/api/users/me",
@@ -56,6 +57,13 @@ async def test_arbitrary_credentials_only_open_an_isolated_nonadmin_demo_user(
     assert me.json()["id"] != str(test_user.id)
     assert me.json()["is_superuser"] is False
     assert me.json()["is_active"] is True
+
+    other_me = await client.get(
+        "/api/users/me",
+        headers={"Authorization": f'Bearer {second.json()["access_token"]}'},
+    )
+    assert other_me.status_code == 200
+    assert other_me.json()["id"] == me.json()["id"]
 
 
 @pytest.mark.asyncio

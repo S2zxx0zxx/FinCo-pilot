@@ -114,7 +114,7 @@ async def logout(
     session: AsyncSession = Depends(get_async_session),
 ):
     # Explicitly sign out all sessions. Rotation is durable across workers/restarts.
-    if user.email == DEMO_EMAIL and (user.auth_epoch or "").startswith(DEMO_EPOCH_PREFIX):
+    if (user.auth_epoch or "").startswith(DEMO_EPOCH_PREFIX):
         user.auth_epoch = DEMO_EPOCH_PREFIX + uuid.uuid4().hex[:24]
     else:
         user.auth_epoch = str(uuid.uuid4())

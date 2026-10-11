@@ -2569,3 +2569,15 @@ def test_parse_csv_reports_short_rows_instead_of_raising():
     assert failed_rows[2].line_number == 5
     assert failed_rows[2].error_reason == "invalid_date"
     assert failed_rows[2].raw_value == "invalid_date"
+
+
+@pytest.mark.parametrize("encoding", ["utf-8", "utf-16"])
+@pytest.mark.parametrize("declaration", [
+    '<!DOCTYPE Document [<!ENTITY payload "synthetic-expansion">]>',
+    '<!DOCTYPE Document [<!ENTITY payload SYSTEM "file:///synthetic-private-file">]>',
+    '<!DOCTYPE Document SYSTEM "https://external.example.invalid/synthetic.dtd">',
+])
+def test_camt_rejects_dtd_and_entities_before_import(encoding, declaration):
+    document = f'<?xml version="1.0" encoding="{encoding}"?>{declaration}<Document/>'
+    with pytest.raises(ValueError, match="^Unsafe CAMT XML$"):
+        parse_camt(document.encode(encoding))

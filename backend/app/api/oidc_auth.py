@@ -37,6 +37,7 @@ class OIDCConfigResponse(BaseModel):
     enabled: bool
     provider_name: str = "OIDC"
     local_auth_enabled: bool = True
+    temporary_demo_login_enabled: bool = False
 
 
 async def _discover() -> dict[str, Any]:
@@ -63,6 +64,7 @@ async def oidc_config():
         enabled=settings.oidc_login_available,
         provider_name=settings.oidc_provider_name or "OIDC",
         local_auth_enabled=settings.local_auth_enabled,
+        temporary_demo_login_enabled=settings.temporary_demo_login_available,
     )
 
 

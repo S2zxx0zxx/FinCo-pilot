@@ -53,6 +53,9 @@ dev = [
 [tool.setuptools.packages.find]
 include = ["app*"]
 
+[tool.vercel]
+entrypoint = "app.vercel_entry:app"
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "session"

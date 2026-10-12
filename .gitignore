@@ -1,6 +1,7 @@
 .venv
 .env
 frontend/.env
+backend/.env
 secrets/
 .worktrees/
 .DS_Store

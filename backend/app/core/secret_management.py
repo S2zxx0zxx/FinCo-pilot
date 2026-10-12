@@ -47,6 +47,12 @@ class ProductionSecret:
 
 
 PRODUCTION_SECRETS: dict[str, ProductionSecret] = {
+    "SENTRY_DSN": ProductionSecret(
+        "SENTRY_DSN", "sentry_dsn", SecretKind.PROVIDER_CREDENTIAL,
+        ("backend", "celery-worker", "celery-beat"), "SENTRY_ENABLED=true",
+        RotationImpact.PROVIDER_REVOKE_AND_REPLACE, True,
+        notes="Server-only Sentry ingest DSN; put in mounted secret file, not Compose env. Never log the value.",
+    ),
     "CREDENTIAL_ENCRYPTION_KEY": ProductionSecret(
         "CREDENTIAL_ENCRYPTION_KEY", "credential_encryption_key", SecretKind.DATA_ENCRYPTION_KEY,
         ("backend", "celery-worker", "celery-beat", "migration", "mcp-server"), "every production deployment",

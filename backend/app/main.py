@@ -75,6 +75,7 @@ from app.billing.guards import (
 from app.core.auth import fastapi_users
 from app.core.auth_policy import require_local_auth_enabled
 from app.core.config import get_settings
+from app.core.sentry_monitoring import init_sentry
 from app.core.database import async_session_maker
 from app.api.password_recovery import router as password_recovery_router
 from app.api.email_verification import router as email_verification_router, prepare_registration_mail
@@ -86,6 +87,7 @@ from app.services.fx_rate_service import FxRateUnavailableError
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
+init_sentry(component="api")
 
 
 async def _warm_tesouro_cache() -> None:

@@ -1,8 +1,10 @@
 import { Component, type ReactNode } from 'react'
 import { buildSupportUrl } from '@/lib/support'
+import { captureAppError } from '@/lib/sentry'
 
 export class AppErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   state = { failed: false }
+  componentDidCatch(error: Error) { captureAppError(error) }
   static getDerivedStateFromError() { return { failed: true } }
   render() {
     if (!this.state.failed) return this.props.children

@@ -1,5 +1,6 @@
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
+import { sentryVitePlugin } from '@sentry/vite-plugin'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
 import { readFile, readdir, writeFile } from 'node:fs/promises'
@@ -21,6 +22,7 @@ export default defineConfig(async ({ mode }) => {
   const frontendUrl = env.FRONTEND_URL || process.env.FRONTEND_URL
   const backendUrl = env.BACKEND_URL || process.env.BACKEND_URL
   const appVersionRoot = env.APP_VERSION_ROOT || process.env.APP_VERSION_ROOT
+  const sentryUploadEnabled = Boolean(env.SENTRY_AUTH_TOKEN && env.SENTRY_ORG && env.SENTRY_PROJECT)
   const appVersion = await resolveAppVersion(
     appVersionRoot || import.meta.dirname,
     env.VITE_APP_VERSION || process.env.VITE_APP_VERSION,
@@ -32,6 +34,8 @@ export default defineConfig(async ({ mode }) => {
       __APP_VERSION__: JSON.stringify(appVersion),
     },
     build: {
+      // Never publish public sourcemaps; upload private artifacts only with CI token.
+      sourcemap: sentryUploadEnabled ? ('hidden' as const) : false,
       // Keep the existing per-chunk budget; optional locales load on demand.
       chunkSizeWarningLimit: 1000,
       // Emit hashed JS/CSS into `static/` instead of Vite's default `assets/`.
@@ -77,7 +81,16 @@ export default defineConfig(async ({ mode }) => {
         const release = digest.digest('hex').slice(0, 20)
         await writeFile(workerPath, worker.replace("const VERSION = 'finco-pwa-v5'", `const VERSION = 'finco-pwa-v5-${release}'`))
       },
-    }],
+    }, ...(sentryUploadEnabled ? [sentryVitePlugin({
+      org: env.SENTRY_ORG,
+      project: env.SENTRY_PROJECT,
+      authToken: env.SENTRY_AUTH_TOKEN,
+      telemetry: false,
+      release: { name: appVersion },
+      sourcemaps: { filesToDeleteAfterUpload: ['dist/**/*.map'] },
+      // A configured release must not silently lose its source maps.
+      errorHandler: (error) => { throw error },
+    })] : [])],
     resolve: {
       alias: {
         '@': path.resolve(import.meta.dirname, './src'),

@@ -30,6 +30,12 @@ Production variables already configured include `DATABASE_EXTERNAL_REQUIRED=true
 
 `fincopilot-web` exposes no project-scoped production `VITE_CLERK_PUBLISHABLE_KEY` in the same API read; independently verify its build-time source and the **currently aliased deployment**, since the live UI displays Clerk.
 
+## Cloudflare R2 account verification
+
+A read-only Cloudflare API check located a bucket named `fincopilot-prod` in the user's second connected Cloudflare account. The separate account named `FinCo-Pilot` returned `10042: Please enable R2 through the Cloudflare Dashboard`. This is **not** proof that the present API is authorized to access the existing bucket.
+
+Do not create/repoint a bucket based on account names alone. Verify ownership, the approved `STORAGE_S3_ENDPOINT_URL` account prefix, the expected bucket and immutable object-key prefix, and a least-privilege R2 S3 API token. The Vercel API project currently has no project-scoped `STORAGE_S3_ACCESS_KEY` or `STORAGE_S3_SECRET_KEY`.
+
 ## Critical Neon schema mismatch — do not connect blindly
 
 The connected Neon `FinCo-Pilot` project, branch named `production`, was inspected **read-only**. Its public schema has `financial_accounts`, `schema_migrations`, and `users.user_id` as the primary key. It does **not** have the `accounts`, `external_auth_identities`, `alembic_version`, or `users.id` required by this GitHub FastAPI backend's models/Alembic migrations.

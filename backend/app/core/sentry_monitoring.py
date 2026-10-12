@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any
+from typing import Any, cast
 from urllib.parse import urlsplit
 
 from app.core.config import get_settings
@@ -63,6 +63,7 @@ def init_sentry(component: str = "api") -> bool:
 
     # Import only when enabled: boot, tests and disaster recovery stay independent.
     import sentry_sdk
+    from sentry_sdk.types import Event
     from sentry_sdk.integrations.fastapi import FastApiIntegration
     from sentry_sdk.integrations.celery import CeleryIntegration
 
@@ -88,7 +89,7 @@ def init_sentry(component: str = "api") -> bool:
         sample_rate=1.0,
         traces_sample_rate=0.0,
         profiles_sample_rate=0.0,
-        before_send=lambda event, hint: sanitize_event(event, component),
+        before_send=lambda event, hint: cast(Event, sanitize_event(cast(dict[str, Any], event), component)),
     )
     _INITIALIZED = True
     logger.info("Privacy-safe Sentry error instrumentation enabled for %s", component)

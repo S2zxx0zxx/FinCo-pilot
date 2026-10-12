@@ -1,7 +1,48 @@
+import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/auth-context'
+import { useAuth as useClerkAuth } from '@clerk/clerk-react'
+import { isClerkConfigured } from '@/lib/clerk-config'
 
-export function ProtectedRoute({ children }: { children: React.ReactNode }) {
+function ClerkProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { token, isLoading, loginWithClerk } = useAuth()
+  const { isLoaded, isSignedIn, getToken } = useClerkAuth()
+  const [isExchanging, setIsExchanging] = useState(false)
+
+  useEffect(() => {
+    if (!token && isLoaded && isSignedIn && !isExchanging) {
+      setIsExchanging(true)
+      void getToken().then(async (clerkToken) => {
+        if (clerkToken) {
+          await loginWithClerk(clerkToken)
+        }
+      }).catch((err) => {
+        console.error('Failed to exchange Clerk token in ProtectedRoute:', err)
+      }).finally(() => {
+        setIsExchanging(false)
+      })
+    }
+  }, [token, isLoaded, isSignedIn, isExchanging, getToken, loginWithClerk])
+
+  if (isLoading || !isLoaded || isExchanging || (!token && isSignedIn)) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+          <p className="text-sm text-muted-foreground">Signing you in…</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!token) {
+    return <Navigate to="/login" replace />
+  }
+
+  return <>{children}</>
+}
+
+function LocalProtectedRoute({ children }: { children: React.ReactNode }) {
   const { token, isLoading } = useAuth()
 
   if (isLoading) {
@@ -17,4 +58,11 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   return <>{children}</>
+}
+
+export function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  if (isClerkConfigured) {
+    return <ClerkProtectedRoute>{children}</ClerkProtectedRoute>
+  }
+  return <LocalProtectedRoute>{children}</LocalProtectedRoute>
 }

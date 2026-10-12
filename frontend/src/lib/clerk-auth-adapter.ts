@@ -69,7 +69,7 @@ export function useClerkCustomAuth() {
     await signIn.authenticateWithRedirect({
       strategy: 'oauth_google',
       redirectUrl: `${window.location.origin}/sso-callback`,
-      redirectUrlComplete: `${window.location.origin}/sso-callback`,
+      redirectUrlComplete: `${window.location.origin}/`,
     })
   }, [isSignInLoaded, signIn])
 
@@ -84,7 +84,7 @@ export function useClerkCustomAuth() {
     await signUp.authenticateWithRedirect({
       strategy: 'oauth_google',
       redirectUrl: `${window.location.origin}/sso-callback`,
-      redirectUrlComplete: `${window.location.origin}/sso-callback`,
+      redirectUrlComplete: `${window.location.origin}/`,
     })
   }, [isSignUpLoaded, signUp])
 

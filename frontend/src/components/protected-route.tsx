@@ -8,21 +8,29 @@ function ClerkProtectedRoute({ children }: { children: React.ReactNode }) {
   const { token, isLoading, loginWithClerk } = useAuth()
   const { isLoaded, isSignedIn, getToken } = useClerkAuth()
   const [isExchanging, setIsExchanging] = useState(false)
+  const [exchangeError, setExchangeError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!token && isLoaded && isSignedIn && !isExchanging) {
+    if (!token && isLoaded && isSignedIn && !isExchanging && !exchangeError) {
       setIsExchanging(true)
       void getToken().then(async (clerkToken) => {
         if (clerkToken) {
           await loginWithClerk(clerkToken)
         }
-      }).catch((err) => {
+      }).catch((err: unknown) => {
         console.error('Failed to exchange Clerk token in ProtectedRoute:', err)
+        const axiosErr = err as { response?: { data?: { detail?: string } }; message?: string }
+        const msg = axiosErr.response?.data?.detail || axiosErr.message || 'sso_failed'
+        setExchangeError(msg)
       }).finally(() => {
         setIsExchanging(false)
       })
     }
-  }, [token, isLoaded, isSignedIn, isExchanging, getToken, loginWithClerk])
+  }, [token, isLoaded, isSignedIn, isExchanging, exchangeError, getToken, loginWithClerk])
+
+  if (exchangeError) {
+    return <Navigate to={`/login?error=${encodeURIComponent(exchangeError)}`} replace />
+  }
 
   if (isLoading || !isLoaded || isExchanging || (!token && isSignedIn)) {
     return (

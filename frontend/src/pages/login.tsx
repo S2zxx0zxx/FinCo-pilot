@@ -418,6 +418,13 @@ function ClerkLoginContainer() {
     : '/'
 
   useEffect(() => {
+    const urlErr = searchParams.get('error')
+    if (urlErr) {
+      setError(urlErr === 'sso_failed' ? 'Google authentication failed. Please try again.' : decodeURIComponent(urlErr))
+    }
+  }, [searchParams])
+
+  useEffect(() => {
     if (token) {
       navigate('/', { replace: true })
       return
@@ -428,7 +435,12 @@ function ClerkLoginContainer() {
           await loginWithClerk(tok)
           navigate(safeNext, { replace: true })
         }
-      }).catch(() => {})
+      }).catch((err: unknown) => {
+        console.error('Clerk login exchange error:', err)
+        const axiosErr = err as { response?: { data?: { detail?: string } }; message?: string }
+        const msg = axiosErr.response?.data?.detail || axiosErr.message || 'Clerk login exchange failed'
+        setError(msg)
+      })
       return
     }
     void adminApi.registrationStatus().then(({ enabled }) => {

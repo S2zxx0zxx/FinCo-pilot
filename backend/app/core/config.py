@@ -774,4 +774,5 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
+    # Reload settings with latest environment configuration
     return Settings()

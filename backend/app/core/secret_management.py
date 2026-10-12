@@ -133,6 +133,12 @@ PRODUCTION_SECRETS: dict[str, ProductionSecret] = {
         RotationImpact.PROVIDER_REVOKE_AND_REPLACE, True,
         notes="Prefer the dedicated PEM file path instead of an inline environment value.",
     ),
+    "CLERK_SECRET_KEY": ProductionSecret(
+        "CLERK_SECRET_KEY", "clerk_secret_key", SecretKind.PROVIDER_CREDENTIAL,
+        ("backend",), "Clerk session exchange is enabled",
+        RotationImpact.PROVIDER_REVOKE_AND_REPLACE, True,
+        notes="Server-only Clerk Backend API key; never expose through VITE_ or NEXT_PUBLIC_. Revoke and replace at the provider, then restart the backend.",
+    ),
     "OIDC_CLIENT_SECRET": ProductionSecret(
         "OIDC_CLIENT_SECRET", "oidc_client_secret", SecretKind.PROVIDER_CREDENTIAL,
         ("backend",), "OIDC login is enabled with a confidential client",

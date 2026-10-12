@@ -268,7 +268,14 @@ class Settings(BaseSettings):
     oidc_roles_claim: str = "groups"
     oidc_admin_roles: str = ""
     oidc_workspace_role_map: str = ""
-
+    # Clerk Authentication
+    clerk_enabled: bool = False
+    clerk_secret_key: SecretStr = SecretStr("")
+    clerk_publishable_key: str = ""
+    clerk_issuer: str = ""
+    clerk_jwt_public_key: str = ""
+    clerk_authorized_parties: str = "http://localhost:5173,http://localhost:3000"
+    clerk_audience: str = ""
     # Celery / Redis. Production templates require an external authenticated
     # TLS target supplied through secret storage; development remains local-friendly.
     redis_url: str = "redis://localhost:6379/0"
@@ -315,6 +322,17 @@ class Settings(BaseSettings):
     @property
     def oidc_login_available(self) -> bool:
         return bool(self.oidc_enabled and self.oidc_client_id and self.oidc_discovery_url)
+
+    @property
+    def clerk_auth_available(self) -> bool:
+        return bool(self.clerk_enabled and self.clerk_issuer.strip())
+
+    @property
+    def clerk_parties_tuple(self) -> tuple[str, ...]:
+        parties = [p.strip() for p in self.clerk_authorized_parties.split(",") if p.strip()]
+        if self.frontend_url.strip() and self.frontend_url.strip() not in parties:
+            parties.append(self.frontend_url.strip())
+        return tuple(dict.fromkeys(parties))
 
     @property
     def email_delivery_available(self) -> bool:

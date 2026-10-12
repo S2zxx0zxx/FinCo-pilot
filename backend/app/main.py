@@ -23,6 +23,7 @@ from app.api.categories import router as categories_router
 from app.api.checkout import router as checkout_router
 from app.api.payment_webhooks import router as payment_webhooks_router
 from app.api.category_groups import router as category_groups_router
+from app.api.clerk_auth import router as clerk_auth_router
 from app.api.collections import router as collections_router
 from app.api.connections import router as connections_router
 from app.api.currencies import router as currencies_router
@@ -130,9 +131,18 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+cors_origins = list(dict.fromkeys([
+    settings.frontend_url.rstrip("/"),
+    "https://fincopilot.app",
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173",
+]))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_url],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -172,6 +182,7 @@ app.include_router(
 app.include_router(two_factor_router, prefix="/api/auth", tags=["auth"])
 app.include_router(passkeys_router, prefix="/api/auth", tags=["auth"])
 app.include_router(oidc_auth_router)
+app.include_router(clerk_auth_router)
 app.include_router(
     fastapi_users.get_register_router(UserRead, UserCreate),
     prefix="/api/auth",

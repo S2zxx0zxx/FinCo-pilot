@@ -18,6 +18,7 @@ import { PWAProvider } from '@/pwa/pwa-provider'
 import { PWAChrome } from '@/pwa/pwa-chrome'
 import { FinCoRouteLoader } from '@/transitions/finco-route-loader'
 import { FinCoNavigationTransition } from '@/transitions/finco-navigation-transition'
+import { ClerkProviderWrapper } from '@/lib/clerk-provider-wrapper'
 
 const WorkspaceDeletionPage = lazy(() => import('@/pages/workspace-deletion'))
 const AccountDeletionPage = lazy(() => import('@/pages/account-deletion'))
@@ -75,7 +76,8 @@ function App() {
           <TooltipProvider>
             <BrowserRouter>
               <FinCoNavigationTransition />
-              <AuthProvider>
+              <ClerkProviderWrapper>
+                <AuthProvider>
                 <BillingProvider>
                   <WorkspaceProvider>
                     <Suspense fallback={<FinCoRouteLoader />}>
@@ -146,7 +148,8 @@ function App() {
                     <Toaster />
                   </WorkspaceProvider>
                 </BillingProvider>
-              </AuthProvider>
+                </AuthProvider>
+              </ClerkProviderWrapper>
             </BrowserRouter>
             <PWAChrome />
           </TooltipProvider>

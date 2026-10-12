@@ -8,9 +8,12 @@ import { resolveAppVersion } from './build/version.ts'
 import { localQaSessionPlugin } from './build/local-qa-session.ts'
 
 function getFrontendHost(frontendUrl?: string) {
-  if (!frontendUrl) return []
+  const hosts = ['localhost', '127.0.0.1', 'fincopilot.app']
+  if (!frontendUrl) return hosts
   const withoutProto = frontendUrl.replace(/^https?:\/\//, '')
-  return [withoutProto.split(/[:/]/)[0]]
+  const host = withoutProto.split(/[:/]/)[0]
+  if (host && !hosts.includes(host)) hosts.push(host)
+  return hosts
 }
 
 export default defineConfig(async ({ mode }) => {
@@ -24,6 +27,7 @@ export default defineConfig(async ({ mode }) => {
   )
 
   return {
+    envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
     define: {
       __APP_VERSION__: JSON.stringify(appVersion),
     },

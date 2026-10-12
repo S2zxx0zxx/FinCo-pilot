@@ -1,0 +1,44 @@
+# Temporary, branch-scoped lockfile generator. Delete after completing the PR.
+# No secrets, production systems, or application APIs are contacted.
+name: Sentry dependency lock refresh (temporary)
+on:
+  push:
+    branches: [feat/sentry-observability-safe-20261012]
+permissions:
+  contents: write
+jobs:
+  update-locks:
+    if: github.repository == 'S2zxx0zxx/FinCo-pilot' && github.ref == 'refs/heads/feat/sentry-observability-safe-20261012'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Resolve frontend lock without running dependency scripts
+        run: npm --prefix frontend install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.11'
+      - name: Resolve backend lock with canonical pinned uv
+        run: |
+          python -m pip install --disable-pip-version-check uv==0.12.10
+          cd backend
+          uv lock
+      - name: Commit only reviewed dependency locks to this feature branch
+        run: |
+          set -euo pipefail
+          test "$(git branch --show-current)" = 'feat/sentry-observability-safe-20261012'
+          git add -- frontend/package-lock.json backend/uv.lock
+          if git diff --cached --quiet; then
+            echo "Dependency locks already synchronized"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'chore(observability): resolve Sentry npm and uv dependency locks'
+          git push origin HEAD:refs/heads/feat/sentry-observability-safe-20261012

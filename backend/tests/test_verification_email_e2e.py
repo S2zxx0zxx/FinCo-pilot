@@ -220,7 +220,9 @@ async def test_request_availability_is_account_independent_and_signup_stays_comm
         monkeypatch.setattr(get_settings(), "email_delivery_required", True)
         monkeypatch.setattr(get_settings(), "smtp_host", "")
     else:
-        monkeypatch.setattr(password_recovery, "_active_requests", password_recovery._MAX_ACTIVE)
+        from fastapi import HTTPException
+        monkeypatch.setattr(password_recovery, "_acquire_slot", AsyncMock(side_effect=
+            HTTPException(503, "Account recovery is temporarily unavailable", headers={"Retry-After": "60"})))
     deliver = AsyncMock()
     monkeypatch.setattr(password_recovery, "_deliver", deliver)
     responses = []

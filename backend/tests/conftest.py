@@ -638,6 +638,7 @@ def _mock_redis():
     mock.get = AsyncMock(return_value=None)
     mock.set = AsyncMock()
     mock.delete = AsyncMock()
+    mock.eval = AsyncMock(return_value=1)
 
     async def _fake_get_redis():
         return mock
@@ -650,6 +651,7 @@ def _mock_redis():
     with patch("app.core.redis.get_redis", _fake_get_redis), \
          patch("app.core.rate_limit.get_redis", _fake_get_redis), \
          patch("app.api.custom_auth.get_redis", _fake_get_redis), \
+         patch("app.api.password_recovery.get_redis", _fake_get_redis), \
          patch("app.api.two_factor.get_redis", _fake_get_redis):
         yield mock
 

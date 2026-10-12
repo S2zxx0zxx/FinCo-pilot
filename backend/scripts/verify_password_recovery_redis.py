@@ -6,6 +6,35 @@ import uuid
 from fastapi import HTTPException
 from app.core.rate_limit import RateLimiter
 from app.core.redis import get_redis
+from app.core.recovery_capacity import RecoveryCapacity
+
+
+async def verify_capacity(redis, key):
+    slots = RecoveryCapacity(key, limit=8, ttl=120)
+    try:
+        leases = await asyncio.wait_for(asyncio.gather(*(slots.acquire(redis) for _ in range(32))), 15)
+        accepted = [lease for lease in leases if lease is not None]
+        assert len(accepted) == 8 and len(set(accepted)) == 8
+        assert await redis.zcard(key) == 8 and await redis.ttl(key) > 0
+        await slots.release(redis, accepted[0])
+        await slots.release(redis, accepted[0])
+        assert await redis.zcard(key) == 7
+        replacement = await slots.acquire(redis)
+        assert replacement is not None and replacement not in accepted
+        await slots.release(redis, accepted[0])
+        assert await redis.zcard(key) == 8
+        # Simulate a crashed task's expired lease without sleeping or changing
+        # Redis's clock. Only the random disposable CI key is changed.
+        await redis.zadd(key, {accepted[1]: 0})
+        assert not await slots.renew(redis, accepted[1])
+        recovered = await slots.acquire(redis)
+        assert recovered is not None and await redis.zcard(key) == 8
+        await slots.release(redis, accepted[1])
+        assert await redis.zcard(key) == 8
+        assert await slots.renew(redis, recovered)
+        print('PASS: 32 concurrent mail leases allowed exactly 8; expiry and stale/double release preserve replacements')
+    finally:
+        await redis.delete(key)
 
 
 async def main():
@@ -26,6 +55,7 @@ async def main():
         assert results.count('allowed') == 3 and results.count('limited') == 17, results
         assert await redis.ttl(key) > 0
         print('PASS: 20 concurrent Redis attempts allowed exactly 3 and retained bounded TTL')
+        await verify_capacity(redis, key + ':mail-leases')
     finally:
         await redis.delete(key)
         await redis.aclose()

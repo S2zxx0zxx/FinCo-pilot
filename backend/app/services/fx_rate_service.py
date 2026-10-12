@@ -7,6 +7,7 @@ from typing import Awaitable, Optional, cast
 from sqlalchemy import desc, func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql.elements import ColumnElement
 
 from app.core.config import get_settings
 from app.models.fx_rate import FxRate
@@ -16,6 +17,15 @@ from app.providers.openexchangerates import FxProviderError, OpenExchangeRatesPr
 logger = logging.getLogger(__name__)
 
 _provider = OpenExchangeRatesProvider()
+
+
+def approved_rate_source_filters() -> tuple[ColumnElement[bool], ...]:
+    """Production consumes only the configured adapter's attributed cache.
+
+    A valid date and positive value do not establish provider provenance.
+    Development fixtures remain usable without being production evidence.
+    """
+    return (FxRate.source == _provider.name,) if get_settings().is_production else ()
 
 
 class FxRateUnavailableError(RuntimeError):
@@ -179,6 +189,7 @@ async def _resolve_rate(
                 FxRate.date <= target,
                 FxRate.date >= target - timedelta(days=7),
                 FxRate.rate > 0,
+                *approved_rate_source_filters(),
             )
             .group_by(FxRate.date)
             .having(func.count(func.distinct(FxRate.quote_currency)) == len(currencies))
@@ -251,6 +262,7 @@ async def _get_exact_date_rate(session: AsyncSession, currency: str, target: dat
             FxRate.base_currency == "USD",
             FxRate.quote_currency == currency,
             FxRate.date == target,
+            *approved_rate_source_filters(),
         )
     )
     return result
@@ -269,6 +281,7 @@ async def _get_closest_rate(session: AsyncSession, currency: str, target: date) 
             FxRate.date <= target,
             FxRate.date >= target - timedelta(days=7),
             FxRate.rate > 0,
+            *approved_rate_source_filters(),
         )
         .order_by(desc(FxRate.date))
         .limit(1)

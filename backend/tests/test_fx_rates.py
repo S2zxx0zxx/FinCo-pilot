@@ -1735,7 +1735,7 @@ async def test_sync_keeps_provider_publication_date():
 async def test_scheduled_conversion_never_calls_provider(session: AsyncSession, clean_db):
     from types import SimpleNamespace
     from app.services.fx_rate_service import _resolve_rate
-    with patch('app.services.fx_rate_service.get_settings', return_value=SimpleNamespace(fx_sync_mode='scheduled')), patch('app.services.fx_rate_service.sync_rates', AsyncMock()) as sync:
+    with patch('app.services.fx_rate_service.get_settings', return_value=SimpleNamespace(fx_sync_mode='scheduled', is_production=False)), patch('app.services.fx_rate_service.sync_rates', AsyncMock()) as sync:
         assert await _resolve_rate(session, 'USD', 'EUR') is None
         sync.assert_not_awaited()
 

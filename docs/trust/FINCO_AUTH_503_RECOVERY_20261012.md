@@ -30,10 +30,16 @@ Production variables already configured include `DATABASE_EXTERNAL_REQUIRED=true
 
 `fincopilot-web` exposes no project-scoped production `VITE_CLERK_PUBLISHABLE_KEY` in the same API read; independently verify its build-time source and the **currently aliased deployment**, since the live UI displays Clerk.
 
+## Critical Neon schema mismatch — do not connect blindly
+
+The connected Neon `FinCo-Pilot` project, branch named `production`, was inspected **read-only**. Its public schema has `financial_accounts`, `schema_migrations`, and `users.user_id` as the primary key. It does **not** have the `accounts`, `external_auth_identities`, `alembic_version`, or `users.id` required by this GitHub FastAPI backend's models/Alembic migrations.
+
+Therefore **do not** automatically configure `DATABASE_URL` with that Neon branch. It appears to belong to a different application schema or revision. The correct current FastAPI production data source must first be identified and verified without modifying any records. Never run an Alembic upgrade against an unknown financial database.
+
 ## Safe operator recovery order
 
 1. **Freeze deployment and back up:** record current Vercel deployment IDs, config *names and scopes* (not secret values), and the Neon production branch snapshot. Do not reset tables, issue replacement JWT signing secrets, or re-link existing financial users by email.
-2. **Resolve infrastructure:** confirm which existing Neon production branch, Redis instance, R2 bucket/prefix, FX provider, and SMTP identity are the approved live resources. Confirm availability and permission before referencing any of them.
+2. **Resolve infrastructure:** confirm which schema-compatible PostgreSQL database/branch, Redis instance, R2 bucket/prefix, FX provider, and SMTP identity are the approved live resources. Confirm availability and permission before referencing any of them.
 3. **Set real secrets securely:** supply the missing environment settings to `fincopilot-api` production through Vercel encrypted/sensitive variables or approved integration; do not put values into Git, logs, PRs, or the frontend. Retain existing `SECRET_KEY`, `CREDENTIAL_ENCRYPTION_KEY`, `CORE_COPILOT_SIGNING_KEY`, and object prefix exactly unless an independently planned rotation is approved.
 4. **Redeploy API only**, then independently check `/api/health/ready` for HTTP 200 (not just a successful build or `/api/health` liveness). Inspect server logs for config faults without logging credential values.
 5. **Verify Clerk identity bridge:** frontend publishable key from the same Clerk instance, backend `CLERK_ISSUER` / public verifier / authorized parties / secret, live Google redirect allowlist, and mapping of existing financial account UUIDs. An unknown legacy user should remain blocked (`403 Existing account requires an approved identity mapping`) until a separately reviewed migration links the identity.

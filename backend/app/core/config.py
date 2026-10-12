@@ -49,6 +49,11 @@ class Settings(BaseSettings):
     app_name: str = "FinCo-Pilot"
     debug: bool = False
     deployment_environment: str = "development"  # development|test|staging|production
+    # Sentry is an optional privacy-restricted error sink. Credentials use Settings secret sources.
+    sentry_enabled: bool = False
+    sentry_dsn: SecretStr = SecretStr("")
+    sentry_environment: str = ""
+    sentry_release: str = ""
 
     # Public operator/business identity. This is intentionally separate from
     # workspace issuer details: it describes who operates the FinCo-Pilot

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/auth-context'
 import { useAuth as useClerkAuth } from '@clerk/clerk-react'
@@ -26,12 +26,12 @@ function SessionUnavailableNotice() {
 function ClerkProtectedRoute({ children }: { children: React.ReactNode }) {
   const { token, isLoading, isSessionUnavailable, loginWithClerk } = useAuth()
   const { isLoaded, isSignedIn, getToken } = useClerkAuth()
-  const [isExchanging, setIsExchanging] = useState(false)
+  const exchangeInFlight = useRef(false)
   const [exchangeError, setExchangeError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!token && isLoaded && isSignedIn && !isExchanging && !exchangeError) {
-      setIsExchanging(true)
+    if (!token && isLoaded && isSignedIn && !exchangeInFlight.current && !exchangeError) {
+      exchangeInFlight.current = true
       void getToken().then(async (clerkToken) => {
         if (!clerkToken) {
           throw new Error('Clerk did not return a session token. Please sign in again.')
@@ -43,16 +43,16 @@ function ClerkProtectedRoute({ children }: { children: React.ReactNode }) {
         const msg = axiosErr.response?.data?.detail || axiosErr.message || 'sso_failed'
         setExchangeError(msg)
       }).finally(() => {
-        setIsExchanging(false)
+        exchangeInFlight.current = false
       })
     }
-  }, [token, isLoaded, isSignedIn, isExchanging, exchangeError, getToken, loginWithClerk])
+  }, [token, isLoaded, isSignedIn, exchangeError, getToken, loginWithClerk])
 
   if (exchangeError) {
     return <Navigate to={`/login?error=${encodeURIComponent(exchangeError)}`} replace />
   }
 
-  if (isLoading || !isLoaded || isExchanging || (!token && isSignedIn)) {
+  if (isLoading || !isLoaded || (!token && isSignedIn)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex flex-col items-center gap-4">

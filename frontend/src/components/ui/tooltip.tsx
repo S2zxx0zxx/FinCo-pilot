@@ -42,7 +42,7 @@ function TooltipContent({
         data-slot="tooltip-content"
         sideOffset={sideOffset}
         className={cn(
-          "bg-foreground text-background z-50 max-w-xs rounded-lg px-3 py-2 text-xs leading-relaxed shadow-md outline-hidden",
+          "bg-popover text-popover-foreground z-50 max-w-xs rounded-xl px-3 py-2 text-xs leading-relaxed shadow-none outline-hidden",
           "data-[state=open]:animate-in data-[state=closed]:animate-out",
           "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
           "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
@@ -53,7 +53,7 @@ function TooltipContent({
         {...props}
       >
         {children}
-        <TooltipPrimitive.Arrow className="fill-foreground" />
+        <TooltipPrimitive.Arrow className="fill-popover" />
       </TooltipPrimitive.Content>
     </TooltipPrimitive.Portal>
   )

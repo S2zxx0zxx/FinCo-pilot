@@ -62,12 +62,12 @@ button:focus-visible,a:focus-visible,select:focus-visible,textarea:focus-visible
 .finco-auth-card h1 { font-size: 1.625rem; line-height: 1.25; }
 .finco-auth-card form > :first-child p { max-width: 36ch; text-align: center; }
 .finco-metric { font-family: var(--finco-font-heading); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
-[data-slot=dialog-content],[data-slot=dropdown-menu-content],[data-slot=popover-content],[data-slot=select-content] {
+[data-slot=dialog-content],[data-slot=dropdown-menu-content],[data-slot=popover-content],[data-slot=select-content],[data-slot=tooltip-content] {
   corner-shape: superellipse(1.25); box-shadow: none;
   animation-duration: var(--finco-motion-panel); animation-timing-function: var(--finco-ease);
 }
 [data-state=closed][data-slot=dialog-content],[data-state=closed][data-slot=dropdown-menu-content],
-[data-state=closed][data-slot=popover-content],[data-state=closed][data-slot=select-content] { animation-duration: 220ms; }
+[data-state=closed][data-slot=popover-content],[data-state=closed][data-slot=select-content],[data-state=closed][data-slot=tooltip-content] { animation-duration: 220ms; }
 [data-slot=dialog-content] { max-height: min(90dvh, 56rem); overflow-y: auto; overscroll-behavior: contain; }
 [data-slot=table-container] { border-radius: 1rem; overscroll-behavior-x: contain; }
 @keyframes finco-arrive { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }

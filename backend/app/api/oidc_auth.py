@@ -16,6 +16,7 @@ from jwt import PyJWTError as JWTError
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import func, select, update as sql_update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 
 from app.core.auth import UserManager, get_jwt_strategy, get_user_manager
 from app.core.config import get_settings
@@ -31,6 +32,12 @@ from app.services.workspace_service import create_personal_workspace_for_user
 
 router = APIRouter(prefix="/api/auth/oidc", tags=["auth"])
 OIDC_STATE_TTL = 600
+
+
+async def _consume_oidc_state(redis, state: str):
+    # Same atomic GETDEL contract as the banking OAuth state store. Never
+    # split lookup/removal: concurrent callbacks must have exactly one winner.
+    return await redis.getdel(f"oidc_state:{state}")
 
 
 class OIDCConfigResponse(BaseModel):
@@ -347,16 +354,30 @@ async def _get_or_create_oidc_user(
         is_verified=True,
         is_superuser=bool(settings.oidc_sync_roles and admin_roles and provider_roles & admin_roles),
     )
-    # Track whether the row was just created by this call.  If a concurrent
-    # OIDC callback beat us to registration (UserAlreadyExists), the user
-    # already has a workspace/wallet/categories/rules from that first call, so
-    # we must not seed them again.
-    _user_is_brand_new = True
+    # Creation conflicts recheck identity and return before new-user seeding.
     try:
         user = await user_manager.create(user_create, safe=True, request=None)
-    except UserAlreadyExists:
-        _user_is_brand_new = False
-        user = (await session.execute(select(User).where(func.lower(User.email) == email))).scalar_one()
+    except (UserAlreadyExists, IntegrityError):
+        # An email collision is not permission to claim the winning account.
+        # Recover the failed transaction and re-read its actual identity, rather
+        # than blindly assigning the incoming subject or replacing preferences.
+        db_session = user_manager.user_db.session
+        await db_session.rollback()
+        user = await db_session.scalar(select(User).where(func.lower(User.email) == email))
+        if user is None:
+            raise HTTPException(409, "Account changed during sign-in. Start sign-in again.") from None
+        if user.oidc_issuer != issuer or user.oidc_subject != subject:
+            if user.oidc_issuer or user.oidc_subject or link_mode == "disabled":
+                raise HTTPException(403, "Existing account is not linked to this OIDC identity") from None
+            # An explicitly permitted email link must go through the ordinary
+            # policy path on a fresh sign-in, never the new-user seeding path.
+            raise HTTPException(409, "Account changed during sign-in. Start sign-in again.") from None
+        if not user.is_active:
+            raise HTTPException(403, "User is inactive") from None
+        await _sync_oidc_roles(user, merged, db_session)
+        await db_session.commit()
+        await db_session.refresh(user)
+        return user
 
     db_session = user_manager.user_db.session
     await db_session.execute(
@@ -366,23 +387,21 @@ async def _get_or_create_oidc_user(
     )
     await db_session.refresh(user)
 
-    if _user_is_brand_new:
-        # user_manager.create() was called with request=None, which causes
-        # on_after_register to exit immediately without seeding anything.
-        # We therefore seed workspace, wallet, categories, and rules here.
-        workspace = await create_personal_workspace_for_user(db_session, user)
-        wallet = Account(
-            user_id=user.id,
-            workspace_id=workspace.id,
-            name="Wallet",
-            type="checking",
-            balance=0,
-            currency=settings.default_currency,
-        )
-        db_session.add(wallet)
-        await db_session.commit()
-        await create_default_categories(db_session, user.id, "en", workspace_id=workspace.id)
-        await create_default_rules(db_session, user.id, "en", workspace_id=workspace.id)
+    # Only this call's newly created user receives defaults. Conflict winners
+    # returned above retain their preferences and existing financial resources.
+    workspace = await create_personal_workspace_for_user(db_session, user)
+    wallet = Account(
+        user_id=user.id,
+        workspace_id=workspace.id,
+        name="Wallet",
+        type="checking",
+        balance=0,
+        currency=settings.default_currency,
+    )
+    db_session.add(wallet)
+    await db_session.commit()
+    await create_default_categories(db_session, user.id, "en", workspace_id=workspace.id)
+    await create_default_rules(db_session, user.id, "en", workspace_id=workspace.id)
 
     await _sync_oidc_roles(user, merged, db_session)
     await db_session.commit()
@@ -398,11 +417,9 @@ async def oidc_callback(
     user_manager: UserManager = Depends(get_user_manager),
 ):
     r = await get_redis()
-    state_key = f"oidc_state:{state}"
-    raw_state = await r.get(state_key)
+    raw_state = await _consume_oidc_state(r, state)
     if raw_state is None:
         raise HTTPException(status_code=400, detail="Invalid or expired OIDC state")
-    await r.delete(state_key)
     if isinstance(raw_state, bytes):
         raw_state = raw_state.decode()
     state_data = json.loads(raw_state)

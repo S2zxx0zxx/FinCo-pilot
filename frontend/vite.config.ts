@@ -35,7 +35,7 @@ export default defineConfig(async ({ mode }) => {
     },
     build: {
       // Never publish public sourcemaps; upload private artifacts only with CI token.
-      sourcemap: sentryUploadEnabled ? 'hidden' : false,
+      sourcemap: sentryUploadEnabled ? ('hidden' as const) : false,
       // Keep the existing per-chunk budget; optional locales load on demand.
       chunkSizeWarningLimit: 1000,
       // Emit hashed JS/CSS into `static/` instead of Vite's default `assets/`.

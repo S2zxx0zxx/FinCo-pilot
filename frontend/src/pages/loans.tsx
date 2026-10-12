@@ -48,14 +48,14 @@ function LoanWorkspace({ workspaceId, currency }: { workspaceId: string; currenc
       await refresh()
     } catch (error) { setError(message(error)) } finally { setBusy(false) }
   }
-  return <main className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
+  return <main className="mx-auto max-w-5xl space-y-6">
     <header className="space-y-2">
       <h1 className="text-2xl font-semibold">{tr("Loans and EMI plans")}</h1>
       <p className="text-muted-foreground">{tr("Monthly fixed-rate, reducing-balance estimates. Payment counts are entered by you, not verified by your bank. Compare the schedule with your lender’s statement.")}</p>
       <p className="text-sm">{tr("Fees, daily interest, floating rates, partial payments and early principal repayments are not modelled. Add those obligations separately. Saving a plan does not create transactions or move money.")}</p>
       <Link className="inline-block underline" to="/spending-plan">{tr("Open safe-to-spend plan")}</Link>
     </header>
-    {canWrite && <form onSubmit={create} className="space-y-4 rounded-xl border p-5">
+    {canWrite && <form onSubmit={create} className="space-y-4 finco-surface p-5">
       <h2 className="font-semibold">{tr("Add a repayment plan")}</h2>
       <fieldset disabled={busy} className="grid gap-4 sm:grid-cols-2">
         <div><Label htmlFor="loan-name">{tr("Loan name")}</Label><Input id="loan-name" required maxLength={120} value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} /></div>
@@ -87,7 +87,7 @@ function LoanDetails({ id, workspaceId, onSaved }: { id: string; workspaceId: st
   if (detail.isError) return <div role="alert"><p>{tr("Schedule could not be loaded.")}</p><Button variant="outline" onClick={() => void detail.refetch()}>{tr("Retry")}</Button></div>
   const data = detail.data
   const money = (value: string) => new Intl.NumberFormat(locale, { style: 'currency', currency: data.loan.currency }).format(Number(value))
-  return <section className="space-y-4 rounded-xl border p-5">
+  return <section className="space-y-4 finco-surface p-5">
     <h2 className="text-xl font-semibold">{data.loan.name}</h2>
     <p>{tr("Estimated regular installment:")} {money(data.monthly_payment)} {tr("· Total scheduled interest:")} {money(data.total_interest)}</p>
     <p>{tr("Estimated principal remaining after reported payments:")} {money(data.remaining_principal)}</p>

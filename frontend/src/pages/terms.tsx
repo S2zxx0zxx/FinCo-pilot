@@ -30,7 +30,7 @@ export default function TermsPage() {
       </header>
       <h1 className="text-3xl font-semibold tracking-tight">{hi ? 'सेवा की शर्तें' : 'Terms of service'}</h1>
       {query.isPending && <p role="status">{hi ? 'शर्तें लोड हो रही हैं…' : 'Loading terms…'}</p>}
-      {query.isError && <div role="alert" className="space-y-3 rounded-xl border p-5">
+      {query.isError && <div role="alert" className="space-y-3 finco-surface p-5">
         <p>{hi ? 'शर्तें उपलब्ध नहीं हैं। इन्हें प्रकाशित या स्वीकार किया हुआ न मानें।' : 'Terms are unavailable. Do not assume they are published or accepted.'}</p>
         <Button variant="outline" onClick={() => void query.refetch()}>{hi ? 'फिर प्रयास करें' : 'Try again'}</Button>
       </div>}
@@ -42,7 +42,7 @@ export default function TermsPage() {
           <p className="text-sm">{hi ? 'समीक्षा' : 'Reviewed'}: {terms.reviewed_on} · {hi ? 'प्रभावी तारीख' : 'Effective date'}: {terms.effective_date ?? (hi ? 'अभी तय नहीं' : 'Not set')}</p>
           <p className="text-sm">{hi ? 'परीक्षण में भुगतान का सत्यापन योजना सक्रिय नहीं करता। वास्तविक पैसे लेना, नियमित शुल्क और स्वचालित धनवापसी इस संस्करण में चालू नहीं हैं।' : 'Test payment verification does not activate a plan. Live money collection, recurring charges and automated refunds are not operational in this build.'}</p>
         </section>
-        <section className="space-y-4 rounded-xl border p-5" aria-labelledby="terms-operator">
+        <section className="space-y-4 finco-surface p-5" aria-labelledby="terms-operator">
           <h2 id="terms-operator" className="text-xl font-semibold">{hi ? 'संचालक और शिकायत संपर्क' : 'Operator and grievance contact'}</h2>
           <dl className="grid gap-4 text-sm sm:grid-cols-2">
             {[[hi ? 'कानूनी नाम' : 'Legal name', terms.operator.legal_name],
@@ -55,7 +55,7 @@ export default function TermsPage() {
             <div><dt className="text-muted-foreground">{hi ? 'ईमेल' : 'Email'}</dt><dd className="mt-1 break-all">{terms.contact.email ? <a href={`mailto:${encodeURIComponent(terms.contact.email)}`} className="underline">{terms.contact.email}</a> : absent}</dd></div>
           </dl>
         </section>
-        <section className="space-y-4 rounded-xl border p-5" aria-labelledby="terms-commercial">
+        <section className="space-y-4 finco-surface p-5" aria-labelledby="terms-commercial">
           <h2 id="terms-commercial" className="text-xl font-semibold">{hi ? 'धनवापसी और रद्द करने के निर्णय' : 'Refund and cancellation decisions'}</h2>
           <p className="whitespace-pre-wrap break-words text-sm leading-7">{terms.commercial.refund_policy[language] ?? (hi ? 'धनवापसी की व्यावसायिक शर्तें अभी समीक्षा के लिए बाकी हैं।' : 'Operator refund eligibility/window and handling decisions remain pending review.')}</p>
           <p className="whitespace-pre-wrap break-words text-sm leading-7">{terms.commercial.cancellation_policy[language] ?? (hi ? 'रद्द करने और सेवा अवधि की व्यावसायिक शर्तें अभी समीक्षा के लिए बाकी हैं।' : 'Operator cancellation/service-period decisions remain pending review.')}</p>

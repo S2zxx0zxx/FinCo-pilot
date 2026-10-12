@@ -1,3 +1,4 @@
+import { QueryError } from '@/components/spaceui/query-state'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDisplayLocale } from '@/hooks/use-display-locale'
@@ -193,7 +194,7 @@ export default function ReportsPage() {
     }
   }
 
-  const { data, isLoading } = useQuery<ReportResponse>({
+  const { data, isLoading, isError, refetch } = useQuery<ReportResponse>({
     queryKey: ['reports', activeTab, rangeKey, months, period ?? null, days ?? null, interval, isCashFlow ? cashFlowBaseline : false, activeAccountIds, activeWalletIds],
     queryFn: () =>
       isCashFlow
@@ -453,6 +454,8 @@ export default function ReportsPage() {
     return result
   })()
 
+  if (isError) return <QueryError retry={refetch} />
+
   return (
     <div>
       <PageHeader
@@ -559,7 +562,7 @@ export default function ReportsPage() {
       </div>
 
       {/* Hero Card */}
-      <div className="bg-card rounded-xl border border-border shadow-sm mb-5">
+      <div className="finco-surface mb-5">
         <div className="px-5 py-4">
           {isLoading ? (
             <div className="flex items-center gap-8">
@@ -616,7 +619,7 @@ export default function ReportsPage() {
 
       {/* Flow (Sankey) */}
       {isMoneyMap && (
-        <div className="bg-card rounded-xl border border-border shadow-sm mb-5">
+        <div className="finco-surface mb-5">
           <div className="px-5 pt-5 pb-2 flex items-center justify-between">
             <p className="text-sm font-semibold text-foreground">
               {t('reports.moneyMap')}
@@ -653,7 +656,7 @@ export default function ReportsPage() {
       {!isMoneyMap && (
       <>
       {/* Main Trend Chart */}
-      <div className="bg-card rounded-xl border border-border shadow-sm mb-5">
+      <div className="finco-surface mb-5">
         <div className="px-5 pt-5 pb-2 flex items-center justify-between">
           <p className="text-sm font-semibold text-foreground">
             {t(currentTab.labelKey)} · {t('reports.trend')}

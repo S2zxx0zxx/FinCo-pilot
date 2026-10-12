@@ -246,7 +246,7 @@ export default function AccountsPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="bg-card rounded-xl border border-border shadow-sm">
+          <div className="finco-surface">
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-border">
               <h2 className="text-sm font-medium text-muted-foreground">{t('accounts.manualAccounts')}</h2>
             </div>
@@ -315,7 +315,7 @@ export default function AccountsPage() {
                 const showSyncError = ['rate_limited', 'error', 'action_required'].includes(syncState)
 
                 return (
-                  <div key={conn.id} className="bg-card rounded-xl border border-border shadow-sm">
+                  <div key={conn.id} className="finco-surface">
                     <div className="flex items-center justify-between px-5 py-3.5 border-b border-border">
                       <div className="flex items-center gap-3 min-w-0">
                         <ConnectionLogo logoUrl={(conn.institutions?.length ?? 0) > 1 ? null : conn.logo_url} />
@@ -417,7 +417,7 @@ export default function AccountsPage() {
           )}
 
           {closedAccounts.length > 0 && (
-            <div className="bg-card rounded-xl border border-border shadow-sm opacity-60">
+            <div className="finco-surface opacity-60">
               <div className="flex items-center justify-between px-5 py-3.5 border-b border-border"><h2 className="text-sm font-medium text-muted-foreground">{t('accounts.closedAccounts')}</h2></div>
               <div className="divide-y divide-muted">
                 {closedAccounts.map((acc) => (

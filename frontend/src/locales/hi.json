@@ -2505,5 +2505,19 @@
     "importConfirmTitle": "मिलान नियम इंपोर्ट करें?",
     "importConfirmDescription": "फ़ाइल {{file}} में {{count}} नियम हैं।",
     "importOverwriteWarning": "इंपोर्ट करने पर इस वर्कस्पेस के मौजूदा मिलान नियम, उनके क्रम सहित, बदल जाएँगे। यह वापस नहीं किया जा सकता।"
+  },
+  "frontend": {
+    "navigation": "नेविगेशन",
+    "workspace": "कार्यक्षेत्र",
+    "loadError": "आपका डेटा लोड नहीं हो सका। फिर कोशिश करें।",
+    "retry": "फिर कोशिश करें",
+    "planUsage": "आपकी योजना का उपयोग",
+    "metrics": {
+      "accounts": "खाते",
+      "active_budgets": "सक्रिय बजट",
+      "active_goals": "सक्रिय लक्ष्य",
+      "imports_monthly": "इस महीने के आयात",
+      "ai_actions_monthly": "इस महीने की AI कार्रवाइयाँ"
+    }
   }
 }

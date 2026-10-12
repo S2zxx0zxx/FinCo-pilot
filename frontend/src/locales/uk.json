@@ -2518,5 +2518,19 @@
     "importConfirmTitle": "Імпортувати правила зіставлення?",
     "importConfirmDescription": "Файл {{file}} містить правил: {{count}}.",
     "importOverwriteWarning": "Імпорт замінює правила зіставлення цього простору разом з їхнім порядком. Скасувати не можна."
+  },
+  "frontend": {
+    "navigation": "Навігація",
+    "workspace": "Робочий простір",
+    "loadError": "Не вдалося завантажити дані. Спробуйте ще раз.",
+    "retry": "Спробувати ще раз",
+    "planUsage": "Використання вашого плану",
+    "metrics": {
+      "accounts": "Рахунки",
+      "active_budgets": "Активні бюджети",
+      "active_goals": "Активні цілі",
+      "imports_monthly": "Імпорти цього місяця",
+      "ai_actions_monthly": "Дії ШІ цього місяця"
+    }
   }
 }

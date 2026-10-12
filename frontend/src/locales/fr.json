@@ -2506,5 +2506,19 @@
     "importConfirmTitle": "Importer les règles de rapprochement ?",
     "importConfirmDescription": "Le fichier {{file}} contient {{count}} règles.",
     "importOverwriteWarning": "L'import remplace les règles de rapprochement de cet espace, y compris leur ordre. C'est irréversible."
+  },
+  "frontend": {
+    "navigation": "Navigation",
+    "workspace": "Espace de travail",
+    "loadError": "Impossible de charger tes données. Réessaie.",
+    "retry": "Réessayer",
+    "planUsage": "Utilisation de ton forfait",
+    "metrics": {
+      "accounts": "Comptes",
+      "active_budgets": "Budgets actifs",
+      "active_goals": "Objectifs actifs",
+      "imports_monthly": "Importations ce mois-ci",
+      "ai_actions_monthly": "Actions IA ce mois-ci"
+    }
   }
 }

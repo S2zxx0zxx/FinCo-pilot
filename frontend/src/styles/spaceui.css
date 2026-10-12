@@ -1,0 +1,91 @@
+/* Space UI typography, two-tone surfaces and motion tokens.
+ * Source: usespaceui/ui (MIT); adapted to the existing FinCo finance contracts.
+ */
+@font-face { font-family: 'Open Runde'; src: url('/fonts/open-runde/open-runde-regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Open Runde'; src: url('/fonts/open-runde/open-runde-medium.woff2') format('woff2'); font-weight: 500; font-display: swap; }
+@font-face { font-family: 'Open Runde'; src: url('/fonts/open-runde/open-runde-semibold.woff2') format('woff2'); font-weight: 600; font-display: swap; }
+@font-face { font-family: 'Open Runde'; src: url('/fonts/open-runde/open-runde-bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+
+:root {
+  --background: #f7f7f8; --foreground: #18181b;
+  --card: #ffffff; --card-foreground: #18181b;
+  --popover: #ffffff; --popover-foreground: #18181b;
+  --muted: #efeff1; --muted-foreground: #61616b;
+  --secondary: #eeeef0; --secondary-foreground: #27272a;
+  --accent: #e9e9ed; --accent-foreground: #18181b;
+  --border: #e8e8ec; --input: #dedee4; --radius: 0.875rem;
+  --sidebar: #f0f0f2; --sidebar-foreground: #18181b;
+  --sidebar-border: #e5e5e9; --sidebar-accent: #e5e5e9; --sidebar-muted: #62626d;
+  --finco-font-body: 'Inter Variable', system-ui, -apple-system, sans-serif;
+  --finco-font-heading: 'Open Runde', 'Inter Variable', system-ui, sans-serif;
+  --finco-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --finco-motion-quick: 150ms; --finco-motion-base: 250ms; --finco-motion-panel: 350ms;
+  --skeleton-base: #e8e8ed;
+}
+.dark {
+  --background: #101012; --foreground: #f4f4f5;
+  --card: #18181b; --card-foreground: #f4f4f5;
+  --popover: #202024; --popover-foreground: #f4f4f5;
+  --muted: #252529; --muted-foreground: #aaaab5;
+  --secondary: #29292e; --secondary-foreground: #f4f4f5;
+  --accent: #303036; --accent-foreground: #fafafa;
+  --border: #2b2b31; --input: #393940;
+  --sidebar: #17171a; --sidebar-foreground: #f4f4f5;
+  --sidebar-border: #29292e; --sidebar-accent: #29292e; --sidebar-muted: #aaaab5;
+  --skeleton-base: #29292e;
+}
+body { font-family: var(--finco-font-body); line-height: 1.5; font-synthesis: none; }
+h1,h2,h3,h4,h5,h6,[data-slot=card-title],[data-slot=dialog-title] {
+  font-family: var(--finco-font-heading); text-wrap: balance; letter-spacing: -0.025em;
+}
+p { text-wrap: pretty; }
+button,input,select,textarea { -webkit-tap-highlight-color: transparent; }
+button,a,input,select,textarea { scroll-margin-block: 5rem; }
+button:focus-visible,a:focus-visible,select:focus-visible,textarea:focus-visible,
+.recharts-wrapper:focus-visible,.recharts-surface:focus-visible,.recharts-wrapper *:focus-visible {
+  outline: 2px solid var(--ring); outline-offset: 3px;
+}
+.finco-surface {
+  background: var(--card); color: var(--card-foreground); border: 0;
+  border-radius: 1.25rem; corner-shape: superellipse(1.25); box-shadow: none;
+}
+.finco-frame { background: var(--muted); border-radius: 1.5rem; padding: 0.375rem; corner-shape: superellipse(1.25); }
+.finco-page { min-width: 0; animation: finco-arrive var(--finco-motion-panel) var(--finco-ease) both; }
+.finco-sidebar { width: 16.5rem; }
+.finco-sidebar nav a { min-height: 2.5rem; border-radius: 0.875rem; }
+.finco-sidebar nav a[aria-current=page] { background: var(--card); color: var(--foreground); }
+.finco-page-header { margin-bottom: 1.75rem; }
+.finco-page-title { font-size: clamp(1.625rem, 2.7vw, 2.125rem); line-height: 1.2; }
+.finco-auth { background: var(--background); padding: 2rem 1rem; }
+.finco-auth-card { border-radius: 1.75rem; background: var(--card); border: 6px solid var(--muted); box-shadow: none; }
+.finco-auth-card input { min-height: 2.75rem; }
+.finco-auth-card h1 { font-size: 1.625rem; line-height: 1.25; }
+.finco-auth-card form > :first-child p { max-width: 36ch; text-align: center; }
+.finco-metric { font-family: var(--finco-font-heading); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+[data-slot=dialog-content],[data-slot=dropdown-menu-content],[data-slot=popover-content],[data-slot=select-content] {
+  corner-shape: superellipse(1.25); box-shadow: none;
+  animation-duration: var(--finco-motion-panel); animation-timing-function: var(--finco-ease);
+}
+[data-state=closed][data-slot=dialog-content],[data-state=closed][data-slot=dropdown-menu-content],
+[data-state=closed][data-slot=popover-content],[data-state=closed][data-slot=select-content] { animation-duration: 220ms; }
+[data-slot=dialog-content] { max-height: min(90dvh, 56rem); overflow-y: auto; overscroll-behavior: contain; }
+[data-slot=table-container] { border-radius: 1rem; overscroll-behavior-x: contain; }
+@keyframes finco-arrive { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (max-width: 639px) {
+  input:not([type=checkbox]):not([type=radio]),select,textarea { font-size: 16px; }
+  .finco-page-header { gap: 1rem; }
+  .finco-page-header > :last-child { max-width: 100%; flex-wrap: wrap; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .finco-page,[data-slot],.finco-sidebar,.finco-navigation-pulse { animation: none !important; transition-duration: 0ms !important; }
+  html { scroll-behavior: auto !important; }
+}
+@media print {
+  body { background: white; color: black; }
+  .finco-sidebar,.finco-shell-toolbar { display: none; }
+  .finco-page { animation: none; }
+}
+
+::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+
+.finco-identity svg { width: 100%; height: 100%; }

@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "./styles/vendor/shadcn-tailwind.css";
@@ -138,18 +137,6 @@
   h1, h2, h3 {
     letter-spacing: -0.035em;
   }
-}
-
-/* Recharts focuses its wrapper/surface on click; on macOS this draws a
-   browser focus ring around the whole chart. Suppress it — the chart conveys
-   selection via bar opacity, not a focus outline. */
-.recharts-wrapper:focus,
-.recharts-wrapper:focus-visible,
-.recharts-surface:focus,
-.recharts-surface:focus-visible,
-.recharts-wrapper *:focus,
-.recharts-wrapper *:focus-visible {
-  outline: none;
 }
 
 @keyframes fincopilot-highlight-flash {

@@ -71,11 +71,12 @@ export default function AgentDetailPage() {
   return (
     // Height has to account for the AppLayout's chrome around <Outlet />:
     //   - mobile sticky header  = h-14 (3.5rem)
-    //   - p-6 wrapper top+bottom = 3rem
+    //   - mobile p-4 wrapper = 2rem (sm:p-6 = 3rem)
+    //   - desktop toolbar + p-8 wrapper = 8rem
     // Without subtracting both, the input bar gets pushed past the viewport
     // and the user has to scroll the whole page — which they don't want.
     // overflow-hidden ensures only the messages div inside ChatPanel scrolls.
-    <div className="flex flex-col h-[calc(100dvh-6.5rem)] lg:h-[calc(100dvh-3rem)] overflow-hidden">
+    <div className="flex flex-col h-[calc(100dvh-5.5rem)] sm:h-[calc(100dvh-6.5rem)] lg:h-[calc(100dvh-8rem)] overflow-hidden">
       <div className="border-b px-4 py-3 flex items-center gap-3">
         <Button size="icon" variant="ghost" onClick={() => navigate('/agents')} title={t('common.back')} aria-label={t('common.back')}>
           <ArrowLeft className="h-4 w-4" />

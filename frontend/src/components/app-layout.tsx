@@ -1,3 +1,7 @@
+import { Dialog as DialogPrimitive } from 'radix-ui'
+import { IdentityAvatar } from '@/components/spaceui/identity-avatar'
+import { ThemeToggle } from '@/components/spaceui/theme-toggle'
+import { useMediaQuery } from '@/hooks/spaceui/use-media-query'
 import { useState, useCallback, useEffect, useMemo } from 'react'
 import { getAccountName } from '@/lib/account-utils'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
@@ -14,7 +18,6 @@ import { OnboardingTour } from '@/components/onboarding-tour'
 import { useTheme } from 'next-themes'
 import { accounts as accountsApi } from '@/lib/api'
 import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,11 +39,10 @@ import { WorkspaceSwitcher } from '@/components/workspace-switcher'
 import { navItems, visibleNavItems, type NavItem } from '@/lib/nav-items'
 import {
   Menu,
+  X,
   ChevronRight,
   Eye,
   EyeOff,
-  Sun,
-  Moon,
   Languages,
   KeyRound,
   Check,
@@ -91,7 +93,8 @@ export function AppLayout() {
   const { activeAccountIds } = useCollectionFilter()
   const userCurrency = user?.preferences?.currency_display ?? 'USD'
   const locale = useDisplayLocale()
-  const { theme, setTheme, resolvedTheme } = useTheme()
+  const { resolvedTheme } = useTheme()
+  const isDesktop = useMediaQuery('(min-width: 1024px)')
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [accountsExpanded, setAccountsExpanded] = useState(true)
@@ -165,13 +168,6 @@ export function AppLayout() {
   }, [user, updateUser])
 
   const userInitial = user?.email?.charAt(0).toUpperCase() ?? '?'
-  const resolvedThemeLocal = theme === 'system' ? undefined : theme
-  const isDark = resolvedThemeLocal
-    ? resolvedThemeLocal === 'dark'
-    : typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-color-scheme: dark)').matches
-  const toggleTheme = () => setTheme(isDark ? 'light' : 'dark')
-
   const { data: accountsList } = useQuery({
     queryKey: ['accounts'],
     queryFn: () => accountsApi.list(),
@@ -187,86 +183,19 @@ export function AppLayout() {
     return sum + Number(a.balance_primary ?? a.current_balance)
   }, 0)
   const versionA11yLabel = t('app.versionAriaLabel', { version: APP_VERSION })
+  const activeNav = finalNavItems.find((item): item is Extract<NavItem, { type: 'link' }> => item.type === 'link' && location.pathname.startsWith(item.path))
+  const activeTitle = t(activeNav ? `nav.${activeNav.key}` : 'nav.dashboard')
 
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Mobile header */}
-      <header className="sticky top-0 z-40 flex h-14 items-center gap-3 bg-sidebar border-b border-sidebar-border px-4 lg:hidden">
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="text-sidebar-muted hover:text-sidebar-foreground transition-colors"
-          aria-label="Toggle menu"
-        >
-          <Menu size={20} />
-        </button>
-        <Link
-          to="/"
-          className="flex items-center gap-2 -mx-1 px-1 py-1 rounded-md hover:bg-sidebar-accent transition-colors"
-          aria-label={t('app.name')}
-          title={t('nav.dashboard')}
-        >
-          <FinCoLogo size={22} className="text-primary shrink-0" />
-          <span className="font-bold text-sidebar-foreground">
-            {t('app.name')}
-          </span>
-        </Link>
-        <div className="ml-auto flex items-center gap-2">
-          <button
-            onClick={() => setPaletteOpen(true)}
-            className="text-sidebar-muted hover:text-sidebar-foreground transition-colors p-1"
-            title={t('cmdk.triggerAria')}
-            aria-label={t('cmdk.triggerAria')}
-          >
-            <Search size={18} />
-          </button>
-          <button
-            onClick={togglePrivacyMode}
-            className="text-sidebar-muted hover:text-sidebar-foreground transition-colors p-1"
-            title={privacyMode ? t('privacy.show') : t('privacy.hide')}
-          >
-            {privacyMode ? <EyeOff size={18} /> : <Eye size={18} />}
-          </button>
-          <button
-            onClick={toggleTheme}
-            className="text-sidebar-muted hover:text-sidebar-foreground transition-colors p-1"
-            title={isDark ? t('settings.themeLight') : t('settings.themeDark')}
-            aria-label={
-              isDark ? t('settings.themeLight') : t('settings.themeDark')
-            }
-          >
-            {isDark ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
-          <UserMenu
-            userInitial={userInitial}
-            logout={logout}
-            onChangePassword={() => setChangePasswordOpen(true)}
-            onTwoFactor={() => setTwoFactorOpen(true)}
-            onPasskeys={() => setPasskeysOpen(true)}
-            localAuthEnabled={localAuthEnabled}
-            agentsEnabled={agentsEnabled}
-            onBackup={() => setBackupOpen(true)}
-            dark
-            isAdmin={user?.is_superuser}
-          />
-        </div>
-      </header>
-
-      <div className="flex">
-        {/* Sidebar overlay for mobile */}
-        {sidebarOpen && (
-          <div
-            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
-
-        {/* Sidebar */}
+  const sidebar = (
         <aside
+          id="finco-navigation"
+          aria-label={t('frontend.navigation')}
           className={cn(
-            'fixed inset-y-0 left-0 z-50 w-60 bg-sidebar border-r border-sidebar-border flex flex-col transform transition-transform lg:translate-x-0 shrink-0',
-            sidebarOpen ? 'translate-x-0' : '-translate-x-full',
+            'finco-sidebar fixed inset-y-0 left-0 z-50 bg-sidebar flex flex-col shrink-0 outline-none',
+            !isDesktop && 'data-[state=open]:animate-in data-[state=open]:slide-in-from-left-4 duration-350',
           )}
         >
+          {!isDesktop && <DialogPrimitive.Title className="sr-only">{t('frontend.navigation')}</DialogPrimitive.Title>}
           {/* Logo — clickable link to the dashboard. Replaces the
               dedicated 'Painel' nav item so the sidebar stays focused
               on the main destinations. */}
@@ -292,18 +221,8 @@ export function AppLayout() {
               >
                 {privacyMode ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
-              <button
-                onClick={toggleTheme}
-                className="text-sidebar-muted hover:text-sidebar-foreground transition-colors p-1 rounded-md hover:bg-sidebar-accent"
-                title={
-                  isDark ? t('settings.themeLight') : t('settings.themeDark')
-                }
-                aria-label={
-                  isDark ? t('settings.themeLight') : t('settings.themeDark')
-                }
-              >
-                {isDark ? <Sun size={16} /> : <Moon size={16} />}
-              </button>
+              <ThemeToggle />
+              {!isDesktop && <DialogPrimitive.Close asChild><Button type="button" variant="ghost" size="icon-sm" aria-label={t('common.close')}><X size={18} /></Button></DialogPrimitive.Close>}
             </div>
           </div>
 
@@ -321,7 +240,7 @@ export function AppLayout() {
             >
               <Search size={13} className="shrink-0" />
               <span className="flex-1 text-left">{t('cmdk.triggerLabel')}</span>
-              <kbd className="hidden lg:inline-flex h-[17px] items-center rounded border border-sidebar-border bg-sidebar px-1 font-mono text-[9.5px] font-semibold text-sidebar-muted/80">
+              <kbd className="hidden lg:inline-flex h-[17px] items-center rounded border border-sidebar-border bg-sidebar px-1 font-medium text-[10px] font-semibold text-sidebar-muted/80">
                 {isMac ? '⌘' : 'Ctrl'}&nbsp;K
               </kbd>
             </button>
@@ -343,7 +262,7 @@ export function AppLayout() {
                 const isFirstSep = idx === 0
                 return (
                   <div key={`sep-${idx}`} className={cn(isFirstSep ? 'pt-1 pb-1 px-3' : 'pt-3 pb-1 px-3')}>
-                    <span className="text-[10px] uppercase tracking-[0.12em] font-semibold text-sidebar-muted/50">
+                    <span className="text-[11px] tracking-wide font-medium text-sidebar-muted">
                       {t(item.labelKey)}
                     </span>
                   </div>
@@ -359,12 +278,13 @@ export function AppLayout() {
                 <Link
                   key={item.key}
                   to={item.path}
+                  aria-current={isActive ? 'page' : undefined}
                   data-tour={`nav-${item.key}`}
                   onClick={() => setSidebarOpen(false)}
                   className={cn(
                     'flex items-center gap-3 text-[13px] font-medium transition-all rounded-lg px-3 py-2',
                     isActive
-                      ? 'bg-primary/[0.08] text-primary border-l-[3px] border-primary pl-[9px]'
+                      ? 'bg-card text-foreground'
                       : 'text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-foreground',
                   )}
                 >
@@ -483,14 +403,94 @@ export function AppLayout() {
             </div>
           </div>
         </aside>
+  )
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Mobile header */}
+      <header className="sticky top-0 z-40 flex h-14 items-center gap-3 bg-sidebar border-b border-sidebar-border px-4 lg:hidden">
+        <button
+          id="finco-menu-trigger"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="text-sidebar-muted hover:text-sidebar-foreground transition-colors"
+          aria-label={t('frontend.navigation')}
+          aria-expanded={sidebarOpen}
+          aria-controls="finco-navigation"
+        >
+          <Menu size={20} />
+        </button>
+        <Link
+          to="/"
+          className="flex items-center gap-2 -mx-1 px-1 py-1 rounded-md hover:bg-sidebar-accent transition-colors"
+          aria-label={t('app.name')}
+          title={t('nav.dashboard')}
+        >
+          <FinCoLogo size={22} className="text-primary shrink-0" />
+          <span className="font-bold text-sidebar-foreground">
+            {t('app.name')}
+          </span>
+        </Link>
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            onClick={() => setPaletteOpen(true)}
+            className="text-sidebar-muted hover:text-sidebar-foreground transition-colors p-1"
+            title={t('cmdk.triggerAria')}
+            aria-label={t('cmdk.triggerAria')}
+          >
+            <Search size={18} />
+          </button>
+          <button
+            onClick={togglePrivacyMode}
+            className="text-sidebar-muted hover:text-sidebar-foreground transition-colors p-1"
+            title={privacyMode ? t('privacy.show') : t('privacy.hide')}
+            aria-label={privacyMode ? t('privacy.show') : t('privacy.hide')}
+          >
+            {privacyMode ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+          <ThemeToggle />
+          <UserMenu
+            userInitial={userInitial}
+            logout={logout}
+            onChangePassword={() => setChangePasswordOpen(true)}
+            onTwoFactor={() => setTwoFactorOpen(true)}
+            onPasskeys={() => setPasskeysOpen(true)}
+            localAuthEnabled={localAuthEnabled}
+            agentsEnabled={agentsEnabled}
+            onBackup={() => setBackupOpen(true)}
+            dark
+            isAdmin={user?.is_superuser}
+          />
+        </div>
+      </header>
+
+      <div className="flex">
+
+        {/* Sidebar */}
+        {isDesktop ? sidebar : (
+          <DialogPrimitive.Root open={sidebarOpen} onOpenChange={setSidebarOpen}>
+            <DialogPrimitive.Portal>
+              <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-black/45 backdrop-blur-[2px]" />
+              <DialogPrimitive.Content asChild aria-describedby={undefined}
+                onCloseAutoFocus={event => { event.preventDefault(); document.getElementById('finco-menu-trigger')?.focus() }}>
+                {sidebar}
+              </DialogPrimitive.Content>
+            </DialogPrimitive.Portal>
+          </DialogPrimitive.Root>
+        )}
 
         {/* Main content */}
-        <main className="flex-1 min-h-screen overflow-x-hidden lg:ml-60">
-          <div className="p-6 max-w-7xl mx-auto">
+        <main className="flex-1 min-w-0 min-h-screen lg:ml-[16.5rem]">
+          <div className="finco-shell-toolbar hidden lg:flex h-16 items-center justify-between gap-4 px-8 border-b border-muted">
+            <Link to="/" className="text-sm font-semibold">{t('app.name')}</Link>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>{t('frontend.workspace')}</span><span aria-hidden="true">/</span><span className="font-medium text-foreground">{activeTitle}</span>
+            </div>
+          </div>
+          <div className="p-4 sm:p-6 lg:p-8 max-w-[1440px] mx-auto">
             {/* Active-collection filter (issue #105): sticky bar above the
                 content so the scope is visible right where the data is. */}
             <CollectionSelector variant="header" />
-            <Outlet />
+            <div key={location.pathname} className="finco-page"><Outlet /></div>
           </div>
         </main>
       </div>
@@ -521,7 +521,7 @@ export function AppLayout() {
           onClick={() => setChatOpen(true)}
           className={cn(
             'fixed bottom-4 right-4 z-40 flex h-11 w-11 items-center justify-center rounded-2xl',
-            'bg-primary text-primary-foreground shadow-lg shadow-primary/20',
+            'bg-primary text-primary-foreground shadow-none',
             'transition-transform duration-150 hover:scale-[1.04] active:scale-95',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             'lg:bottom-6 lg:right-6',
@@ -529,7 +529,7 @@ export function AppLayout() {
           title={`${t('agents.globalChat.title', 'FinCo Copilot')} (${isMac ? '⌘J' : 'Ctrl+J'})`}
           aria-label={t('agents.globalChat.openHint', 'Open FinCo Copilot')}
         >
-          <Sparkles size={18} aria-hidden />
+          <IdentityAvatar seed="finco-copilot" size={32} className="size-8" />
           <span
             className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-emerald-400 ring-2 ring-primary"
             aria-hidden
@@ -553,7 +553,6 @@ function UserMenu({
   onPasskeys,
   localAuthEnabled,
   onBackup,
-  dark,
   isAdmin,
   agentsEnabled,
 }: {
@@ -575,17 +574,8 @@ function UserMenu({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0" aria-label={t('common.userMenu')}>
-          <Avatar className="h-8 w-8">
-            <AvatarFallback
-              className={
-                dark
-                  ? 'bg-primary/20 text-primary text-xs font-semibold'
-                  : 'bg-primary/10 text-primary text-xs font-semibold'
-              }
-            >
-              {userInitial}
-            </AvatarFallback>
-          </Avatar>
+          <IdentityAvatar seed={`finco-user-${userInitial}`} size={32} className="size-8" />
+
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
@@ -809,6 +799,8 @@ function UserMenu({
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link to="/workspace-deletion">{currentLang === 'hi' ? 'संग्रहीत कार्यक्षेत्र हटाएँ' : 'Delete archived workspace'}</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
           <Link to="/account-deletion">{currentLang === 'hi' ? 'व्यक्तिगत खाता हटाएँ' : 'Delete personal account'}</Link>
         </DropdownMenuItem>
         <DropdownMenuItem

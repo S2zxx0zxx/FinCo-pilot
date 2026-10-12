@@ -656,7 +656,7 @@ export default function DashboardPage() {
       />
 
       {/* Hero Card: Available Balance + secondary indicators */}
-      <div className="bg-card rounded-xl border border-border shadow-sm mb-5 px-5 pt-5 pb-4">
+      <div className="finco-surface mb-6 p-5 sm:p-7">
         {/* Available balance in checking/savings accounts */}
         <div className="pb-4 mb-4 border-b border-border">
           <p className="text-xs font-semibold text-muted-foreground mb-1">{t('dashboard.availableBalance')}</p>
@@ -668,7 +668,7 @@ export default function DashboardPage() {
                   colour is left to mean direction (income, expenses) and
                   exception (a negative balance), so it still says something
                   when it does appear. */}
-              <p className={`text-3xl font-bold tabular-nums leading-tight ${availableBalance < 0 ? 'text-rose-500' : 'text-foreground'}`}>
+              <p className={`finco-metric text-4xl sm:text-5xl font-semibold leading-tight ${availableBalance < 0 ? 'text-rose-500' : 'text-foreground'}`}>
                 {mask(formatCurrency(availableBalance, primaryCurrency, locale))}
               </p>
               {availableBalanceAccounts.length > 0 && (
@@ -904,7 +904,7 @@ export default function DashboardPage() {
       {/* Charts: Category Spending Bars + Balance Flow */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5" style={{ gridAutoRows: 'minmax(380px, auto)' }}>
         {/* Category Spending Bars */}
-        <div className="bg-card rounded-xl border border-border shadow-sm flex flex-col max-h-[420px]">
+        <div className="finco-surface flex flex-col max-h-[420px]">
           <div className="px-5 py-4 border-b border-border shrink-0 flex items-center justify-between">
             <p className="text-sm font-semibold text-foreground">{t('dashboard.spendingByCategory')}</p>
             <button
@@ -987,7 +987,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Cumulative Spending Comparison */}
-        <div className="bg-card rounded-xl border border-border shadow-sm max-h-[420px] flex flex-col">
+        <div className="finco-surface max-h-[420px] flex flex-col">
           <div className="px-5 pt-5 pb-3 shrink-0">
             <div className="flex items-start justify-between mb-0.5">
               <div>
@@ -1145,7 +1145,7 @@ export default function DashboardPage() {
 
       {/* Goals Progress Widget */}
       {goalsSummary && goalsSummary.length > 0 && (
-        <div className="bg-card rounded-xl border border-border shadow-sm mb-5">
+        <div className="finco-surface mb-5">
           <div className="px-5 py-4 border-b border-border flex items-center justify-between">
             <p className="text-sm font-semibold text-foreground">{t('goals.dashboardTitle')}</p>
             <Link to="/goals" className="text-xs font-medium text-primary hover:underline">
@@ -1254,7 +1254,7 @@ export default function DashboardPage() {
         )}
 
         {txViewMode === 'list' && (
-        <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+        <div className="finco-surface overflow-hidden">
           {txListLoading ? (
             <div className="p-5 space-y-3">
               {Array.from({ length: 5 }).map((_, i) => (

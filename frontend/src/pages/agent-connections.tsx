@@ -65,11 +65,11 @@ export default function AgentConnectionsPage() {
       <p className="text-sm text-muted-foreground mb-6 max-w-2xl">{t('agents.connections.subtitle')}</p>
 
       {isLoading ? (
-        <div className="bg-card rounded-xl border border-border shadow-sm p-6 text-sm text-muted-foreground">
+        <div className="finco-surface p-6 text-sm text-muted-foreground">
           {t('agents.loading')}
         </div>
       ) : (list?.length ?? 0) === 0 ? (
-        <div className="bg-card rounded-xl border border-border shadow-sm p-10 text-center">
+        <div className="finco-surface p-10 text-center">
           <div className="h-12 w-12 mx-auto rounded-full bg-muted flex items-center justify-center mb-3">
             <Plug className="h-6 w-6 text-muted-foreground" />
           </div>
@@ -84,7 +84,7 @@ export default function AgentConnectionsPage() {
           )}
         </div>
       ) : (
-        <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+        <div className="finco-surface overflow-hidden">
           <div className="divide-y divide-border">
             {list?.map((c) => {
               const tested = testResults[c.id]

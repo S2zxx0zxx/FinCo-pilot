@@ -2506,5 +2506,19 @@
     "importConfirmTitle": "Abgleichsregeln importieren?",
     "importConfirmDescription": "Die Datei {{file}} enthält {{count}} Regeln.",
     "importOverwriteWarning": "Der Import ersetzt die Abgleichsregeln dieses Arbeitsbereichs samt ihrer Reihenfolge. Das lässt sich nicht rückgängig machen."
+  },
+  "frontend": {
+    "navigation": "Navigation",
+    "workspace": "Arbeitsbereich",
+    "loadError": "Die Daten konnten nicht geladen werden. Bitte versuche es erneut.",
+    "retry": "Erneut versuchen",
+    "planUsage": "Nutzung deines Tarifs",
+    "metrics": {
+      "accounts": "Konten",
+      "active_budgets": "Aktive Budgets",
+      "active_goals": "Aktive Ziele",
+      "imports_monthly": "Importe diesen Monat",
+      "ai_actions_monthly": "KI-Aktionen diesen Monat"
+    }
   }
 }

@@ -45,7 +45,7 @@ function serviceWorkerContextAllowed() {
 function syncThemeColor() {
   if (typeof document === 'undefined') return
   const dark = document.documentElement.classList.contains('dark')
-  const color = dark ? '#000000' : '#FAFAFA'
+  const color = dark ? '#101012' : '#f7f7f8'
   let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"][data-finco-dynamic]')
   if (!meta) {
     meta = document.createElement('meta')

@@ -11,11 +11,15 @@
     "preview": "vite preview",
     "dev:docker": "node ../scripts/dev-frontend.mjs",
     "test": "vitest run",
-    "test:pwa": "node scripts/verify-pwa-browser.mjs"
+    "test:pwa": "node scripts/verify-pwa-browser.mjs",
+    "test:spaceui": "node scripts/verify-spaceui-browser.mjs"
   },
   "dependencies": {
+    "@base-ui/react": "1.9.0",
+    "@fontsource-variable/inter": "5.3.0",
     "@hookform/resolvers": "^5.2.2",
     "@tanstack/react-query": "^5.90.21",
+    "@usespaceui/squishmoji": "0.1.0",
     "axios": "^1.13.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -25,6 +29,7 @@
     "i18next": "^25.8.13",
     "i18next-browser-languagedetector": "^8.2.1",
     "lucide-react": "^0.575.0",
+    "motion": "14.1.0",
     "next-themes": "^0.4.6",
     "pdfjs-dist": "^5.5.207",
     "qrcode.react": "^4.2.0",

@@ -1,6 +1,8 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import '@fontsource-variable/inter'
 import './index.css'
+import './styles/spaceui.css'
 import './pwa/pwa.css'
 import './transitions/finco-navigation-transition.css'
 import { i18nReady } from './lib/i18n'

@@ -1,3 +1,4 @@
+import { IdentityAvatar } from '@/components/spaceui/identity-avatar'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -152,12 +153,7 @@ export function WorkspaceSwitcher({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button className="flex items-center gap-3 w-full rounded-lg px-3 py-2.5 text-sm hover:bg-sidebar-accent transition-colors text-left">
-            <CategoryIcon
-              icon={workspaceIcon(current)}
-              color={workspaceColor(current)}
-              size="sm"
-              className="shrink-0"
-            />
+            <IdentityAvatar seed={`workspace-${current.id}`} size={32} className="size-8" />
             <div className="flex-1 min-w-0">
               <p className="text-xs font-semibold truncate">{current.name}</p>
               <p className="text-[10px] text-sidebar-muted/70 truncate">
@@ -409,6 +405,12 @@ export function WorkspaceSwitcher({
 
           <DropdownMenuSeparator />
 
+          <DropdownMenuItem onClick={() => navigate('/workspace-deletion')}>
+            {currentLang === 'hi' ? 'संग्रहीत कार्यक्षेत्र हटाएँ' : 'Delete archived workspace'}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate('/account-deletion')}>
+            {currentLang === 'hi' ? 'व्यक्तिगत खाता हटाएँ' : 'Delete personal account'}
+          </DropdownMenuItem>
           <DropdownMenuItem
             onClick={logout}
             className="flex items-center gap-2 text-rose-600 focus:text-rose-600"

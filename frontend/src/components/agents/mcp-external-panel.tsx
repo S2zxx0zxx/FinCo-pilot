@@ -136,7 +136,7 @@ function McpExternalPanelContent() {
   ]
 
   return (
-    <div className="mt-8 bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+    <div className="mt-8 finco-surface overflow-hidden">
       <div className="flex items-start gap-3 px-4 sm:px-5 py-4 border-b border-border">
         <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center shrink-0">
           <Plug className="h-5 w-5 text-muted-foreground" />

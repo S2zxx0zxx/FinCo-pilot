@@ -55,7 +55,7 @@ import { formatCurrency } from '@/lib/format'
 
 function SectionCard({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+    <div className="finco-surface overflow-hidden">
       {children}
     </div>
   )
@@ -110,7 +110,7 @@ function KpiCard({
         : 'text-foreground'
   const hasBreakdown = !!breakdown && breakdown.length > 0
   return (
-    <div className="bg-card rounded-xl border border-border shadow-sm p-3 sm:p-4">
+    <div className="finco-surface p-3 sm:p-4">
       <button
         type="button"
         className={`w-full text-left ${hasBreakdown ? 'cursor-pointer' : 'cursor-default'}`}

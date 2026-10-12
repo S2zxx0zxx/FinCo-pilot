@@ -27,6 +27,12 @@ const APP_SHELL = [
   '/android-icon-192x192.png',
   '/android-icon-512x512.png',
   '/android-icon-maskable-512x512.png',
+  '/fonts/open-runde/open-runde-regular.woff2',
+  '/fonts/open-runde/open-runde-medium.woff2',
+  '/fonts/open-runde/open-runde-semibold.woff2',
+  '/fonts/open-runde/open-runde-bold.woff2',
+  '/spaceui/coin.webp',
+  '/spaceui/target.webp',
 ]
 
 const PUBLIC_ASSETS = new Set(APP_SHELL.filter((url) => url !== '/'))

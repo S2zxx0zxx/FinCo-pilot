@@ -56,14 +56,14 @@ describe('setThemeBasedOnSystem', () => {
 
   it('uses neutral surface accents in both modes', () => {
     setThemeBasedOnSystem(null, null, 'light')
-    expect(readVar('--accent')).toBe('#F1F1F2')
-    expect(readVar('--accent-foreground')).toBe('#09090B')
-    expect(readVar('--muted')).toBe('#F4F4F5')
+    expect(readVar('--accent')).toBe('#e9e9ed')
+    expect(readVar('--accent-foreground')).toBe('#18181b')
+    expect(readVar('--muted')).toBe('#efeff1')
 
     setThemeBasedOnSystem(null, null, 'dark')
-    expect(readVar('--accent')).toBe('#171717')
-    expect(readVar('--accent-foreground')).toBe('#FAFAFA')
-    expect(readVar('--muted')).toBe('#151515')
+    expect(readVar('--accent')).toBe('#303036')
+    expect(readVar('--accent-foreground')).toBe('#fafafa')
+    expect(readVar('--muted')).toBe('#252529')
   })
 
   it('sets every shared theme variable even when old settings are absent', () => {

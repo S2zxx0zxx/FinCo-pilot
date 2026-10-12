@@ -2611,5 +2611,19 @@
     "importConfirmTitle": "Zaimportować reguły dopasowania?",
     "importConfirmDescription": "Plik {{file}} zawiera {{count}} reguł.",
     "importOverwriteWarning": "Import zastępuje reguły dopasowania tej przestrzeni wraz z ich kolejnością. Tego nie da się cofnąć."
+  },
+  "frontend": {
+    "navigation": "Nawigacja",
+    "workspace": "Obszar roboczy",
+    "loadError": "Nie udało się wczytać danych. Spróbuj ponownie.",
+    "retry": "Spróbuj ponownie",
+    "planUsage": "Wykorzystanie planu",
+    "metrics": {
+      "accounts": "Konta",
+      "active_budgets": "Aktywne budżety",
+      "active_goals": "Aktywne cele",
+      "imports_monthly": "Importy w tym miesiącu",
+      "ai_actions_monthly": "Działania AI w tym miesiącu"
+    }
   }
 }

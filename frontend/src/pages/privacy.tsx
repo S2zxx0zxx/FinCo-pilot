@@ -30,7 +30,7 @@ export default function PrivacyPage() {
       </header>
       <h1 className="text-3xl font-semibold tracking-tight">{hi ? 'गोपनीयता नीति' : 'Privacy policy'}</h1>
       {query.isPending && <p role="status">{hi ? 'नीति लोड हो रही है…' : 'Loading privacy notice…'}</p>}
-      {query.isError && <div role="alert" className="space-y-3 rounded-xl border p-5">
+      {query.isError && <div role="alert" className="space-y-3 finco-surface p-5">
         <p>{hi ? 'अभी नीति नहीं मिली। इसे प्रकाशित मानकर आगे न बढ़ें।' : 'The notice is unavailable. Do not assume it is published.'}</p>
         <Button variant="outline" onClick={() => void query.refetch()}>{hi ? 'फिर प्रयास करें' : 'Try again'}</Button>
       </div>}
@@ -41,7 +41,7 @@ export default function PrivacyPage() {
           <p className="text-xs break-all">{policy.version}</p>
           <p className="text-sm">{hi ? 'समीक्षा' : 'Reviewed'}: {policy.reviewed_on} · {hi ? 'प्रभावी तारीख' : 'Effective date'}: {policy.effective_date ?? (hi ? 'अभी तय नहीं' : 'Not set')}</p>
         </div>
-        <section className="space-y-4 rounded-xl border p-5" aria-labelledby="privacy-operator">
+        <section className="space-y-4 finco-surface p-5" aria-labelledby="privacy-operator">
           <h2 id="privacy-operator" className="text-xl font-semibold">{hi ? 'संचालक और privacy/grievance संपर्क' : 'Operator and privacy/grievance contact'}</h2>
           <dl className="grid gap-4 text-sm sm:grid-cols-2">
             {[[hi ? 'संचालक का कानूनी नाम' : 'Operator legal name', policy.operator.legal_name],

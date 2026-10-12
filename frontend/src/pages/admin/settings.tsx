@@ -313,7 +313,7 @@ export default function AdminSettingsPage() {
       </div>
 
       {/* User list */}
-      <div className="rounded-xl border border-border/60 bg-card overflow-hidden mb-8">
+      <div className="finco-surface overflow-hidden mb-8">
         {usersLoading ? (
           <div className="p-4 space-y-3">
             {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-lg" />)}
@@ -379,7 +379,7 @@ export default function AdminSettingsPage() {
 
       {/* Theme and Customization Section */}
       <div className="grid grid-cols-1 gap-6 mb-8">
-        <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+        <div className="finco-surface overflow-hidden">
           <div className="px-5 py-4 border-b border-border/40 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Palette size={15} className="text-muted-foreground" />
@@ -439,7 +439,7 @@ export default function AdminSettingsPage() {
       </div>
 
       {/* Accounting section */}
-      <div className="rounded-xl border border-border/60 bg-card overflow-hidden mb-8">
+      <div className="finco-surface overflow-hidden mb-8">
         <div className="px-5 py-4 border-b border-border/40">
           <div className="flex items-center gap-2 mb-0.5">
             <Scale size={15} className="text-muted-foreground" />
@@ -480,7 +480,7 @@ export default function AdminSettingsPage() {
       </div>
 
       {/* Provider categories toggle */}
-      <div className="rounded-xl border border-border/60 bg-card overflow-hidden mb-8">
+      <div className="finco-surface overflow-hidden mb-8">
         <div className="px-5 py-4 border-b border-border/40">
           <div className="flex items-center gap-2 mb-0.5">
             <Tag size={15} className="text-muted-foreground" />
@@ -506,7 +506,7 @@ export default function AdminSettingsPage() {
       </div>
 
       {/* Number / date format */}
-      <div className="rounded-xl border border-border/60 bg-card overflow-hidden mb-8">
+      <div className="finco-surface overflow-hidden mb-8">
         <div className="px-5 py-4 border-b border-border/40">
           <div className="flex items-center gap-2 mb-0.5">
             <Hash size={15} className="text-muted-foreground" />
@@ -553,7 +553,7 @@ export default function AdminSettingsPage() {
       </div>
 
       {/* Date format */}
-      <div className="rounded-xl border border-border/60 bg-card overflow-hidden mb-8">
+      <div className="finco-surface overflow-hidden mb-8">
         <div className="px-5 py-4 border-b border-border/40">
           <div className="flex items-center gap-2 mb-0.5">
             <CalendarDays size={15} className="text-muted-foreground" />
@@ -603,7 +603,7 @@ export default function AdminSettingsPage() {
       </div>
 
       {/* Settings section */}
-      <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+      <div className="finco-surface overflow-hidden">
         <div className="px-5 py-4 border-b border-border/40">
           <div className="flex items-center gap-2 mb-0.5">
             <UserCog size={15} className="text-muted-foreground" />

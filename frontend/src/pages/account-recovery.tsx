@@ -62,7 +62,7 @@ export default function AccountRecovery({ mode }: { mode: Mode }) {
   }
 
   return <main className="min-h-screen flex items-center justify-center bg-background p-5">
-    <section className="w-full max-w-md rounded-xl border bg-card p-6 space-y-5">
+    <section className="finco-auth-card w-full max-w-md p-6 space-y-5">
       <h1 className="text-xl font-semibold">{title}</h1>
       <p className="text-sm text-muted-foreground">{tr("Use the email address associated with your FinCo-Pilot account.")}</p>
       {message && <p role="status">{tr(message)}</p>}

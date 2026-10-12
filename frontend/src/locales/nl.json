@@ -2507,5 +2507,19 @@
     "importConfirmTitle": "Koppelregels importeren?",
     "importConfirmDescription": "Bestand {{file}} bevat {{count}} regels.",
     "importOverwriteWarning": "Importeren vervangt de koppelregels van deze werkruimte, inclusief hun volgorde. Dit kan niet ongedaan worden gemaakt."
+  },
+  "frontend": {
+    "navigation": "Navigatie",
+    "workspace": "Werkruimte",
+    "loadError": "Je gegevens konden niet worden geladen. Probeer het opnieuw.",
+    "retry": "Opnieuw proberen",
+    "planUsage": "Gebruik van je abonnement",
+    "metrics": {
+      "accounts": "Rekeningen",
+      "active_budgets": "Actieve budgetten",
+      "active_goals": "Actieve doelen",
+      "imports_monthly": "Importen deze maand",
+      "ai_actions_monthly": "AI-acties deze maand"
+    }
   }
 }

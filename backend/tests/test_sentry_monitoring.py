@@ -1,4 +1,8 @@
 """Sentry event data-minimization acceptance (no external Sentry traffic)."""
+from types import SimpleNamespace
+
+from pydantic import SecretStr
+
 from app.core.sentry_monitoring import sanitize_event
 
 
@@ -33,22 +37,28 @@ def test_sensitive_data_scrubbed():
 def test_missing_dsn_does_not_initialize(monkeypatch):
     from app.core import sentry_monitoring
     monkeypatch.setattr(sentry_monitoring, "_INITIALIZED", False)
-    monkeypatch.setenv("SENTRY_ENABLED", "true")
-    monkeypatch.delenv("SENTRY_DSN", raising=False)
+    monkeypatch.setattr(sentry_monitoring, "get_settings", lambda: SimpleNamespace(
+        sentry_enabled=True, sentry_dsn=SecretStr(""),
+        sentry_environment="", deployment_environment="test", sentry_release="",
+    ))
     assert not sentry_monitoring.init_sentry()
 
 
 def test_opt_in_required_even_if_dsn_present(monkeypatch):
     from app.core import sentry_monitoring
     monkeypatch.setattr(sentry_monitoring, "_INITIALIZED", False)
-    monkeypatch.delenv("SENTRY_ENABLED", raising=False)
-    monkeypatch.setenv("SENTRY_DSN", "https://public@example.ingest.sentry.io/42")
+    monkeypatch.setattr(sentry_monitoring, "get_settings", lambda: SimpleNamespace(
+        sentry_enabled=False, sentry_dsn=SecretStr("https://public@example.ingest.sentry.io/42"),
+        sentry_environment="", deployment_environment="test", sentry_release="",
+    ))
     assert not sentry_monitoring.init_sentry()
 
 
 def test_http_dsn_rejected(monkeypatch):
     from app.core import sentry_monitoring
     monkeypatch.setattr(sentry_monitoring, "_INITIALIZED", False)
-    monkeypatch.setenv("SENTRY_ENABLED", "true")
-    monkeypatch.setenv("SENTRY_DSN", "http://public@example.ingest.sentry.io/42")
+    monkeypatch.setattr(sentry_monitoring, "get_settings", lambda: SimpleNamespace(
+        sentry_enabled=True, sentry_dsn=SecretStr("http://public@example.ingest.sentry.io/42"),
+        sentry_environment="", deployment_environment="test", sentry_release="",
+    ))
     assert not sentry_monitoring.init_sentry()

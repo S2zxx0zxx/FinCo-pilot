@@ -115,6 +115,13 @@ class Settings(BaseSettings):
     core_copilot_signing_key: SecretStr = SecretStr("")
     legacy_data_keys: SecretStr = SecretStr("")
     local_auth_enabled: bool = True
+    # Isolated Clerk bridge is OFF by default; this does not switch existing auth.
+    # A backend token verifies identity only. Workspace/billing guards remain local.
+    clerk_bridge_enabled: bool = False
+    clerk_issuer: str = ""
+    clerk_jwt_public_key: str = ""
+    clerk_authorized_parties: str = ""  # comma-separated exact browser origins
+    clerk_audience: str = ""
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 60 * 24
 
@@ -350,6 +357,25 @@ class Settings(BaseSettings):
                 "DEPLOYMENT_ENVIRONMENT must be one of development, test, staging, production"
             )
 
+        if self.clerk_bridge_enabled:
+            from urllib.parse import urlsplit as _urlsplit
+
+            url = _urlsplit(self.clerk_issuer)
+            if (url.scheme != "https" or not url.hostname or url.username
+                    or url.password or url.query or url.fragment or url.path not in {"", "/"}):
+                raise ValueError("CLERK_ISSUER must be the exact HTTPS issuer origin")
+            if "BEGIN PUBLIC KEY" not in self.clerk_jwt_public_key:
+                raise ValueError("CLERK_JWT_PUBLIC_KEY must contain an RSA public key")
+            parties = [part.strip() for part in self.clerk_authorized_parties.split(",")]
+            if not parties or any(
+                not part or part != part.rstrip("/") or "*" in part
+                or (lambda u: not u.hostname or u.path or u.query or u.fragment or u.username
+                    or u.password or u.scheme not in (
+                        {"https", "http"} if environment != "production" else {"https"}
+                    ))(_urlsplit(part))
+                for part in parties
+            ):
+                raise ValueError("CLERK_AUTHORIZED_PARTIES must contain exact approved origins")
         if not self.local_auth_enabled and not self.oidc_login_available:
             missing = []
             if not self.oidc_enabled:

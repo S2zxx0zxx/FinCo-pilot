@@ -4,6 +4,8 @@
  */
 import * as Sentry from '@sentry/react'
 
+declare const __APP_VERSION__: string
+
 let initialized = false
 
 export function sanitizeSentryEvent<T extends object>(event: T): T {
@@ -62,7 +64,6 @@ export function initSentry(): boolean {
     dsn,
     environment,
     release: __APP_VERSION__,
-    sendDefaultPii: false,
     // Finance URLs, request spans and DOM/session replay are intentionally disabled.
     tracesSampleRate: 0,
     replaysSessionSampleRate: 0,

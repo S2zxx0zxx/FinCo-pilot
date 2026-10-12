@@ -20,6 +20,7 @@ from app.models.transaction import Transaction
 from app.models.user import User
 from app.schemas.spending_plan import SpendingPlan, SpendingPlanRequest
 from app.services._query_filters import is_not_ignored
+from app.services.fx_rate_service import approved_rate_source_filters
 from app.services.dashboard_service import _get_open_accounts, get_projected_transactions
 
 ZERO = Decimal(0)
@@ -27,7 +28,7 @@ CASH_TYPES = {'checking', 'savings', 'wallet'}
 
 
 async def calculate_spending_plan(session: AsyncSession, workspace_id: uuid.UUID, user_id: uuid.UUID, request: SpendingPlanRequest) -> SpendingPlan:
-    today = date.today()
+    today = datetime.now(timezone.utc).date()
     through = today + timedelta(days=request.horizon_days - 1)
     user = await session.get(User, user_id)
     if user is None:
@@ -56,6 +57,7 @@ async def calculate_spending_plan(session: AsyncSession, workspace_id: uuid.UUID
     fx = (await session.scalars(select(FxRate).where(
         FxRate.base_currency == 'USD', FxRate.date <= today,
         FxRate.date >= today - timedelta(days=7),
+        *approved_rate_source_filters(),
     ).order_by(FxRate.date.desc()))).all()
     for row in fx:
         snapshot = snapshots.setdefault(row.date, {"USD": Decimal(1)})

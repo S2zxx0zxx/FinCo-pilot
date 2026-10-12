@@ -1,3 +1,4 @@
+import { AuthShell } from '@/components/spaceui/auth-shell'
 import { TermsLink } from '@/components/terms-link'
 import { PrivacyLink } from '@/components/privacy-link'
 import { useState, useEffect, useRef } from 'react'
@@ -294,8 +295,8 @@ export default function LoginPage() {
 
   if (requires2fa) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-background px-4">
-        <Card className="w-full max-w-[380px] shadow-sm">
+      <AuthShell>
+        <Card className="finco-auth-card w-full max-w-[420px]">
           <form onSubmit={handleVerify2fa}>
             <div className="flex flex-col items-center pt-8 pb-2 px-8">
               <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
@@ -394,13 +395,13 @@ export default function LoginPage() {
             </CardFooter>
           </form>
         </Card>
-      </div>
+      </AuthShell>
     )
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background px-4">
-      <Card className="w-full max-w-[380px] shadow-sm">
+    <AuthShell>
+      <Card className="finco-auth-card w-full max-w-[420px]">
         <form onSubmit={handleSubmit}>
           <div className="flex flex-col items-center pt-8 pb-2 px-8">
             <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
@@ -512,6 +513,6 @@ export default function LoginPage() {
           )}
         </form>
       </Card>
-    </div>
+    </AuthShell>
   )
 }

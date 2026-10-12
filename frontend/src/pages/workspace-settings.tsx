@@ -283,7 +283,7 @@ export default function WorkspaceSettingsPage() {
   return (
     <div className="container max-w-5xl py-8 space-y-6">
       {/* Header card — identity + role + stats strip */}
-      <section className="rounded-xl border bg-card overflow-hidden">
+      <section className="finco-surface overflow-hidden">
         <div className="p-6 flex items-center gap-5 border-b">
           <CategoryIcon
             icon={current.icon ?? DEFAULT_WORKSPACE_ICON}
@@ -327,7 +327,7 @@ export default function WorkspaceSettingsPage() {
       </section>
 
       {/* Details card — 4-column form */}
-      <section className="space-y-4 rounded-xl border bg-card p-6">
+      <section className="space-y-4 finco-surface p-6">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold">{t('workspace.details')}</h2>
           {canManage && (
@@ -480,7 +480,7 @@ export default function WorkspaceSettingsPage() {
       </section>
 
       {/* Members card */}
-      <section className="space-y-4 rounded-xl border bg-card p-6">
+      <section className="space-y-4 finco-surface p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -572,7 +572,7 @@ export default function WorkspaceSettingsPage() {
 
       {/* Danger zone — owners only */}
       {canManage && (
-        <section className="space-y-4 rounded-xl border bg-card p-6">
+        <section className="space-y-4 finco-surface p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-muted-foreground" />

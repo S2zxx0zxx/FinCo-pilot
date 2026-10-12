@@ -1,3 +1,4 @@
+// Space UI Card and two-tone frame styling adapted to existing slot names (MIT).
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
@@ -7,7 +8,7 @@ function Card({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="card"
       className={cn(
-        "bg-card text-card-foreground flex flex-col rounded-xl border border-border/80 shadow-[0_1px_2px_0_rgba(0,0,0,0.03)]",
+        "finco-surface text-card-foreground flex flex-col",
         className
       )}
       {...props}
@@ -32,7 +33,7 @@ function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card-title"
-      className={cn("leading-none font-semibold", className)}
+      className={cn("font-semibold text-lg leading-tight", className)}
       {...props}
     />
   )

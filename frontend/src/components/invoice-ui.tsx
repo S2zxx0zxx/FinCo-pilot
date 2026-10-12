@@ -1,4 +1,6 @@
 import { useTranslation } from 'react-i18next'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import type { InvoiceState } from '@/types'
 
@@ -22,7 +24,7 @@ export function SectionCard({
   return (
     <div
       className={cn(
-        'bg-card rounded-xl border border-border shadow-sm overflow-hidden',
+        'finco-surface overflow-hidden',
         className,
       )}
     >
@@ -70,7 +72,7 @@ const STATE_TONE: Record<InvoiceState, string> = {
 export function StateBadge({ state }: { state: InvoiceState }) {
   const { t } = useTranslation()
   return (
-    <span
+    <Badge variant="secondary"
       data-testid={`invoice-state-${state}`}
       className={cn(
         'text-[11px] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap',
@@ -78,7 +80,7 @@ export function StateBadge({ state }: { state: InvoiceState }) {
       )}
     >
       {t(`invoices.state.${state}`)}
-    </span>
+    </Badge>
   )
 }
 
@@ -103,7 +105,8 @@ export function Segmented<T extends string>({
       {options.map((option) => {
         const active = value === option.value
         return (
-          <button
+          <Button type="button" variant="ghost"
+            aria-pressed={active}
             key={option.value}
             onClick={() => onChange(option.value)}
             data-testid={`${testIdPrefix}-${option.value}`}
@@ -129,7 +132,7 @@ export function Segmented<T extends string>({
                 {option.count}
               </span>
             )}
-          </button>
+          </Button>
         )
       })}
     </div>
@@ -149,7 +152,7 @@ export function IconAction({
   destructive?: boolean
 }) {
   return (
-    <button
+    <Button type="button" variant="ghost" size="icon-sm"
       onClick={onClick}
       aria-label={label}
       title={label}
@@ -161,6 +164,6 @@ export function IconAction({
       )}
     >
       {children}
-    </button>
+    </Button>
   )
 }

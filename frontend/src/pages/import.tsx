@@ -349,7 +349,7 @@ function TransactionImportPanel() {
 
       {/* Review section */}
       {previewData && (
-        <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+        <div className="finco-surface overflow-hidden">
           {/* Header */}
           <div className="px-5 py-4 border-b border-border">
             <div className="flex items-center justify-between">

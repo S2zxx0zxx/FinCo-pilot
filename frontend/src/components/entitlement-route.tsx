@@ -24,12 +24,12 @@ export function EntitlementRoute({
   const plan = CAPABILITY_PLAN[capability]
   return (
     <div className="mx-auto flex min-h-[68vh] max-w-xl items-center justify-center px-4 py-10">
-      <section className="w-full overflow-hidden rounded-[28px] border bg-card shadow-[0_24px_80px_rgba(0,0,0,.09)]">
+      <section className="finco-frame w-full overflow-hidden">
         <div className="relative p-7 sm:p-9">
           <div className="pointer-events-none absolute inset-x-12 top-0 h-32 rounded-full bg-foreground/[0.045] blur-3xl" />
           <div className="relative">
             <div className="mb-5 flex items-center gap-2.5">
-              <span className="grid size-11 place-items-center rounded-2xl border bg-muted/50 shadow-inner">
+              <span className="grid size-11 place-items-center rounded-2xl bg-card shadow-none">
                 <LockKeyhole className="size-5" />
               </span>
               <PlanBadge plan={plan} />
@@ -45,7 +45,7 @@ export function EntitlementRoute({
           </div>
         </div>
         <div className="border-t bg-muted/20 px-7 py-4 text-xs leading-5 text-muted-foreground sm:px-9">
-          Paid access is verified by FinCo-Pilot on the server. Browser changes cannot unlock this feature.
+          Your existing records stay available when you change plans.
         </div>
       </section>
     </div>

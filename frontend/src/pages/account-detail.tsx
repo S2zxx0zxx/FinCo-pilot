@@ -1059,7 +1059,7 @@ export default function AccountDetailPage() {
         })
         const max = Math.max(1, ...totals.map(c => c.total))
         return (
-          <div className="bg-card rounded-xl border border-border shadow-sm p-3 sm:p-4 mb-6">
+          <div className="finco-surface p-3 sm:p-4 mb-6">
             <div className="flex items-end gap-2 sm:gap-3 overflow-x-auto pb-1">
               {totals.map((c, i) => {
                 const isCurrent = c.start === filterFrom && c.end === filterTo
@@ -1170,7 +1170,7 @@ export default function AccountDetailPage() {
             : null
         return (
           <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
-            <div className="bg-card rounded-xl border border-border shadow-sm p-3 sm:p-4 overflow-hidden">
+            <div className="finco-surface p-3 sm:p-4 overflow-hidden">
               <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-1 truncate">
                 {t('accounts.cycleBillTotal')}
               </p>
@@ -1183,7 +1183,7 @@ export default function AccountDetailPage() {
                 </p>
               )}
             </div>
-            <div className="bg-card rounded-xl border border-border shadow-sm p-3 sm:p-4 overflow-hidden">
+            <div className="finco-surface p-3 sm:p-4 overflow-hidden">
               <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1 truncate">
                 {t('accounts.availableCredit')}
                 <span className="inline-flex items-center px-1 py-0 rounded text-[8px] sm:text-[9px] font-bold uppercase tracking-wide bg-muted text-muted-foreground shrink-0">
@@ -1196,7 +1196,7 @@ export default function AccountDetailPage() {
                   : '—'}
               </p>
             </div>
-            <div className="bg-card rounded-xl border border-border shadow-sm p-3 sm:p-4 overflow-hidden">
+            <div className="finco-surface p-3 sm:p-4 overflow-hidden">
               <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-1 truncate">
                 {t('accounts.dueDate')}
               </p>
@@ -1213,7 +1213,7 @@ export default function AccountDetailPage() {
         )
       })() : (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-6">
-          <div className="bg-card rounded-xl border border-border shadow-sm p-3 sm:p-4 overflow-hidden">
+          <div className="finco-surface p-3 sm:p-4 overflow-hidden">
             <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-1 truncate">
               {t('accounts.currentBalance')}
             </p>
@@ -1221,7 +1221,7 @@ export default function AccountDetailPage() {
               {mask(formatCurrency(totalBalance, displayCurrency, locale))}
             </p>
           </div>
-          <div className="bg-card rounded-xl border border-border shadow-sm p-3 sm:p-4 overflow-hidden">
+          <div className="finco-surface p-3 sm:p-4 overflow-hidden">
             <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-1 truncate">
               {t('accounts.projectedBalance', 'Projected balance')}
             </p>
@@ -1238,7 +1238,7 @@ export default function AccountDetailPage() {
               </p>
             )}
           </div>
-          <div className="bg-card rounded-xl border border-border shadow-sm p-3 sm:p-4 overflow-hidden">
+          <div className="finco-surface p-3 sm:p-4 overflow-hidden">
             <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-1 truncate">
               {t('accounts.income')}
             </p>
@@ -1251,7 +1251,7 @@ export default function AccountDetailPage() {
               </p>
             )}
           </div>
-          <div className="bg-card rounded-xl border border-border shadow-sm p-3 sm:p-4 overflow-hidden">
+          <div className="finco-surface p-3 sm:p-4 overflow-hidden">
             <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-1 truncate">
               {t('accounts.expenses')}
             </p>
@@ -1278,7 +1278,7 @@ export default function AccountDetailPage() {
         const rawPct = limit != null && limit > 0 && utilized != null ? (utilized / limit) * 100 : null
         const pct = rawPct != null ? Math.min(100, rawPct) : null
         return (
-          <div className="bg-card rounded-xl border border-border shadow-sm p-4 sm:p-5 mb-6">
+          <div className="finco-surface p-4 sm:p-5 mb-6">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 {account.card_brand && (
@@ -1387,7 +1387,7 @@ export default function AccountDetailPage() {
         const strokeSolid = dataMin >= 0 ? '#10B981' : '#F43F5E'
         const lastBalance = balances.length > 0 ? balances[balances.length - 1] : 0
         return (
-      <div className="bg-card rounded-xl border border-border shadow-sm mb-6">
+      <div className="finco-surface mb-6">
         <div className="px-5 pt-5 pb-3">
           <p className="text-base font-bold text-foreground">
             {isCreditCard ? t('accounts.cycleSpending') : t('dashboard.balanceFlow')}
@@ -1503,7 +1503,7 @@ export default function AccountDetailPage() {
       })()}
 
       {/* Transaction table */}
-      <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+      <div className="finco-surface overflow-hidden">
         <div className="px-5 py-4 border-b border-border">
           <p className="font-semibold text-foreground">{t('transactions.title')}</p>
         </div>

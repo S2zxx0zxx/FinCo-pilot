@@ -34,7 +34,7 @@ const TH = 'text-xs font-medium text-muted-foreground py-3'
 
 function SectionCard({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+    <div className="finco-surface overflow-hidden">
       {children}
     </div>
   )

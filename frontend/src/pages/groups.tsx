@@ -170,7 +170,7 @@ export default function GroupsPage() {
         ))}
       </div>
 
-      <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden mb-4">
+      <div className="finco-surface overflow-hidden mb-4">
         {isLoading ? (
           <div className="p-6 space-y-3">
             {Array.from({ length: 3 }).map((_, i) => (

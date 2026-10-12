@@ -2506,5 +2506,19 @@
     "importConfirmTitle": "Importare le regole di riconciliazione?",
     "importConfirmDescription": "Il file {{file}} contiene {{count}} regole.",
     "importOverwriteWarning": "L'importazione sostituisce le regole di riconciliazione di questo spazio, incluso il loro ordine. Non è reversibile."
+  },
+  "frontend": {
+    "navigation": "Navigazione",
+    "workspace": "Spazio di lavoro",
+    "loadError": "Impossibile caricare i dati. Riprova.",
+    "retry": "Riprova",
+    "planUsage": "Utilizzo del tuo piano",
+    "metrics": {
+      "accounts": "Conti",
+      "active_budgets": "Budget attivi",
+      "active_goals": "Obiettivi attivi",
+      "imports_monthly": "Importazioni questo mese",
+      "ai_actions_monthly": "Azioni IA questo mese"
+    }
   }
 }

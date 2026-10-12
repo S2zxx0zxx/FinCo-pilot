@@ -190,7 +190,7 @@ export default function InvoicesPage() {
       {/* One block, in the dashboard's shape: a headline figure with its
           supporting numbers beside it, and the accountant's view of the
           same money to the right. Four identical stat cards say less. */}
-      <div className="bg-card rounded-xl border border-border shadow-sm mb-5">
+      <div className="finco-surface mb-5">
         <div className="grid grid-cols-1 lg:grid-cols-3">
           <div className="lg:col-span-2 px-5 py-4">
             <p className="text-xs font-medium text-muted-foreground mb-0.5">

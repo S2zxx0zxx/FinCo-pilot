@@ -2518,5 +2518,19 @@
     "importConfirmTitle": "Импортировать правила сопоставления?",
     "importConfirmDescription": "Файл {{file}} содержит правил: {{count}}.",
     "importOverwriteWarning": "Импорт заменит правила сопоставления этого пространства вместе с их порядком. Отменить нельзя."
+  },
+  "frontend": {
+    "navigation": "Навигация",
+    "workspace": "Рабочее пространство",
+    "loadError": "Не удалось загрузить данные. Попробуйте ещё раз.",
+    "retry": "Повторить",
+    "planUsage": "Использование вашего плана",
+    "metrics": {
+      "accounts": "Счета",
+      "active_budgets": "Активные бюджеты",
+      "active_goals": "Активные цели",
+      "imports_monthly": "Импорты за этот месяц",
+      "ai_actions_monthly": "Действия ИИ за этот месяц"
+    }
   }
 }

@@ -119,7 +119,7 @@ export function TransactionCalendarView({
 
   if (isLoading) {
     return (
-      <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden mb-4">
+      <div className="finco-surface overflow-hidden mb-4">
         <div className="p-4 border-b border-border flex items-center justify-between">
           <Skeleton className="h-6 w-44" />
           <Skeleton className="h-8 w-32" />
@@ -140,7 +140,7 @@ export function TransactionCalendarView({
 
   return (
     <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-start">
-      <section className="min-w-0 flex-1 bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+      <section className="min-w-0 flex-1 finco-surface overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-border sm:px-5">
           <CalendarLegend />
           <div className="flex flex-wrap items-center gap-2">

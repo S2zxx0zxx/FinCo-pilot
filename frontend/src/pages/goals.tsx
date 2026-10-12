@@ -1,3 +1,5 @@
+import { FinanceEmoji } from '@/components/spaceui/finance-emoji'
+import { QueryError } from '@/components/spaceui/query-state'
 import { createElement, useState } from 'react'
 import { getAccountName, sortAccountsByDisplayName } from '@/lib/account-utils'
 import { useTranslation } from 'react-i18next'
@@ -80,7 +82,7 @@ function LinkedResourceSelect<T extends { id: string }>({
 
 function SectionCard({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+    <div className="finco-surface overflow-hidden">
       {children}
     </div>
   )
@@ -151,7 +153,7 @@ export default function GoalsPage() {
   const [selectedColor, setSelectedColor] = useState('#3B82F6')
   const [targetDate, setTargetDate] = useState('')
 
-  const { data: goalsList } = useQuery({
+  const { data: goalsList, isPending: goalsPending, isError: goalsError, refetch: retryGoals } = useQuery({
     queryKey: ['goals', statusFilter],
     queryFn: () => goalsApi.list(statusFilter || undefined),
   })
@@ -269,7 +271,7 @@ export default function GoalsPage() {
             ) : undefined
           }
         />
-        {goalsList && goalsList.length > 0 ? (
+        {goalsError ? <QueryError retry={retryGoals} /> : goalsPending ? <p role="status" className="p-6 text-sm text-muted-foreground">{t('common.loading')}</p> : goalsList && goalsList.length > 0 ? (
           <div className="divide-y divide-border">
             {goalsList.map((goal) => {
               const days = goal.target_date ? daysUntil(goal.target_date) : null
@@ -418,7 +420,7 @@ export default function GoalsPage() {
             })}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground text-center py-10">{t('goals.empty')}</p>
+          <div className="flex flex-col items-center gap-4 py-10"><FinanceEmoji kind="target" /><p className="text-sm text-muted-foreground text-center">{t('goals.empty')}</p></div>
         )}
       </SectionCard>
 

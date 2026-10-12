@@ -2505,5 +2505,19 @@
     "importConfirmTitle": "照合ルールをインポートしますか?",
     "importConfirmDescription": "ファイル{{file}}には{{count}}件のルールが含まれています。",
     "importOverwriteWarning": "インポートすると、このワークスペースの現在の照合ルールが順序ごと置き換わります。この操作は取り消せません。"
+  },
+  "frontend": {
+    "navigation": "ナビゲーション",
+    "workspace": "ワークスペース",
+    "loadError": "データを読み込めませんでした。もう一度お試しください。",
+    "retry": "再試行",
+    "planUsage": "プランの利用状況",
+    "metrics": {
+      "accounts": "口座",
+      "active_budgets": "有効な予算",
+      "active_goals": "有効な目標",
+      "imports_monthly": "今月のインポート",
+      "ai_actions_monthly": "今月のAI操作"
+    }
   }
 }

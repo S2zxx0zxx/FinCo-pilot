@@ -1,4 +1,6 @@
-import { useEffect, useRef, useMemo } from 'react'
+import { useMemo } from 'react'
+import { Dialog as DialogPrimitive } from 'radix-ui'
+import { Button } from '@/components/ui/button'
 import { useTranslation } from 'react-i18next'
 import { useDisplayLocale, useDateLocale } from '@/hooks/use-display-locale'
 import { useQuery } from '@tanstack/react-query'
@@ -57,7 +59,6 @@ export function TransactionDrillDown({
   const userCurrency = user?.preferences?.currency_display ?? 'USD'
   const locale = useDisplayLocale()
   const dateLocale = useDateLocale()
-  const panelRef = useRef<HTMLDivElement>(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ['drill-down', filter],
@@ -145,34 +146,6 @@ export function TransactionDrillDown({
     return items
   }, [data, projectedTxs, filter])
 
-  // Close on Escape
-  useEffect(() => {
-    if (!filter) return
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', handleKey)
-    return () => document.removeEventListener('keydown', handleKey)
-  }, [filter, onClose])
-
-  // Close on click outside
-  useEffect(() => {
-    if (!filter) return
-    const handleClick = (e: MouseEvent) => {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        onClose()
-      }
-    }
-    // Delay to avoid closing immediately from the click that opened it
-    const timer = setTimeout(() => {
-      document.addEventListener('mousedown', handleClick)
-    }, 100)
-    return () => {
-      clearTimeout(timer)
-      document.removeEventListener('mousedown', handleClick)
-    }
-  }, [filter, onClose])
-
   // Sum in user's primary currency. For foreign-currency rows we need
   // amount_primary; if it's missing we can't convert, so skip the row
   // instead of adding a raw foreign amount as if it were primary. This
@@ -187,33 +160,24 @@ export function TransactionDrillDown({
   const hasUnsettledTotal = pendingTotal > 0 || projectedTotal > 0
 
   return (
-    <>
-      {/* Backdrop */}
-      <div
-        className={`fixed inset-0 bg-black/20 z-40 transition-opacity duration-200 ${
-          filter ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        }`}
-      />
-
-      {/* Panel */}
-      <div
-        ref={panelRef}
-        className={`fixed top-0 right-0 h-full w-full max-w-md bg-card shadow-2xl z-50 transform transition-transform duration-200 ease-out flex flex-col ${
-          filter ? 'translate-x-0' : 'translate-x-full'
-        }`}
-      >
+    <DialogPrimitive.Root open={Boolean(filter)} onOpenChange={open => { if (!open) onClose() }}>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-black/35 backdrop-blur-[2px]" />
+        <DialogPrimitive.Content aria-describedby={undefined}
+          className="fixed top-0 right-0 z-50 flex h-dvh w-full max-w-md flex-col bg-card shadow-none outline-none data-[state=open]:animate-in data-[state=open]:slide-in-from-right-4 duration-350">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-          <h2 className="text-sm font-semibold text-foreground truncate pr-4">
+          <DialogPrimitive.Title asChild><h2 className="text-base font-semibold text-foreground truncate pr-4">
             {filter?.title}
-          </h2>
-          <button
+          </h2></DialogPrimitive.Title>
+          <Button type="button" variant="ghost" size="icon-sm"
+            aria-label={t('common.close')}
             onClick={onClose}
             className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors shrink-0"
             title={t('common.close')}
           >
             <X size={16} />
-          </button>
+          </Button>
         </div>
 
         {isAccrual && filter?.from && (
@@ -342,7 +306,8 @@ export function TransactionDrillDown({
             )}
           </div>
         )}
-      </div>
-    </>
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   )
 }

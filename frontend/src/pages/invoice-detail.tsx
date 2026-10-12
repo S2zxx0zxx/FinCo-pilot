@@ -1,3 +1,5 @@
+import { QueryError } from '@/components/spaceui/query-state'
+import { useClipboard } from '@/hooks/spaceui/use-clipboard'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -91,9 +93,9 @@ export default function InvoiceDetailPage() {
   const [linkOpen, setLinkOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [tab, setTab] = useState<Tab>('details')
-  const [copied, setCopied] = useState(false)
+  const { copy, hasCopied: copied } = useClipboard({ timeout: 2500 })
 
-  const { data: invoice, isLoading } = useQuery({
+  const { data: invoice, isLoading, isError, refetch } = useQuery({
     queryKey: ['invoice', id],
     queryFn: () => invoicesApi.get(id),
     enabled: Boolean(id),
@@ -187,15 +189,8 @@ export default function InvoiceDetailPage() {
     mutationFn: () => invoicesApi.share(id),
     onSuccess: async (link) => {
       const url = `${window.location.origin}${link.path}`
-      try {
-        await navigator.clipboard.writeText(url)
-        setCopied(true)
-        setTimeout(() => setCopied(false), 2500)
-        toast.success(t('invoices.shareCopied'))
-      } catch {
-        // A blocked clipboard is not a failed share — the link exists.
-        toast.success(url)
-      }
+      if (await copy(url)) toast.success(t('invoices.shareCopied'))
+      else toast.success(url) // Share succeeded even if clipboard access is blocked.
       refresh()
     },
     onError,
@@ -209,6 +204,8 @@ export default function InvoiceDetailPage() {
     },
     onError,
   })
+
+  if (isError) return <QueryError retry={refetch} />
 
   if (isLoading || !invoice) {
     return (
@@ -421,8 +418,7 @@ export default function InvoiceDetailPage() {
                 <div className="ml-auto">
                   <IconAction
                     onClick={() => {
-                      void navigator.clipboard.writeText(shareUrl)
-                      toast.success(t('invoices.shareCopied'))
+                      void copy(shareUrl).then(ok => { if (ok) toast.success(t('invoices.shareCopied')); else toast.error(t('common.error')) })
                     }}
                     label={t('invoices.shareCopy')}
                   >

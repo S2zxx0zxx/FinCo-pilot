@@ -2506,5 +2506,19 @@
     "importConfirmTitle": "¿Importar reglas de conciliación?",
     "importConfirmDescription": "El archivo {{file}} contiene {{count}} reglas.",
     "importOverwriteWarning": "La importación reemplaza las reglas de conciliación de este espacio, incluido su orden. No se puede deshacer."
+  },
+  "frontend": {
+    "navigation": "Navegación",
+    "workspace": "Espacio de trabajo",
+    "loadError": "No se pudieron cargar tus datos. Inténtalo de nuevo.",
+    "retry": "Reintentar",
+    "planUsage": "Uso de tu plan",
+    "metrics": {
+      "accounts": "Cuentas",
+      "active_budgets": "Presupuestos activos",
+      "active_goals": "Objetivos activos",
+      "imports_monthly": "Importaciones este mes",
+      "ai_actions_monthly": "Acciones de IA este mes"
+    }
   }
 }

@@ -1,3 +1,4 @@
+import { AuthShell } from '@/components/spaceui/auth-shell'
 import { TermsLink } from '@/components/terms-link'
 import { PrivacyLink } from '@/components/privacy-link'
 import { useLaunchText } from '@/lib/launch-copy'
@@ -100,7 +101,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background px-4">
+    <AuthShell>
       <Card className="w-full max-w-[400px] shadow-sm">
         <form onSubmit={handleSubmit}>
           <div className="flex flex-col items-center pt-8 pb-2 px-8">
@@ -172,6 +173,6 @@ export default function RegisterPage() {
           </CardFooter>
         </form>
       </Card>
-    </div>
+    </AuthShell>
   )
 }

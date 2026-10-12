@@ -1,3 +1,4 @@
+import { UsageCard } from '@/components/spaceui/usage-card'
 import { useQueryClient } from '@tanstack/react-query'
 import { CheckoutStatusCard } from '@/billing/checkout-status-card'
 import { RenewalEnrollmentCard } from "@/billing/renewal-enrollment-card"
@@ -547,6 +548,7 @@ export default function PricingPage() {
           <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-muted-foreground sm:text-base">Start free. Upgrade only when the extra power is worth it. Your existing financial history stays yours even after a downgrade.</p>
         </section>
 
+        <UsageCard />
         {selectedPlan === 'pro' && (
           <div className="mx-auto max-w-3xl">
             <FounderOfferCard campaign={founderCampaign} />

@@ -2505,5 +2505,19 @@
     "importConfirmTitle": "Import matching rules?",
     "importConfirmDescription": "File {{file}} contains {{count}} rules.",
     "importOverwriteWarning": "Importing replaces the matching rules this workspace has now, including their order. This cannot be undone."
+  },
+  "frontend": {
+    "navigation": "Navigation",
+    "workspace": "Workspace",
+    "loadError": "We could not load your data. Please try again.",
+    "retry": "Try again",
+    "planUsage": "Your plan usage",
+    "metrics": {
+      "accounts": "Accounts",
+      "active_budgets": "Active budgets",
+      "active_goals": "Active goals",
+      "imports_monthly": "Imports this month",
+      "ai_actions_monthly": "AI actions this month"
+    }
   }
 }

@@ -1,9 +1,11 @@
 'use client'
 
 import * as React from 'react'
+import { useMediaQuery } from '@/hooks/use-media-query'
 import Image from 'next/image'
 import emojiRegex from 'emoji-regex'
-import { EmojiSource, EmojiType, resolveEmojiUrl, fromUnicode } from '@usespaceui/emoji'
+import type { EmojiSource } from '@usespaceui/emoji'
+import { useInView } from 'motion/react'
 import { cn } from '@/lib/utils'
 
 export type Segment = { kind: 'text'; value: string } | { kind: 'emoji'; value: string }
@@ -17,7 +19,7 @@ function splitCodepoints(text: string): Segment[] {
   return text.split(/(\s+)/).map((part) => {
     if (CODEPOINT_TOKEN.test(part)) {
       try {
-        return { kind: 'emoji', value: fromUnicode(part) }
+        return { kind: 'emoji', value: String.fromCodePoint(...part.split(/[-_]/).map(value => Number.parseInt(value, 16))) }
       } catch {
         return { kind: 'text', value: part }
       }
@@ -40,23 +42,30 @@ export function splitEmoji(text: string): Segment[] {
   return segments
 }
 
-function EmojiGlyph({ emoji, source, className }: { emoji: string; source: EmojiSource; className?: string }) {
-  // No format: @usespaceui/emoji already defaults to the right one per source + type.
-  const src = React.useMemo(() => {
-    try {
-      return resolveEmojiUrl(emoji, { source, type: EmojiType.Anim, fallback: true } as never)
-    } catch {
-      return ''
-    }
-  }, [emoji, source])
+function EmojiGlyph({ emoji, source, className, localAssets }: { emoji: string; source: EmojiSource; className?: string; localAssets?: boolean }) {
+  const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)', true)
+  const ref = React.useRef<HTMLSpanElement>(null)
+  const inView = useInView(ref, { once: true, amount: 0.4 })
+  const [resolved, setResolved] = React.useState('')
+  React.useEffect(() => {
+    if (localAssets || !inView) return
+    let active = true
+    void import('@usespaceui/emoji').then(({ resolveEmojiUrl, EmojiType }) => {
+      if (active) setResolved(resolveEmojiUrl(emoji, { source, type: reducedMotion ? EmojiType.ThreeD : EmojiType.Anim, fallback: true } as never))
+    }).catch(() => { if (active) setResolved('') })
+    return () => { active = false }
+  }, [emoji, source, reducedMotion, localAssets, inView])
+  const src = localAssets && emoji === '🧭'
+    ? (!reducedMotion && inView ? '/emoji/compass.webp' : '/emoji/compass-still.webp')
+    : resolved
   const [failed, setFailed] = React.useState(false)
   React.useEffect(() => setFailed(false), [src])
 
   // Raw glyph fallback rather than break the sentence.
-  if (!src || failed) return <>{emoji}</>
+  if (!src || failed) return <span ref={ref}>{emoji}</span>
 
   return (
-    <Image
+    <span ref={ref}><Image
       src={src}
       alt={emoji}
       width={48}
@@ -65,7 +74,7 @@ function EmojiGlyph({ emoji, source, className }: { emoji: string; source: Emoji
       draggable={false}
       onError={() => setFailed(true)}
       className={cn('pointer-events-none inline-block h-[1em] w-[1em] object-contain align-[-0.1em]', className)}
-    />
+    /></span>
   )
 }
 
@@ -78,17 +87,19 @@ export type AnimojiProps = {
   source?: AnimojiSource
   className?: string
   emojiClassName?: string
+  /** Self-hosted Fluent compass assets avoid third-party requests. */
+  localAssets?: boolean
 }
 
 /** Renders every Unicode emoji in `children` as an animated image sized to the surrounding text. */
-export function Animoji({ children, source = EmojiSource.Fluent, className, emojiClassName }: AnimojiProps) {
+export function Animoji({ children, source = 'fluent', className, emojiClassName, localAssets }: AnimojiProps) {
   return (
     <span className={cn('inline', className)}>
       {splitEmoji(children).map((segment, index) =>
         segment.kind === 'text' ? (
           <React.Fragment key={index}>{segment.value}</React.Fragment>
         ) : (
-          <EmojiGlyph key={index} emoji={segment.value} source={source} className={emojiClassName} />
+          <EmojiGlyph key={index} emoji={segment.value} source={source} className={emojiClassName} localAssets={localAssets} />
         ),
       )}
     </span>

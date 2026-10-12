@@ -1,0 +1,59 @@
+{
+  "sourceCommit": "dde45d069e57e3fc3c37eb1f26477356332515de",
+  "data": "Synthetic browser fixtures; not live account data",
+  "captures": [
+    {
+      "name": "dashboard",
+      "width": 1440,
+      "path": "/",
+      "file": "dashboard-desktop.png",
+      "sha256": "258fd141667efd51e0ac602ff4be2f3c783fa5324a7b39c397cf1f56820afab3",
+      "pageErrors": [],
+      "webp": "dashboard-desktop.webp",
+      "webp_bytes": 55564,
+      "webp_sha256": "bbe224b489046ce32aacf45f8a8875ce7f1ec0dea272bb30ce24611478c8ee13"
+    },
+    {
+      "name": "dashboard",
+      "width": 390,
+      "path": "/",
+      "file": "dashboard-mobile.png",
+      "sha256": "9a9266c5f515b763293f2010c22253a85cf2de795f134989ad66f734eb825a06",
+      "pageErrors": [],
+      "webp": "dashboard-mobile.webp",
+      "webp_bytes": 30508,
+      "webp_sha256": "d15f2f48dbbfdd1bfc5b7bd07c4e375cf01f827e8248b28c1c581b58de1681ac"
+    },
+    {
+      "name": "accounts",
+      "width": 1440,
+      "path": "/accounts",
+      "file": "accounts-desktop.png",
+      "sha256": "5b573e00c9cafe679b7c0cb0d88fb47fd82ae34d9c2c9cf450aaaeaab2052197",
+      "pageErrors": [],
+      "webp": "accounts-desktop.webp",
+      "webp_bytes": 31946,
+      "webp_sha256": "1c1a8e4dc8a38b71d6ab3d7143d4ec9b09ca1eb66df30b3c631ab55447899222"
+    },
+    {
+      "name": "accounts",
+      "width": 390,
+      "path": "/accounts",
+      "file": "accounts-mobile.png",
+      "sha256": "c495eab5d943df199f0481303aea892c1a7b820f365b3f58e986ac7319122828",
+      "pageErrors": [],
+      "webp": "accounts-mobile.webp",
+      "webp_bytes": 13110,
+      "webp_sha256": "52ccfdb9fdc720db5fa976652b74d97d6e65356070c42aecf3ef991b96cb52b9"
+    }
+  ],
+  "unmapped": [
+    "/api/admin/number-format",
+    "/api/admin/date-format",
+    "/api/admin/accounting-mode",
+    "/api/info",
+    "/api/auth/oidc/config",
+    "/api/admin/default-colors",
+    "/api/currencies"
+  ]
+}

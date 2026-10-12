@@ -32,3 +32,12 @@ Direct-source MIT adaptations from https://github.com/usespaceui/ui: Button, Bad
 7. A proposed main-domain promotion must first separately migrate/verify original app origin, API proxy, OAuth callbacks, email recovery links, payments and login routes. No cutover here.
 
 No production deployment, domain mutation, database migration or main-branch merge is part of this draft PR.
+
+
+## Independent completion work
+
+See docs/IMPLEMENTATION_BLUEPRINT.md for exact source mapping and showcase evidence, docs/CATALOG_DECISIONS.json for all 265 assessed entries, docs/PRODUCT_CAPTURE_PROVENANCE.json for actual-source sample captures, docs/PERFORMANCE_BASELINE.json for the lab run and docs/RELEASE_ACCEPTANCE.md for all thirteen requested steps and honest external gates.
+
+Fonts are self-hosted Latin/currency subsets with next/font/local and optional display to avoid late text repaint on slow mobile links. The originals' SIL OFL notice remains. Compass artwork is Fluent/Microsoft MIT, self-hosted with its license. Sounds start off, load only on explicit user opt-in, and follow reduced motion; no delegated global sound binding.
+
+Browser tools (Playwright, axe-core, Lighthouse) are pinned in the lockfile; CI uses npm ci and a Chromium/Firefox/WebKit matrix. Review scripts/test artifacts are not marketing customer data. The original app screenshots use synthetic fixture accounts and cannot demonstrate production authentication, bank connections or financial accuracy.

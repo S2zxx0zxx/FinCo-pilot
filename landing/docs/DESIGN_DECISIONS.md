@@ -32,3 +32,8 @@ Design cues: Linear for a single clear promise and product-first proof; Mercury 
 ## Safety and release
 
 App remains deployed separately. CTA destinations are real paths but production availability is independently blocked in the 2026-10-12 audit. No fabricated customer counts, security certificates, revenue, returns, live bank coverage or performance numbers. Do not mark landing visually production-ready until real-browser and device tests have passed.
+
+
+## Independent review follow-up
+
+The original historical notes above describe the first draft. IMPLEMENTATION_BLUEPRINT.md and RELEASE_ACCEPTANCE.md are the current source/behavior records. Added real Tabs/Avatar/media-query adoption, actual app sample screenshots, visible and reduced-motion headline safeguards, default-off optional Space UI sound, self-hosted Animoji, font subsetting and comprehensive browser state scans. A direct official Showcase review now establishes conceptual examples (Rival/Sunabase/Oleap); this does not establish real customer success metrics.

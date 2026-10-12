@@ -1,8 +1,4 @@
 @import "tailwindcss";
-@font-face {font-family:'Open Runde';src:url('/fonts/open-runde/open-runde-regular.woff2') format('woff2');font-weight:400;font-display:swap;}
-@font-face {font-family:'Open Runde';src:url('/fonts/open-runde/open-runde-medium.woff2') format('woff2');font-weight:500;font-display:swap;}
-@font-face {font-family:'Open Runde';src:url('/fonts/open-runde/open-runde-semibold.woff2') format('woff2');font-weight:600;font-display:swap;}
-@font-face {font-family:'Open Runde';src:url('/fonts/open-runde/open-runde-bold.woff2') format('woff2');font-weight:700;font-display:swap;}
 
 
 :root {
@@ -53,11 +49,11 @@
 }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; scroll-padding-top: 100px; }
-body { margin:0; min-width: 320px; background:var(--background); color:var(--foreground); font-family: Inter, "Segoe UI", -apple-system, BlinkMacSystemFont, system-ui, sans-serif; line-height:1.5; -webkit-font-smoothing:antialiased; }
+body { margin:0; min-width: 320px; background:var(--background); color:var(--foreground); font-family:var(--font-finco),system-ui,sans-serif; line-height:1.5; -webkit-font-smoothing:antialiased; }
 button, a { -webkit-tap-highlight-color: transparent; }
 a { color:inherit; text-decoration:none; }
 h1,h2,h3,h4,p { margin:0; }
-h1,h2,h3 { font-family:'Open Runde',Inter,system-ui,sans-serif; letter-spacing:-.055em; text-wrap: balance; font-weight:600; }
+h1,h2,h3 { font-family:var(--font-finco),system-ui,sans-serif; letter-spacing:-.055em; text-wrap: balance; font-weight:600; }
 p { text-wrap: pretty; }
 button:focus-visible, a:focus-visible, [role=tab]:focus-visible { outline:2px solid #d9f9bb; outline-offset:4px; }
 ::selection { background:#b8f19b; color:#0b120d; }
@@ -72,7 +68,7 @@ button:focus-visible, a:focus-visible, [role=tab]:focus-visible { outline:2px so
 .brand-link { display:inline-flex; align-items:center; min-width:fit-content; }
 .brand-lockup { display:flex; gap:9px; align-items:center; }
 .brand-symbol { width:38px; height:38px; border-radius:13px; display:grid; place-items:center; background:#161f1c; color:white; border:1px solid #38453e; }
-.brand-name { font-family:'Open Runde',Inter,system-ui,sans-serif; font-weight:700; letter-spacing:-.055em; font-size:22px; color:#f4f5f0; }
+.brand-name { font-family:var(--font-finco),system-ui,sans-serif; font-weight:700; letter-spacing:-.055em; font-size:22px; color:#f4f5f0; }
 .brand-hyphen { color:#b1c5b1; }
 .brand-period { color:var(--primary); }
 .nav-desktop { display:flex; align-items:center; gap:32px; margin-left:auto; margin-right:auto; }
@@ -109,7 +105,7 @@ button:focus-visible, a:focus-visible, [role=tab]:focus-visible { outline:2px so
 .hero-footnote-divider { display:none; }
 .hero-visual { position:relative; min-width:0; padding:25px 0 55px; }
 .preview-frame { position:relative; max-width:630px; margin:0 auto; }
-.preview-browser { position:relative; overflow:hidden; background:#192022; border:1px solid #3a4d46; border-radius:24px; box-shadow:0 26px 110px #0009,0 0 0 6px #18201d70; transform:perspective(1400px) rotateY(-3deg) rotateX(2deg); transition:transform 500ms var(--finco-ease); }
+.preview-browser { position:relative; overflow:hidden; background:#192022; border:1px solid #3a4d46; border-radius:24px; box-shadow:0 26px 110px #0009,0 0 0 6px #18201d70; transform:perspective(1400px) rotateY(-3deg) rotateX(2deg); transition:transform 350ms var(--finco-ease); }
 .preview-browser:hover { transform:perspective(1400px) rotateY(0) rotateX(0); }
 .preview-topline { height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 16px; font-size:9px; letter-spacing:.12em; font-weight:700; color:#81938b; border-bottom:1px solid #30403b; }
 .traffic-lights { display:flex; gap:5px; }
@@ -153,7 +149,7 @@ button:focus-visible, a:focus-visible, [role=tab]:focus-visible { outline:2px so
 .tx-description strong { font-size:10px; font-weight:720; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .tx-description span { margin-top:3px; font-size:9px; color:#5c6d60; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .tx-value { margin-left:auto; font-size:11px; font-weight:750; color:#48574e; white-space:nowrap; font-variant-numeric:tabular-nums; }
-.tx-value.positive { color:#388359; }
+.tx-value.positive { color:#2a6844; }
 .float-note { position:absolute; right:-28px; bottom:42px; display:flex; align-items:center; gap:10px; padding:13px 19px 13px 12px; background:#283d33; border:1px solid #476150; box-shadow:0 18px 32px #0006; border-radius:18px; transform:rotate(3deg); }
 .float-icon { display:grid; place-items:center; color:#15351a; background:#b8eda0; width:32px; height:32px; border-radius:11px; flex:none; }
 .float-note strong { display:block; font-size:12px; font-weight:680; }
@@ -391,3 +387,49 @@ button:focus-visible, a:focus-visible, [role=tab]:focus-visible { outline:2px so
   .preview-browser,.preview-browser:hover { transform:none; }
   .feature-card:hover,.cta-button:hover { transform:none; }
 }
+/* Source-adopted Space UI tabs keep controls legible at every viewport. */
+.preview-tabs { background:transparent!important; width:100%; justify-content:flex-start; padding:0 0 8px!important; }
+.preview-tabs [data-slot=tab-indicator] { display:none; }
+.preview-tab { min-height:44px!important; height:auto!important; font-size:12px!important; padding:8px 11px!important; }
+.preview-tab[data-active] { color:#183727!important; background:#dce8d9!important; }
+.experience-choices { width:100%; display:flex; flex-direction:column; align-items:stretch; background:transparent!important; padding:0!important; }
+.experience-choices [data-slot=tab-indicator] { display:none; }
+.choice[data-active] { color:#d8f7cb!important; }
+.choice-description { display:block; }
+.demo-profile > [data-slot=avatar-fallback] { background:transparent; }
+.product-section { padding-top:0; }
+.product-section .section-head { align-items:flex-start; }
+.product-section .section-head > p { max-width:410px; }
+.product-tabs { gap:22px; }
+.product-tabs-list { flex-wrap:wrap; width:100%; justify-content:flex-start; gap:8px; background:transparent!important; padding:0!important; }
+.product-tabs-list [data-slot=tab-indicator] { display:none; }
+.product-tab { min-height:48px; padding:10px 18px!important; color:#b9c6bc; background:#18201c; border:1px solid #344338; border-radius:12px; }
+.product-tab[data-active] { background:#c5f4a5; color:#12250f; border-color:#c5f4a5; }
+.product-tab svg { width:18px; height:18px; }
+.product-capture { padding:8px!important; overflow:hidden; border:1px solid #33473a; border-radius:22px; background:#121d16!important; }
+.product-capture img { display:block; width:100%; height:auto; border-radius:15px; }
+.product-caption { display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:16px; margin-top:18px; }
+.product-caption p { color:#a7b8ab; max-width:64ch; font-size:14px; }
+.product-caption .capture-note { color:#9faf9f; font-size:12px; max-width:42ch; }
+.product-heading-emoji { margin-left:8px; }
+.sound-toggle { color:#b7cbb7!important; font-size:12px!important; min-height:44px; border-color:#334a36!important; }
+.sound-toggle[aria-pressed=true] { color:#d8fac5!important; background:#223821!important; }
+@media (max-width:620px) {
+  .mini-eyebrow { font-size:10px; letter-spacing:.03em; }
+  .chart-axis,.tx-heading span,.tx-description span { font-size:11px; }
+  .tx-description strong,.tx-value,.finance-summary p { font-size:12px; }
+  .finance-trend { font-size:11px; }
+  .preview-main { padding-inline:10px; }
+  .preview-sidebar { display:none; }
+  .tx-row { min-height:48px; gap:8px; }
+  .float-note { display:none; }
+  .preview-disclaimer { margin-top:16px; font-size:11px; }
+  .product-tab { flex:1; justify-content:center; min-width:0; padding-inline:10px!important; font-size:13px!important; }
+  .product-capture { border-radius:16px; padding:5px!important; }
+  .product-capture img { border-radius:11px; }
+  .product-caption { flex-direction:column; gap:10px; }
+  .product-caption p { font-size:14px; }
+  .footer-bottom .sound-toggle { margin-top:5px; }
+}
+/* Outgoing Base UI panels are inert; exclude them from layout during replacement. */
+.preview-body[data-ending-style],.choice-description[data-ending-style],.product-tabs > [data-ending-style] { display:none!important; }

@@ -7,7 +7,8 @@ import uuid
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, ROUND_DOWN
 
-from sqlalchemy import case, func, or_, select
+from fastapi import HTTPException
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.loan import Loan
@@ -76,19 +77,15 @@ async def calculate_spending_plan(session: AsyncSession, workspace_id: uuid.UUID
 
     cash = debt = outflows = ZERO
     manual_ids = [a.id for a in relevant.values() if not a.connection_id]
-    # Group ledger balances without rounding through binary floats. Mixed
-    # transaction/account currencies need reconciliation, not a 1:1 fallback.
-    balances = {}
-    if manual_ids:
-        rows = (await session.execute(select(
-            Transaction.account_id, Transaction.currency,
-            func.sum(case((Transaction.type == 'credit', func.abs(Transaction.amount)), else_=-func.abs(Transaction.amount))),
-        ).where(Transaction.account_id.in_(manual_ids), Transaction.date <= today,
-                Transaction.status == 'posted', is_not_ignored()).group_by(Transaction.account_id, Transaction.currency))).all()
-        for aid, denomination, amount in rows:
-            if denomination != relevant[aid].currency:
-                blockers.append(f'Reconcile mixed-currency ledger entries in {relevant[aid].name}.')
-            balances[aid] = balances.get(aid, ZERO) + convert(amount, denomination)
+    # A ledger's net flow cannot prove its opening or present-day balance.
+    # Manual confirmations remain read-only, explicit and workspace-bound.
+    for aid, confirmation in request.manual_balances.items():
+        account = relevant.get(aid)
+        expected_kind = 'card_debt' if account and account.type == 'credit_card' else 'cash'
+        if (account is None or account.connection_id or confirmation.kind != expected_kind
+                or confirmation.currency != account.currency or confirmation.as_of != today):
+            raise HTTPException(400, 'Manual balance confirmations must match current manual accounts, currencies, types and date in this workspace.')
+    cash_unknown = debt_unknown = False
     connection_ids = {a.connection_id for a in relevant.values() if a.connection_id}
     connections = (await session.scalars(select(BankConnection).where(BankConnection.id.in_(connection_ids)))).all() if connection_ids else []
     for conn in connections:
@@ -105,11 +102,27 @@ async def calculate_spending_plan(session: AsyncSession, workspace_id: uuid.UUID
         if conn.status != 'active' or refresh is None or datetime.now(timezone.utc) - refresh > timedelta(hours=24):
             blockers.append(f'Confirm a fresh bank refresh for {conn.display_name or conn.institution_name}; a cached ingestion alone is insufficient.')
     if manual_ids:
-        assumptions.append('Manual balances rely on posted ledger entries; confirm they match your accounts today.')
+        assumptions.append('Manual amounts are entered and confirmed by you for this calculation; they are not bank-verified and do not change your ledger.')
     for account in relevant.values():
-        amount = convert(account.balance, account.currency) if account.connection_id else balances.get(account.id, ZERO)
-        if account.type == 'credit_card':
-            debt += max(ZERO, amount if account.connection_id else -amount)
+        is_debt = account.type == 'credit_card'
+        confirmation = request.manual_balances.get(account.id)
+        if not account.connection_id and confirmation is None:
+            blockers.append(f'Confirm today’s {"outstanding card debt" if is_debt else "cash balance"} for {account.name}; transaction history does not confirm today’s balance.')
+            debt_unknown = debt_unknown or is_debt
+            cash_unknown = cash_unknown or not is_debt
+            continue
+        if account.connection_id:
+            value = account.balance
+        else:
+            assert confirmation is not None
+            value = confirmation.amount
+        previous_blockers = len(blockers)
+        amount = convert(value, account.currency)
+        if len(blockers) != previous_blockers:
+            debt_unknown = debt_unknown or is_debt
+            cash_unknown = cash_unknown or not is_debt
+        if is_debt:
+            debt += max(ZERO, amount)
         else:
             cash += amount
 
@@ -163,7 +176,7 @@ async def calculate_spending_plan(session: AsyncSession, workspace_id: uuid.UUID
     return SpendingPlan(
         currency=currency, as_of=today, through=through,
         status='needs_review' if blockers else 'estimated',
-        cash_balance=cash, card_debt_reserve=debt, upcoming_outflows=outflows,
+        cash_balance=None if cash_unknown else cash, card_debt_reserve=None if debt_unknown else debt, upcoming_outflows=outflows,
         loan_due_reserve=loan_reserve,
         emergency_buffer=request.emergency_buffer, goal_reserve=request.goal_reserve,
         other_obligations=request.other_obligations,

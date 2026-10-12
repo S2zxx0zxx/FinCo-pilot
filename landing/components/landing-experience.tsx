@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { MotionConfig } from 'motion/react'
 import {
   IconArrowRight, IconArrowUpRight, IconArrowDownRight, IconArrowsExchange,
@@ -14,9 +14,13 @@ import { Badge } from '@/components/spaceui/badge'
 import { Card } from '@/components/spaceui/card'
 import { Link as SpaceLink } from '@/components/spaceui/link'
 import { BlurRevealText } from '@/components/spaceui/blur-reveal-text'
-import { ProximityGrid } from '@/components/spaceui/proximity-grid'
+import { HeroBackdrop } from '@/components/hero-backdrop'
 import { IdentityAvatar } from '@/components/spaceui/identity-avatar'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionPanel } from '@/components/spaceui/accordion'
+import { Tabs, TabsList, TabsTab, TabsPanel } from '@/components/spaceui/tabs'
+import { Avatar, AvatarFallback } from '@/components/spaceui/avatar'
+import { ProductScreens } from '@/components/product-screens'
+import { LandingSoundProvider, SoundToggle, useLandingSound } from '@/components/landing-sound'
 import { APP_LINKS } from '@/lib/links'
 
 type View = 'overview' | 'budgets' | 'activity'
@@ -33,7 +37,7 @@ const featureCards: Array<{ number: string; icon: IconType; title: string; body:
   { number: '01', icon: IconWallet, title: 'Your complete picture.', body: 'Bring accounts, transactions and balances into one organised view. Stop piecing together the story across tabs.', label: 'SEE IT ALL' },
   { number: '02', icon: IconTarget, title: 'Plans you can actually follow.', body: 'Make room for essentials, set meaningful goals and check how your spending fits the bigger picture.', label: 'PLAN WITH INTENT' },
   { number: '03', icon: IconChartDots3, title: 'Understand the patterns.', body: 'Go from individual transactions to useful reporting, categories and recurring expenses without the spreadsheet detour.', label: 'FIND THE SIGNAL' },
-  { number: '04', icon: IconSparkles, title: 'A little intelligence, when you want it.', body: 'Optional AI-assisted tools can help you explore financial questions in deployments where those capabilities are enabled.', label: 'STAY IN CONTROL' },
+  { number: '04', icon: IconSparkles, title: 'A little intelligence, when you want it.', body: 'Explore financial questions with optional AI tools, while keeping accounts, budgets and reports at the centre of your workflow.', label: 'STAY IN CONTROL' },
 ]
 
 const steps = [
@@ -45,9 +49,9 @@ const steps = [
 const faqs = [
   { id: 'faq-1', question: 'What is FinCo-Pilot?', answer: 'FinCo-Pilot is a personal finance workspace for tracking accounts and transactions, planning budgets and goals, and exploring reports. Optional features such as bank connections and AI agents depend on configuration and availability.' },
   { id: 'faq-2', question: 'Do I have to connect a bank account?', answer: 'No. FinCo-Pilot supports managing financial accounts and transactions manually. Import and provider-connection options are separate capabilities and may not be available on every deployment.' },
-  { id: 'faq-3', question: 'Can I use FinCo-Pilot on my phone?', answer: 'The web application includes responsive screens and progressive web app support. Actual behaviour on your device depends on your browser and the deployment.' },
+  { id: 'faq-3', question: 'Can I use FinCo-Pilot on my phone?', answer: 'The web application includes responsive screens and progressive web app support. You can use the web app in a supported mobile browser; available features may vary.' },
   { id: 'faq-4', question: 'Is the financial preview on this page real?', answer: 'The preview uses illustrative sample data to explain the interface. It is not a live account, personal financial data or a performance claim.' },
-  { id: 'faq-5', question: 'Are AI features required?', answer: 'No. The core financial workspace is independent of optional agent capabilities. AI availability and access depend on the active product configuration.' },
+  { id: 'faq-5', question: 'Are AI features required?', answer: 'No. The core financial workspace is independent of optional agent capabilities. AI tools are optional and may not be available in every setup.' },
 ]
 
 const demoData: Record<View, { eyebrow: string; title: string; amount: string; delta: string; detail: string; bars: number[]; transactions: Array<{ name: string; context: string; amount: string; positive?: boolean }> }> = {
@@ -75,9 +79,10 @@ function ArrowLink({ href, children, light = false, small = false }: { href: str
 
 function Navigation() {
   const [menuOpen, setMenuOpen] = useState(false)
-  return <header className="site-header" id="top">
+  const toggleRef = useRef<HTMLButtonElement>(null)
+  return <header className="site-header" id="top" onKeyDown={event => { if (event.key === 'Escape' && menuOpen) { setMenuOpen(false); toggleRef.current?.focus() } }}>
     <div className="nav-inner shell">
-      <a href="#top" className="brand-link" aria-label="FinCo-Pilot, back to top"><Mark /></a>
+      <SpaceLink href="#top" className="brand-link" aria-label="FinCo-Pilot, back to top"><Mark /></SpaceLink>
       <nav className="nav-desktop" aria-label="Primary navigation">
         {nav.map(item => <SpaceLink key={item.href} href={item.href} variant="secondary" className="nav-text">{item.title}</SpaceLink>)}
       </nav>
@@ -85,7 +90,7 @@ function Navigation() {
         <SpaceLink href={APP_LINKS.login} variant="secondary" className="nav-login">Log in</SpaceLink>
         <ArrowLink href={APP_LINKS.register} small>Get started</ArrowLink>
       </div>
-      <Button aria-label={menuOpen ? 'Close navigation' : 'Open navigation'} aria-expanded={menuOpen} aria-controls="mobile-menu" size="icon-lg" variant="ghost" className="nav-toggle" onClick={() => setMenuOpen(current => !current)}>
+      <Button ref={toggleRef} aria-label={menuOpen ? 'Close navigation' : 'Open navigation'} aria-expanded={menuOpen} aria-controls="mobile-menu" size="icon-lg" variant="ghost" className="nav-toggle" onClick={() => setMenuOpen(current => !current)}>
         {menuOpen ? <IconX size={22} /> : <IconMenu2 size={22} />}
       </Button>
     </div>
@@ -99,7 +104,7 @@ function Navigation() {
 
 function ProductPreview() {
   const [activeView, setActiveView] = useState<View>('overview')
-  const sample = demoData[activeView]
+  const { cue } = useLandingSound()
   return <div className="preview-frame">
     <div className="preview-browser" id="interactive-preview">
       <div className="preview-topline"><span className="traffic-lights" aria-hidden="true"><i/><i/><i/></span><span>FINCO / WORKSPACE</span><span className="preview-top-right"><IconLock size={13} stroke={1.6} aria-hidden="true"/> PRIVATE VIEW</span></div>
@@ -109,20 +114,13 @@ function ProductPreview() {
           {[IconChartBar, IconWallet, IconReceipt, IconTarget, IconCalendarStats].map((Icon, index) => <div key={index} className={index === 0 ? 'preview-side-icon active' : 'preview-side-icon'} aria-hidden="true"><Icon size={18} stroke={1.7}/></div>)}
         </aside>
         <div className="preview-main">
-          <div className="preview-titlebar"><span>My workspace</span><span className="demo-profile">FC</span></div>
-          <div role="tablist" aria-label="Explore sample views" className="preview-tabs">
-            {(['overview','budgets','activity'] as View[]).map(view => <Button key={view} role="tab" aria-selected={activeView === view} aria-controls="sample-panel" id={'tab-' + view} onClick={() => setActiveView(view)} variant={activeView===view ? 'secondary' : 'ghost'} size="sm" className={activeView===view ? 'preview-tab active' : 'preview-tab'}>{view === 'overview' ? 'Overview' : view === 'budgets' ? 'Budgets' : 'Activity'}</Button>)}
-          </div>
-          <div id="sample-panel" role="tabpanel" aria-labelledby={'tab-' + activeView} className="preview-body" key={activeView}>
-            <div className="mini-eyebrow">{sample.eyebrow}</div>
-            <div className="finance-summary"><div><p>{sample.title}</p><div className="finance-amount">{sample.amount}</div></div><div className="finance-trend"><IconArrowUpRight size={14}/>{sample.delta}</div></div>
-            <div className="chart-wrap"><div className="chart-intro"><span>Financial trend</span><span>{sample.detail}</span></div>
-              <div className="chart-bars" role="img" aria-label={'Illustrative trend for ' + activeView}>{sample.bars.map((v,i) => <span key={i} style={{height:v+'%'}} className={i===sample.bars.length-1?'bright':''}/>)}</div>
-              <div className="chart-axis"><span>Start</span><span>Today</span></div>
-            </div>
-            <div className="tx-heading">Recent items <span>Sample data</span></div>
-            <div className="tx-list">{sample.transactions.map((item,i)=><div className="tx-row" key={i}><div className="tx-symbol">{i===0?<IconArrowDownRight size={16}/>:i===1?<IconReceipt size={16}/>:<IconTarget size={16}/>}</div><div className="tx-description"><strong>{item.name}</strong><span>{item.context}</span></div><span className={item.positive?'tx-value positive':'tx-value'}>{item.amount}</span></div>)}</div>
-          </div>
+          <div className="preview-titlebar"><span>My workspace</span><Avatar className="demo-profile" aria-label="Sample profile"><AvatarFallback>FC</AvatarFallback></Avatar></div>
+          <Tabs value={activeView} onValueChange={value => { setActiveView(value as View); cue() }}>
+            <TabsList activateOnFocus aria-label="Explore sample views" className="preview-tabs">
+              {(['overview','budgets','activity'] as View[]).map(view => <TabsTab key={view} value={view} className="preview-tab">{view === 'overview' ? 'Overview' : view === 'budgets' ? 'Budgets' : 'Activity'}</TabsTab>)}
+            </TabsList>
+            {(['overview','budgets','activity'] as View[]).map(view => <TabsPanel key={view} value={view} className="preview-body"><SampleView view={view} /></TabsPanel>)}
+          </Tabs>
         </div>
       </div>
     </div>
@@ -131,9 +129,23 @@ function ProductPreview() {
   </div>
 }
 
+function SampleView({ view }: { view: View }) {
+  const sample = demoData[view]
+  return <>
+    <div className="mini-eyebrow">{sample.eyebrow}</div>
+    <div className="finance-summary"><div><p>{sample.title}</p><div className="finance-amount">{sample.amount}</div></div><div className="finance-trend"><IconArrowUpRight size={14} aria-hidden="true"/>{sample.delta}</div></div>
+    <div className="chart-wrap"><div className="chart-intro"><span>Financial trend</span><span>{sample.detail}</span></div>
+      <div className="chart-bars" role="img" aria-label={'Illustrative trend for ' + view}>{sample.bars.map((v,i) => <span key={i} style={{height:v+'%'}} className={i===sample.bars.length-1?'bright':''}/>)}</div>
+      <div className="chart-axis"><span>Start</span><span>Today</span></div>
+    </div>
+    <div className="tx-heading">Recent items <span>Sample data</span></div>
+    <div className="tx-list">{sample.transactions.map((item,i)=><div className="tx-row" key={item.name}><div className="tx-symbol" aria-hidden="true">{i===0?<IconArrowDownRight size={16}/>:i===1?<IconReceipt size={16}/>:<IconTarget size={16}/>}</div><div className="tx-description"><strong>{item.name}</strong><span>{item.context}</span></div><span className={item.positive?'tx-value positive':'tx-value'}>{item.amount}</span></div>)}</div>
+  </>
+}
+
 function Hero() {
   return <section className="hero-section">
-    <div className="hero-ambient" aria-hidden="true"><ProximityGrid cellSize={86} gap={2} proximity={3} interactive={false} /></div>
+    <HeroBackdrop/>
     <div className="hero-halo" aria-hidden="true"/>
     <div className="shell hero-grid">
       <div className="hero-copy">
@@ -145,7 +157,7 @@ function Hero() {
       </div>
       <div className="hero-visual"><ProductPreview /></div>
     </div>
-    <div className="hero-bottom shell"><span>LESS GUESSWORK. MORE CLARITY.</span><a href="#why-finco" className="scroll-prompt">Discover more <span aria-hidden="true">↓</span></a></div>
+    <div className="hero-bottom shell"><span>LESS GUESSWORK. MORE CLARITY.</span><SpaceLink href="#why-finco" className="scroll-prompt">Discover more <IconArrowDownRight size={16} aria-hidden="true"/></SpaceLink></div>
   </section>
 }
 
@@ -162,14 +174,18 @@ function WhyFinCo() {
 
 function Experience() {
   const [selected, setSelected] = useState<'clarity'|'control'>('clarity')
-  return <section className="section experience-section" id="experience">
+  const { cue } = useLandingSound()
+  return <section className="section experience-section" id="perspective">
     <div className="shell experience-grid">
       <div className="experience-copy"><p className="section-kicker"><span>02 /</span> BUILT AROUND YOU</p><h2>For the bigger picture. <em>And the little details.</em></h2><p className="section-intro">It’s not about staring at another chart. It’s about making your next financial decision feel more grounded.</p>
-        <div className="experience-choices" role="tablist" aria-label="Choose benefit">
-          <Button role="tab" aria-selected={selected==='clarity'} onClick={()=>setSelected('clarity')} variant="ghost" className={selected==='clarity'?'choice active':'choice'}><IconChartBar size={20}/> Understand what changed <IconArrowRight size={18}/></Button>
-          <Button role="tab" aria-selected={selected==='control'} onClick={()=>setSelected('control')} variant="ghost" className={selected==='control'?'choice active':'choice'}><IconShieldLock size={20}/> Stay in the driver’s seat <IconArrowRight size={18}/></Button>
-        </div>
-        <p className="choice-description" aria-live="polite">{selected==='clarity'?'See your spending, savings and activity in a context you can actually use.':'Keep your own financial workflow, workspace and permissions at the centre of the experience.'}</p>
+        <Tabs value={selected} orientation="vertical" onValueChange={value => { setSelected(value as 'clarity'|'control'); cue() }}>
+          <TabsList activateOnFocus className="experience-choices" aria-label="Choose benefit">
+            <TabsTab value="clarity" className="choice"><IconChartBar size={20} aria-hidden="true"/> Understand what changed <IconArrowRight size={18} aria-hidden="true"/></TabsTab>
+            <TabsTab value="control" className="choice"><IconShieldLock size={20} aria-hidden="true"/> Stay in the driver’s seat <IconArrowRight size={18} aria-hidden="true"/></TabsTab>
+          </TabsList>
+          <TabsPanel value="clarity" className="choice-description">See your spending, savings and activity in a context you can actually use.</TabsPanel>
+          <TabsPanel value="control" className="choice-description">Keep your own financial workflow, workspace and permissions at the centre of the experience.</TabsPanel>
+        </Tabs>
       </div>
       <div className="experience-art">
         <div className="orbit orbit-one"/><div className="orbit orbit-two"/>
@@ -210,9 +226,9 @@ function FinalCTA() {
 }
 
 function Footer() {
-  return <footer className="footer"><div className="shell"><div className="footer-top"><div><a href="#top" className="brand-link"><Mark compact/></a><p>More clarity. Less guesswork.</p></div><div className="footer-links"><SpaceLink href="#why-finco" variant="secondary">Features</SpaceLink><SpaceLink href={APP_LINKS.pricing} variant="secondary">Pricing</SpaceLink><SpaceLink href={APP_LINKS.support} variant="secondary">Support</SpaceLink><SpaceLink href={APP_LINKS.login} variant="secondary">Log in</SpaceLink></div></div><div className="footer-bottom"><span>© 2026 FinCo-Pilot</span><div><SpaceLink href={APP_LINKS.privacy} variant="secondary">Privacy</SpaceLink><SpaceLink href={APP_LINKS.terms} variant="secondary">Terms</SpaceLink></div><span>More clarity. Less guesswork.</span></div></div></footer>
+  return <footer className="footer"><div className="shell"><div className="footer-top"><div><SpaceLink href="#top" className="brand-link"><Mark compact/></SpaceLink><p>More clarity. Less guesswork.</p></div><div className="footer-links"><SpaceLink href="#why-finco" variant="secondary">Features</SpaceLink><SpaceLink href={APP_LINKS.pricing} variant="secondary">Pricing</SpaceLink><SpaceLink href={APP_LINKS.support} variant="secondary">Support</SpaceLink><SpaceLink href={APP_LINKS.login} variant="secondary">Log in</SpaceLink></div></div><div className="footer-bottom"><span>© 2026 FinCo-Pilot</span><div><SpaceLink href={APP_LINKS.privacy} variant="secondary">Privacy</SpaceLink><SpaceLink href={APP_LINKS.terms} variant="secondary">Terms</SpaceLink></div><SoundToggle /></div></div></footer>
 }
 
 export function LandingExperience() {
-  return <MotionConfig reducedMotion="user"><div className="marketing-page"><a className="skip-link" href="#main-content">Skip to content</a><Navigation/><main id="main-content"><Hero/><ProofLine/><WhyFinCo/><Experience/><HowItWorks/><Privacy/><Questions/><FinalCTA/></main><Footer/></div></MotionConfig>
+  return <LandingSoundProvider><MotionConfig reducedMotion="user"><div className="marketing-page"><a className="skip-link" href="#main-content">Skip to content</a><Navigation/><main id="main-content"><Hero/><ProofLine/><WhyFinCo/><ProductScreens/><Experience/><HowItWorks/><Privacy/><Questions/><FinalCTA/></main><Footer/></div></MotionConfig></LandingSoundProvider>
 }

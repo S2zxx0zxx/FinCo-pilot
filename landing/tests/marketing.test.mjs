@@ -11,7 +11,7 @@ test('product sign-in and registration stay in the original Vite application', (
   assert.doesNotMatch(links, /CLERK_SECRET_KEY|DATABASE_URL/)
 })
 test('real sections, metadata, and no fabricated social proof', () => {
-  const p = read('components/landing-experience.tsx')
+  const p = read('components/landing-experience.tsx') + read('components/product-screens.tsx')
   for (const section of ['why-finco','experience','how-it-works','questions']) assert.ok(p.includes(section))
   for (const section of ['Hero','ProductPreview','WhyFinCo','Experience','HowItWorks','Privacy','Questions','FinalCTA']) assert.ok(p.includes('function '+section))
   assert.match(p, /Illustrative interface/)
@@ -29,6 +29,6 @@ test('source attribution and accessibility guards', () => {
   assert.match(read('components/spaceui/blur-reveal-text.tsx'), /useInView/)
   assert.match(read('app/globals.css'), /prefers-reduced-motion/)
   assert.match(read('components/landing-experience.tsx'), /aria-expanded/)
-  assert.match(read('components/landing-experience.tsx'), /aria-selected/)
+  assert.match(read('components/spaceui/tabs.tsx'), /TabsPrimitive/)
   assert.match(read('components/landing-experience.tsx'), /Skip to content/)
 })

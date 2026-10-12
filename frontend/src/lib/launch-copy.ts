@@ -4,6 +4,16 @@ import { resolveSupportedLang } from './i18n'
 // Launch flows use the same persisted language selection as the rest of the app.
 // Keep untranslated locales in English; never present English text as translated.
 export const launchHindi: Record<string, string> = {
+  'Spending plan inputs': 'खर्च योजना की जानकारी',
+  'Confirm current manual balances': 'मैनुअल खातों का मौजूदा बैलेंस भरें',
+  "Enter today's actual cash balance or outstanding card debt in each account's currency. Leave unknown amounts blank. These inputs do not change your ledger.": 'हर खाते की मुद्रा में आज का वास्तविक नकद बैलेंस या कार्ड का बकाया कर्ज़ भरें। अज्ञात रकम खाली छोड़ें। इससे दर्ज लेनदेन नहीं बदलते।',
+  'Outstanding card debt': 'कार्ड का बकाया कर्ज़',
+  'Current cash balance': 'मौजूदा नकद बैलेंस',
+  'Not confirmed': 'पुष्टि नहीं हुई',
+  'Unknown — confirmation needed': 'अज्ञात — पुष्टि ज़रूरी है',
+  'Accounts could not be loaded. Reload this page before calculating.': 'खाते लोड नहीं हो पाए। गणना से पहले पेज फिर से लोड करें।',
+  'Manual amounts are entered and confirmed by you for this calculation; they are not bank-verified and do not change your ledger.': 'इस गणना के लिए मैनुअल रकम आपने भरी और पुष्ट की है; बैंक ने इसे सत्यापित नहीं किया है और दर्ज लेनदेन नहीं बदलते।',
+
   'Add and reconcile at least one cash account.': 'कम से कम एक नकद या बैंक खाते को जोड़कर उसका बैलेंस मिलाएँ।',
   'Review balances, scheduled bills, loan repayments and other obligations before using this estimate.': 'इस अनुमान का इस्तेमाल करने से पहले बैलेंस, तय बिल, लोन भुगतान और अन्य देनदारियाँ जाँचें।',
   'An unsupported account type may contain debt; reconcile it before calculating.': 'किसी असमर्थित खाता प्रकार में कर्ज़ हो सकता है; गणना से पहले उसका मिलान ज़रूरी है।',
@@ -124,6 +134,8 @@ export function translateLaunch(text: string, language: string): string {
   if (match) return `${match[1]} के लिए बैंक से ताज़ा डेटा आने की पुष्टि करें; केवल पुराना कैश डेटा पर्याप्त नहीं है।`
   match = /^Safe-to-spend is unavailable for (.+): this bank connection does not yet reliably distinguish cash from loan accounts\.$/.exec(text)
   if (match) return `${match[1]} के लिए खर्च करने योग्य रकम उपलब्ध नहीं है: यह बैंक कनेक्शन नकद और लोन खातों में अभी विश्वसनीय अंतर नहीं करता।`
+  match = /^Confirm today’s (cash balance|outstanding card debt) for (.+); transaction history does not confirm today’s balance\.$/.exec(text)
+  if (match) return `${match[2]} के लिए आज का ${match[1] === 'cash balance' ? 'नकद बैलेंस' : 'कार्ड का बकाया कर्ज़'} पुष्ट करें; लेनदेन का इतिहास आज का बैलेंस प्रमाणित नहीं करता।`
   return text
 }
 

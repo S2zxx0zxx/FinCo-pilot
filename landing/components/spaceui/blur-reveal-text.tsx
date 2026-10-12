@@ -1,5 +1,7 @@
 'use client'
 
+import { useMediaQuery } from '@/hooks/use-media-query'
+
 import * as React from 'react'
 import { motion, useInView, type Variants } from 'motion/react'
 import { cn } from '@/lib/utils'
@@ -72,6 +74,9 @@ export const BlurRevealText: React.FC<BlurRevealTextProps> = ({
   style,
   ...props
 }) => {
+  const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)', true)
+  const [hydrated, setHydrated] = React.useState(false)
+  React.useEffect(() => setHydrated(true), [])
   const containerRef = React.useRef<HTMLElement | null>(null)
   const isElementInView = useInView(containerRef, { once })
 
@@ -82,7 +87,7 @@ export const BlurRevealText: React.FC<BlurRevealTextProps> = ({
   const initialY = direction === 'up' ? yOffset : direction === 'down' ? -yOffset : 0
 
   const containerVariants: Variants = {
-    hidden: { opacity: 0 },
+    hidden: { opacity: 1 },
     visible: {
       opacity: 1,
       transition: {
@@ -94,7 +99,7 @@ export const BlurRevealText: React.FC<BlurRevealTextProps> = ({
 
   const segmentVariants: Variants = {
     hidden: {
-      opacity: 0,
+      opacity: 1,
       filter: `blur(${blurAmount})`,
       y: initialY,
       willChange: 'filter, transform, opacity',
@@ -108,7 +113,12 @@ export const BlurRevealText: React.FC<BlurRevealTextProps> = ({
     },
   }
 
-  const MotionComponent = motion.create(Component)
+  const MotionComponent = React.useMemo(() => motion.create(Component), [Component])
+
+  // Server and no-JS output is visible; motion is a progressive enhancement.
+  if (!hydrated || reduceMotion) {
+    return <Component data-reveal-static="true" aria-label={text} className={cn('inline-flex flex-wrap items-baseline', className)} style={style} {...props}>{segments.map((segment, index) => <span key={index} aria-hidden="true" className={cn('inline-block whitespace-pre', segmentClassName)}>{splitBy === 'words' ? segment + (index < segments.length - 1 ? '\u00A0' : '') : segment}</span>)}</Component>
+  }
 
   return (
     <MotionComponent
@@ -135,6 +145,7 @@ export const BlurRevealText: React.FC<BlurRevealTextProps> = ({
         return (
           <motion.span
             key={`${segment}-${index}`}
+            aria-hidden="true"
             variants={segmentVariants}
             className={cn('inline-block whitespace-pre', segmentClassName)}
           >

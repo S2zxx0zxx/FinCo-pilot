@@ -80,6 +80,7 @@ const GridCell = React.memo(function GridCell({
 })
 
 interface GridBoardProps {
+  staticGrid: boolean
   cells: Array<{ id: string; centerX: number; centerY: number }>
   gap: number
   metrics: GridMetrics
@@ -92,6 +93,7 @@ interface GridBoardProps {
 }
 
 const GridBoard = React.memo(function GridBoard({
+  staticGrid,
   cells,
   gap,
   metrics,
@@ -113,7 +115,7 @@ const GridBoard = React.memo(function GridBoard({
       aria-hidden="true"
     >
       {cells.map((cell) => (
-        <GridCell
+        staticGrid ? <div key={cell.id} className="bg-muted opacity-45" /> : <GridCell
           key={cell.id}
           centerX={cell.centerX}
           centerY={cell.centerY}
@@ -243,6 +245,7 @@ export const ProximityGrid: React.FC<ProximityGridProps> = ({
       {...props}
     >
       <GridBoard
+        staticGrid={!interactive || isReducedMotion}
         cells={cells}
         gap={gap}
         metrics={metrics}

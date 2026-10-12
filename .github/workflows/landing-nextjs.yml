@@ -1,0 +1,38 @@
+name: Landing Next.js
+on:
+  pull_request:
+    paths:
+      - 'landing/**'
+      - '.github/workflows/landing-nextjs.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'landing/**'
+      - '.github/workflows/landing-nextjs.yml'
+permissions:
+  contents: read
+jobs:
+  marketing:
+    name: Landing Typecheck / Tests / Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: landing
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '22'
+      - name: Install isolated landing dependencies
+        run: npm install --no-audit --no-fund
+      - name: Verify source contracts
+        run: npm run test
+      - name: Validate TypeScript
+        run: npm run typecheck
+      - name: Build Next.js App Router
+        run: npm run build
+      - name: Verify dependency vulnerability floor
+        run: npm audit --omit=dev --audit-level=high

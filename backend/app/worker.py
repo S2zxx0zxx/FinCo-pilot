@@ -3,9 +3,11 @@ import ssl
 from celery import Celery
 
 from app.core.config import get_settings
+from app.core.sentry_monitoring import init_sentry
 from app.core.redis_runtime import parse_redis_target
 
 settings = get_settings()
+init_sentry(component="worker")
 redis_target = parse_redis_target(settings.redis_url)
 
 celery_app = Celery(

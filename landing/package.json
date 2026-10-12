@@ -1,0 +1,49 @@
+{
+  "name": "fincopilot-landing",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/*.test.mjs",
+    "verify": "npm run typecheck && npm run test && npm run build",
+    "test:browser": "node tests/browser-acceptance.mjs",
+    "test:performance": "node scripts/performance.mjs",
+    "capture:product": "node scripts/capture-product.mjs",
+    "generate:social": "node scripts/social-card.mjs"
+  },
+  "dependencies": {
+    "@base-ui/react": "1.9.0",
+    "@tabler/icons-react": "3.49.0",
+    "@usespaceui/emoji": "0.1.0",
+    "@usespaceui/sounds": "0.1.4",
+    "@usespaceui/squishmoji": "0.1.0",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "emoji-regex": "10.5.0",
+    "lucide-react": "1.28.0",
+    "motion": "12.43.0",
+    "next": "16.4.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "tailwind-merge": "3.5.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "26.6.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "axe-core": "4.10.3",
+    "lighthouse": "13.5.0",
+    "playwright": "1.56.1",
+    "postcss": "8.5.28",
+    "sharp": "0.35.5",
+    "tailwindcss": "4.3.3",
+    "typescript": "7.0.2"
+  }
+}

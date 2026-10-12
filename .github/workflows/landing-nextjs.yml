@@ -1,0 +1,86 @@
+name: Landing Next.js
+on:
+  pull_request:
+    paths:
+      - 'landing/**'
+      - '.github/workflows/landing-nextjs.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'landing/**'
+      - '.github/workflows/landing-nextjs.yml'
+permissions:
+  contents: read
+jobs:
+  marketing:
+    name: Landing Typecheck / Tests / Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: landing
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '22'
+      - name: Install isolated landing dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Verify source contracts
+        run: npm run test
+      - name: Validate TypeScript
+        run: npm run typecheck
+      - name: Build Next.js App Router
+        run: npm run build
+      - name: Verify dependency vulnerability floor
+        run: npm audit --omit=dev --audit-level=high
+  browser:
+    name: Landing Browser QA (${{ matrix.browser }})
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    needs: marketing
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: landing
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: landing/package-lock.json
+      - name: Install deterministic dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Prepare locked browser tooling
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+      - name: Build optimized landing
+        run: npm run build
+      - name: Exercise keyboard, accessibility and nine responsive viewports
+        env:
+          LANDING_BROWSER: ${{ matrix.browser }}
+        run: |
+          npm run start -- -p 3100 -H 127.0.0.1 > /tmp/fincopilot-landing-next.log 2>&1 &
+          pid=$!
+          trap 'kill $pid 2>/dev/null || true' EXIT
+          for i in $(seq 1 40); do
+            if curl --silent --fail http://127.0.0.1:3100/ > /dev/null; then break; fi
+            sleep 1
+          done
+          node tests/browser-acceptance.mjs
+          if [ "${{ matrix.browser }}" = "chromium" ]; then node scripts/performance.mjs; fi
+      - name: Preserve visual review screenshots
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: always()
+        with:
+          name: finco-landing-${{ matrix.browser }}-captures
+          path: landing/test-artifacts/
+          retention-days: 7
+          if-no-files-found: ignore

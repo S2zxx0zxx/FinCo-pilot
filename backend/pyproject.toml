@@ -36,6 +36,7 @@ dependencies = [
     "pyzipper>=0.4.0",
     "fastembed>=0.4.0",
     "razorpay>=1.4.1",
+    "sentry-sdk==2.71.0",
 ]
 
 [project.optional-dependencies]

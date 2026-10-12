@@ -72,6 +72,7 @@ ALLOWLIST: dict[tuple[str, str], str] = {
     ("POST", "/passkeys/2fa/options"): "unauthenticated step of login",
     ("POST", "/passkeys/2fa/verify"): "unauthenticated step of login",
     ("POST", "/login"): "unauthenticated by definition",
+    ("POST", "/api/auth/clerk/exchange"): "login exchange: verified Clerk signature and live subject-bound provider session; exact active local identity mapping or policy-enabled new-account provisioning; never mutates an existing financial workspace by email",
     ("POST", "/logout"): "authenticated user revokes own sessions",
     ("POST", "/2fa/recovery-codes"): "own account, password and TOTP checked",
     ("POST", "/request-verify-token"): "public email verification request, rate-limited",
@@ -147,7 +148,7 @@ ALLOWLIST: dict[tuple[str, str], str] = {
 # user would prevent the operation. All other exemptions still require a user.
 PUBLIC_ROUTES = {
     ("POST", path) for path in (
-        "/api/webhooks/razorpay", "/login", "/request-verify-token", "/verify", "/register", "/forgot-password", "/reset-password",
+        "/api/auth/clerk/exchange", "/api/webhooks/razorpay", "/login", "/request-verify-token", "/verify", "/register", "/forgot-password", "/reset-password",
         "/2fa/verify", "/passkeys/authenticate/options", "/passkeys/authenticate/verify",
         "/passkeys/2fa/options", "/passkeys/2fa/verify", "/api/setup/create-admin",
     )

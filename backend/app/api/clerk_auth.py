@@ -6,9 +6,11 @@ from typing import Any, Optional
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, EmailStr
+from fastapi_users.password import PasswordHelper
+from pydantic import BaseModel, EmailStr, TypeAdapter, ValidationError
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 
 from app.core.auth import get_jwt_strategy
 from app.core.clerk_sessions import ClerkTokenError, verify_clerk_session_auto
@@ -58,23 +60,47 @@ async def _fetch_verified_email_from_clerk(user_id: str, secret_key: str) -> Opt
     """Query Clerk's Backend API to get the authoritative primary email address."""
     url = f"https://api.clerk.com/v1/users/{user_id}"
     try:
-        async with httpx.AsyncClient(timeout=10) as client:
+        async with httpx.AsyncClient(timeout=10, follow_redirects=False) as client:
             resp = await client.get(url, headers={"Authorization": f"Bearer {secret_key}"})
             if resp.status_code != 200:
-                logger.warning("Clerk API returned %s for user %s", resp.status_code, user_id)
                 return None
             data = resp.json()
+            if not isinstance(data, dict) or data.get("id") != user_id:
+                return None
             primary_id = data.get("primary_email_address_id")
-            for item in data.get("email_addresses", []):
-                if item.get("id") == primary_id:
-                    return item.get("email_address")
-            # Fallback to first verified or first email
-            emails = data.get("email_addresses", [])
-            if emails:
-                return emails[0].get("email_address")
-    except Exception as exc:
-        logger.exception("Error querying Clerk Backend API: %s", exc)
+            emails = data.get("email_addresses")
+            if not primary_id or not isinstance(emails, list):
+                return None
+            for item in emails:
+                if not isinstance(item, dict) or item.get("id") != primary_id:
+                    continue
+                verification = item.get("verification")
+                if not isinstance(verification, dict) or verification.get("status") != "verified":
+                    return None
+                return str(TypeAdapter(EmailStr).validate_python(item.get("email_address")))
+    except (httpx.HTTPError, ValueError, TypeError, ValidationError):
+        logger.warning("Clerk verified email lookup unavailable")
     return None
+
+
+async def _verify_active_clerk_session(session_id: str, user_id: str, secret_key: str) -> bool:
+    """Check provider revocation and subject before exchanging into a local token."""
+    if not secret_key:
+        return False
+    try:
+        async with httpx.AsyncClient(timeout=10, follow_redirects=False) as client:
+            response = await client.get(
+                f"https://api.clerk.com/v1/sessions/{session_id}",
+                headers={"Authorization": f"Bearer {secret_key}"},
+            )
+            if response.status_code != 200:
+                return False
+            data = response.json()
+            return bool(isinstance(data, dict) and data.get("id") == session_id
+                        and data.get("user_id") == user_id and data.get("status") == "active")
+    except (httpx.HTTPError, ValueError, TypeError):
+        logger.warning("Clerk active session lookup unavailable")
+        return False
 
 
 @router.post("/exchange", response_model=ClerkExchangeResponse)
@@ -88,7 +114,7 @@ async def exchange_clerk_session(
     the user record, and issues an internal JWT bound to local session management.
     """
     settings = get_settings()
-    if not settings.clerk_auth_available and not settings.clerk_issuer:
+    if not settings.clerk_auth_available:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Clerk authentication is not configured on this server",
@@ -104,14 +130,9 @@ async def exchange_clerk_session(
             detail="Invalid or expired Clerk session token",
         ) from exc
 
-    # 2. Determine verified email address
-    email: Optional[str] = None
-    secret_key = settings.clerk_secret_key.get_secret_value()
-    if secret_key.strip():
-        email = await _fetch_verified_email_from_clerk(verified.user_id, secret_key.strip())
-
-    if not email and payload.email:
-        email = str(payload.email)
+    secret_key = settings.clerk_secret_key.get_secret_value().strip()
+    if not await _verify_active_clerk_session(verified.session_id, verified.user_id, secret_key):
+        raise HTTPException(401, "Clerk session is inactive or cannot be verified")
 
     # 3. Check existing ExternalAuthIdentity mapping
     stmt = select(ExternalAuthIdentity).where(
@@ -136,12 +157,10 @@ async def exchange_clerk_session(
                 detail="User account is deactivated",
             )
     else:
-        # Not linked yet. Check if an existing local account has the matching email.
+        # Client-supplied email is only a UI hint, never proof of ownership.
+        email = await _fetch_verified_email_from_clerk(verified.user_id, secret_key) if secret_key else None
         if not email:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email address is required for first-time account linking",
-            )
+            raise HTTPException(403, "A verified primary Clerk email is required")
 
         existing_res = await session.execute(
             select(User).where(func.lower(User.email) == email.lower())
@@ -149,21 +168,9 @@ async def exchange_clerk_session(
         existing_user = existing_res.scalar_one_or_none()
 
         if existing_user is not None:
-            # Link existing local account to this Clerk identity
-            ident = ExternalAuthIdentity(
-                provider="clerk",
-                issuer=verified.issuer,
-                provider_subject=verified.user_id,
-                user_id=existing_user.id,
-            )
-            session.add(ident)
-            if not existing_user.oidc_issuer:
-                existing_user.oidc_issuer = verified.issuer
-                existing_user.oidc_subject = verified.user_id
-                session.add(existing_user)
-            await session.commit()
-            await session.refresh(existing_user)
-            user = existing_user
+            # Legacy financial identities require an independently proved mapping.
+            # Matching even a verified email cannot grant access to an existing UUID.
+            raise HTTPException(403, "Existing account requires an approved identity mapping")
         else:
             # Brand new user -> verify registration policy, then provision
             if not await admin_service.is_registration_enabled(session):
@@ -179,7 +186,7 @@ async def exchange_clerk_session(
             user = User(
                 id=uuid.uuid4(),
                 email=email.lower(),
-                hashed_password=secrets.token_urlsafe(32),
+                hashed_password=PasswordHelper().hash(secrets.token_urlsafe(32)),
                 is_active=True,
                 is_verified=True,
                 is_superuser=False,
@@ -193,38 +200,44 @@ async def exchange_clerk_session(
                 oidc_issuer=verified.issuer,
                 oidc_subject=verified.user_id,
             )
-            session.add(user)
-            await session.flush()
+            try:
+                session.add(user)
+                await session.flush()
 
-            ident = ExternalAuthIdentity(
-                provider="clerk",
-                issuer=verified.issuer,
-                provider_subject=verified.user_id,
-                user_id=user.id,
-            )
-            session.add(ident)
+                ident = ExternalAuthIdentity(
+                    provider="clerk",
+                    issuer=verified.issuer,
+                    provider_subject=verified.user_id,
+                    user_id=user.id,
+                )
+                session.add(ident)
 
-            # Provision personal workspace, initial wallet, default categories and rules
-            workspace = await create_personal_workspace_for_user(session, user)
-            wallet_name = "Carteira" if lang.startswith("pt") else "Wallet"
-            wallet = Account(
-                user_id=user.id,
-                workspace_id=workspace.id,
-                name=wallet_name,
-                type="checking",
-                balance=Decimal("0.00"),
-                currency=currency,
-            )
-            session.add(wallet)
-            await session.commit()
-
-            await create_default_categories(session, user.id, lang, workspace_id=workspace.id)
-            await create_default_rules(session, user.id, lang, workspace_id=workspace.id)
-            await session.refresh(user)
+                # Provision personal workspace, initial wallet, default categories and rules
+                workspace = await create_personal_workspace_for_user(session, user)
+                wallet_name = "Carteira" if lang.startswith("pt") else "Wallet"
+                wallet = Account(
+                    user_id=user.id,
+                    workspace_id=workspace.id,
+                    name=wallet_name,
+                    type="checking",
+                    balance=Decimal("0.00"),
+                    currency=currency,
+                )
+                session.add(wallet)
+                await create_default_categories(session, user.id, lang, workspace_id=workspace.id, commit=False)
+                await create_default_rules(session, user.id, lang, workspace_id=workspace.id, commit=False)
+                await session.commit()
+                await session.refresh(user)
+            except IntegrityError as exc:
+                await session.rollback()
+                raise HTTPException(409, "Account creation conflicted; please sign in again") from exc
+            except Exception:
+                await session.rollback()
+                raise
 
     # 4. Issue standard FinCo-Pilot revocable JWT
     strategy = get_jwt_strategy()
-    access_token = await strategy.write_token(user, fresh_auth=True)
+    access_token = await strategy.write_token(user, fresh_auth=False)
 
     return ClerkExchangeResponse(
         access_token=access_token,

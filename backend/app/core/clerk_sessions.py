@@ -1,16 +1,11 @@
-"""Clerk JWT verification foundation. Intentionally NOT wired into app routes.
-
-This module is a prepared, fully-tested cryptographic foundation for a future
-Clerk authentication integration path. It has its own test suite
-(tests/test_clerk_sessions.py) and is kept isolated until the integration is
-ready to be wired up.
+"""Clerk JWT verification used by the explicit external identity exchange.
 
 This verifies cryptographic identity, not permission to access a financial resource.
 A separate DB identity lookup and existing workspace/billing guards are required.
 """
 import time
+import re
 from dataclasses import dataclass
-from typing import Any
 
 import httpx
 import jwt
@@ -73,9 +68,9 @@ def verify_clerk_session(
 
     user_id = claims.get("sub")
     session_id = claims.get("sid")
-    if not isinstance(user_id, str) or not user_id.startswith("user_"):
+    if not isinstance(user_id, str) or not re.fullmatch(r"user_[A-Za-z0-9_]+", user_id):
         raise ClerkTokenError("Invalid Clerk user subject")
-    if not isinstance(session_id, str) or not session_id.startswith("sess_"):
+    if not isinstance(session_id, str) or not re.fullmatch(r"sess_[A-Za-z0-9_]+", session_id):
         raise ClerkTokenError("Invalid Clerk session")
     if claims.get("azp") not in authorized_parties:
         raise ClerkTokenError("Unauthorized Clerk token origin")
@@ -128,14 +123,16 @@ async def get_or_fetch_clerk_public_key(issuer: str, key_id: str | None = None) 
     if not jwks:
         raise ClerkTokenError(f"Failed to fetch Clerk JWKS from {jwks_url} or Clerk API")
 
-    keys = jwks.get("keys", [])
+    if not isinstance(jwks, dict) or not isinstance(jwks.get("keys"), list):
+        raise ClerkTokenError("Invalid Clerk JWKS")
+    keys = [key for key in jwks["keys"] if isinstance(key, dict)]
     target_key = None
     if key_id:
         target_key = next((k for k in keys if k.get("kid") == key_id), None)
-    if not target_key and keys:
+    if not key_id and keys:
         target_key = next((k for k in keys if k.get("alg") in ("RS256", None)), keys[0])
 
-    if not target_key:
+    if not target_key or target_key.get("kty") != "RSA" or target_key.get("use", "sig") != "sig" or target_key.get("alg", "RS256") != "RS256":
         raise ClerkTokenError("No suitable RSA public key found in Clerk JWKS")
 
     try:
@@ -147,6 +144,9 @@ async def get_or_fetch_clerk_public_key(issuer: str, key_id: str | None = None) 
     except Exception as exc:
         raise ClerkTokenError("Failed to convert Clerk JWK to PEM") from exc
 
+    # Untrusted kid values must not grow the process cache without bound.
+    if len(_JWKS_CACHE) >= 128:
+        _JWKS_CACHE.pop(next(iter(_JWKS_CACHE)))
     _JWKS_CACHE[cache_key] = (now, pem)
     return pem
 
@@ -161,9 +161,13 @@ async def verify_clerk_session_auto(token: str) -> VerifiedClerkSession:
     kid = None
     try:
         header = jwt.get_unverified_header(token)
+        if header.get("alg") != "RS256":
+            raise ClerkTokenError("Unsupported Clerk signing algorithm")
         kid = header.get("kid")
-    except Exception:
-        pass
+        if kid is not None and (not isinstance(kid, str) or not kid or len(kid) > 128):
+            raise ClerkTokenError("Invalid Clerk key identifier")
+    except (jwt.PyJWTError, ValueError, TypeError) as exc:
+        raise ClerkTokenError("Invalid Clerk session token") from exc
 
     public_key_pem = await get_or_fetch_clerk_public_key(issuer, kid)
     return verify_clerk_session(

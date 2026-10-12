@@ -1,4 +1,5 @@
 import time
+from unittest.mock import AsyncMock
 import pytest
 from httpx import AsyncClient
 import jwt
@@ -6,6 +7,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
 from app.core.config import get_settings
+from app.api import clerk_auth
 
 
 ISSUER = "https://fincopilot-test.clerk.accounts.dev"
@@ -80,6 +82,11 @@ async def test_clerk_exchange_new_user(
     monkeypatch.setattr(settings, "clerk_jwt_public_key", public)
     monkeypatch.setattr(settings, "clerk_authorized_parties", "http://localhost:5173")
 
+    monkeypatch.setattr(clerk_auth, "_fetch_verified_email_from_clerk", AsyncMock(return_value="clerk_user@example.com"))
+    from pydantic import SecretStr
+    monkeypatch.setattr(settings, "clerk_secret_key", SecretStr("synthetic-clerk-secret"))
+
+    monkeypatch.setattr(clerk_auth, "_verify_active_clerk_session", AsyncMock(return_value=True))
     token = create_clerk_token(private)
     response = await client.post(
         "/api/auth/clerk/exchange",

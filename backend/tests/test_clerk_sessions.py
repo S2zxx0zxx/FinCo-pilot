@@ -2,6 +2,7 @@
 import time
 
 import jwt
+from jwt.algorithms import RSAAlgorithm
 import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -65,6 +66,8 @@ def test_accepts_genuine_rs256_clerk_session(signing_keys):
         {"azp": None},
         {"sub": "not_a_clerk_id"},
         {"sid": ""},
+        {"sid": "sess_../other"},
+        {"sub": "user_../other"},
         {"sts": "pending"},
         {"act": {"sub": "user_attacker"}},
     ],
@@ -127,3 +130,22 @@ def test_rejects_missing_configuration(signing_keys):
         verify(signed(private), public, authorized_parties=())
     with pytest.raises(ClerkTokenError):
         verify(signed(private), public, issuer="http://insecure.local")
+
+
+async def test_unknown_jwks_kid_is_not_replaced_with_another_key(monkeypatch, signing_keys):
+    import httpx
+    from app.core import clerk_sessions
+    from app.core.config import get_settings
+    monkeypatch.setattr(get_settings(), "clerk_jwt_public_key", "")
+    clerk_sessions._JWKS_CACHE.clear()
+    private, _ = signing_keys
+    jwk = RSAAlgorithm.to_jwk(private.public_key(), as_dict=True)
+    jwk.update(kid="known", alg="RS256", use="sig")
+    transport = httpx.MockTransport(lambda request: httpx.Response(200, json={"keys": [jwk]}))
+    real_client = httpx.AsyncClient
+    monkeypatch.setattr(clerk_sessions.httpx, "AsyncClient", lambda **kwargs: real_client(transport=transport, **kwargs))
+    with pytest.raises(ClerkTokenError):
+        await clerk_sessions.get_or_fetch_clerk_public_key(ISSUER, "unknown")
+    assert not clerk_sessions._JWKS_CACHE
+    assert "BEGIN PUBLIC KEY" in await clerk_sessions.get_or_fetch_clerk_public_key(ISSUER, "known")
+    clerk_sessions._JWKS_CACHE.clear()

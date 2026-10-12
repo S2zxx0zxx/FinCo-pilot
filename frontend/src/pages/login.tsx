@@ -1,4 +1,4 @@
-import React, {
+import {
   useState,
   useEffect,
   useRef,
@@ -23,7 +23,7 @@ import { setup, auth as authApi, admin as adminApi } from '@/lib/api'
 import { isServerUnreachable } from '@/lib/auth-errors'
 import { resolveLocalAuthEnabled } from '@/lib/auth-config-utils'
 import { setThemeBasedOnSystem } from '@/lib/theme-utils'
-import { isClerkConfigured } from '@/lib/clerk-provider-wrapper'
+import { isClerkConfigured } from '@/lib/clerk-config'
 import { useClerkCustomAuth } from '@/lib/clerk-auth-adapter'
 import {
   isConditionalPasskeySupported,

@@ -1,4 +1,4 @@
-import React, {
+import {
   useState,
   useEffect,
   type FormEvent,
@@ -24,7 +24,7 @@ import { CurrencySelect } from '@/components/currency-select'
 import { FinCoLogo } from '@/components/finco-logo'
 import { setThemeBasedOnSystem } from '@/lib/theme-utils'
 import { isServerUnreachable } from '@/lib/auth-errors'
-import { isClerkConfigured } from '@/lib/clerk-provider-wrapper'
+import { isClerkConfigured } from '@/lib/clerk-config'
 import { useClerkCustomAuth } from '@/lib/clerk-auth-adapter'
 
 interface RegisterFormViewProps {

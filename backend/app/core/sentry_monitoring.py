@@ -10,6 +10,8 @@ import os
 from typing import Any
 from urllib.parse import urlsplit
 
+from app.core.config import get_settings
+
 logger = logging.getLogger(__name__)
 _INITIALIZED = False
 
@@ -47,9 +49,10 @@ def init_sentry(component: str = "api") -> bool:
     global _INITIALIZED
     if _INITIALIZED:
         return True
-    if os.environ.get("SENTRY_ENABLED", "").strip().lower() not in {"1", "true"}:
+    settings = get_settings()
+    if not settings.sentry_enabled:
         return False
-    dsn = os.environ.get("SENTRY_DSN", "").strip()
+    dsn = settings.sentry_dsn.get_secret_value().strip()
     if not dsn:
         logger.warning("Sentry enabled but DSN is not configured; telemetry disabled")
         return False
@@ -63,11 +66,9 @@ def init_sentry(component: str = "api") -> bool:
     from sentry_sdk.integrations.fastapi import FastApiIntegration
     from sentry_sdk.integrations.celery import CeleryIntegration
 
-    environment = os.environ.get("SENTRY_ENVIRONMENT", "").strip() or os.environ.get(
-        "DEPLOYMENT_ENVIRONMENT", "development"
-    ).strip().lower()
+    environment = settings.sentry_environment.strip() or settings.deployment_environment.strip().lower()
     environment = environment if environment in {"production", "staging", "preview", "development", "test"} else "unknown"
-    release = os.environ.get("SENTRY_RELEASE", "").strip() or os.environ.get(
+    release = settings.sentry_release.strip() or os.environ.get(
         "VERCEL_GIT_COMMIT_SHA", ""
     ).strip() or None
 

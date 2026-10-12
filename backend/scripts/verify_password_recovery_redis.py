@@ -7,6 +7,21 @@ from fastapi import HTTPException
 from app.core.rate_limit import RateLimiter
 from app.core.redis import get_redis
 from app.core.recovery_capacity import RecoveryCapacity
+from app.api.oidc_auth import _consume_oidc_state
+
+
+async def verify_oidc_state(redis, state):
+    key = 'oidc_state:' + state
+    original = '{"nonce":"synthetic-ci-nonce","code_verifier":"synthetic-ci-verifier"}'
+    try:
+        await redis.set(key, original, ex=600)
+        results = await asyncio.wait_for(asyncio.gather(*(_consume_oidc_state(redis, state) for _ in range(32))), 15)
+        assert len([result for result in results if result is not None]) == 1
+        assert await redis.get(key) is None
+        assert await _consume_oidc_state(redis, state) is None
+        print('PASS: 32 native Redis OIDC state consumers yield exactly one winner; replay refused')
+    finally:
+        await redis.delete(key)
 
 
 async def verify_capacity(redis, key):
@@ -56,6 +71,7 @@ async def main():
         assert await redis.ttl(key) > 0
         print('PASS: 20 concurrent Redis attempts allowed exactly 3 and retained bounded TTL')
         await verify_capacity(redis, key + ':mail-leases')
+        await verify_oidc_state(redis, key + ':oidc')
     finally:
         await redis.delete(key)
         await redis.aclose()

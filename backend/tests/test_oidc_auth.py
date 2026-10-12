@@ -27,6 +27,9 @@ class FakeRedis:
     async def delete(self, key):
         self.store.pop(key, None)
 
+    async def getdel(self, key):
+        return self.store.pop(key, None)
+
 
 @pytest.fixture
 def oidc_settings(monkeypatch):

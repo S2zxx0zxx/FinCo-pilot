@@ -6,6 +6,7 @@ Marketing only. This package does not replace or import the authenticated Vite a
 
 - Node 22; from landing/: npm install; npm run dev; npm run verify.
 - Root directory for any separate preview Vercel project: landing.
+- Preview builds are **noindex**. Only explicit `NEXT_PUBLIC_MARKETING_INDEXABLE=true` in a Vercel production deployment enables indexing after domain ownership and URL strategy are approved.
 - The CI-generated reviewed package-lock.json is committed; CI now uses deterministic npm ci.
 - Public-only environment variable NEXT_PUBLIC_FINCO_APP_URL points to the existing authenticated application origin. Default: https://fincopilot.app. Never configure secrets or provider keys here.
 

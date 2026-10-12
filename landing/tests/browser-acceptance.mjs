@@ -69,7 +69,7 @@ try {
         })
         return result.violations.map(v => ({
           id: v.id, impact: v.impact, description: v.help,
-          targets: v.nodes.slice(0, 5).map(node => node.target),
+          targets: v.nodes.slice(0, 45).map(node => node.target),
         }))
       })
       assert.deepEqual(audit, [], width + ': WCAG axe-core violations')

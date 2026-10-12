@@ -1,12 +1,14 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
+const indexingEnabled = process.env.VERCEL_ENV === 'production' && process.env.NEXT_PUBLIC_MARKETING_INDEXABLE === 'true'
+
 export const metadata: Metadata = {
   metadataBase: new URL('https://fincopilot.app'),
   title: 'FinCo-Pilot | Make sense of all your money',
   description: 'Understand accounts, track spending, plan budgets and keep your financial picture together in one thoughtful workspace.',
   applicationName: 'FinCo-Pilot',
-  robots: { index: true, follow: true },
+  robots: { index: indexingEnabled, follow: indexingEnabled },
   openGraph: {
     type: 'website',
     title: 'FinCo-Pilot | Clarity for your everyday finances',

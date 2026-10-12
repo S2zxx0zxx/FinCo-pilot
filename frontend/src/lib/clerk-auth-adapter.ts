@@ -57,6 +57,37 @@ export function useClerkCustomAuth() {
     return { status: 'other' }
   }, [isSignInLoaded, signIn, setSignInActive, acquireSessionToken])
 
+  /**
+   * Initiates Google OAuth sign-in via Clerk's redirect flow.
+   * The browser is redirected to Google, then back to /sso-callback
+   * where the session token is picked up and exchanged with our backend.
+   */
+  const signInWithGoogle = useCallback(async (): Promise<void> => {
+    if (!isSignInLoaded || !signIn) {
+      throw new Error('Clerk is not yet loaded')
+    }
+    await signIn.authenticateWithRedirect({
+      strategy: 'oauth_google',
+      redirectUrl: `${window.location.origin}/sso-callback`,
+      redirectUrlComplete: '/',
+    })
+  }, [isSignInLoaded, signIn])
+
+  /**
+   * Initiates Google OAuth sign-up via Clerk's redirect flow.
+   * New users who haven't registered yet should use this path.
+   */
+  const signUpWithGoogle = useCallback(async (): Promise<void> => {
+    if (!isSignUpLoaded || !signUp) {
+      throw new Error('Clerk is not yet loaded')
+    }
+    await signUp.authenticateWithRedirect({
+      strategy: 'oauth_google',
+      redirectUrl: `${window.location.origin}/sso-callback`,
+      redirectUrlComplete: '/',
+    })
+  }, [isSignUpLoaded, signUp])
+
   const verifySecondFactor = useCallback(async (
     code: string,
     strategy: 'totp' | 'phone_code' = 'totp',
@@ -140,6 +171,8 @@ export function useClerkCustomAuth() {
   return {
     isLoaded: isSignInLoaded && isSignUpLoaded,
     signInWithPassword,
+    signInWithGoogle,
+    signUpWithGoogle,
     verifySecondFactor,
     signUpWithPassword,
     verifyEmailCode,

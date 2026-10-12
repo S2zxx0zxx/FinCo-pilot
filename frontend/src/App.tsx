@@ -58,6 +58,7 @@ const SharedInvoicePage = lazy(() => import('@/pages/shared-invoice'))
 const WorkspaceSettingsPage = lazy(() => import('@/pages/workspace-settings'))
 const OAuthCallbackPage = lazy(() => import('@/pages/oauth-callback'))
 const OIDCCallbackPage = lazy(() => import('@/pages/oidc-callback'))
+const SSOCallbackPage = lazy(() => import('@/pages/sso-callback'))
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -90,6 +91,7 @@ function App() {
                         <Route path="*" element={<main className="p-10 space-y-4"><h1 className="text-xl">Page not found</h1><a className="underline" href="/">Return home</a></main>} />
                         <Route path="/login" element={<LoginPage />} />
                         <Route path="/auth/oidc/callback" element={<OIDCCallbackPage />} />
+                        <Route path="/sso-callback" element={<SSOCallbackPage />} />
                         <Route path="/register" element={<RegisterPage />} />
                         <Route path="/pricing" element={<PricingPage />} />
                         <Route path="/support" element={<SupportPage />} />

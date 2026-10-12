@@ -422,13 +422,22 @@ function ClerkLoginContainer() {
       navigate('/', { replace: true })
       return
     }
-    adminApi.registrationStatus().then(({ enabled }) => {
+    if (clerkAuth.session) {
+      void clerkAuth.acquireSessionToken().then(async (tok: string) => {
+        if (tok) {
+          await loginWithClerk(tok)
+          navigate(safeNext, { replace: true })
+        }
+      }).catch(() => {})
+      return
+    }
+    void adminApi.registrationStatus().then(({ enabled }) => {
       setRegistrationEnabled(enabled)
     }).catch(() => {})
-    adminApi.defaultColors().then(({ light, dark }) => {
+    void adminApi.defaultColors().then(({ light, dark }) => {
       setThemeBasedOnSystem(light, dark, resolvedTheme)
     }).catch(() => {})
-  }, [navigate, token, resolvedTheme])
+  }, [navigate, token, resolvedTheme, clerkAuth, loginWithClerk, safeNext])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()

@@ -2,11 +2,11 @@
  * Never transmit bank data, URL tokens, auth state, breadcrumbs or session replay.
  * Production only reports when explicitly enabled AND configured.
  */
-import * as Sentry from '@sentry/react'
 
 declare const __APP_VERSION__: string
 
 let initialized = false
+let sentryModule: { captureException: (error: Error) => void } | null = null
 
 export function sanitizeSentryEvent<T extends object>(event: T): T {
   const raw = event as Record<string, unknown>
@@ -60,21 +60,32 @@ export function initSentry(): boolean {
   const rawEnvironment = String(import.meta.env.VITE_SENTRY_ENVIRONMENT || import.meta.env.MODE)
   const environment = ['production', 'staging', 'preview', 'development', 'test'].includes(rawEnvironment)
     ? rawEnvironment : 'unknown'
-  Sentry.init({
-    dsn,
-    environment,
-    release: __APP_VERSION__,
-    // Finance URLs, request spans and DOM/session replay are intentionally disabled.
-    tracesSampleRate: 0,
-    replaysSessionSampleRate: 0,
-    replaysOnErrorSampleRate: 0,
-    beforeBreadcrumb: () => null,
-    beforeSend: (event) => sanitizeSentryEvent(event),
-  })
-  initialized = true
+
+  const pkg = '@sentry/react'
+  import(/* @vite-ignore */ pkg)
+    .then((Sentry) => {
+      Sentry.init({
+        dsn,
+        environment,
+        release: typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'unknown',
+        tracesSampleRate: 0,
+        replaysSessionSampleRate: 0,
+        replaysOnErrorSampleRate: 0,
+        beforeBreadcrumb: () => null,
+        beforeSend: (event: unknown) => sanitizeSentryEvent(event as object),
+      })
+      sentryModule = Sentry
+      initialized = true
+    })
+    .catch(() => {
+      // Sentry package not installed or failed to load
+    })
+
   return true
 }
 
 export function captureAppError(error: Error): void {
-  if (initialized) Sentry.captureException(error)
+  if (initialized && sentryModule) {
+    sentryModule.captureException(error)
+  }
 }

@@ -1,25 +1,23 @@
 /**
  * SSO Callback Page
  *
- * Clerk redirects back to this page after an OAuth provider (e.g. Google)
- * completes. We then:
- *   1. Wait for Clerk to finish the OAuth handshake and set an active session.
- *   2. Acquire the short-lived Clerk session JWT.
- *   3. Exchange it with the FinCo-Pilot backend (/api/auth/clerk/exchange).
- *   4. Redirect to the dashboard on success, or /login on failure.
- *
- * This page must be registered as an allowed redirect URL in Clerk Dashboard:
- *   https://dashboard.clerk.com → your app → Redirect URLs → add
- *   https://fincopilot.app/sso-callback
+ * Handles Clerk OAuth redirects (e.g. Google sign-in and sign-up).
+ * 1. Completes the OAuth redirect handshake with Clerk.
+ * 2. If the user was signing up, activates the created session.
+ * 3. Acquires the Clerk session JWT.
+ * 4. Exchanges it with the FinCo-Pilot backend (/api/auth/clerk/exchange).
+ * 5. Navigates to the dashboard (/).
  */
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useClerk, useAuth } from '@clerk/clerk-react'
+import { useClerk, useAuth, useSignUp, useSignIn } from '@clerk/clerk-react'
 import { useAuth as useAppAuth } from '@/contexts/auth-context'
 
 export default function SSOCallbackPage() {
-  const { handleRedirectCallback } = useClerk()
+  const { handleRedirectCallback, session } = useClerk()
   const { getToken } = useAuth()
+  const { signUp, setActive: setSignUpActive } = useSignUp()
+  const { signIn, setActive: setSignInActive } = useSignIn()
   const { loginWithClerk } = useAppAuth()
   const navigate = useNavigate()
   const processed = useRef(false)
@@ -30,21 +28,69 @@ export default function SSOCallbackPage() {
 
     const run = async () => {
       try {
-        // Let Clerk complete the OAuth handshake (sets the active session)
-        await handleRedirectCallback({
-          afterSignInUrl: '/',
-          afterSignUpUrl: '/',
-        })
-
-        // Acquire the session token from the freshly-created Clerk session
-        const clerkToken = await getToken()
-        if (!clerkToken) {
-          throw new Error('No Clerk session token after OAuth callback')
+        // Step 1: Let Clerk complete the OAuth handshake
+        try {
+          await handleRedirectCallback({
+            afterSignInUrl: '/sso-callback',
+            afterSignUpUrl: '/sso-callback',
+            continueSignUpUrl: '/sso-callback',
+          })
+        } catch (callbackErr) {
+          console.warn('handleRedirectCallback notice (proceeding):', callbackErr)
         }
 
-        // Exchange the Clerk JWT for a FinCo-Pilot access token
-        await loginWithClerk(clerkToken)
-        navigate('/', { replace: true })
+        // Step 2: If sign-up completed, set the session active
+        if (signUp?.status === 'complete' && signUp?.createdSessionId && setSignUpActive) {
+          try {
+            await setSignUpActive({ session: signUp.createdSessionId })
+          } catch (e) {
+            console.warn('setSignUpActive notice:', e)
+          }
+        }
+
+        // Step 3: If sign-in completed, set the session active
+        if (signIn?.status === 'complete' && signIn?.createdSessionId && setSignInActive) {
+          try {
+            await setSignInActive({ session: signIn.createdSessionId })
+          } catch (e) {
+            console.warn('setSignInActive notice:', e)
+          }
+        }
+
+        // Step 4: Acquire Clerk session JWT token (with retry if session is mounting)
+        let attempts = 0
+        const acquireAndExchange = async () => {
+          let clerkToken: string | null = null
+          try {
+            clerkToken = await getToken()
+          } catch {
+            // ignore
+          }
+
+          if (!clerkToken && session) {
+            try {
+              clerkToken = await session.getToken()
+            } catch {
+              // ignore
+            }
+          }
+
+          if (clerkToken) {
+            await loginWithClerk(clerkToken)
+            navigate('/', { replace: true })
+            return
+          }
+
+          attempts++
+          if (attempts < 6) {
+            setTimeout(acquireAndExchange, 350)
+          } else {
+            console.error('No Clerk session token after OAuth callback attempts')
+            navigate('/login?error=sso_failed', { replace: true })
+          }
+        }
+
+        await acquireAndExchange()
       } catch (err) {
         console.error('SSO callback failed:', err)
         navigate('/login?error=sso_failed', { replace: true })
@@ -52,7 +98,17 @@ export default function SSOCallbackPage() {
     }
 
     void run()
-  }, [handleRedirectCallback, getToken, loginWithClerk, navigate])
+  }, [
+    handleRedirectCallback,
+    session,
+    getToken,
+    signUp,
+    setSignUpActive,
+    signIn,
+    setSignInActive,
+    loginWithClerk,
+    navigate,
+  ])
 
   return (
     <div className="flex min-h-screen items-center justify-center">

@@ -88,11 +88,12 @@ function App() {
                         <Route path="/reset-password" element={<AccountRecovery key="reset" mode="reset" />} />
                         <Route path="/verify-email" element={<AccountRecovery key="verify" mode="verify" />} />
                         <Route path="/request-verification" element={<AccountRecovery key="request-verification" mode="request-verification" />} />
-                        <Route path="*" element={<main className="p-10 space-y-4"><h1 className="text-xl">Page not found</h1><a className="underline" href="/">Return home</a></main>} />
                         <Route path="/login" element={<LoginPage />} />
-                        <Route path="/auth/oidc/callback" element={<OIDCCallbackPage />} />
-                        <Route path="/sso-callback" element={<SSOCallbackPage />} />
+                        <Route path="/sign-in" element={<LoginPage />} />
                         <Route path="/register" element={<RegisterPage />} />
+                        <Route path="/sign-up" element={<SSOCallbackPage />} />
+                        <Route path="/sso-callback" element={<SSOCallbackPage />} />
+                        <Route path="/auth/oidc/callback" element={<OIDCCallbackPage />} />
                         <Route path="/pricing" element={<PricingPage />} />
                         <Route path="/support" element={<SupportPage />} />
                         <Route path="/privacy" element={<PrivacyPage />} />
@@ -145,6 +146,7 @@ function App() {
                           <Route path="/agents/connections" element={<AgentsRoute><EntitlementRoute capability="agents_automation" title="Agent Connections are a Max feature" description="Upgrade to Max to configure advanced agent connections and automation."><AgentConnectionsPage /></EntitlementRoute></AgentsRoute>} />
                           <Route path="/agents/:id" element={<AgentsRoute><EntitlementRoute capability="agents_automation" title="Advanced Agents are a Max feature" description="Upgrade to Max to use agent workflows and MCP automation."><AgentDetailPage /></EntitlementRoute></AgentsRoute>} />
                         </Route>
+                        <Route path="*" element={<main className="p-10 space-y-4"><h1 className="text-xl">Page not found</h1><a className="underline" href="/">Return home</a></main>} />
                       </Routes>
                     </Suspense>
                     <Toaster />

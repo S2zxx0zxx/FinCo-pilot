@@ -1,6 +1,5 @@
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
-import { sentryVitePlugin } from '@sentry/vite-plugin'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
 import { readFile, readdir, writeFile } from 'node:fs/promises'
@@ -81,16 +80,21 @@ export default defineConfig(async ({ mode }) => {
         const release = digest.digest('hex').slice(0, 20)
         await writeFile(workerPath, worker.replace("const VERSION = 'finco-pwa-v5'", `const VERSION = 'finco-pwa-v5-${release}'`))
       },
-    }, ...(sentryUploadEnabled ? [sentryVitePlugin({
-      org: env.SENTRY_ORG,
-      project: env.SENTRY_PROJECT,
-      authToken: env.SENTRY_AUTH_TOKEN,
-      telemetry: false,
-      release: { name: appVersion },
-      sourcemaps: { filesToDeleteAfterUpload: ['dist/**/*.map'] },
-      // A configured release must not silently lose its source maps.
-      errorHandler: (error) => { throw error },
-    })] : [])],
+    }, ...(sentryUploadEnabled ? [
+      (await (async () => {
+        const pkg = '@sentry/vite-plugin'
+        const mod = await import(/* @vite-ignore */ pkg)
+        return mod.sentryVitePlugin({
+          org: env.SENTRY_ORG,
+          project: env.SENTRY_PROJECT,
+          authToken: env.SENTRY_AUTH_TOKEN,
+          telemetry: false,
+          release: { name: appVersion },
+          sourcemaps: { filesToDeleteAfterUpload: ['dist/**/*.map'] },
+          errorHandler: (error: unknown) => { throw error },
+        })
+      })())
+    ] : [])],
     resolve: {
       alias: {
         '@': path.resolve(import.meta.dirname, './src'),

@@ -266,10 +266,25 @@ function ClerkRegisterContainer() {
   const [isResending, setIsResending] = useState(false)
 
   useEffect(() => {
-    adminApi.defaultColors().then(({ light, dark }) => {
+    void adminApi.defaultColors().then(({ light, dark }) => {
       setThemeBasedOnSystem(light, dark, resolvedTheme)
     }).catch(() => {})
   }, [resolvedTheme])
+
+  useEffect(() => {
+    if (clerkAuth.session) {
+      void clerkAuth.acquireSessionToken().then(async (tok: string) => {
+        if (tok) {
+          const lang = resolveSupportedLang(i18n.resolvedLanguage ?? i18n.language)
+          await loginWithClerk(tok, undefined, {
+            currency_display: currency,
+            language: lang,
+          })
+          navigate('/', { replace: true })
+        }
+      }).catch(() => {})
+    }
+  }, [clerkAuth, loginWithClerk, navigate, i18n, currency])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()

@@ -141,7 +141,7 @@ function Hero() {
         <BlurRevealText as="h1" className="hero-title" text="Money makes more sense together." stagger={0.045} delay={0.06} duration={0.38} blurAmount="7px" />
         <p className="hero-description">Every account. Every decision. One thoughtful place to understand where your money stands — and where it can go next.</p>
         <div className="hero-actions"><ArrowLink href={APP_LINKS.register}>Make money make sense</ArrowLink><SpaceLink href="#experience" variant="secondary" className="secondary-cta">Explore the experience <IconArrowRight size={18}/></SpaceLink></div>
-        <div className="hero-footnote"><span className="verified-icon"><IconCircleCheck size={16}/></span> Built for the decisions you make every day. <span className="hero-footnote-divider"/> No invented promises.</div>
+        <div className="hero-footnote"><span className="verified-icon"><IconCircleCheck size={16}/></span> Built for the decisions you make every day.</div>
       </div>
       <div className="hero-visual"><ProductPreview /></div>
     </div>
@@ -210,7 +210,7 @@ function FinalCTA() {
 }
 
 function Footer() {
-  return <footer className="footer"><div className="shell"><div className="footer-top"><div><a href="#top" className="brand-link"><Mark compact/></a><p>More clarity. Less guesswork.</p></div><div className="footer-links"><SpaceLink href="#why-finco" variant="secondary">Features</SpaceLink><SpaceLink href={APP_LINKS.pricing} variant="secondary">Pricing</SpaceLink><SpaceLink href={APP_LINKS.support} variant="secondary">Support</SpaceLink><SpaceLink href={APP_LINKS.login} variant="secondary">Log in</SpaceLink></div></div><div className="footer-bottom"><span>© 2026 FinCo-Pilot</span><div><SpaceLink href={APP_LINKS.privacy} variant="secondary">Privacy</SpaceLink><SpaceLink href={APP_LINKS.terms} variant="secondary">Terms</SpaceLink></div><span>Designed with intention. Built with Space UI.</span></div></div></footer>
+  return <footer className="footer"><div className="shell"><div className="footer-top"><div><a href="#top" className="brand-link"><Mark compact/></a><p>More clarity. Less guesswork.</p></div><div className="footer-links"><SpaceLink href="#why-finco" variant="secondary">Features</SpaceLink><SpaceLink href={APP_LINKS.pricing} variant="secondary">Pricing</SpaceLink><SpaceLink href={APP_LINKS.support} variant="secondary">Support</SpaceLink><SpaceLink href={APP_LINKS.login} variant="secondary">Log in</SpaceLink></div></div><div className="footer-bottom"><span>© 2026 FinCo-Pilot</span><div><SpaceLink href={APP_LINKS.privacy} variant="secondary">Privacy</SpaceLink><SpaceLink href={APP_LINKS.terms} variant="secondary">Terms</SpaceLink></div><span>More clarity. Less guesswork.</span></div></div></footer>
 }
 
 export function LandingExperience() {

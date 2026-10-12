@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { mkdir } from 'node:fs/promises'
 import { chromium } from 'playwright'
+import axe from 'axe-core'
 
 const origin = process.env.LANDING_TEST_URL || 'http://127.0.0.1:3100'
 const screenshots = new URL('../test-artifacts/', import.meta.url)
@@ -61,6 +62,22 @@ try {
       assert.equal(scroll, 'auto', 'reduced motion must disable smooth scroll')
     }
     if (width === 390 || width === 1440) {
+      await page.addScriptTag({ content: axe.source })
+      const audit = await page.evaluate(async () => {
+        const result = await window.axe.run(document, {
+          runOnly: { type: 'tag', values: ['wcag2a','wcag2aa','wcag21a','wcag21aa'] },
+        })
+        return result.violations.map(v => ({
+          id: v.id, impact: v.impact, description: v.help,
+          targets: v.nodes.slice(0, 5).map(node => node.target),
+        }))
+      })
+      assert.deepEqual(audit, [], width + ': WCAG axe-core violations')
+      await page.evaluate(() => {
+        history.replaceState(null, '', location.pathname)
+        window.scrollTo({ top: 0, behavior: 'instant' })
+      })
+      await page.waitForTimeout(150)
       await page.screenshot({ path: new URL(width + '-full.png', screenshots).pathname, fullPage: true, animations: 'disabled' })
     }
     assert.deepEqual(pageErrors, [], width + ': JavaScript page errors')

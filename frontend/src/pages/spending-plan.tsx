@@ -1,10 +1,10 @@
 import { FinanceEmoji } from '@/components/spaceui/finance-emoji'
 import { useLaunchText, useLaunchLocale } from '@/lib/launch-copy'
 import { Link } from 'react-router-dom'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useWorkspace } from '@/contexts/workspace-context'
 import { useAuth } from '@/contexts/auth-context'
-import { dashboard } from '@/lib/api'
+import { accounts, dashboard } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -29,15 +29,38 @@ function SpendingPlanForm() {
   const [result, setResult] = useState<Result | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [manualAccounts, setManualAccounts] = useState<Awaited<ReturnType<typeof accounts.list>>>([])
+  const [balances, setBalances] = useState<Record<string, string>>({})
+  const [accountsLoading, setAccountsLoading] = useState(true)
+  const [accountsFailed, setAccountsFailed] = useState(false)
+  useEffect(() => {
+    let active = true
+    void (async () => {
+      try {
+        const items = await accounts.list()
+        if (active) setManualAccounts(items.filter(a => !a.connection_id && !a.is_closed && ['checking', 'savings', 'wallet', 'credit_card'].includes(a.type)))
+      } catch {
+        if (active) setAccountsFailed(true)
+      } finally {
+        if (active) setAccountsLoading(false)
+      }
+    })()
+    return () => { active = false }
+  }, [])
   const currency = result?.currency || user?.preferences?.currency_display || 'INR'
-  const money = (value: string | number) => new Intl.NumberFormat(locale, { style: 'currency', currency }).format(Number(value))
+  const money = (value: string | number | null) => value === null ? tr("Unknown — confirmation needed") : new Intl.NumberFormat(locale, { style: 'currency', currency }).format(Number(value))
   async function calculate(event: React.FormEvent) {
     event.preventDefault()
     setBusy(true)
     setError('')
     setResult(null)
     try {
-      setResult(await dashboard.spendingPlan({ horizon_days: Number(days), emergency_buffer: emergency, goal_reserve: goals, other_obligations: other, obligations_reviewed: reviewed }))
+      const manual_balances: NonNullable<Parameters<typeof dashboard.spendingPlan>[0]['manual_balances']> = {}
+      for (const account of manualAccounts) {
+        const amount = balances[account.id]?.trim()
+        if (amount) manual_balances[account.id] = { amount, currency: account.currency, kind: account.type === 'credit_card' ? 'card_debt' : 'cash', as_of: new Date().toISOString().slice(0, 10) }
+      }
+      setResult(await dashboard.spendingPlan({ horizon_days: Number(days), emergency_buffer: emergency, goal_reserve: goals, other_obligations: other, obligations_reviewed: reviewed, manual_balances }))
     } catch {
       setError("The spending plan could not be calculated. Check your connection and try again.")
     } finally {
@@ -47,10 +70,14 @@ function SpendingPlanForm() {
   return <main className="mx-auto max-w-3xl space-y-6">
     <header className="space-y-3"><FinanceEmoji /><h1 className="text-2xl font-semibold">{tr("Safe to spend")}</h1><p className="text-muted-foreground">{tr("Plan from your current workspace’s cash, debts and upcoming expenses. Review all obligations before relying on an estimate.")}</p><Link className="inline-block underline" to="/loans">{tr("Manage loan and EMI plans")}</Link></header>
     <form onSubmit={calculate} onChange={() => setResult(null)} className="finco-surface p-5 space-y-4">
+      <fieldset disabled={busy} className="space-y-4"><legend className="sr-only">{tr("Spending plan inputs")}</legend>
       <div className="space-y-2"><Label htmlFor="plan-days">{tr("Plan for how many days?")}</Label><Input id="plan-days" type="number" min={1} max={90} required value={days} onChange={e => setDays(e.target.value)} /></div>
       {[['emergency', tr("Emergency savings to protect"), emergency, setEmergency], ['goals', tr("Additional goal contributions"), goals, setGoals], ['other', tr("Other obligations not included in loan plans or scheduled expenses"), other, setOther]].map(([id, label, value, setter]) => <div key={id as string} className="space-y-2"><Label htmlFor={`plan-${id}`}>{label as string} ({currency})</Label><Input id={`plan-${id}`} type="number" min="0" max="999999999999" step="0.01" required value={value as string} onChange={e => (setter as (value: string) => void)(e.target.value)} /></div>)}
+      {manualAccounts.length > 0 && <fieldset className="space-y-3"><legend className="font-medium">{tr("Confirm current manual balances")}</legend><p className="text-sm text-muted-foreground">{tr("Enter today's actual cash balance or outstanding card debt in each account's currency. Leave unknown amounts blank. These inputs do not change your ledger.")}</p>{manualAccounts.map(account => <div key={account.id} className="space-y-2"><Label htmlFor={`manual-${account.id}`}>{account.name} · {tr(account.type === 'credit_card' ? "Outstanding card debt" : "Current cash balance")} ({account.currency})</Label><Input id={`manual-${account.id}`} type="number" step="0.01" min={account.type === 'credit_card' ? '0' : '-999999999999'} max="999999999999" placeholder={tr("Not confirmed")} value={balances[account.id] ?? ''} onChange={e => setBalances(previous => ({ ...previous, [account.id]: e.target.value }))} /></div>)}</fieldset>}
+      {accountsFailed && <p role="alert" className="text-destructive">{tr("Accounts could not be loaded. Reload this page before calculating.")}</p>}
       <label className="flex gap-3 text-sm"><input type="checkbox" checked={reviewed} onChange={e => setReviewed(e.target.checked)} />{tr("I checked that my balances, upcoming bills and additional obligations are complete and current.")}</label>
-      <Button disabled={busy}>{busy ? tr("Calculating…") : tr("Calculate spending plan")}</Button>
+      <Button disabled={busy || accountsLoading || accountsFailed}>{busy ? tr("Calculating…") : tr("Calculate spending plan")}</Button>
+      </fieldset>
     </form>
     {error && <p role="alert" className="text-destructive">{tr(error)}</p>}
     {result && <section aria-live="polite" className="space-y-5 finco-surface p-5">

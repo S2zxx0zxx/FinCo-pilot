@@ -26,6 +26,12 @@ async def transaction(session, user, workspace, account, amount, kind='debit', d
     return row
 
 
+def confirmed(*pairs):
+    return {row.id: {'amount': Decimal(amount), 'currency': row.currency,
+                    'kind': 'card_debt' if row.type == 'credit_card' else 'cash',
+                    'as_of': date.today()} for row, amount in pairs}
+
+
 @pytest.mark.asyncio
 async def test_real_ledger_reserves_debt_bills_buffers_and_excludes_future_income(session, test_user, test_workspace):
     cash = await account(session, test_user, test_workspace)
@@ -35,7 +41,7 @@ async def test_real_ledger_reserves_debt_bills_buffers_and_excludes_future_incom
     await transaction(session, test_user, test_workspace, cash, '1000', days=2)
     await transaction(session, test_user, test_workspace, cash, '50000', 'credit', days=1)
     await session.commit()
-    plan = await calculate_spending_plan(session, test_workspace.id, test_user.id, SpendingPlanRequest(obligations_reviewed=True, emergency_buffer=Decimal('3000'), goal_reserve=Decimal('500'), other_obligations=Decimal('500')))
+    plan = await calculate_spending_plan(session, test_workspace.id, test_user.id, SpendingPlanRequest(manual_balances=confirmed((cash, '10000'), (card, '2000')), obligations_reviewed=True, emergency_buffer=Decimal('3000'), goal_reserve=Decimal('500'), other_obligations=Decimal('500')))
     assert plan.status == 'estimated'
     assert plan.cash_balance == 10000
     assert plan.card_debt_reserve == 2000
@@ -48,7 +54,7 @@ async def test_real_ledger_reserves_debt_bills_buffers_and_excludes_future_incom
 async def test_missing_fx_and_unreviewed_obligations_never_show_spendable_amount(session, test_user, test_workspace):
     cash = await account(session, test_user, test_workspace, currency='ZZZ')
     await transaction(session, test_user, test_workspace, cash, '10000', 'credit')
-    plan = await calculate_spending_plan(session, test_workspace.id, test_user.id, SpendingPlanRequest())
+    plan = await calculate_spending_plan(session, test_workspace.id, test_user.id, SpendingPlanRequest(manual_balances=confirmed((cash, '10000'))))
     assert plan.safe_to_spend is None
     assert any('exchange rate' in message for message in plan.blockers)
     assert any('Review balances' in message for message in plan.blockers)
@@ -65,7 +71,7 @@ async def test_future_internal_transfers_not_expenses_but_settled_incoming_is_re
     settled_pair = uuid.uuid4()
     await transaction(session, test_user, test_workspace, cash, '100', days=1, pair=settled_pair)
     await transaction(session, test_user, test_workspace, savings, '100', 'credit', pair=settled_pair)
-    plan = await calculate_spending_plan(session, test_workspace.id, test_user.id, SpendingPlanRequest(obligations_reviewed=True))
+    plan = await calculate_spending_plan(session, test_workspace.id, test_user.id, SpendingPlanRequest(obligations_reviewed=True, manual_balances=confirmed((cash, '1000'), (savings, '100'))))
     assert plan.cash_balance == 1100
     assert plan.upcoming_outflows == 100
     assert plan.safe_to_spend == 1000
@@ -77,7 +83,7 @@ async def test_projected_recurring_and_shortfall(session, test_user, test_worksp
     await transaction(session, test_user, test_workspace, cash, '100', 'credit')
     projected = ProjectedTransaction(recurring_id=str(uuid.uuid4()), account_id=str(cash.id), description='Rent', amount=300, currency=cash.currency, type='debit', date=date.today().isoformat(), category_id=None, category_name=None, category_icon=None)
     with patch('app.services.spending_plan_service.get_projected_transactions', return_value=[projected]):
-        plan = await calculate_spending_plan(session, test_workspace.id, test_user.id, SpendingPlanRequest(obligations_reviewed=True))
+        plan = await calculate_spending_plan(session, test_workspace.id, test_user.id, SpendingPlanRequest(obligations_reviewed=True, manual_balances=confirmed((cash, '100'))))
     assert plan.safe_to_spend == 0
     assert plan.shortfall == 200
 
@@ -127,7 +133,7 @@ async def test_fx_requires_same_publication_date(session, test_user, test_worksp
         FxRate(base_currency='USD', quote_currency='INR', rate=Decimal('83'), date=date.today()-timedelta(days=1), source='test'),
     ])
     await session.commit()
-    plan = await calculate_spending_plan(session, test_workspace.id, test_user.id, SpendingPlanRequest(obligations_reviewed=True))
+    plan = await calculate_spending_plan(session, test_workspace.id, test_user.id, SpendingPlanRequest(obligations_reviewed=True, manual_balances=confirmed((cash, '100'))))
     assert plan.safe_to_spend is None
     assert any('exchange rate' in blocker for blocker in plan.blockers)
 
@@ -140,7 +146,7 @@ async def test_unclassified_or_loan_is_never_spendable_cash(session, test_user, 
     loan = await account(session, test_user, test_workspace, kind)
     loan.balance = Decimal(balance)
     await session.commit()
-    plan = await calculate_spending_plan(session, test_workspace.id, test_user.id, SpendingPlanRequest(obligations_reviewed=True))
+    plan = await calculate_spending_plan(session, test_workspace.id, test_user.id, SpendingPlanRequest(obligations_reviewed=True, manual_balances=confirmed((cash, '1000'))))
     assert plan.cash_balance == 1000
     assert plan.safe_to_spend is None
     assert any('unsupported account type' in blocker for blocker in plan.blockers)

@@ -1208,8 +1208,8 @@ const acctIdsParam = (accountIds?: string[]) =>
     : {}
 
 export const dashboard = {
-  spendingPlan: async (body: { horizon_days: number; emergency_buffer: string; goal_reserve: string; other_obligations: string; obligations_reviewed: boolean }): Promise<{
-    currency: string; as_of: string; through: string; status: string; cash_balance: string; card_debt_reserve: string; upcoming_outflows: string; loan_due_reserve?: string;
+  spendingPlan: async (body: { horizon_days: number; emergency_buffer: string; goal_reserve: string; other_obligations: string; obligations_reviewed: boolean; manual_balances?: Record<string, { amount: string; currency: string; kind: "cash" | "card_debt"; as_of: string }> }): Promise<{
+    currency: string; as_of: string; through: string; status: string; cash_balance: string | null; card_debt_reserve: string | null; upcoming_outflows: string; loan_due_reserve?: string;
     emergency_buffer: string; goal_reserve: string; other_obligations: string; safe_to_spend: string | null; daily_allowance: string | null; shortfall: string | null; blockers: string[]; assumptions: string[];
   }> => (await api.post('/dashboard/spending-plan', body)).data,
   summary: async (month?: string, balanceDate?: string, accountIds?: string[], assetGroupIds?: string[]): Promise<DashboardSummary> => {

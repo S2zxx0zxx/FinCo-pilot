@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
@@ -10,7 +10,7 @@ import SpendingPlanPage from './spending-plan'
 
 const api = vi.hoisted(() => ({ forgotPassword: vi.fn(), list: vi.fn(), spendingPlan: vi.fn() }))
 vi.mock('@/lib/recovery-api', () => ({ recoveryApi: api }))
-vi.mock('@/lib/api', () => ({ loans: { list: api.list }, dashboard: { spendingPlan: api.spendingPlan } }))
+vi.mock('@/lib/api', () => ({ loans: { list: api.list }, accounts: { list: api.list }, dashboard: { spendingPlan: api.spendingPlan } }))
 vi.mock('@/contexts/workspace-context', () => ({ useWorkspace: () => ({ current: { id: 'one', default_currency: 'INR' }, canWrite: false }) }))
 vi.mock('@/contexts/auth-context', async (importOriginal) => ({
   ...await importOriginal<typeof import('@/contexts/auth-context')>(),
@@ -48,6 +48,7 @@ it('localises spending-plan labels and connection failure feedback', async () =>
   api.spendingPlan.mockRejectedValue(new Error('offline'))
   render(<MemoryRouter><SpendingPlanPage /></MemoryRouter>)
   expect(screen.getByLabelText('कितने दिनों की योजना बनाएँ?')).toHaveValue(30)
+  await waitFor(() => expect(screen.getByRole('button', { name: 'खर्च की योजना बनाएँ' })).toBeEnabled())
   fireEvent.click(screen.getByRole('button', { name: 'खर्च की योजना बनाएँ' }))
   expect(await screen.findByRole('alert')).toHaveTextContent('इंटरनेट कनेक्शन जाँचकर फिर कोशिश करें')
 })

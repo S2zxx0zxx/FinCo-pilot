@@ -122,7 +122,7 @@ async def test_spending_plan_reserves_overdue_and_upcoming_but_not_reported_paid
     loan = Loan(workspace_id=test_workspace.id, user_id=test_user.id, **LoanCreate(**payload(currency=cash.currency, first_due_date="2020-01-31", paid_installments=2)).model_dump())
     session.add(loan)
     await session.commit()
-    request = SpendingPlanRequest(obligations_reviewed=True)
+    request = SpendingPlanRequest(obligations_reviewed=True, manual_balances={cash.id: {'amount': '2000', 'currency': cash.currency, 'kind': 'cash', 'as_of': date.today()}})
     plan = await calculate_spending_plan(session, test_workspace.id, test_user.id, request)
     assert plan.loan_due_reserve == 1000
     assert plan.safe_to_spend == 1000

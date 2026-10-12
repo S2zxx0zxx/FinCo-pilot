@@ -14,6 +14,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<LoginResult>
   verify2fa: (tempToken: string, code: string) => Promise<void>
   loginWithToken: (accessToken: string, options?: { preserveCurrentUser: true }) => void
+  loginWithClerk: (token: string, email?: string, preferences?: Record<string, string>) => Promise<void>
   register: (email: string, password: string, preferences?: Record<string, string>) => Promise<void>
   updateUser: (user: User) => void
   confirmEmailVerification?: (userId: string, email: string) => void

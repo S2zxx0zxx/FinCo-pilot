@@ -136,6 +136,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [adoptToken, queryClient, user])
 
+  const loginWithClerk = useCallback(async (clerkToken: string, email?: string, preferences?: Record<string, string>) => {
+    const data = await auth.clerkExchange(clerkToken, email, preferences)
+    adoptToken(data.access_token)
+    if (data.user) {
+      setUser(normalizeUser(data.user))
+    } else {
+      const me = await auth.me()
+      setUser(normalizeUser(me))
+    }
+  }, [adoptToken])
+
   const updateUser = useCallback((updatedUser: User) => {
     setUser(normalizeUser(updatedUser))
   }, [])
@@ -160,10 +171,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null)
     setUser(null)
     queryClient.clear()
+    if (typeof window !== 'undefined' && (window as unknown as { Clerk?: { signOut: () => Promise<void> } }).Clerk) {
+      void (window as unknown as { Clerk: { signOut: () => Promise<void> } }).Clerk.signOut().catch(() => {})
+    }
   }, [queryClient])
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, verify2fa, loginWithToken, register, updateUser, confirmEmailVerification, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, verify2fa, loginWithToken, loginWithClerk, register, updateUser, confirmEmailVerification, logout }}>
       {children}
     </AuthContext.Provider>
   )

@@ -1,21 +1,30 @@
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  type FormEvent,
+  type ChangeEvent,
+} from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { useTheme } from 'next-themes'
+import type { AxiosError } from 'axios'
+
 import { AuthShell } from '@/components/spaceui/auth-shell'
 import { TermsLink } from '@/components/terms-link'
 import { PrivacyLink } from '@/components/privacy-link'
-import { useState, useEffect, useRef } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
-import { useAuth } from '@/contexts/auth-context'
-import { setup, auth as authApi, admin as adminApi } from '@/lib/api'
+import { FinCoLogo } from '@/components/finco-logo'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
-import { FinCoLogo } from '@/components/finco-logo'
-import type { AxiosError } from 'axios'
+import { useAuth } from '@/contexts/auth-context'
+import { setup, auth as authApi, admin as adminApi } from '@/lib/api'
 import { isServerUnreachable } from '@/lib/auth-errors'
 import { resolveLocalAuthEnabled } from '@/lib/auth-config-utils'
-import { useTheme } from 'next-themes'
 import { setThemeBasedOnSystem } from '@/lib/theme-utils'
+import { isClerkConfigured } from '@/lib/clerk-provider-wrapper'
+import { useClerkCustomAuth } from '@/lib/clerk-auth-adapter'
 import {
   isConditionalPasskeySupported,
   isPasskeySupported,
@@ -37,12 +46,439 @@ const PASSKEY_LOGIN_FAILURE_KEYS: Record<PasskeyFailure, string> = {
 }
 
 type OIDCConfig = {
-  enabled: boolean
-  provider_name: string
-  local_auth_enabled: boolean
+  readonly enabled: boolean
+  readonly provider_name: string
+  readonly local_auth_enabled: boolean
 }
 
-export default function LoginPage() {
+interface TwoFactorCardProps {
+  readonly error: string
+  readonly isLoading: boolean
+  readonly totpCode: string
+  readonly setTotpCode: (val: string) => void
+  readonly handleVerify2fa: (e: FormEvent) => void
+  readonly resetSecondFactor: () => void
+  readonly selected2faMethod?: 'totp' | 'passkey'
+  readonly setSelected2faMethod?: (method: 'totp' | 'passkey') => void
+  readonly available2faMethods?: readonly ('totp' | 'passkey')[]
+  readonly handlePasskeySecondFactor?: () => void
+  readonly isPasskeyLoading?: boolean
+  readonly passkeySupported?: boolean
+}
+
+function TwoFactorCard({
+  error,
+  isLoading,
+  totpCode,
+  setTotpCode,
+  handleVerify2fa,
+  resetSecondFactor,
+  selected2faMethod = 'totp',
+  setSelected2faMethod,
+  available2faMethods = ['totp'],
+  handlePasskeySecondFactor,
+  isPasskeyLoading = false,
+  passkeySupported = false,
+}: TwoFactorCardProps) {
+  const { t } = useTranslation()
+
+  return (
+    <AuthShell>
+      <Card className="finco-auth-card w-full max-w-105">
+        <form onSubmit={handleVerify2fa}>
+          <div className="flex flex-col items-center pt-8 pb-2 px-8">
+            <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
+              <FinCoLogo size={22} className="text-primary" />
+            </div>
+            <h1 className="text-xl font-semibold tracking-tight">
+              {selected2faMethod === 'passkey' ? t('auth.passkeySecondFactorTitle') : t('auth.twoFactorTitle')}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1 text-center">
+              {selected2faMethod === 'passkey'
+                ? t('auth.passkeySecondFactorDescription')
+                : t('auth.twoFactorDescription')}
+            </p>
+          </div>
+          <CardContent className="space-y-4 px-8 pt-4">
+            {error && (
+              <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-lg">
+                {error}
+              </div>
+            )}
+            {available2faMethods.length > 1 && setSelected2faMethod && (
+              <div className="grid grid-cols-2 gap-2">
+                {available2faMethods.includes('passkey') && (
+                  <Button
+                    type="button"
+                    variant={selected2faMethod === 'passkey' ? 'default' : 'outline'}
+                    onClick={() => setSelected2faMethod('passkey')}
+                  >
+                    {t('auth.passkeyMethod')}
+                  </Button>
+                )}
+                {available2faMethods.includes('totp') && (
+                  <Button
+                    type="button"
+                    variant={selected2faMethod === 'totp' ? 'default' : 'outline'}
+                    onClick={() => setSelected2faMethod('totp')}
+                  >
+                    {t('auth.totpMethod')}
+                  </Button>
+                )}
+              </div>
+            )}
+            {selected2faMethod === 'totp' && (
+              <div className="space-y-1.5">
+                <Label htmlFor="totp-code" className="text-sm">Authenticator code or one-time recovery code</Label>
+                <Input
+                  id="totp-code"
+                  type="text"
+                  inputMode="text"
+                  autoComplete="one-time-code"
+                  value={totpCode}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                    setTotpCode(e.target.value.replace(/[^a-fA-F0-9]/g, '').slice(0, 20))
+                  }
+                  placeholder="Authenticator or recovery code"
+                  className="text-center text-lg tracking-[0.3em] font-mono"
+                  maxLength={20}
+                  required
+                  autoFocus
+                />
+              </div>
+            )}
+            {selected2faMethod === 'passkey' && (
+              <p className="text-sm text-muted-foreground text-center">
+                {t('auth.passkeySecondFactorPrompt')}
+              </p>
+            )}
+          </CardContent>
+          <CardFooter className="flex flex-col gap-4 px-8 pb-8 pt-2">
+            {selected2faMethod === 'totp' ? (
+              <Button type="submit" className="w-full" disabled={isLoading || ![6, 20].includes(totpCode.length)}>
+                {isLoading ? t('common.loading') : t('auth.verify')}
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                className="w-full"
+                onClick={handlePasskeySecondFactor}
+                disabled={isLoading || isPasskeyLoading || !passkeySupported}
+              >
+                {isPasskeyLoading ? t('common.loading') : t('auth.usePasskeySecondFactor')}
+              </Button>
+            )}
+            <div className="flex items-center gap-4 text-sm">
+              <button
+                type="button"
+                onClick={resetSecondFactor}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                {t('auth.login')}
+              </button>
+              <Link to="/support?from=%2Flogin&category=account_access" className="text-primary hover:underline">
+                {t('support.helpLink')}
+              </Link>
+            </div>
+            <PrivacyLink />
+            <TermsLink />
+          </CardFooter>
+        </form>
+      </Card>
+    </AuthShell>
+  )
+}
+
+interface LoginFormViewProps {
+  readonly email: string
+  readonly setEmail: (val: string) => void
+  readonly password: string
+  readonly setPassword: (val: string) => void
+  readonly error: string
+  readonly isLoading: boolean
+  readonly requires2fa: boolean
+  readonly totpCode: string
+  readonly setTotpCode: (val: string) => void
+  readonly handleSubmit: (e: FormEvent) => void
+  readonly handleVerify2fa: (e: FormEvent) => void
+  readonly resetSecondFactor: () => void
+  readonly authConfigLoading?: boolean
+  readonly oidcConfigFailed?: boolean
+  readonly noAuthMethodConfigured?: boolean
+  readonly localAuthEnabled?: boolean
+  readonly showAuthDivider?: boolean
+  readonly showPasskeyLogin?: boolean
+  readonly handlePasskeyLogin?: () => void
+  readonly isPasskeyLoading?: boolean
+  readonly oidcEnabled?: boolean
+  readonly handleOIDCLogin?: () => void
+  readonly oidcConfig?: OIDCConfig | null
+  readonly registrationEnabled?: boolean
+  readonly selected2faMethod?: 'totp' | 'passkey'
+  readonly setSelected2faMethod?: (method: 'totp' | 'passkey') => void
+  readonly available2faMethods?: readonly ('totp' | 'passkey')[]
+  readonly handlePasskeySecondFactor?: () => void
+  readonly passkeySupported?: boolean
+}
+
+function LoginFormView(props: LoginFormViewProps) {
+  const { t } = useTranslation()
+
+  if (props.requires2fa) {
+    return (
+      <TwoFactorCard
+        error={props.error}
+        isLoading={props.isLoading}
+        totpCode={props.totpCode}
+        setTotpCode={props.setTotpCode}
+        handleVerify2fa={props.handleVerify2fa}
+        resetSecondFactor={props.resetSecondFactor}
+        selected2faMethod={props.selected2faMethod}
+        setSelected2faMethod={props.setSelected2faMethod}
+        available2faMethods={props.available2faMethods}
+        handlePasskeySecondFactor={props.handlePasskeySecondFactor}
+        isPasskeyLoading={props.isPasskeyLoading}
+        passkeySupported={props.passkeySupported}
+      />
+    )
+  }
+
+  return (
+    <AuthShell>
+      <Card className="finco-auth-card w-full max-w-105">
+        <form onSubmit={props.handleSubmit}>
+          <div className="flex flex-col items-center pt-8 pb-2 px-8">
+            <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
+              <FinCoLogo size={22} className="text-primary" />
+            </div>
+            <h1 className="text-xl font-semibold tracking-tight">{t('auth.login')}</h1>
+            <p className="text-sm text-muted-foreground mt-1">{t('auth.loginDescription')}</p>
+          </div>
+          {props.authConfigLoading && (
+            <CardContent className="px-8 py-6 text-center text-sm text-muted-foreground" role="status">
+              {t('common.loading')}
+            </CardContent>
+          )}
+          {props.oidcConfigFailed && (
+            <CardContent className="px-8 py-4">
+              <div role="alert" className="p-3 text-sm text-muted-foreground bg-muted rounded-lg">
+                {t('auth.authConfigUnavailable')}
+              </div>
+            </CardContent>
+          )}
+          {props.noAuthMethodConfigured && (
+            <CardContent className="px-8 py-4">
+              <div role="alert" className="p-3 text-sm text-destructive bg-destructive/10 rounded-lg">
+                {t('auth.noAuthMethodConfigured')}
+              </div>
+            </CardContent>
+          )}
+          {props.localAuthEnabled && (
+            <CardContent className="space-y-4 px-8 pt-4">
+              {props.error && (
+                <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-lg">
+                  {props.error}
+                </div>
+              )}
+              <div className="space-y-1.5">
+                <Label htmlFor="email" className="text-sm">{t('auth.email')}</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={props.email}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => props.setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  autoComplete="username webauthn"
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex justify-between">
+                  <Label htmlFor="password" className="text-sm">{t('auth.password')}</Label>
+                  <span className="flex gap-2 text-xs">
+                    <Link to="/request-verification" className="underline">Verify email</Link>
+                    <Link to="/forgot-password" className="underline">Forgot password?</Link>
+                  </span>
+                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  value={props.password}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => props.setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  required
+                />
+              </div>
+            </CardContent>
+          )}
+          {!props.authConfigLoading && !props.noAuthMethodConfigured && (
+            <CardFooter className={`flex flex-col gap-4 px-8 pb-8 ${props.localAuthEnabled ? 'pt-2' : 'pt-6'}`}>
+              {props.localAuthEnabled && (
+                <Button type="submit" className="w-full" disabled={props.isLoading || props.isPasskeyLoading}>
+                  {props.isLoading ? t('common.loading') : t('auth.login')}
+                </Button>
+              )}
+              {props.showAuthDivider && (
+                <div className="flex items-center gap-3 w-full">
+                  <div className="h-px flex-1 bg-border" />
+                  <span className="text-xs text-muted-foreground">{t('auth.or')}</span>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
+              )}
+              {props.showPasskeyLogin && props.handlePasskeyLogin && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={props.handlePasskeyLogin}
+                  disabled={props.isLoading || props.isPasskeyLoading}
+                >
+                  {props.isPasskeyLoading ? t('common.loading') : t('auth.loginWithPasskey')}
+                </Button>
+              )}
+              {props.oidcEnabled && props.handleOIDCLogin && (
+                <Button
+                  type="button"
+                  variant={props.localAuthEnabled ? 'outline' : 'default'}
+                  className="w-full"
+                  onClick={props.handleOIDCLogin}
+                >
+                  {t('auth.loginWithProvider', { provider: props.oidcConfig?.provider_name ?? 'OIDC' })}
+                </Button>
+              )}
+              {props.localAuthEnabled && props.registrationEnabled && (
+                <p className="text-sm text-muted-foreground">
+                  {t('auth.noAccount')}{' '}
+                  <Link to="/register" className="text-primary font-medium hover:underline">
+                    {t('auth.register')}
+                  </Link>
+                </p>
+              )}
+              <Link to="/support?from=%2Flogin&category=account_access" className="text-sm text-muted-foreground hover:text-primary hover:underline">
+                {t('support.helpLink')}
+              </Link>
+              <PrivacyLink />
+              <TermsLink />
+            </CardFooter>
+          )}
+        </form>
+      </Card>
+    </AuthShell>
+  )
+}
+
+function ClerkLoginContainer() {
+  const { t } = useTranslation()
+  const { loginWithClerk, token } = useAuth()
+  const clerkAuth = useClerkCustomAuth()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const { resolvedTheme } = useTheme()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [registrationEnabled, setRegistrationEnabled] = useState(true)
+
+  // 2FA state
+  const [requires2fa, setRequires2fa] = useState(false)
+  const [totpCode, setTotpCode] = useState('')
+
+  const requestedNext = searchParams.get('next')
+  const safeNext = requestedNext?.startsWith('/') && !requestedNext.startsWith('//') && !requestedNext.includes('://')
+    ? requestedNext
+    : '/'
+
+  useEffect(() => {
+    if (token) {
+      navigate('/', { replace: true })
+      return
+    }
+    adminApi.registrationStatus().then(({ enabled }) => {
+      setRegistrationEnabled(enabled)
+    }).catch(() => {})
+    adminApi.defaultColors().then(({ light, dark }) => {
+      setThemeBasedOnSystem(light, dark, resolvedTheme)
+    }).catch(() => {})
+  }, [navigate, token, resolvedTheme])
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setIsLoading(true)
+    try {
+      const result = await clerkAuth.signInWithPassword(email, password)
+      if (result.status === 'complete' && result.token) {
+        await loginWithClerk(result.token, email)
+        navigate(safeNext)
+      } else if (result.status === 'needs_second_factor') {
+        setRequires2fa(true)
+      } else {
+        setError(t('auth.invalidCredentials'))
+      }
+    } catch (err: unknown) {
+      const clerkErr = err as { errors?: Array<{ message?: string; longMessage?: string; code?: string }> }
+      if (clerkErr?.errors?.length) {
+        setError(clerkErr.errors[0].longMessage || clerkErr.errors[0].message || t('auth.invalidCredentials'))
+      } else {
+        setError(t('auth.invalidCredentials'))
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleVerify2fa = async (e: FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setIsLoading(true)
+    try {
+      const result = await clerkAuth.verifySecondFactor(totpCode)
+      if (result.status === 'complete' && result.token) {
+        await loginWithClerk(result.token, email)
+        navigate(safeNext)
+      } else {
+        setError(t('auth.invalid2faCode'))
+      }
+    } catch (err: unknown) {
+      const clerkErr = err as { errors?: Array<{ message?: string; longMessage?: string; code?: string }> }
+      if (clerkErr?.errors?.length) {
+        setError(clerkErr.errors[0].longMessage || clerkErr.errors[0].message || t('auth.invalid2faCode'))
+      } else {
+        setError(t('auth.invalid2faCode'))
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const resetSecondFactor = () => {
+    setRequires2fa(false)
+    setTotpCode('')
+    setError('')
+  }
+
+  return (
+    <LoginFormView
+      email={email}
+      setEmail={setEmail}
+      password={password}
+      setPassword={setPassword}
+      error={error}
+      isLoading={isLoading}
+      requires2fa={requires2fa}
+      totpCode={totpCode}
+      setTotpCode={setTotpCode}
+      handleSubmit={handleSubmit}
+      handleVerify2fa={handleVerify2fa}
+      resetSecondFactor={resetSecondFactor}
+      registrationEnabled={registrationEnabled}
+      localAuthEnabled={true}
+    />
+  )
+}
+
+function LocalLoginContainer() {
   const { t } = useTranslation()
   const { login, verify2fa, loginWithToken, token } = useAuth()
   const navigate = useNavigate()
@@ -135,8 +571,6 @@ export default function LoginPage() {
       if (!await isConditionalPasskeySupported() || abortController.signal.aborted) return
 
       try {
-        // An account-less request lets the browser discover eligible passkeys
-        // and offer them alongside saved usernames in the email field.
         const options = await authApi.passkeyAuthenticationOptions()
         if (abortController.signal.aborted) return
 
@@ -150,8 +584,7 @@ export default function LoginPage() {
         loginWithToken(result.access_token)
         navigate(safeNext)
       } catch {
-        // Conditional UI is an enhancement. Unsupported providers, dismissal,
-        // expiry, and cancellation leave the normal login methods untouched.
+        // Conditional UI enhancement dismissed/failed silently
       }
     }
 
@@ -176,7 +609,7 @@ export default function LoginPage() {
     token,
   ])
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     conditionalPasskeyAbortRef.current?.abort()
     setError('')
@@ -234,7 +667,7 @@ export default function LoginPage() {
     }
   }
 
-  const handleVerify2fa = async (e: React.FormEvent) => {
+  const handleVerify2fa = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
     setIsLoading(true)
@@ -247,7 +680,6 @@ export default function LoginPage() {
         setError(t('auth.serverError'))
       } else if (axiosErr?.response?.status === 401) {
         setError(t('auth.invalidCredentials'))
-        // Token expired, go back to login
         resetSecondFactor()
       } else {
         setError(t('auth.invalid2faCode'))
@@ -293,226 +725,44 @@ export default function LoginPage() {
     }
   }
 
-  if (requires2fa) {
-    return (
-      <AuthShell>
-        <Card className="finco-auth-card w-full max-w-[420px]">
-          <form onSubmit={handleVerify2fa}>
-            <div className="flex flex-col items-center pt-8 pb-2 px-8">
-              <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                <FinCoLogo size={22} className="text-primary" />
-              </div>
-              <h1 className="text-xl font-semibold tracking-tight">
-                {selected2faMethod === 'passkey' ? t('auth.passkeySecondFactorTitle') : t('auth.twoFactorTitle')}
-              </h1>
-              <p className="text-sm text-muted-foreground mt-1 text-center">
-                {selected2faMethod === 'passkey'
-                  ? t('auth.passkeySecondFactorDescription')
-                  : t('auth.twoFactorDescription')}
-              </p>
-            </div>
-            <CardContent className="space-y-4 px-8 pt-4">
-              {error && (
-                <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-lg">
-                  {error}
-                </div>
-              )}
-              {available2faMethods.length > 1 && (
-                <div className="grid grid-cols-2 gap-2">
-                  {available2faMethods.includes('passkey') && (
-                    <Button
-                      type="button"
-                      variant={selected2faMethod === 'passkey' ? 'default' : 'outline'}
-                      onClick={() => setSelected2faMethod('passkey')}
-                    >
-                      {t('auth.passkeyMethod')}
-                    </Button>
-                  )}
-                  {available2faMethods.includes('totp') && (
-                    <Button
-                      type="button"
-                      variant={selected2faMethod === 'totp' ? 'default' : 'outline'}
-                      onClick={() => setSelected2faMethod('totp')}
-                    >
-                      {t('auth.totpMethod')}
-                    </Button>
-                  )}
-                </div>
-              )}
-              {selected2faMethod === 'totp' && (
-                <div className="space-y-1.5">
-                  <Label htmlFor="totp-code" className="text-sm">Authenticator code or one-time recovery code</Label>
-                  <Input
-                    id="totp-code"
-                    type="text"
-                    inputMode="text"
-                    autoComplete="one-time-code"
-                    value={totpCode}
-                    onChange={(e) => setTotpCode(e.target.value.replace(/[^a-fA-F0-9]/g, '').slice(0, 20))}
-                    placeholder="Authenticator or recovery code"
-                    className="text-center text-lg tracking-[0.3em] font-mono"
-                    maxLength={20}
-                    required
-                    autoFocus
-                  />
-                </div>
-              )}
-              {selected2faMethod === 'passkey' && (
-                <p className="text-sm text-muted-foreground text-center">
-                  {t('auth.passkeySecondFactorPrompt')}
-                </p>
-              )}
-            </CardContent>
-            <CardFooter className="flex flex-col gap-4 px-8 pb-8 pt-2">
-              {selected2faMethod === 'totp' ? (
-                <Button type="submit" className="w-full" disabled={isLoading || ![6, 20].includes(totpCode.length)}>
-                  {isLoading ? t('common.loading') : t('auth.verify')}
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  className="w-full"
-                  onClick={handlePasskeySecondFactor}
-                  disabled={isLoading || isPasskeyLoading || !passkeySupported}
-                >
-                  {isPasskeyLoading ? t('common.loading') : t('auth.usePasskeySecondFactor')}
-                </Button>
-              )}
-              <div className="flex items-center gap-4 text-sm">
-                <button
-                  type="button"
-                  onClick={resetSecondFactor}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  {t('auth.login')}
-                </button>
-                <Link to="/support?from=%2Flogin&category=account_access" className="text-primary hover:underline">
-                  {t('support.helpLink')}
-                </Link>
-              </div>
-              <PrivacyLink />
-              <TermsLink />
-            </CardFooter>
-          </form>
-        </Card>
-      </AuthShell>
-    )
-  }
-
   return (
-    <AuthShell>
-      <Card className="finco-auth-card w-full max-w-[420px]">
-        <form onSubmit={handleSubmit}>
-          <div className="flex flex-col items-center pt-8 pb-2 px-8">
-            <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-              <FinCoLogo size={22} className="text-primary" />
-            </div>
-            <h1 className="text-xl font-semibold tracking-tight">{t('auth.login')}</h1>
-            <p className="text-sm text-muted-foreground mt-1">{t('auth.loginDescription')}</p>
-          </div>
-          {authConfigLoading && (
-            <CardContent className="px-8 py-6 text-center text-sm text-muted-foreground" role="status">
-              {t('common.loading')}
-            </CardContent>
-          )}
-          {oidcConfigFailed && (
-            <CardContent className="px-8 py-4">
-              <div role="alert" className="p-3 text-sm text-muted-foreground bg-muted rounded-lg">
-                {t('auth.authConfigUnavailable')}
-              </div>
-            </CardContent>
-          )}
-          {noAuthMethodConfigured && (
-            <CardContent className="px-8 py-4">
-              <div role="alert" className="p-3 text-sm text-destructive bg-destructive/10 rounded-lg">
-                {t('auth.noAuthMethodConfigured')}
-              </div>
-            </CardContent>
-          )}
-          {localAuthEnabled && (
-            <CardContent className="space-y-4 px-8 pt-4">
-              {error && (
-                <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-lg">
-                  {error}
-                </div>
-              )}
-              <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-sm">{t('auth.email')}</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  autoComplete="username webauthn"
-                  required
-                />
-              </div>
-              <div className="space-y-1.5">
-                <div className="flex justify-between"><Label htmlFor="password" className="text-sm">{t('auth.password')}</Label><span className="flex gap-2 text-xs"><Link to="/request-verification" className="underline">Verify email</Link><Link to="/forgot-password" className="underline">Forgot password?</Link></span></div>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="current-password"
-                  required
-                />
-              </div>
-            </CardContent>
-          )}
-          {!authConfigLoading && !noAuthMethodConfigured && (
-            <CardFooter className={`flex flex-col gap-4 px-8 pb-8 ${localAuthEnabled ? 'pt-2' : 'pt-6'}`}>
-              {localAuthEnabled && (
-                <Button type="submit" className="w-full" disabled={isLoading || isPasskeyLoading}>
-                  {isLoading ? t('common.loading') : t('auth.login')}
-                </Button>
-              )}
-              {showAuthDivider && (
-                <div className="flex items-center gap-3 w-full">
-                  <div className="h-px flex-1 bg-border" />
-                  <span className="text-xs text-muted-foreground">{t('auth.or')}</span>
-                  <div className="h-px flex-1 bg-border" />
-                </div>
-              )}
-              {showPasskeyLogin && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={handlePasskeyLogin}
-                  disabled={isLoading || isPasskeyLoading}
-                >
-                  {isPasskeyLoading ? t('common.loading') : t('auth.loginWithPasskey')}
-                </Button>
-              )}
-              {oidcEnabled && (
-                <Button
-                  type="button"
-                  variant={localAuthEnabled ? 'outline' : 'default'}
-                  className="w-full"
-                  onClick={handleOIDCLogin}
-                >
-                  {t('auth.loginWithProvider', { provider: oidcConfig?.provider_name ?? 'OIDC' })}
-                </Button>
-              )}
-              {localAuthEnabled && registrationEnabled && (
-                <p className="text-sm text-muted-foreground">
-                  {t('auth.noAccount')}{' '}
-                  <Link to="/register" className="text-primary font-medium hover:underline">
-                    {t('auth.register')}
-                  </Link>
-                </p>
-              )}
-              <Link to="/support?from=%2Flogin&category=account_access" className="text-sm text-muted-foreground hover:text-primary hover:underline">
-                {t('support.helpLink')}
-              </Link>
-              <PrivacyLink />
-              <TermsLink />
-            </CardFooter>
-          )}
-        </form>
-      </Card>
-    </AuthShell>
+    <LoginFormView
+      email={email}
+      setEmail={setEmail}
+      password={password}
+      setPassword={setPassword}
+      error={error}
+      isLoading={isLoading}
+      requires2fa={requires2fa}
+      totpCode={totpCode}
+      setTotpCode={setTotpCode}
+      handleSubmit={handleSubmit}
+      handleVerify2fa={handleVerify2fa}
+      resetSecondFactor={resetSecondFactor}
+      authConfigLoading={authConfigLoading}
+      oidcConfigFailed={oidcConfigFailed}
+      noAuthMethodConfigured={noAuthMethodConfigured}
+      localAuthEnabled={localAuthEnabled}
+      showAuthDivider={showAuthDivider}
+      showPasskeyLogin={showPasskeyLogin}
+      handlePasskeyLogin={handlePasskeyLogin}
+      isPasskeyLoading={isPasskeyLoading}
+      oidcEnabled={oidcEnabled}
+      handleOIDCLogin={handleOIDCLogin}
+      oidcConfig={oidcConfig}
+      registrationEnabled={registrationEnabled}
+      selected2faMethod={selected2faMethod}
+      setSelected2faMethod={setSelected2faMethod}
+      available2faMethods={available2faMethods}
+      handlePasskeySecondFactor={handlePasskeySecondFactor}
+      passkeySupported={passkeySupported}
+    />
   )
+}
+
+export default function LoginPage() {
+  if (isClerkConfigured) {
+    return <ClerkLoginContainer />
+  }
+  return <LocalLoginContainer />
 }

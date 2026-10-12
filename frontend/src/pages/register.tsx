@@ -1,11 +1,18 @@
+import React, {
+  useState,
+  useEffect,
+  type FormEvent,
+  type ChangeEvent,
+} from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { useTheme } from 'next-themes'
+import type { AxiosError } from 'axios'
+
 import { AuthShell } from '@/components/spaceui/auth-shell'
 import { TermsLink } from '@/components/terms-link'
 import { PrivacyLink } from '@/components/privacy-link'
 import { useLaunchText } from '@/lib/launch-copy'
-import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
-import { useTheme } from 'next-themes'
 import { useAuth } from '@/contexts/auth-context'
 import { admin as adminApi, auth as authApi } from '@/lib/api'
 import { resolveSupportedLang } from '@/lib/i18n'
@@ -17,10 +24,326 @@ import { CurrencySelect } from '@/components/currency-select'
 import { FinCoLogo } from '@/components/finco-logo'
 import { setThemeBasedOnSystem } from '@/lib/theme-utils'
 import { isServerUnreachable } from '@/lib/auth-errors'
-import type { AxiosError } from 'axios'
+import { isClerkConfigured } from '@/lib/clerk-provider-wrapper'
+import { useClerkCustomAuth } from '@/lib/clerk-auth-adapter'
 
-export default function RegisterPage() {
+interface RegisterFormViewProps {
+  readonly email: string
+  readonly setEmail: (val: string) => void
+  readonly password: string
+  readonly setPassword: (val: string) => void
+  readonly confirmPassword: string
+  readonly setConfirmPassword: (val: string) => void
+  readonly currency: string
+  readonly setCurrency: (val: string) => void
+  readonly error: string
+  readonly isLoading: boolean
+  readonly onSubmit: (e: FormEvent) => void
+  readonly pendingVerification?: boolean
+  readonly verificationCode?: string
+  readonly setVerificationCode?: (val: string) => void
+  readonly onVerifyCode?: (e: FormEvent) => void
+  readonly onResendCode?: () => void
+  readonly onBackToRegister?: () => void
+  readonly isResending?: boolean
+}
+
+function RegisterFormView({
+  email,
+  setEmail,
+  password,
+  setPassword,
+  confirmPassword,
+  setConfirmPassword,
+  currency,
+  setCurrency,
+  error,
+  isLoading,
+  onSubmit,
+  pendingVerification = false,
+  verificationCode = '',
+  setVerificationCode,
+  onVerifyCode,
+  onResendCode,
+  onBackToRegister,
+  isResending = false,
+}: RegisterFormViewProps) {
   const tr = useLaunchText()
+  const { t } = useTranslation()
+
+  if (pendingVerification) {
+    return (
+      <AuthShell>
+        <Card className="w-full max-w-100 shadow-sm">
+          <form onSubmit={onVerifyCode}>
+            <div className="flex flex-col items-center pt-8 pb-2 px-8">
+              <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
+                <FinCoLogo size={22} className="text-primary" />
+              </div>
+              <h1 className="text-xl font-semibold tracking-tight">Verify your email</h1>
+              <p className="text-sm text-muted-foreground mt-1 text-center">
+                We sent a verification code to <span className="font-medium text-foreground">{email}</span>
+              </p>
+            </div>
+            <CardContent className="space-y-4 px-8 pt-4">
+              {error && (
+                <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-lg">
+                  {error}
+                </div>
+              )}
+              <div className="space-y-1.5">
+                <Label htmlFor="verificationCode" className="text-sm">Verification code</Label>
+                <Input
+                  id="verificationCode"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  value={verificationCode}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                    setVerificationCode?.(e.target.value.replace(/[^0-9a-zA-Z]/g, '').slice(0, 10))
+                  }
+                  placeholder="123456"
+                  className="text-center text-lg tracking-[0.3em] font-mono"
+                  maxLength={10}
+                  required
+                  autoFocus
+                />
+              </div>
+            </CardContent>
+            <CardFooter className="flex flex-col gap-4 px-8 pb-8 pt-2">
+              <Button type="submit" className="w-full" disabled={isLoading || verificationCode.length < 4}>
+                {isLoading ? t('common.loading') : 'Verify and complete setup'}
+              </Button>
+              <div className="flex items-center justify-between w-full text-sm">
+                <button
+                  type="button"
+                  onClick={onResendCode}
+                  disabled={isResending}
+                  className="text-primary hover:underline text-xs"
+                >
+                  {isResending ? 'Sending...' : 'Resend code'}
+                </button>
+                <button
+                  type="button"
+                  onClick={onBackToRegister}
+                  className="text-muted-foreground hover:text-foreground text-xs"
+                >
+                  Change email
+                </button>
+              </div>
+              <PrivacyLink />
+              <TermsLink />
+            </CardFooter>
+          </form>
+        </Card>
+      </AuthShell>
+    )
+  }
+
+  return (
+    <AuthShell>
+      <Card className="w-full max-w-100 shadow-sm">
+        <form onSubmit={onSubmit}>
+          <div className="flex flex-col items-center pt-8 pb-2 px-8">
+            <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
+              <FinCoLogo size={22} className="text-primary" />
+            </div>
+            <h1 className="text-xl font-semibold tracking-tight">{t('auth.register')}</h1>
+            <p className="text-sm text-muted-foreground mt-1">{t('auth.registerDescription')}</p>
+            <p className="text-sm text-muted-foreground">
+              {tr("After signup, check your email for verification. You can request another link from the sign-in page.")}
+            </p>
+          </div>
+          <CardContent className="space-y-4 px-8 pt-4">
+            {error && (
+              <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-lg">
+                {error}
+              </div>
+            )}
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-sm">{t('auth.email')}</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="password" className="text-sm">{t('auth.password')}</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                required
+                minLength={8}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="confirmPassword" className="text-sm">{t('auth.confirmPassword')}</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="currency" className="text-sm">{t('auth.currency')}</Label>
+              <CurrencySelect id="currency" value={currency} onChange={setCurrency} />
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-col gap-4 px-8 pb-8 pt-2">
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? t('common.loading') : t('auth.register')}
+            </Button>
+            <p className="text-sm text-muted-foreground">
+              {t('auth.hasAccount')}{' '}
+              <Link to="/login" className="text-primary font-medium hover:underline">
+                {t('auth.login')}
+              </Link>
+            </p>
+            <Link to="/support?from=%2Fregister&category=account_access" className="text-sm text-muted-foreground hover:text-primary hover:underline">
+              {t('support.helpLink')}
+            </Link>
+            <PrivacyLink />
+            <TermsLink />
+          </CardFooter>
+        </form>
+      </Card>
+    </AuthShell>
+  )
+}
+
+function ClerkRegisterContainer() {
+  const { t, i18n } = useTranslation()
+  const { loginWithClerk } = useAuth()
+  const clerkAuth = useClerkCustomAuth()
+  const navigate = useNavigate()
+  const { resolvedTheme } = useTheme()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [currency, setCurrency] = useState('INR')
+  const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [pendingVerification, setPendingVerification] = useState(false)
+  const [verificationCode, setVerificationCode] = useState('')
+  const [isResending, setIsResending] = useState(false)
+
+  useEffect(() => {
+    adminApi.defaultColors().then(({ light, dark }) => {
+      setThemeBasedOnSystem(light, dark, resolvedTheme)
+    }).catch(() => {})
+  }, [resolvedTheme])
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault()
+    setError('')
+
+    if (password !== confirmPassword) {
+      setError(t('auth.passwordMismatch'))
+      return
+    }
+
+    if (password.length < 8) {
+      setError(t('auth.passwordTooShort'))
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const result = await clerkAuth.signUpWithPassword(email, password)
+      if (result.status === 'needs_verification') {
+        setPendingVerification(true)
+      } else if (result.status === 'complete' && result.token) {
+        const lang = resolveSupportedLang(i18n.resolvedLanguage ?? i18n.language)
+        await loginWithClerk(result.token, email, {
+          currency_display: currency,
+          language: lang,
+        })
+        navigate('/')
+      }
+    } catch (err: unknown) {
+      const clerkErr = err as { errors?: Array<{ message?: string; longMessage?: string; code?: string }> }
+      if (clerkErr?.errors?.length) {
+        setError(clerkErr.errors[0].longMessage || clerkErr.errors[0].message || t('auth.registrationError'))
+      } else {
+        setError(t('auth.registrationError'))
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleVerifyCode = async (e: FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setIsLoading(true)
+    try {
+      const result = await clerkAuth.verifyEmailCode(verificationCode)
+      if (result.status === 'complete' && result.token) {
+        const lang = resolveSupportedLang(i18n.resolvedLanguage ?? i18n.language)
+        await loginWithClerk(result.token, email, {
+          currency_display: currency,
+          language: lang,
+        })
+        navigate('/')
+      } else {
+        setError('Verification code is invalid or expired')
+      }
+    } catch (err: unknown) {
+      const clerkErr = err as { errors?: Array<{ message?: string; longMessage?: string; code?: string }> }
+      if (clerkErr?.errors?.length) {
+        setError(clerkErr.errors[0].longMessage || clerkErr.errors[0].message || 'Invalid verification code')
+      } else {
+        setError('Invalid verification code')
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleResendCode = async () => {
+    setIsResending(true)
+    try {
+      await clerkAuth.resendVerificationCode()
+    } catch {
+      // Ignored
+    } finally {
+      setIsResending(false)
+    }
+  }
+
+  return (
+    <RegisterFormView
+      email={email}
+      setEmail={setEmail}
+      password={password}
+      setPassword={setPassword}
+      confirmPassword={confirmPassword}
+      setConfirmPassword={setConfirmPassword}
+      currency={currency}
+      setCurrency={setCurrency}
+      error={error}
+      isLoading={isLoading}
+      onSubmit={handleSubmit}
+      pendingVerification={pendingVerification}
+      verificationCode={verificationCode}
+      setVerificationCode={setVerificationCode}
+      onVerifyCode={handleVerifyCode}
+      onResendCode={handleResendCode}
+      onBackToRegister={() => setPendingVerification(false)}
+      isResending={isResending}
+    />
+  )
+}
+
+function LocalRegisterContainer() {
   const { t, i18n } = useTranslation()
   const { register } = useAuth()
   const navigate = useNavigate()
@@ -56,7 +379,7 @@ export default function RegisterPage() {
     }
   }, [navigate, resolvedTheme])
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
 
@@ -101,78 +424,25 @@ export default function RegisterPage() {
   }
 
   return (
-    <AuthShell>
-      <Card className="w-full max-w-[400px] shadow-sm">
-        <form onSubmit={handleSubmit}>
-          <div className="flex flex-col items-center pt-8 pb-2 px-8">
-            <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-              <FinCoLogo size={22} className="text-primary" />
-            </div>
-            <h1 className="text-xl font-semibold tracking-tight">{t('auth.register')}</h1>
-            <p className="text-sm text-muted-foreground mt-1">{t('auth.registerDescription')}</p>
-            <p className="text-sm text-muted-foreground">{tr("After signup, check your email for verification. You can request another link from the sign-in page.")}</p>
-          </div>
-          <CardContent className="space-y-4 px-8 pt-4">
-            {error && (
-              <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-lg">
-                {error}
-              </div>
-            )}
-            <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-sm">{t('auth.email')}</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                required
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-sm">{t('auth.password')}</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={8}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="confirmPassword" className="text-sm">{t('auth.confirmPassword')}</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="currency" className="text-sm">{t('auth.currency')}</Label>
-              <CurrencySelect id="currency" value={currency} onChange={setCurrency} />
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-4 px-8 pb-8 pt-2">
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? t('common.loading') : t('auth.register')}
-            </Button>
-            <p className="text-sm text-muted-foreground">
-              {t('auth.hasAccount')}{' '}
-              <Link to="/login" className="text-primary font-medium hover:underline">
-                {t('auth.login')}
-              </Link>
-            </p>
-            <Link to="/support?from=%2Fregister&category=account_access" className="text-sm text-muted-foreground hover:text-primary hover:underline">
-              {t('support.helpLink')}
-            </Link>
-            <PrivacyLink />
-            <TermsLink />
-          </CardFooter>
-        </form>
-      </Card>
-    </AuthShell>
+    <RegisterFormView
+      email={email}
+      setEmail={setEmail}
+      password={password}
+      setPassword={setPassword}
+      confirmPassword={confirmPassword}
+      setConfirmPassword={setConfirmPassword}
+      currency={currency}
+      setCurrency={setCurrency}
+      error={error}
+      isLoading={isLoading}
+      onSubmit={handleSubmit}
+    />
   )
+}
+
+export default function RegisterPage() {
+  if (isClerkConfigured) {
+    return <ClerkRegisterContainer />
+  }
+  return <LocalRegisterContainer />
 }

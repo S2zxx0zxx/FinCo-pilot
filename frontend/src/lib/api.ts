@@ -194,6 +194,14 @@ export const setup = {
 
 // Auth
 export const auth = {
+  clerkConfig: async (): Promise<{ enabled: boolean; publishable_key: string }> => {
+    const { data } = await api.get('/auth/clerk/config')
+    return data
+  },
+  clerkExchange: async (token: string, email?: string, preferences?: Record<string, string>): Promise<{ access_token: string; token_type: string; user: User }> => {
+    const { data } = await api.post('/auth/clerk/exchange', { token, email, preferences })
+    return data
+  },
   logout: async (token: string): Promise<void> => {
     await api.post('/auth/logout', {}, { headers: { Authorization: `Bearer ${token}` } })
   },

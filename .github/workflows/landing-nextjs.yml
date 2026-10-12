@@ -28,6 +28,12 @@ jobs:
           node-version: '22'
       - name: Install isolated landing dependencies
         run: npm install --no-audit --no-fund
+      - name: Export resolved lockfile for one-time audited vendoring
+        if: github.head_ref == 'feature/nextjs-spaceui-landing-20261012'
+        run: |
+          echo FINCO_LANDING_LOCK_BEGIN
+          base64 package-lock.json | fold -w76
+          echo FINCO_LANDING_LOCK_END
       - name: Verify source contracts
         run: npm run test
       - name: Validate TypeScript

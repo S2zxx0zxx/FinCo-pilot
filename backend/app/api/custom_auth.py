@@ -14,7 +14,13 @@ from app.core.database import get_async_session
 from app.core.redis import get_redis
 from app.models.passkey import UserPasskey
 
+# Rate-limited login endpoint. Registered in main.py with login_rate_limit.
 router = APIRouter()
+
+# Logout lives on a separate router so it is never subject to login rate limits.
+# A user who has already authenticated should always be able to sign out, even
+# if they (or someone else) has recently hit the login throttle.
+logout_router = APIRouter()
 
 TEMP_TOKEN_TTL = 300  # 5 minutes
 
@@ -59,7 +65,7 @@ async def login(
     return {"access_token": token, "token_type": "bearer"}
 
 
-@router.post("/logout")
+@logout_router.post("/logout")
 async def logout(
     user: User = Depends(current_active_user),
     session: AsyncSession = Depends(get_async_session),

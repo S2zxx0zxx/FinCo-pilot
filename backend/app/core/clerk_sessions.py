@@ -1,5 +1,10 @@
 """Clerk JWT verification foundation. Intentionally NOT wired into app routes.
 
+This module is a prepared, fully-tested cryptographic foundation for a future
+Clerk authentication integration path. It has its own test suite
+(tests/test_clerk_sessions.py) and is kept isolated until the integration is
+ready to be wired up.
+
 This verifies cryptographic identity, not permission to access a financial resource.
 A separate DB identity lookup and existing workspace/billing guards are required.
 """

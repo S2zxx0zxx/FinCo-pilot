@@ -347,9 +347,15 @@ async def _get_or_create_oidc_user(
         is_verified=True,
         is_superuser=bool(settings.oidc_sync_roles and admin_roles and provider_roles & admin_roles),
     )
+    # Track whether the row was just created by this call.  If a concurrent
+    # OIDC callback beat us to registration (UserAlreadyExists), the user
+    # already has a workspace/wallet/categories/rules from that first call, so
+    # we must not seed them again.
+    _user_is_brand_new = True
     try:
         user = await user_manager.create(user_create, safe=True, request=None)
     except UserAlreadyExists:
+        _user_is_brand_new = False
         user = (await session.execute(select(User).where(func.lower(User.email) == email))).scalar_one()
 
     db_session = user_manager.user_db.session
@@ -359,19 +365,25 @@ async def _get_or_create_oidc_user(
         .values(preferences=preferences, oidc_issuer=issuer, oidc_subject=str(merged.get("sub")))
     )
     await db_session.refresh(user)
-    workspace = await create_personal_workspace_for_user(db_session, user)
-    wallet = Account(
-        user_id=user.id,
-        workspace_id=workspace.id,
-        name="Wallet",
-        type="checking",
-        balance=0,
-        currency=settings.default_currency,
-    )
-    db_session.add(wallet)
-    await db_session.commit()
-    await create_default_categories(db_session, user.id, "en", workspace_id=workspace.id)
-    await create_default_rules(db_session, user.id, "en", workspace_id=workspace.id)
+
+    if _user_is_brand_new:
+        # user_manager.create() was called with request=None, which causes
+        # on_after_register to exit immediately without seeding anything.
+        # We therefore seed workspace, wallet, categories, and rules here.
+        workspace = await create_personal_workspace_for_user(db_session, user)
+        wallet = Account(
+            user_id=user.id,
+            workspace_id=workspace.id,
+            name="Wallet",
+            type="checking",
+            balance=0,
+            currency=settings.default_currency,
+        )
+        db_session.add(wallet)
+        await db_session.commit()
+        await create_default_categories(db_session, user.id, "en", workspace_id=workspace.id)
+        await create_default_rules(db_session, user.id, "en", workspace_id=workspace.id)
+
     await _sync_oidc_roles(user, merged, db_session)
     await db_session.commit()
     await db_session.refresh(user)

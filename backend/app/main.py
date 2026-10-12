@@ -26,7 +26,7 @@ from app.api.category_groups import router as category_groups_router
 from app.api.collections import router as collections_router
 from app.api.connections import router as connections_router
 from app.api.currencies import router as currencies_router
-from app.api.custom_auth import router as custom_auth_router
+from app.api.custom_auth import router as custom_auth_router, logout_router as custom_logout_router
 from app.api.dashboard import router as dashboard_router
 from app.api.export import router as export_router
 from app.api.fiscal import router as fiscal_router
@@ -161,6 +161,13 @@ app.include_router(
     prefix="/api/auth",
     tags=["auth"],
     dependencies=[Depends(login_rate_limit)],
+)
+# Logout must never be rate-limited with the login limiter — a user should
+# always be able to sign out, even if they recently hit the login throttle.
+app.include_router(
+    custom_logout_router,
+    prefix="/api/auth",
+    tags=["auth"],
 )
 app.include_router(two_factor_router, prefix="/api/auth", tags=["auth"])
 app.include_router(passkeys_router, prefix="/api/auth", tags=["auth"])

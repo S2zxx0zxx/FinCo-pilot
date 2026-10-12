@@ -1,0 +1,12 @@
+# Preserve Jekyll's standard dependency exclusions and omit imported code
+# references whose JSX examples are not Liquid templates. The source files
+# remain in Git; this config only controls the separate GitHub Pages build.
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+  - frontend/docs/spaceui-reference

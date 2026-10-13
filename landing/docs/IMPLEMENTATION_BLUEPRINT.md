@@ -72,3 +72,7 @@ These are official conceptual starter/showcase entries, not proven successful pa
 ## Responsive and motion rules
 
 Main CTAs stay 50px high; interactive preview tabs at least 44px; product tabs 48px. Mobile specimen hides decorative sidebar/floating note to make content readable. Actual product screens use matching 390px captures on narrow screens instead of shrinking a desktop capture. Dynamic number widths are tabular. Text balances/pretty wraps; no arbitrary counters or endless hero text swaps. User motion preference updates reactively. H1 exists and is visible without JS. No external assets, analytics, auth or finance API requests from marketing.
+
+## Post-merge refinement — 13 October
+
+New branch starts from main 75df7e8, which includes the merged landing and later authentication/Sentry/FX work. See DESIGN_SELECTION_20261013.md for exact Meter/Timeline/Separator/useInView mapping, Motion playground findings and typography refinement. SPACEUI_PREVIEW_REVIEW_20261013.json records all 831 attempted unique demo URLs; 189 visual snapshots, 26 loading snapshots, 10 failed captures and 606 HTTP 429 responses. Full interactive/video inspection is incomplete. Contact-sheet review is not a substitute for exercising every interaction. No gated Pro source was adopted.

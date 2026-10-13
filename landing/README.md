@@ -41,3 +41,7 @@ See docs/IMPLEMENTATION_BLUEPRINT.md for exact source mapping and showcase evide
 Fonts are self-hosted Latin/currency subsets with next/font/local and optional display to avoid late text repaint on slow mobile links. The originals' SIL OFL notice remains. Compass artwork is Fluent/Microsoft MIT, self-hosted with its license. Sounds start off, load only on explicit user opt-in, and follow reduced motion; no delegated global sound binding.
 
 Browser tools (Playwright, axe-core, Lighthouse) are pinned in the lockfile; CI uses npm ci and a Chromium/Firefox/WebKit matrix. Review scripts/test artifacts are not marketing customer data. The original app screenshots use synthetic fixture accounts and cannot demonstrate production authentication, bank connections or financial accuracy.
+
+## 13 October refinement
+
+See docs/DESIGN_SELECTION_20261013.md and docs/SPACEUI_PREVIEW_REVIEW_20261013.json for current preview outcomes and exact source selections. Meter, Timeline, Separator and callback-ref useInView are direct-source adaptations. A fresh `.next` production build is used for final acceptance; stale local route caches must not be treated as evidence for a new revision. No added runtime dependencies.

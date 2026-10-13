@@ -3,7 +3,8 @@
 import { useMediaQuery } from '@/hooks/use-media-query'
 
 import * as React from 'react'
-import { motion, useInView, type Variants } from 'motion/react'
+import { motion, type Variants } from 'motion/react'
+import { useInView } from '@/hooks/use-in-view'
 import { cn } from '@/lib/utils'
 
 export type SplitMode = 'words' | 'characters' | 'lines'
@@ -77,25 +78,13 @@ export const BlurRevealText: React.FC<BlurRevealTextProps> = ({
   const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)', true)
   const [hydrated, setHydrated] = React.useState(false)
   React.useEffect(() => setHydrated(true), [])
-  const containerRef = React.useRef<HTMLElement | null>(null)
-  const isElementInView = useInView(containerRef, { once })
+  const [containerRef, isElementInView] = useInView({ triggerOnce: once, fallbackInView: true })
 
   const shouldAnimate = inView ? isElementInView : true
 
   const segments = React.useMemo(() => splitText(text, splitBy), [text, splitBy])
 
   const initialY = direction === 'up' ? yOffset : direction === 'down' ? -yOffset : 0
-
-  const containerVariants: Variants = {
-    hidden: { opacity: 1 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: stagger,
-        delayChildren: delay,
-      },
-    },
-  }
 
   const segmentVariants: Variants = {
     hidden: {
@@ -109,50 +98,36 @@ export const BlurRevealText: React.FC<BlurRevealTextProps> = ({
       filter: 'none',
       y: 0,
       willChange: 'auto',
-      transition: { duration, ease: [0.25, 0.1, 0.25, 1] },
     },
   }
 
-  const MotionComponent = React.useMemo(() => motion.create(Component), [Component])
-
-  // Server and no-JS output is visible; motion is a progressive enhancement.
-  if (!hydrated || reduceMotion) {
-    return <Component data-reveal-static="true" aria-label={text} className={cn('inline-flex flex-wrap items-baseline', className)} style={style} {...props}>{segments.map((segment, index) => <span key={index} aria-hidden="true" className={cn('inline-block whitespace-pre', segmentClassName)}>{splitBy === 'words' ? segment + (index < segments.length - 1 ? '\u00A0' : '') : segment}</span>)}</Component>
-  }
-
+  const staticReveal = !hydrated || reduceMotion
+  // Keep the observed heading mounted across hydration and preference changes.
+  // Server/no-JS text stays readable; only the word spans enhance to Motion.
   return (
-    <MotionComponent
-      ref={containerRef as React.Ref<any>}
-      key={replayKey}
-      className={cn(
-        'inline-flex flex-wrap items-baseline',
+    <Component
+      ref={containerRef}
+      className={cn('inline-flex flex-wrap items-baseline',
         className?.includes('text-center') && 'justify-center',
-        className?.includes('text-right') && 'justify-end',
-        className,
-      )}
-      initial="hidden"
-      animate={shouldAnimate ? 'visible' : 'hidden'}
-      variants={containerVariants}
+        className?.includes('text-right') && 'justify-end', className)}
       style={style}
       aria-label={text}
-      {...(props as any)}
+      data-reveal-static={staticReveal ? 'true' : undefined}
+      {...props}
     >
       {segments.map((segment, index) => {
-        const isSpace = segment === ' '
-        const displayText =
-          splitBy === 'words' ? segment + (index < segments.length - 1 ? '\u00A0' : '') : isSpace ? '\u00A0' : segment
-
-        return (
-          <motion.span
-            key={`${segment}-${index}`}
-            aria-hidden="true"
-            variants={segmentVariants}
-            className={cn('inline-block whitespace-pre', segmentClassName)}
-          >
-            {renderSegment ? renderSegment(displayText) : displayText}
-          </motion.span>
-        )
+        const displayText = splitBy === 'words'
+          ? segment + (index < segments.length - 1 ? '\u00A0' : '')
+          : segment === ' ' ? '\u00A0' : segment
+        const content = renderSegment ? renderSegment(displayText) : displayText
+        const classes = cn('inline-block whitespace-pre', segmentClassName)
+        return staticReveal
+          ? <span key={`${segment}-${index}`} aria-hidden="true" className={classes}>{content}</span>
+          : <motion.span key={`${replayKey ?? ''}-${segment}-${index}`} aria-hidden="true" className={classes}
+              initial="hidden" animate={shouldAnimate ? 'visible' : 'hidden'} variants={segmentVariants}
+              transition={{ duration, delay: delay + Math.min(index * stagger, 0.3), ease: [0.22, 1, 0.36, 1] }}
+            >{content}</motion.span>
       })}
-    </MotionComponent>
+    </Component>
   )
 }

@@ -1,6 +1,7 @@
 import {
   useState,
   useEffect,
+  useRef,
   type FormEvent,
   type ChangeEvent,
 } from 'react'
@@ -250,8 +251,10 @@ function RegisterFormView({
 
 function ClerkRegisterContainer() {
   const { t, i18n } = useTranslation()
-  const { loginWithClerk } = useAuth()
+  const { token, loginWithClerk } = useAuth()
   const clerkAuth = useClerkCustomAuth()
+  const { session: clerkSession, acquireSessionToken } = clerkAuth
+  const exchangeAttempt = useRef<string | null>(null)
   const navigate = useNavigate()
   const { resolvedTheme } = useTheme()
   const [email, setEmail] = useState('')
@@ -272,8 +275,9 @@ function ClerkRegisterContainer() {
   }, [resolvedTheme])
 
   useEffect(() => {
-    if (clerkAuth.session) {
-      void clerkAuth.acquireSessionToken().then(async (tok: string) => {
+    if (!token && clerkSession && exchangeAttempt.current !== clerkSession.id) {
+      exchangeAttempt.current = clerkSession.id
+      void acquireSessionToken().then(async (tok: string) => {
         if (tok) {
           const lang = resolveSupportedLang(i18n.resolvedLanguage ?? i18n.language)
           await loginWithClerk(tok, undefined, {
@@ -282,9 +286,9 @@ function ClerkRegisterContainer() {
           })
           navigate('/', { replace: true })
         }
-      }).catch(() => {})
+      }).catch(() => { setError(t('auth.registrationError')) })
     }
-  }, [clerkAuth, loginWithClerk, navigate, i18n, currency])
+  }, [token, clerkSession, acquireSessionToken, loginWithClerk, navigate, i18n, currency, t])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -303,7 +307,9 @@ function ClerkRegisterContainer() {
     setIsLoading(true)
     try {
       const result = await clerkAuth.signUpWithPassword(email, password)
-      if (result.status === 'needs_verification') {
+      if (result.status === 'needs_requirements') {
+        navigate('/sign-up#/continue')
+      } else if (result.status === 'needs_verification') {
         setPendingVerification(true)
       } else if (result.status === 'complete' && result.token) {
         const lang = resolveSupportedLang(i18n.resolvedLanguage ?? i18n.language)
@@ -338,6 +344,8 @@ function ClerkRegisterContainer() {
           language: lang,
         })
         navigate('/')
+      } else if (result.status === 'needs_requirements') {
+        navigate('/sign-up#/continue')
       } else {
         setError('Verification code is invalid or expired')
       }

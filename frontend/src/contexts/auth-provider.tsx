@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, type ReactNode } from 'react'
+import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { auth } from '@/lib/api'
 import { SESSION_INVALIDATED_EVENT } from '@/lib/session-state'
@@ -24,11 +24,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => loopbackQa ? null : localStorage.getItem('token'))
   const [qaPending, setQaPending] = useState(loopbackQa)
   const [isLoading, setIsLoading] = useState(true)
+  const [isSessionUnavailable, setIsSessionUnavailable] = useState(false)
   const queryClient = useQueryClient()
+  const clerkExchange = useRef<{ credential: string; promise: Promise<void> } | null>(null)
   const adoptToken = useCallback((accessToken: string) => {
     queryClient.clear()
     setUser(null)
     setIsLoading(true)
+    setIsSessionUnavailable(false)
     localStorage.setItem('token', accessToken)
     setToken(accessToken)
   }, [queryClient])
@@ -69,12 +72,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!token) return
     let cancelled = false
     auth.me()
-      .then((me) => { if (!cancelled && localStorage.getItem('token') === token) setUser(normalizeUser(me)) })
-      .catch(() => {
+      .then((me) => {
         if (cancelled || localStorage.getItem('token') !== token) return
+        setUser(normalizeUser(me))
+        setIsSessionUnavailable(false)
+      })
+      .catch((error: unknown) => {
+        if (cancelled || localStorage.getItem('token') !== token) return
+        // Never expose cached financial data without a verified user. A 503 or
+        // network outage is NOT evidence of a revoked/expired login session.
         queryClient.clear()
-        localStorage.removeItem('token')
-        setToken(null)
+        setUser(null)
+        const status = (error as { response?: { status?: number } })?.response?.status
+        if (status === 401 || status === 403) {
+          localStorage.removeItem('token')
+          setToken(null)
+          setIsSessionUnavailable(false)
+        } else {
+          // Keep the opaque credential so an operator can restore the API
+          // without forcing the user through Google OAuth again.
+          setIsSessionUnavailable(true)
+        }
       })
       .finally(() => { if (!cancelled) setIsLoading(false) })
     return () => { cancelled = true }
@@ -86,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (e.key === 'token' || e.key === null) {
         queryClient.clear()
         setUser(null)
+        setIsSessionUnavailable(false)
         setIsLoading(e.key !== null && e.newValue !== null)
         setToken(e.key === null ? null : e.newValue)
       }
@@ -94,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.clear()
       setUser(null)
       setToken(null)
+      setIsSessionUnavailable(false)
     }
     window.addEventListener('storage', handleStorage)
     window.addEventListener(SESSION_INVALIDATED_EVENT, handleInvalidation)
@@ -136,15 +156,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [adoptToken, queryClient, user])
 
-  const loginWithClerk = useCallback(async (clerkToken: string, email?: string, preferences?: Record<string, string>) => {
-    const data = await auth.clerkExchange(clerkToken, email, preferences)
-    adoptToken(data.access_token)
-    if (data.user) {
-      setUser(normalizeUser(data.user))
-    } else {
-      const me = await auth.me()
-      setUser(normalizeUser(me))
-    }
+  const loginWithClerk = useCallback((clerkToken: string, email?: string, preferences?: Record<string, string>): Promise<void> => {
+    // The form and the session effect may complete together. Provision once.
+    if (clerkExchange.current?.credential === clerkToken) return clerkExchange.current.promise
+    const promise = (async () => {
+      const data = await auth.clerkExchange(clerkToken, email, preferences)
+      adoptToken(data.access_token)
+      if (data.user) {
+        setUser(normalizeUser(data.user))
+      } else {
+        const me = await auth.me()
+        setUser(normalizeUser(me))
+      }
+    })().finally(() => {
+      if (clerkExchange.current?.promise === promise) clerkExchange.current = null
+    })
+    clerkExchange.current = { credential: clerkToken, promise }
+    return promise
   }, [adoptToken])
 
   const updateUser = useCallback((updatedUser: User) => {
@@ -170,6 +198,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('token')
     setToken(null)
     setUser(null)
+    setIsSessionUnavailable(false)
     queryClient.clear()
     if (typeof window !== 'undefined' && (window as unknown as { Clerk?: { signOut: () => Promise<void> } }).Clerk) {
       void (window as unknown as { Clerk: { signOut: () => Promise<void> } }).Clerk.signOut().catch(() => {})
@@ -177,7 +206,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [queryClient])
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, verify2fa, loginWithToken, loginWithClerk, register, updateUser, confirmEmailVerification, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, isSessionUnavailable, login, verify2fa, loginWithToken, loginWithClerk, register, updateUser, confirmEmailVerification, logout }}>
       {children}
     </AuthContext.Provider>
   )

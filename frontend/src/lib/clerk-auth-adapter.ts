@@ -2,7 +2,7 @@ import { useSignIn, useSignUp, useClerk, useAuth } from '@clerk/clerk-react'
 import { useCallback } from 'react'
 
 export interface ClerkAuthResult {
-  status: 'complete' | 'needs_verification' | 'needs_second_factor' | 'other'
+  status: 'complete' | 'needs_verification' | 'needs_requirements' | 'needs_second_factor' | 'other'
   token?: string
   error?: string
 }
@@ -28,7 +28,7 @@ export function useClerkCustomAuth() {
         // failed session getToken
       }
     }
-    return ''
+    throw new Error('No active Clerk session token. Please sign in again.')
   }, [getToken, session])
 
   const signInWithPassword = useCallback(async (
@@ -129,11 +129,9 @@ export function useClerkCustomAuth() {
       return { status: 'complete', token }
     }
 
-    // Default Clerk instances require email verification
-    if (
-      attempt.status === 'missing_requirements' ||
-      attempt.unverifiedFields?.includes('email_address')
-    ) {
+    // Collect required fields before attempting email verification.
+    if (attempt.missingFields?.length) return { status: 'needs_requirements' }
+    if (attempt.unverifiedFields?.includes('email_address')) {
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' })
       return { status: 'needs_verification' }
     }
@@ -158,6 +156,7 @@ export function useClerkCustomAuth() {
       return { status: 'complete', token }
     }
 
+    if (complete.missingFields?.length) return { status: 'needs_requirements' }
     return { status: 'other' }
   }, [isSignUpLoaded, signUp, setSignUpActive, acquireSessionToken])
 

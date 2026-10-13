@@ -59,6 +59,7 @@ const WorkspaceSettingsPage = lazy(() => import('@/pages/workspace-settings'))
 const OAuthCallbackPage = lazy(() => import('@/pages/oauth-callback'))
 const OIDCCallbackPage = lazy(() => import('@/pages/oidc-callback'))
 const SSOCallbackPage = lazy(() => import('@/pages/sso-callback'))
+const ClerkSignUpPage = lazy(() => import('@/pages/clerk-sign-up'))
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -91,7 +92,7 @@ function App() {
                         <Route path="/login" element={<LoginPage />} />
                         <Route path="/sign-in" element={<LoginPage />} />
                         <Route path="/register" element={<RegisterPage />} />
-                        <Route path="/sign-up" element={<SSOCallbackPage />} />
+                        <Route path="/sign-up/*" element={<ClerkSignUpPage />} />
                         <Route path="/sso-callback" element={<SSOCallbackPage />} />
                         <Route path="/auth/oidc/callback" element={<OIDCCallbackPage />} />
                         <Route path="/pricing" element={<PricingPage />} />

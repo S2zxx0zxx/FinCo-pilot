@@ -10,6 +10,7 @@ import { createTestQueryClient } from '@/test/utils'
 
 const auth = vi.hoisted(() => ({
   me: vi.fn(),
+  clerkExchange: vi.fn(),
   login: vi.fn(),
   logout: vi.fn().mockResolvedValue(undefined),
   verify2fa: vi.fn(),
@@ -71,13 +72,36 @@ describe('AuthProvider session restore', () => {
     // An expired or revoked token must not leave the app in a half-signed-in
     // state where every request 401s.
     localStorage.setItem('token', 'expired-jwt')
-    auth.me.mockRejectedValue(new Error('401'))
+    auth.me.mockRejectedValue({ response: { status: 401 } })
 
     const { result } = await renderAuth()
 
     expect(result.current.token).toBeNull()
     expect(result.current.user).toBeNull()
     expect(localStorage.getItem('token')).toBeNull()
+  })
+
+  it('retains a valid-looking token on a 503 without treating it as a verified session', async () => {
+    localStorage.setItem('token', 'stored-jwt')
+    auth.me.mockRejectedValue({ response: { status: 503 } })
+
+    const { result } = await renderAuth()
+
+    expect(result.current.token).toBe('stored-jwt')
+    expect(localStorage.getItem('token')).toBe('stored-jwt')
+    expect(result.current.user).toBeNull()
+    expect(result.current.isSessionUnavailable).toBe(true)
+  })
+
+  it('retains the token on a network failure instead of silently signing out', async () => {
+    localStorage.setItem('token', 'stored-jwt')
+    auth.me.mockRejectedValue(new Error('Network Error'))
+
+    const { result } = await renderAuth()
+
+    expect(result.current.token).toBe('stored-jwt')
+    expect(result.current.isSessionUnavailable).toBe(true)
+    expect(result.current.user).toBeNull()
   })
 })
 
@@ -409,4 +433,28 @@ it('ignores a late verification callback after the stored session changes or log
   act(() => late?.(USER.id, USER.email))
   expect(result.current.user).toBeNull()
   expect(result.current.token).toBeNull()
+})
+
+
+describe('Clerk exchange concurrency', () => {
+  it('provisions only once when the form and session effect exchange the same credential together', async () => {
+    let finish!: (value: { access_token: string; user: User }) => void
+    auth.clerkExchange.mockReturnValue(new Promise(resolve => { finish = resolve }))
+    auth.me.mockResolvedValue(USER)
+    const { result } = await renderAuth()
+    let first!: Promise<void>
+    let second!: Promise<void>
+    act(() => {
+      first = result.current.loginWithClerk('clerk-session')
+      second = result.current.loginWithClerk('clerk-session')
+    })
+    expect(first).toBe(second)
+    expect(auth.clerkExchange).toHaveBeenCalledTimes(1)
+    await act(async () => {
+      finish({ access_token: 'internal-jwt', user: USER })
+      await first
+    })
+    expect(result.current.token).toBe('internal-jwt')
+    expect(result.current.user?.id).toBe(USER.id)
+  })
 })

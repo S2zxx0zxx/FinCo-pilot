@@ -11,6 +11,8 @@ interface AuthContextType {
   user: User | null
   token: string | null
   isLoading: boolean
+  /** Authentication could not be revalidated because the API is unavailable. */
+  isSessionUnavailable: boolean
   login: (email: string, password: string) => Promise<LoginResult>
   verify2fa: (tempToken: string, code: string) => Promise<void>
   loginWithToken: (accessToken: string, options?: { preserveCurrentUser: true }) => void

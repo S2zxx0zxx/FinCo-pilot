@@ -55,6 +55,22 @@ describe('ProtectedRoute', () => {
     expect(screen.queryByText('login screen')).not.toBeInTheDocument()
   })
 
+  it('blocks private UI and offers reconnect when API session verification fails', () => {
+    useAuth.mockReturnValue({
+      token: 'stored-jwt',
+      user: null,
+      isLoading: false,
+      isSessionUnavailable: true,
+    })
+
+    renderGuard()
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Unable to verify your session')
+    expect(screen.getByRole('button', { name: 'Retry connection' })).toBeInTheDocument()
+    expect(screen.queryByText('private page')).not.toBeInTheDocument()
+    expect(screen.queryByText('login screen')).not.toBeInTheDocument()
+  })
+
   it('does not leak the page for a moment while loading without a token', () => {
     useAuth.mockReturnValue({ token: null, user: null, isLoading: true })
 

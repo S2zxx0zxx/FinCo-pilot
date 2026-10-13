@@ -398,6 +398,8 @@ function ClerkLoginContainer() {
   const { t } = useTranslation()
   const { loginWithClerk, token } = useAuth()
   const clerkAuth = useClerkCustomAuth()
+  const { session: clerkSession, acquireSessionToken } = clerkAuth
+  const exchangeAttemptRef = useRef<string | null>(null)
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { resolvedTheme } = useTheme()
@@ -420,7 +422,7 @@ function ClerkLoginContainer() {
   useEffect(() => {
     const urlErr = searchParams.get('error')
     if (urlErr) {
-      setError(urlErr === 'sso_failed' ? 'Google authentication failed. Please try again.' : decodeURIComponent(urlErr))
+      setError(urlErr === 'sso_failed' ? 'Google authentication failed. Please try again.' : urlErr)
     }
   }, [searchParams])
 
@@ -429,18 +431,23 @@ function ClerkLoginContainer() {
       navigate('/', { replace: true })
       return
     }
-    if (clerkAuth.session) {
-      void clerkAuth.acquireSessionToken().then(async (tok: string) => {
-        if (tok) {
+    if (clerkSession) {
+      // A new adapter object is returned per render. Track session ID instead:
+      // failed exchanges must not retrigger forever on every error repaint.
+      if (exchangeAttemptRef.current !== clerkSession.id) {
+        exchangeAttemptRef.current = clerkSession.id
+        void acquireSessionToken().then(async (tok: string) => {
+          if (!tok) throw new Error('No active Clerk session token. Please sign in again.')
           await loginWithClerk(tok)
           navigate(safeNext, { replace: true })
-        }
-      }).catch((err: unknown) => {
-        console.error('Clerk login exchange error:', err)
-        const axiosErr = err as { response?: { data?: { detail?: string } }; message?: string }
-        const msg = axiosErr.response?.data?.detail || axiosErr.message || 'Clerk login exchange failed'
-        setError(msg)
-      })
+        }).catch((err: unknown) => {
+          const axiosErr = err as { response?: { status?: number; data?: { detail?: string } }; message?: string }
+          const msg = axiosErr.response?.status && axiosErr.response.status >= 500
+            ? t('auth.serverError')
+            : axiosErr.response?.data?.detail || axiosErr.message || 'Clerk login exchange failed'
+          setError(msg)
+        })
+      }
       return
     }
     void adminApi.registrationStatus().then(({ enabled }) => {
@@ -449,7 +456,7 @@ function ClerkLoginContainer() {
     void adminApi.defaultColors().then(({ light, dark }) => {
       setThemeBasedOnSystem(light, dark, resolvedTheme)
     }).catch(() => {})
-  }, [navigate, token, resolvedTheme, clerkAuth, loginWithClerk, safeNext])
+  }, [navigate, token, resolvedTheme, clerkSession, acquireSessionToken, loginWithClerk, safeNext, t])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -469,8 +476,13 @@ function ClerkLoginContainer() {
       const clerkErr = err as { errors?: Array<{ message?: string; longMessage?: string; code?: string }> }
       if (clerkErr?.errors?.length) {
         setError(clerkErr.errors[0].longMessage || clerkErr.errors[0].message || t('auth.invalidCredentials'))
+      } else if (isServerUnreachable(err)) {
+        setError(t('auth.serverError'))
       } else {
-        setError(t('auth.invalidCredentials'))
+        const axiosErr = err as { response?: { status?: number; data?: { detail?: string } } }
+        setError(axiosErr.response?.status === 403
+          ? axiosErr.response.data?.detail || t('auth.invalidCredentials')
+          : t('auth.invalidCredentials'))
       }
     } finally {
       setIsLoading(false)

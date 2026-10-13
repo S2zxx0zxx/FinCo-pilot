@@ -1,32 +1,32 @@
 {
   "mode": "Lighthouse simulated mobile, loopback production build; not field INP or physical phone",
   "categories": {
-    "performance": 91,
+    "performance": 89,
     "accessibility": 100,
     "best-practices": 100,
     "seo": 66
   },
   "metrics": {
     "first-contentful-paint": {
-      "value": 760.586,
-      "display": "0.8 s"
+      "value": 916.9960000000001,
+      "display": "0.9 s"
     },
     "largest-contentful-paint": {
-      "value": 3465.8790000000004,
-      "display": "3.5 s"
+      "value": 3625.494,
+      "display": "3.6 s"
     },
     "total-blocking-time": {
-      "value": 27,
-      "display": "30 ms"
+      "value": 120.75099999999998,
+      "display": "120 ms"
     },
     "cumulative-layout-shift": {
       "value": 0,
       "display": "0"
     },
     "speed-index": {
-      "value": 1075.0212056532746,
-      "display": "1.1 s"
+      "value": 1168.385935684941,
+      "display": "1.2 s"
     }
   },
-  "resourceTransferBytes": 442886
+  "resourceTransferBytes": 446176
 }

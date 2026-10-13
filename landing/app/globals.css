@@ -433,3 +433,38 @@ button:focus-visible, a:focus-visible, [role=tab]:focus-visible { outline:2px so
 }
 /* Outgoing Base UI panels are inert; exclude them from layout during replacement. */
 .preview-body[data-ending-style],.choice-description[data-ending-style],.product-tabs > [data-ending-style] { display:none!important; }
+
+/* Space UI vertical keyboard semantics with stacked marketing content. */
+.benefit-tabs { flex-direction:column!important; gap:0!important; }
+.benefit-tabs .choice-description { width:100%; min-width:0; }
+
+/* Registry-first details: finite sample gauges and a semantic process timeline. */
+.budget-meters { display:flex; flex-direction:column; gap:11px; margin-top:14px; min-height:97px; }
+.budget-meter { gap:4px!important; }
+.meter-heading { display:flex; justify-content:space-between; gap:12px; font-size:11px; color:#354940; }
+.meter-heading [data-slot=meter-label] { font-size:11px; font-weight:600; color:#354940; }
+.budget-meter-track { height:5px!important; border-radius:4px; background:#d3dfd1!important; }
+.budget-meter-indicator { height:100%; background:#42664d!important; border-radius:4px; transition-duration:250ms!important; }
+.proof-line { position:relative; }
+.proof-divider { position:absolute; inset:0 0 auto; background:#27342d!important; }
+.steps-grid { list-style:none; margin:58px 0 0; padding:0; }
+.steps-grid .step-item { margin:0!important; padding:24px 28px 28px!important; gap:0!important; }
+.steps-grid [data-slot=timeline-indicator] { position:static; transform:none; width:50px; height:50px; border:0; }
+.steps-grid [data-slot=timeline-separator] { top:0; left:0; height:1px; width:100%; background:#34463a; transform:none; }
+.steps-grid [data-slot=timeline-title] { font-size:20px; line-height:1.35; margin-top:24px; color:#e9eee5; }
+.steps-grid [data-slot=timeline-content] { margin-top:13px; max-width:36ch; color:#91a295; font-size:13px; line-height:1.75; }
+.steps-grid .step-index { display:block; margin-bottom:24px; }
+.steps-grid .step-icon { display:grid; place-items:center; margin:0; }
+.steps-grid .step-item:last-child [data-slot=timeline-separator] { display:block; }
+/* Two-tone surfaces keep the actual product and typography in focus. */
+.hero-halo { display:none; }
+.preview-browser, .float-note, .privacy-avatar, .privacy-pill, .orbit-center { box-shadow:none!important; }
+h1,h2,h3 { letter-spacing:-.035em; }
+.hero-title { letter-spacing:-.045em; }
+.feature-card, .preview-browser, .product-capture, .privacy-panel, .cta-button { corner-shape:superellipse(1.25); }
+@media(max-width:620px) {
+ .budget-meters { gap:13px; min-height:115px; }
+ .meter-heading, .meter-heading [data-slot=meter-label] { font-size:12px; }
+ .steps-grid .step-item { padding:24px 0!important; }
+ .steps-grid [data-slot=timeline-title] { margin-top:18px; }
+}

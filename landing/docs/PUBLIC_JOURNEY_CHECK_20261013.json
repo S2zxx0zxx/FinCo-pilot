@@ -1,0 +1,49 @@
+{
+  "checked_on": "2026-10-13",
+  "scope": "Read-only public routes; no credentials/account creation or form submissions. Auth UI rendering is not successful authentication.",
+  "tinyfish_run": "https://agent.tinyfish.ai/runs/546fd3e3-d323-4b90-b364-705ef8829eb2",
+  "tinyfish_observations": {
+    "homepage": "HTTPS navigation timed out; HTTP black snapshot; inconclusive actual landing.",
+    "login": "Email/password and Google auth UI observed; no submission.",
+    "register": "Registration UI observed; no account creation.",
+    "oauth_dashboard": "Not verified without authenticated session."
+  },
+  "independent_route_checks": [
+    {
+      "url": "https://fincopilot.app/pricing",
+      "status": "inconclusive",
+      "error": "page.goto: Timeout 20000ms exceeded."
+    },
+    {
+      "url": "https://fincopilot.app/terms",
+      "status": "inconclusive",
+      "error": "page.goto: Timeout 20000ms exceeded."
+    },
+    {
+      "url": "https://fincopilot.app/privacy",
+      "status": "inconclusive",
+      "error": "page.goto: Timeout 20000ms exceeded."
+    },
+    {
+      "url": "https://fincopilot.app/support",
+      "http": 200,
+      "finalUrl": "https://fincopilot.app/support",
+      "title": "FinCo-Pilot",
+      "text": "Privacy policy\nTerms of service\nHelp & Support\n\nGet help without exposing your financial or security secrets.\n\nCustomer support is not configured on this deployment yet.\n\nSecurity reports still use the private security channel shown below.\n\nSecurity vulnerability?\n\nDo not send vulnerability details through normal customer support. Use the private security reporting channel.\n\nReport a security issue privately",
+      "status": "content_observed"
+    }
+  ],
+  "readiness": {
+    "url": "https://api.fincopilot.app/api/health/ready",
+    "http": 503,
+    "response": {
+      "status": "not_ready",
+      "checks": {
+        "configuration": {
+          "ok": false,
+          "error": "InvalidConfiguration"
+        }
+      }
+    }
+  }
+}

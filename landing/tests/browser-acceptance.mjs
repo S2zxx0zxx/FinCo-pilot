@@ -39,11 +39,13 @@ try {
       const appOrigin=process.env.LANDING_APP_ORIGIN || 'https://fincopilot.app'
       assert.ok(await page.locator('a[href="'+appOrigin+path+'"]').count(), 'missing product destination '+path)
     }
+    await page.waitForFunction(()=>[...document.querySelectorAll('h1 span')].every(e=>['none','blur(0px)'].includes(getComputedStyle(e).filter)&&getComputedStyle(e).opacity==='1'), null, {timeout:5000})
     assert.ok(await page.getByText('Illustrative interface').count())
     assert.ok(await page.getByText('Actual application screens · Synthetic sample data · Screenshots, not live accounts').count())
     const sampleTabs=page.getByRole('tablist',{name:'Explore sample views'})
     for(const [name,text] of [['Budgets','₹24,800'],['Activity','18 items'],['Overview','₹1,84,250']]) {
       await sampleTabs.getByRole('tab',{name,exact:true}).click()
+      if(name==='Budgets') { assert.equal(await page.getByRole('meter').count(),3); assert.deepEqual(await page.getByRole('meter').evaluateAll(es=>es.map(e=>e.getAttribute('aria-valuenow'))),['49','26','25']) }
       assert.ok((await page.locator('.preview-body:not([inert]):visible').innerText()).includes(text))
       if(width===390||width===1440)await accessibility(page,width+':'+name)
     }
@@ -60,6 +62,9 @@ try {
     await benefits.getByRole('tab',{name:'Understand what changed'}).focus();await page.keyboard.press('ArrowDown')
     assert.equal(await benefits.getByRole('tab',{name:'Stay in the driver’s seat'}).getAttribute('aria-selected'),'true')
     assert.ok(await page.getByRole('tabpanel').filter({hasText:'Keep your own financial workflow'}).isVisible())
+    const panelBounds=await page.getByRole('tabpanel').filter({hasText:'Keep your own financial workflow'}).boundingBox();const listBounds=await benefits.boundingBox()
+    assert.ok(panelBounds.width>=Math.min(listBounds.width*0.8,280),'Benefit description must not collapse to a narrow column')
+    assert.equal(await page.locator('ol[aria-label="How FinCo-Pilot works"] > li').count(),3)
     const screens=page.getByRole('tablist',{name:'Explore FinCo-Pilot screens'})
     await screens.getByRole('tab',{name:'Accounts',exact:true}).click()
     const img=page.locator('.product-capture img:visible')
@@ -99,6 +104,7 @@ try {
     if(width===390||width===1440) {
       await accessibility(page,width+':full-page-final')
       await page.evaluate(()=>{history.replaceState(null,'',location.pathname);window.scrollTo({top:0,behavior:'instant'})})
+      await page.waitForFunction(()=>[...document.querySelectorAll('h1 span')].every(e=>['none','blur(0px)'].includes(getComputedStyle(e).filter)&&getComputedStyle(e).opacity==='1'),null,{timeout:5000})
       await page.screenshot({path:new URL(width+'-full.png',directory).pathname,fullPage:true,animations:'disabled'})
     }
     assert.deepEqual(errors,[],width+': page errors');assert.deepEqual(external,[],width+': third-party requests')

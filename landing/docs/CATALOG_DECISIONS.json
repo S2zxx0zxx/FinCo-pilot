@@ -1098,7 +1098,7 @@
       "category": "primitives",
       "url": "https://www.spaceui.one/primitives/meter",
       "historical_read_status": "TinyFish detail read",
-      "landing_decision": "Evaluated: meter does not improve the defined landing journey; selected primitives already cover navigation, explanation and FAQ.",
+      "landing_decision": "Used: three bounded illustrative budget allocation gauges; official labelled finite Meter primitive.",
       "official_document_found": true,
       "official_document_characters": 1339,
       "headings": [
@@ -1473,7 +1473,7 @@
       "category": "primitives",
       "url": "https://www.spaceui.one/primitives/separator",
       "historical_read_status": "TinyFish detail read",
-      "landing_decision": "Evaluated: separator does not improve the defined landing journey; selected primitives already cover navigation, explanation and FAQ.",
+      "landing_decision": "Used: proof-section decorative divider; hidden from assistive technology.",
       "official_document_found": true,
       "official_document_characters": 910,
       "headings": [
@@ -3096,7 +3096,7 @@
       "category": "components",
       "url": "https://www.spaceui.one/components/timeline",
       "historical_read_status": "TinyFish detail read",
-      "landing_decision": "Evaluated: timeline does not improve the defined landing journey; selected primitives already cover navigation, explanation and FAQ.",
+      "landing_decision": "Used: semantic three-step process, responsive horizontal/stacked composition; no fake completed onboarding.",
       "official_document_found": true,
       "official_document_characters": 5297,
       "headings": [
@@ -5938,7 +5938,7 @@
       "category": "hooks",
       "url": "https://www.spaceui.one/hooks/use-in-view",
       "historical_read_status": "TinyFish detail read",
-      "landing_decision": "Evaluated: landing has no use-in-view workflow; retain native/simple state, avoid unused runtime abstractions.",
+      "landing_decision": "Used: stable callback ref in BlurRevealText; once and missing-observer fallback.",
       "official_document_found": true,
       "official_document_characters": 800,
       "headings": [
@@ -6677,5 +6677,6 @@
         }
       ]
     }
-  ]
+  ],
+  "refinement_evidence": "DESIGN_SELECTION_20261013.md and SPACEUI_PREVIEW_REVIEW_20261013.json; full live preview review remains incomplete due 429/loading/timeouts."
 }

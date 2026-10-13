@@ -18,6 +18,9 @@ import { HeroBackdrop } from '@/components/hero-backdrop'
 import { IdentityAvatar } from '@/components/spaceui/identity-avatar'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionPanel } from '@/components/spaceui/accordion'
 import { Tabs, TabsList, TabsTab, TabsPanel } from '@/components/spaceui/tabs'
+import { Meter, MeterLabel, MeterTrack, MeterIndicator } from '@/components/spaceui/meter'
+import { Timeline, TimelineItem, TimelineHeader, TimelineTitle, TimelineContent, TimelineIndicator, TimelineSeparator } from '@/components/spaceui/timeline'
+import { Separator } from '@/components/spaceui/separator'
 import { Avatar, AvatarFallback } from '@/components/spaceui/avatar'
 import { ProductScreens } from '@/components/product-screens'
 import { LandingSoundProvider, SoundToggle, useLandingSound } from '@/components/landing-sound'
@@ -131,12 +134,13 @@ function ProductPreview() {
 
 function SampleView({ view }: { view: View }) {
   const sample = demoData[view]
+  const allocations = [{ label:'Essentials', amount:'₹12,200', percent:49 }, { label:'Everyday', amount:'₹6,400', percent:26 }, { label:'Savings goal', amount:'₹6,200', percent:25 }]
   return <>
     <div className="mini-eyebrow">{sample.eyebrow}</div>
     <div className="finance-summary"><div><p>{sample.title}</p><div className="finance-amount">{sample.amount}</div></div><div className="finance-trend"><IconArrowUpRight size={14} aria-hidden="true"/>{sample.delta}</div></div>
     <div className="chart-wrap"><div className="chart-intro"><span>Financial trend</span><span>{sample.detail}</span></div>
-      <div className="chart-bars" role="img" aria-label={'Illustrative trend for ' + view}>{sample.bars.map((v,i) => <span key={i} style={{height:v+'%'}} className={i===sample.bars.length-1?'bright':''}/>)}</div>
-      <div className="chart-axis"><span>Start</span><span>Today</span></div>
+      {view === 'budgets' ? <div className="budget-meters">{allocations.map(item => <Meter key={item.label} value={item.percent} min={0} max={100} className="budget-meter" aria-label={item.label + ' share of illustrative plan'}><div className="meter-heading"><MeterLabel>{item.label}</MeterLabel><span>{item.amount}</span></div><MeterTrack className="budget-meter-track"><MeterIndicator className="budget-meter-indicator" /></MeterTrack></Meter>)}</div> : <div className="chart-bars" role="img" aria-label={'Illustrative trend for ' + view}>{sample.bars.map((v,i) => <span key={i} style={{height:v+'%'}} className={i===sample.bars.length-1?'bright':''}/>)}</div>}
+      <div className="chart-axis"><span>{view === 'budgets' ? 'Illustrative allocation' : 'Start'}</span><span>{view === 'budgets' ? 'Sample plan' : 'Today'}</span></div>
     </div>
     <div className="tx-heading">Recent items <span>Sample data</span></div>
     <div className="tx-list">{sample.transactions.map((item,i)=><div className="tx-row" key={item.name}><div className="tx-symbol" aria-hidden="true">{i===0?<IconArrowDownRight size={16}/>:i===1?<IconReceipt size={16}/>:<IconTarget size={16}/>}</div><div className="tx-description"><strong>{item.name}</strong><span>{item.context}</span></div><span className={item.positive?'tx-value positive':'tx-value'}>{item.amount}</span></div>)}</div>
@@ -150,7 +154,7 @@ function Hero() {
     <div className="shell hero-grid">
       <div className="hero-copy">
         <Badge size="lg" variant="outline" className="eyebrow-badge"><span className="status-dot"/> A better way to understand your money <IconArrowUpRight size={13}/></Badge>
-        <BlurRevealText as="h1" className="hero-title" text="Money makes more sense together." stagger={0.045} delay={0.06} duration={0.38} blurAmount="7px" />
+        <BlurRevealText inView={false} as="h1" className="hero-title" text="Money makes more sense together." stagger={0.045} delay={0.06} duration={0.38} blurAmount="7px" />
         <p className="hero-description">Every account. Every decision. One thoughtful place to understand where your money stands — and where it can go next.</p>
         <div className="hero-actions"><ArrowLink href={APP_LINKS.register}>Make money make sense</ArrowLink><SpaceLink href="#experience" variant="secondary" className="secondary-cta">Explore the experience <IconArrowRight size={18}/></SpaceLink></div>
         <div className="hero-footnote"><span className="verified-icon"><IconCircleCheck size={16}/></span> Built for the decisions you make every day.</div>
@@ -162,7 +166,7 @@ function Hero() {
 }
 
 function ProofLine() {
-  return <div className="proof-line shell"><p>One place for more than your balance.</p><div className="proof-items"><span><IconWallet size={18}/> Accounts</span><span><IconReceipt size={18}/> Transactions</span><span><IconTarget size={18}/> Budgets & goals</span><span><IconChartDots3 size={18}/> Reports</span></div></div>
+  return <div className="proof-line shell"><Separator aria-hidden="true" className="proof-divider" /><p>One place for more than your balance.</p><div className="proof-items"><span><IconWallet size={18}/> Accounts</span><span><IconReceipt size={18}/> Transactions</span><span><IconTarget size={18}/> Budgets & goals</span><span><IconChartDots3 size={18}/> Reports</span></div></div>
 }
 
 function WhyFinCo() {
@@ -178,7 +182,7 @@ function Experience() {
   return <section className="section experience-section" id="perspective">
     <div className="shell experience-grid">
       <div className="experience-copy"><p className="section-kicker"><span>02 /</span> BUILT AROUND YOU</p><h2>For the bigger picture. <em>And the little details.</em></h2><p className="section-intro">It’s not about staring at another chart. It’s about making your next financial decision feel more grounded.</p>
-        <Tabs value={selected} orientation="vertical" onValueChange={value => { setSelected(value as 'clarity'|'control'); cue() }}>
+        <Tabs className="benefit-tabs" value={selected} orientation="vertical" onValueChange={value => { setSelected(value as 'clarity'|'control'); cue() }}>
           <TabsList activateOnFocus className="experience-choices" aria-label="Choose benefit">
             <TabsTab value="clarity" className="choice"><IconChartBar size={20} aria-hidden="true"/> Understand what changed <IconArrowRight size={18} aria-hidden="true"/></TabsTab>
             <TabsTab value="control" className="choice"><IconShieldLock size={20} aria-hidden="true"/> Stay in the driver’s seat <IconArrowRight size={18} aria-hidden="true"/></TabsTab>
@@ -202,7 +206,7 @@ function Experience() {
 function HowItWorks() {
   return <section className="section steps-section shell" id="how-it-works">
     <div className="section-head"><div><p className="section-kicker"><span>03 /</span> YOUR NEXT STEP</p><h2>A little less noise.<br/><span>A lot more direction.</span></h2></div><p>Start simply. Find your rhythm. Use the features that fit your financial life.</p></div>
-    <div className="steps-grid">{steps.map(item=><div key={item.id} className="step-item"><span className="step-index">{item.id}</span><div className="step-icon"><item.icon size={24} stroke={1.45}/></div><h3>{item.title}</h3><p>{item.description}</p></div>)}</div>
+    <Timeline render={<ol />} value={0} orientation="horizontal" className="steps-grid" aria-label="How FinCo-Pilot works">{steps.map((item,index)=><TimelineItem render={<li />} step={index + 1} key={item.id} className="step-item"><TimelineSeparator /><TimelineHeader><span className="step-index">{item.id}</span><TimelineIndicator className="step-icon"><item.icon size={24} stroke={1.45}/></TimelineIndicator><TimelineTitle>{item.title}</TimelineTitle></TimelineHeader><TimelineContent>{item.description}</TimelineContent></TimelineItem>)}</Timeline>
   </section>
 }
 

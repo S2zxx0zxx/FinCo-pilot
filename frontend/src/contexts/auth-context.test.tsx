@@ -71,13 +71,36 @@ describe('AuthProvider session restore', () => {
     // An expired or revoked token must not leave the app in a half-signed-in
     // state where every request 401s.
     localStorage.setItem('token', 'expired-jwt')
-    auth.me.mockRejectedValue(new Error('401'))
+    auth.me.mockRejectedValue({ response: { status: 401 } })
 
     const { result } = await renderAuth()
 
     expect(result.current.token).toBeNull()
     expect(result.current.user).toBeNull()
     expect(localStorage.getItem('token')).toBeNull()
+  })
+
+  it('retains a valid-looking token on a 503 without treating it as a verified session', async () => {
+    localStorage.setItem('token', 'stored-jwt')
+    auth.me.mockRejectedValue({ response: { status: 503 } })
+
+    const { result } = await renderAuth()
+
+    expect(result.current.token).toBe('stored-jwt')
+    expect(localStorage.getItem('token')).toBe('stored-jwt')
+    expect(result.current.user).toBeNull()
+    expect(result.current.isSessionUnavailable).toBe(true)
+  })
+
+  it('retains the token on a network failure instead of silently signing out', async () => {
+    localStorage.setItem('token', 'stored-jwt')
+    auth.me.mockRejectedValue(new Error('Network Error'))
+
+    const { result } = await renderAuth()
+
+    expect(result.current.token).toBe('stored-jwt')
+    expect(result.current.isSessionUnavailable).toBe(true)
+    expect(result.current.user).toBeNull()
   })
 })
 

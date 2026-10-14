@@ -11,6 +11,7 @@ import { useTheme } from 'next-themes'
 import type { AxiosError } from 'axios'
 
 import { AuthShell } from '@/components/spaceui/auth-shell'
+import { FinCoRouteLoader } from '@/transitions/finco-route-loader'
 import { TermsLink } from '@/components/terms-link'
 import { PrivacyLink } from '@/components/privacy-link'
 import { FinCoLogo } from '@/components/finco-logo'
@@ -226,6 +227,11 @@ interface LoginFormViewProps {
 function LoginFormView(props: LoginFormViewProps) {
   const { t } = useTranslation()
 
+  // The server decides which sign-in methods are available. Keep the existing
+  // route loader during this real wait instead of painting a short card that
+  // jumps when credential/provider controls arrive. No artificial delay.
+  if (props.authConfigLoading) return <FinCoRouteLoader />
+
   if (props.requires2fa) {
     return (
       <TwoFactorCard
@@ -256,11 +262,6 @@ function LoginFormView(props: LoginFormViewProps) {
             <h1 className="text-xl font-semibold tracking-tight">{t('auth.login')}</h1>
             <p className="text-sm text-muted-foreground mt-1">{t('auth.loginDescription')}</p>
           </div>
-          {props.authConfigLoading && (
-            <CardContent className="px-8 py-6 text-center text-sm text-muted-foreground" role="status">
-              {t('common.loading')}
-            </CardContent>
-          )}
           {props.oidcConfigFailed && (
             <CardContent className="px-8 py-4">
               <div role="alert" className="p-3 text-sm text-muted-foreground bg-muted rounded-lg">

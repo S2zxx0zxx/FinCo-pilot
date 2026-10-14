@@ -2,13 +2,12 @@ import i18n, { type BackendModule, type ResourceLanguage } from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
 
-import ptBR from '@/locales/pt-BR.json'
 import en from '@/locales/en.json'
 
-// Keep the default and Brazilian Portuguese bundles available immediately;
-// other languages are separate build assets loaded by i18next when selected.
+// English fallback is immediate. Every selected non-English language, including
+// Brazilian Portuguese, loads before i18nReady resolves; no language is removed.
 const localeLoaders = import.meta.glob<{ default: ResourceLanguage }>([
-  '../locales/*.json', '!../locales/en.json', '!../locales/pt-BR.json',
+  '../locales/*.json', '!../locales/en.json',
 ])
 
 // Pricing is an app-level destination rather than a workspace module. Keep the
@@ -21,15 +20,6 @@ const enWithPricingNavigation = {
     ...en.nav,
     groupPersonal: 'Personal',
     planBilling: 'Plan & Billing',
-  },
-}
-
-const ptBRWithPricingNavigation = {
-  ...ptBR,
-  nav: {
-    ...ptBR.nav,
-    groupPersonal: 'Pessoal',
-    planBilling: 'Plano e cobrança',
   },
 }
 
@@ -48,7 +38,10 @@ export const i18nReady = i18n
         return
       }
       load().then(
-        ({ default: resource }) => callback(null, resource),
+        ({ default: resource }) => callback(null, language === 'pt-BR' ? {
+          ...resource,
+          nav: { ...(resource.nav as Record<string, unknown>), groupPersonal: 'Pessoal', planBilling: 'Plano e cobrança' },
+        } : resource),
         (error: Error) => callback(error, false),
       )
     },
@@ -57,7 +50,6 @@ export const i18nReady = i18n
   .use(initReactI18next)
   .init({
     resources: {
-      'pt-BR': { translation: ptBRWithPricingNavigation },
       en: { translation: enWithPricingNavigation },
     },
     partialBundledLanguages: true,

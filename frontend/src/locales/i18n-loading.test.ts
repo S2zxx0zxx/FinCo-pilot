@@ -19,6 +19,16 @@ it('loads a selected locale on demand and keeps English fallback keys', async ()
   expect(document.documentElement.lang).toBe('hi')
 })
 
+it('keeps Portuguese out of the English entry and restores all Portuguese navigation on selection', async () => {
+  vi.resetModules()
+  const { default: i18n, i18nReady } = await import('@/lib/i18n')
+  await i18nReady
+  expect(i18n.hasResourceBundle('pt-BR', 'translation')).toBe(false)
+  await i18n.changeLanguage('pt-BR')
+  expect(i18n.t('nav.assets')).toBe((await import('./pt-BR.json')).default.nav.assets)
+  expect(i18n.t('nav.planBilling')).toBe('Plano e cobrança')
+})
+
 it('finishes loading a persisted locale before initialization resolves', async () => {
   localStorage.setItem('i18nextLng', 'de')
   vi.resetModules()

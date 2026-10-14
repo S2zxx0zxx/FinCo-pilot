@@ -5,14 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run typecheck && vite build",
+    "build": "npm run typecheck && vite build && npm run verify:production",
     "typecheck": "node ./node_modules/@typescript/native/bin/tsc -b",
     "lint": "eslint .",
     "preview": "vite preview",
     "dev:docker": "node ../scripts/dev-frontend.mjs",
     "test": "vitest run",
     "test:pwa": "node scripts/verify-pwa-browser.mjs",
-    "test:spaceui": "node scripts/verify-spaceui-browser.mjs"
+    "test:spaceui": "node scripts/verify-spaceui-browser.mjs",
+    "verify:production": "node scripts/verify-production-build.mjs"
   },
   "dependencies": {
     "@base-ui/react": "1.9.0",
@@ -48,9 +49,11 @@
     "remark-gfm": "^4.0.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",
+    "web-vitals": "6.2.3",
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@eslint/js": "^9.39.1",
     "@sentry/vite-plugin": "5.4.1",
     "@tailwindcss/vite": "4.3.3",

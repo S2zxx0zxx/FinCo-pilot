@@ -13,12 +13,15 @@ import { AdminRoute } from '@/components/admin-route'
 import { AgentsRoute } from '@/components/agents-route'
 import { ModuleRoute } from '@/components/module-route'
 import { EntitlementRoute } from '@/components/entitlement-route'
-import { AppLayout } from '@/components/app-layout'
 import { PWAProvider } from '@/pwa/pwa-provider'
 import { PWAChrome } from '@/pwa/pwa-chrome'
 import { FinCoRouteLoader } from '@/transitions/finco-route-loader'
 import { FinCoNavigationTransition } from '@/transitions/finco-navigation-transition'
 import { ClerkProviderWrapper } from '@/lib/clerk-provider-wrapper'
+
+// Private shell imports charts, chat/markdown and account-management dialogs.
+// Do not download or evaluate them until ProtectedRoute admits the session.
+const AppLayout = lazy(() => import('@/components/app-layout').then(module => ({ default: module.AppLayout })))
 
 const WorkspaceDeletionPage = lazy(() => import('@/pages/workspace-deletion'))
 const AccountDeletionPage = lazy(() => import('@/pages/account-deletion'))

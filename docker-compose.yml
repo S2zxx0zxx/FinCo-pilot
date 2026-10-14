@@ -207,13 +207,22 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
+      # Only public browser configuration is embedded in this build. Backend
+      # credentials, Clerk secret keys and Sentry upload tokens are never args.
+      args:
+        VITE_APP_VERSION: ${VITE_APP_VERSION:-}
+        VITE_CLERK_PUBLISHABLE_KEY: ${VITE_CLERK_PUBLISHABLE_KEY:-}
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-}
+        VITE_RAZORPAY_KEY_ID: ${VITE_RAZORPAY_KEY_ID:-}
+        VITE_SENTRY_ENABLED: ${VITE_SENTRY_ENABLED:-false}
+        VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}
+        VITE_WEB_VITALS_ENABLED: ${VITE_WEB_VITALS_ENABLED:-false}
     ports:
-      - "${FRONTEND_PORT:-3000}:5173"
+      - "${FRONTEND_PORT:-3000}:8080"
     environment:
       BACKEND_URL: http://backend:8000
       MCP_SERVER_URL: http://mcp-server:8765
-      # Also drives Vite's allowedHosts, so a proxied domain is not blocked.
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:${FRONTEND_PORT:-3000}}
       APP_VERSION_ROOT: /workspace
       VITE_RAZORPAY_KEY_ID: ${VITE_RAZORPAY_KEY_ID:-}
@@ -221,10 +230,8 @@ services:
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-}
     depends_on:
       - backend
-    volumes:
-      - ./frontend:/app
-      - ./:/workspace:ro
-      - /app/node_modules
+    # Public traffic (including the existing host:3000 Tunnel) serves the built
+    # nginx image. Source bind mounts/live reload are an explicit dev override.
     restart: unless-stopped
 
   celery-worker:

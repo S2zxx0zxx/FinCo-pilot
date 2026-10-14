@@ -29,8 +29,10 @@ docker run --rm -d --name finco-mcp-upstream-ci --network finco-mcp-edge-ci --ne
   -v "$proof_dir/upstream.conf:/etc/nginx/conf.d/default.conf:ro" nginxinc/nginx-unprivileged:alpine >/dev/null
 docker run --rm -d --name finco-mcp-edge-ci --network finco-mcp-edge-ci \
   -p 127.0.0.1:18081:8080 -e BACKEND_URL=http://backend:8000 -e NGINX_RESOLVER=127.0.0.11 \
+  -e FINCO_TRUSTED_TYPES_REPORT_ONLY=false \
   -v "$PWD/dist:/usr/share/nginx/html:ro" \
   -v "$PWD/default.conf.template:/etc/nginx/templates/default.conf.template:ro" \
+  -v "$PWD/security-headers.conf:/etc/nginx/finco-security-headers.conf:ro" \
   nginxinc/nginx-unprivileged:alpine >/dev/null
 ready=false
 for _ in $(seq 1 20); do

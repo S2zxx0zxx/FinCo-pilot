@@ -3,16 +3,16 @@ import react from '@vitejs/plugin-react'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
 import { readFile, readdir, writeFile } from 'node:fs/promises'
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig, loadEnv, type IndexHtmlTransformContext } from 'vite'
 import { resolveAppVersion } from './build/version.ts'
 import { localQaSessionPlugin } from './build/local-qa-session.ts'
 
-function getFrontendHost(frontendUrl?: string) {
-  const hosts = ['localhost', '127.0.0.1', 'fincopilot.app']
+function getFrontendHost(frontendUrl?: string, allowPublicDevelopment = false) {
+  const hosts = ['localhost', '127.0.0.1']
   if (!frontendUrl) return hosts
   const withoutProto = frontendUrl.replace(/^https?:\/\//, '')
   const host = withoutProto.split(/[:/]/)[0]
-  if (host && !hosts.includes(host)) hosts.push(host)
+  if (host && !hosts.includes(host) && allowPublicDevelopment) hosts.push(host)
   return hosts
 }
 
@@ -20,6 +20,7 @@ export default defineConfig(async ({ mode }) => {
   const env = loadEnv(mode, import.meta.dirname, '')
   const frontendUrl = env.FRONTEND_URL || process.env.FRONTEND_URL
   const backendUrl = env.BACKEND_URL || process.env.BACKEND_URL
+  const allowPublicDevelopment = (env.FINCO_ALLOW_PUBLIC_DEV_SERVER || process.env.FINCO_ALLOW_PUBLIC_DEV_SERVER) === 'true'
   const appVersionRoot = env.APP_VERSION_ROOT || process.env.APP_VERSION_ROOT
   const sentryUploadEnabled = Boolean(env.SENTRY_AUTH_TOKEN && env.SENTRY_ORG && env.SENTRY_PROJECT)
   const appVersion = await resolveAppVersion(
@@ -44,6 +45,7 @@ export default defineConfig(async ({ mode }) => {
       // refresh of `/assets` 301s into the build dir and renders a blank
       // page instead of booting the app (issue #295).
       assetsDir: 'static',
+      manifest: true,
     },
     plugins: [react(), tailwindcss(), localQaSessionPlugin({
       mode,
@@ -53,6 +55,22 @@ export default defineConfig(async ({ mode }) => {
       email: env.FINCO_QA_EMAIL || process.env.FINCO_QA_EMAIL,
       password: env.FINCO_QA_PASSWORD || process.env.FINCO_QA_PASSWORD,
     }), {
+      name: 'finco-public-route-hints',
+      apply: 'build',
+      transformIndexHtml: {
+        order: 'post',
+        handler(_html: string, context: IndexHtmlTransformContext) {
+          if (!context.bundle) return
+          const login = Object.values(context.bundle).find(output => output.type === 'chunk' && output.facadeModuleId?.endsWith('/src/pages/login.tsx'))
+          const headingFont = Object.values(context.bundle).find(output => output.type === 'asset' && /open-runde-semibold-latin-.+\.woff2$/.test(output.fileName))
+          if (!login || login.type !== 'chunk') return
+          // Only public sign-in code is hinted. Modulepreload fetches/parses;
+          // it does not admit a session, render private UI or fetch finance APIs.
+          const hints = JSON.stringify({ login: `/${login.fileName}`, font: headingFont ? `/${headingFont.fileName}` : null })
+          return [{ tag: 'script', injectTo: 'head', children: `(()=>{const h=${hints};const p=location.pathname;if(!['/','/login','/sign-in'].includes(p))return;try{if(p==='/'&&localStorage.getItem('token'))return}catch{}const add=(rel,href,as)=>{const l=document.createElement('link');l.rel=rel;l.href=href;if(as){l.as=as;l.type='font/woff2';l.crossOrigin='anonymous'}document.head.append(l)};add('modulepreload',h.login);let lang='en';try{lang=new URLSearchParams(location.search).get('lng')||localStorage.getItem('i18nextLng')||'en'}catch{}if(h.font&&/^(en|pt|es|fr|de|it|pl|nl|sk)(-|$)/i.test(lang))add('preload',h.font,'font')})()` }]
+        },
+      },
+    }, {
       name: 'finco-pwa-release-version',
       apply: 'build',
       async closeBundle() {
@@ -103,7 +121,9 @@ export default defineConfig(async ({ mode }) => {
     server: {
       port: 5173,
       host: '0.0.0.0',
-      allowedHosts: getFrontendHost(frontendUrl),
+      // Public domains must serve the production build. A deliberate public
+      // development session requires explicit operator opt-in; no wildcard.
+      allowedHosts: getFrontendHost(frontendUrl, allowPublicDevelopment),
       proxy: {
         '/api': {
           target: backendUrl ?? 'http://localhost:8000',

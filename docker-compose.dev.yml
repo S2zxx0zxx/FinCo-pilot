@@ -1,0 +1,14 @@
+# Explicit live-reload frontend, preserving the same host/container port map.
+# docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+# For public traffic use default Compose or the hardened production stack.
+services:
+  frontend:
+    build:
+      dockerfile: Dockerfile.dev
+    command: ["npm", "run", "dev", "--", "--port", "8080"]
+    environment:
+      FINCO_ALLOW_PUBLIC_DEV_SERVER: ${FINCO_ALLOW_PUBLIC_DEV_SERVER:-false}
+    volumes:
+      - ./frontend:/app
+      - ./:/workspace:ro
+      - /app/node_modules

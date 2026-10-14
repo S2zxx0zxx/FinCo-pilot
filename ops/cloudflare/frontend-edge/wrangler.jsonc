@@ -1,0 +1,25 @@
+// No live route: retain the current origin until its Tunnel is healthy.
+{
+  "name": "fincopilot-production-frontend",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-10-14",
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": {
+    "enabled": false,
+    "logs": {
+      "enabled": false,
+      "invocation_logs": false,
+      "persist": false
+    },
+    "traces": {
+      "enabled": false
+    },
+    "redact_query_string": true
+  },
+  "vars": {
+    "APP_HOST": "fincopilot.app",
+    "FRONTEND_DEPLOYMENT_ORIGIN": "https://fincopilot-61zf7hlwz-s2zxx0zxxs-projects.vercel.app",
+    "FRONTEND_DEPLOYMENT_COMMIT": "6bcb6584afaa3468337284b5226bb957961e200a"
+  }
+}

@@ -1,0 +1,162 @@
+{
+  "checkedAt": "2026-10-14T15:27:14.738125+00:00",
+  "branch": "fix/mobile-performance-34-20261014",
+  "sourceCommit": "6bcb6584afaa3468337284b5226bb957961e200a",
+  "pullRequest": "https://github.com/S2zxx0zxx/FinCo-pilot/pull/88",
+  "mainMerged": false,
+  "githubCi": {
+    "runId": 38588814538,
+    "jobs": 7,
+    "conclusion": "success",
+    "workerPrivacyRunId": 38588815168,
+    "workerPrivacyConclusion": "success"
+  },
+  "vercel": {
+    "projectId": "prj_TI6Yg1OFOQDyMr22reNnNwAMPw5f",
+    "projectName": "fincopilot-web",
+    "deploymentId": "dpl_BFvXna1Bc1CkUcvfgo8fsK8yKJ92",
+    "url": "https://fincopilot-61zf7hlwz-s2zxx0zxxs-projects.vercel.app",
+    "state": "READY",
+    "target": "preview",
+    "branchPublicClerkKey": "existing tenant, branch-scoped; no secret or production env changed"
+  },
+  "cloudflare": {
+    "workerName": "fincopilot-production-frontend",
+    "uploaded": true,
+    "moduleEtag": "ea1b4c3b5df84ce2bc505c8e156db8837edfc3e0a32831c1e5e8f5107a128e3e",
+    "compatibilityDate": "2026-10-14",
+    "workersDev": false,
+    "previewUrls": false,
+    "routes": [],
+    "logpush": false,
+    "observability": null,
+    "bindings": "three non-secret plain-text app host/artifact origin/source SHA bindings",
+    "cacheRulesetId": "8334b97a29674e758814d6bc9787a62d",
+    "hsts": "31536000; no includeSubdomains/preload; nosniff",
+    "tunnelId": "dc9f949a-6702-4222-844f-51e1b2f34031",
+    "tunnelStatus": "down",
+    "tunnelConnections": 0,
+    "dnsChanged": false,
+    "tunnelIngressChanged": false,
+    "liveCutover": false,
+    "reason": "Owner-hosted connector unavailable; backend cannot be certified; route intentionally unbound"
+  },
+  "previewHttp": [
+    {
+      "path": "/login",
+      "statusType": "200 text/html; charset=utf-8",
+      "bytes": 8853,
+      "containsHtmlLiteral": true
+    },
+    {
+      "path": "/reset-password",
+      "statusType": "200 text/html; charset=utf-8",
+      "bytes": 8853,
+      "containsHtmlLiteral": true
+    },
+    {
+      "path": "/sw.js",
+      "statusType": "200 application/javascript; charset=utf-8",
+      "bytes": 7260,
+      "containsHtmlLiteral": true
+    },
+    {
+      "path": "/manifest.webmanifest",
+      "statusType": "200 application/manifest+json; charset=utf-8",
+      "bytes": 1679,
+      "containsHtmlLiteral": false
+    },
+    {
+      "path": "/robots.txt",
+      "statusType": "200 text/plain; charset=utf-8",
+      "bytes": 261,
+      "containsHtmlLiteral": false
+    },
+    {
+      "path": "/llms.txt",
+      "statusType": "200 text/plain; charset=utf-8",
+      "bytes": 743,
+      "containsHtmlLiteral": false
+    },
+    {
+      "path": "/.well-known/ai-catalog.json",
+      "statusType": "200 application/json; charset=utf-8",
+      "bytes": 153,
+      "containsHtmlLiteral": false
+    },
+    {
+      "path": "/spaceui/coin.webp",
+      "statusType": "200 image/webp",
+      "bytes": 4904,
+      "containsHtmlLiteral": false
+    },
+    {
+      "path": "/android-icon-192x192.png",
+      "statusType": "200 image/png",
+      "bytes": 4351,
+      "containsHtmlLiteral": false
+    },
+    {
+      "path": "/static/missing.js",
+      "statusType": "404 text/plain; charset=utf-8",
+      "bytes": 79,
+      "containsHtmlLiteral": false
+    },
+    {
+      "entrySri": "all matched actual delivered JS"
+    }
+  ],
+  "configuredClerkFixture": {
+    "compatibilityCspCases": 8,
+    "strictCspCases": 8,
+    "axeViolations": 0,
+    "strictCspBlockedResources": 0,
+    "realSignin": false,
+    "scope": "Authorized app-host origin fulfilled by local GET-only nginx/API fixture; actual Clerk HTTPS provider"
+  },
+  "ownerRequired": [
+    "Restart existing origin connector and retain current backend",
+    "Rebuild only frontend in existing deployment context with preserved public keys, or bind tested edge route after backend acceptance",
+    "Real account OAuth/MFA/recovery/bank/test-payment acceptance",
+    "Strict CSP with edge RUM and TT sink policy review",
+    "Physical Android/iOS and screen-reader tests",
+    "Post-rollout live PageSpeed/RUM/CrUX traffic"
+  ],
+  "dataWrites": false,
+  "databaseMigrations": false,
+  "trackedFilesDeleted": false,
+  "finalPreviewHttp": {
+    "url": "https://fincopilot-61zf7hlwz-s2zxx0zxxs-projects.vercel.app",
+    "entryAndModulepreloadSri": "verified actual bytes",
+    "sriResources": 17,
+    "configuredClerkPublicKey": "matches existing tenant",
+    "cache": [
+      {
+        "path": "/index.html",
+        "status": 200,
+        "cacheControl": "no-store"
+      },
+      {
+        "path": "/reset-password",
+        "status": 200,
+        "cacheControl": "no-store"
+      },
+      {
+        "path": "/sw.js",
+        "status": 200,
+        "cacheControl": "no-store, no-cache, must-revalidate"
+      },
+      {
+        "path": "/static/missing.js",
+        "status": 404,
+        "cacheControl": "no-store"
+      },
+      {
+        "path": "/static/index-DquECH9e.js",
+        "status": 200,
+        "cacheControl": "no-store"
+      }
+    ]
+  },
+  "previewHttpProvenance": "Public-file MIME checks on preceding same-code profile ef2a1d3; final actual SRI/cache/public-key checks below verify 6bcb658."
+}

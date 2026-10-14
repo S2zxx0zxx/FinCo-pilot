@@ -33,3 +33,8 @@ https://developers.cloudflare.com/workers/configuration/routing/routes/
 
 Deployment is a separate acceptance step. Consult the deployment receipt;
 absence of a receipt means source readiness, not a completed live rollout.
+
+Vercel preview headers intentionally default to no-store, including missing
+static files. Broad /static immutable headers also matched 404s in the actual
+platform and were removed. Production nginx and this status-aware Worker keep
+successful hashed files immutable while preventing stale cached errors.

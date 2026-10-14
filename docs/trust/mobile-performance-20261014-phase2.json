@@ -25,7 +25,25 @@
     "uiVisits": 360,
     "strictCspLocalCases": 8,
     "workerPrivacyTests": 7,
-    "configuredClerkBrowser": "pending interrupted run"
+    "configuredClerkBrowser": {
+      "cases": 8,
+      "axeViolations": 0,
+      "googleAndEmailControls": "present",
+      "scope": "Real Clerk HTTPS tenant; app-host GETs supplied by local nginx synthetic API fixture; no actual signin"
+    },
+    "strictCspConfiguredClerk": {
+      "cases": 8,
+      "blockedResources": 0,
+      "scope": "same anonymous local app-host fixture, no real OAuth or payment callback"
+    },
+    "githubCi": {
+      "sourceCommit": "6bcb6584afaa3468337284b5226bb957961e200a",
+      "runId": 38588814538,
+      "jobs": 7,
+      "conclusion": "success",
+      "additionalWorkerPrivacyRunId": 38588815168,
+      "workerPrivacyConclusion": "success"
+    }
   },
   "historicalPreRolloutRum": {
     "observedAt": "2026-10-14T12:18:42.565Z",

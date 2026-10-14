@@ -20,10 +20,11 @@ for template in "$PWD/default.conf.template" /tmp/finco-helm-nginx.template; do
   docker run --rm -d --name finco-recovery-edge-ci \
     -p 127.0.0.1:18080:8080 \
     -e BACKEND_URL=http://127.0.0.1:8000 -e NGINX_RESOLVER=127.0.0.11 \
-    -e FINCO_TRUSTED_TYPES_REPORT_ONLY=false \
+    -e FINCO_TRUSTED_TYPES_REPORT_ONLY=false -e FINCO_STRICT_CSP_MODE=compatibility \
     -v "$PWD/dist:/usr/share/nginx/html:ro" \
     -v "$template:/etc/nginx/templates/default.conf.template:ro" \
     -v "$PWD/security-headers.conf:/etc/nginx/finco-security-headers.conf:ro" \
+  -v "$PWD/node_modules/.cache/finco-security/csp-map.conf.template:/etc/nginx/templates/00-finco-csp.conf.template:ro" \
     nginxinc/nginx-unprivileged:alpine >/dev/null
   ready=false
   for _ in $(seq 1 15); do

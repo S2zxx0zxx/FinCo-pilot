@@ -43,6 +43,8 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 10
           env:
+            - name: FINCO_STRICT_CSP_MODE
+              value: {{ .Values.config.frontendStrictCspMode | default "compatibility" | quote }}
             - name: BACKEND_URL
               value: {{ default (printf "http://%s-backend.%s.svc.cluster.local:%v" (include "fincopilot.fullname" .) .Release.Namespace .Values.backend.service.port) .Values.frontend.backendUrl | quote }}
             - name: FRONTEND_URL

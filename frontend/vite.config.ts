@@ -6,6 +6,7 @@ import { readFile, readdir, writeFile } from 'node:fs/promises'
 import { defineConfig, loadEnv, type IndexHtmlTransformContext } from 'vite'
 import { resolveAppVersion } from './build/version.ts'
 import { localQaSessionPlugin } from './build/local-qa-session.ts'
+import { finalizeSecurityPolicy } from './build/security-policy.ts'
 
 function getFrontendHost(frontendUrl?: string, allowPublicDevelopment = false) {
   const hosts = ['localhost', '127.0.0.1']
@@ -63,17 +64,19 @@ export default defineConfig(async ({ mode }) => {
           if (!context.bundle) return
           const login = Object.values(context.bundle).find(output => output.type === 'chunk' && output.facadeModuleId?.endsWith('/src/pages/login.tsx'))
           const headingFont = Object.values(context.bundle).find(output => output.type === 'asset' && /open-runde-semibold-latin-.+\.woff2$/.test(output.fileName))
+          const bodyFont = Object.values(context.bundle).find(output => output.type === 'asset' && /inter-latin-wght-normal-.+\.woff2$/.test(output.fileName))
           if (!login || login.type !== 'chunk') return
           // Only public sign-in code is hinted. Modulepreload fetches/parses;
           // it does not admit a session, render private UI or fetch finance APIs.
-          const hints = JSON.stringify({ login: `/${login.fileName}`, font: headingFont ? `/${headingFont.fileName}` : null })
-          return [{ tag: 'script', injectTo: 'head', children: `(()=>{const h=${hints};const p=location.pathname;if(!['/','/login','/sign-in'].includes(p))return;try{if(p==='/'&&localStorage.getItem('token'))return}catch{}const add=(rel,href,as)=>{const l=document.createElement('link');l.rel=rel;l.href=href;if(as){l.as=as;l.type='font/woff2';l.crossOrigin='anonymous'}document.head.append(l)};add('modulepreload',h.login);let lang='en';try{lang=new URLSearchParams(location.search).get('lng')||localStorage.getItem('i18nextLng')||'en'}catch{}if(h.font&&/^(en|pt|es|fr|de|it|pl|nl|sk)(-|$)/i.test(lang))add('preload',h.font,'font')})()` }]
+          const hints = JSON.stringify({ login: `/${login.fileName}`, font: headingFont ? `/${headingFont.fileName}` : null, bodyFont: bodyFont ? `/${bodyFont.fileName}` : null })
+          return [{ tag: 'script', injectTo: 'head', children: `(()=>{const h=${hints};const p=location.pathname;if(!['/','/login','/sign-in'].includes(p))return;try{if(p==='/'&&localStorage.getItem('token'))return}catch{}const add=(rel,href,as,integrity)=>{const l=document.createElement('link');l.rel=rel;l.href=href;if(integrity)l.integrity=integrity;if(as){l.as=as;l.type='font/woff2';l.crossOrigin='anonymous'}document.head.append(l)};add('modulepreload',h.login,undefined,h.loginIntegrity);let lang='en';try{lang=new URLSearchParams(location.search).get('lng')||localStorage.getItem('i18nextLng')||'en'}catch{}if(/^(en|pt|es|fr|de|it|pl|nl|sk)(-|$)/i.test(lang)){if(h.bodyFont)add('preload',h.bodyFont,'font');if(h.font)add('preload',h.font,'font')}})()` }]
         },
       },
     }, {
       name: 'finco-pwa-release-version',
       apply: 'build',
       async closeBundle() {
+        await finalizeSecurityPolicy(import.meta.dirname)
         // A changed shell must produce a changed worker and isolated caches.
         // Otherwise browsers never discover frontend-only releases, and a
         // waiting worker can overwrite the active release's offline shell.

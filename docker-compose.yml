@@ -223,6 +223,8 @@ services:
     environment:
       BACKEND_URL: http://backend:8000
       MCP_SERVER_URL: http://mcp-server:8765
+      FINCO_STRICT_CSP_MODE: ${FINCO_STRICT_CSP_MODE:-compatibility}
+      FINCO_TRUSTED_TYPES_REPORT_ONLY: ${FINCO_TRUSTED_TYPES_REPORT_ONLY:-false}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:${FRONTEND_PORT:-3000}}
       APP_VERSION_ROOT: /workspace
       VITE_RAZORPAY_KEY_ID: ${VITE_RAZORPAY_KEY_ID:-}

@@ -1,0 +1,19 @@
+name: Frontend Edge Privacy
+on:
+  pull_request:
+    branches: [main]
+    paths: ['ops/cloudflare/frontend-edge/**', 'frontend/public/**', '.github/workflows/frontend-edge.yml']
+  push:
+    branches: [main]
+    paths: ['ops/cloudflare/frontend-edge/**', 'frontend/public/**', '.github/workflows/frontend-edge.yml']
+permissions:
+  contents: read
+jobs:
+  frontend-edge-privacy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: '22'
+      - run: node --test ops/cloudflare/frontend-edge/worker.test.mjs

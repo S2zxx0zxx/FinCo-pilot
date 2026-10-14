@@ -1,0 +1,40 @@
+{
+  "mode": "local nginx production template, synthetic public config, no real login",
+  "scores": {
+    "performance": 0.77,
+    "accessibility": 1,
+    "best-practices": 1,
+    "seo": 1
+  },
+  "metrics": {
+    "first-contentful-paint": 3183.125,
+    "largest-contentful-paint": 4026.5,
+    "total-blocking-time": 219,
+    "cumulative-layout-shift": 0,
+    "speed-index": 3183.125,
+    "total-byte-weight": 447843
+  },
+  "provenance": "Phase-2 default/local-auth synthetic GET-only fixture; before final SRI metadata; not live or configured provider acceptance",
+  "entryGzipBytes": {
+    "default": 214229,
+    "existingClerkConfigured": 214289
+  },
+  "verification": {
+    "vitestFiles": 121,
+    "vitestTests": 920,
+    "uiVisits": 360,
+    "strictCspLocalCases": 8,
+    "workerPrivacyTests": 7,
+    "configuredClerkBrowser": "pending interrupted run"
+  },
+  "historicalPreRolloutRum": {
+    "observedAt": "2026-10-14T12:18:42.565Z",
+    "metricEvents": 214,
+    "lcpSamples": 137,
+    "inpSamples": 63,
+    "clsSamples": 145,
+    "p75LcpSeconds": 12.416,
+    "p75InpMilliseconds": 272,
+    "p75Cls": 0.003
+  }
+}

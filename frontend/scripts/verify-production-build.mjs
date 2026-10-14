@@ -1,6 +1,7 @@
 /** Production entry regression gate. No network, credentials or private data. */
 import assert from 'node:assert/strict'
 import { readFile, readdir } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
 import { gzipSync } from 'node:zlib'
 import path from 'node:path'
 
@@ -11,6 +12,16 @@ assert.match(html, /name="description"/, 'Description missing')
 const structured = JSON.parse(html.match(/<script type="application\/ld\+json">(.*?)<\/script>/s)?.[1] || '{}')
 assert.equal(structured['@type'], 'WebApplication')
 assert.equal(structured.name, 'FinCo-Pilot')
+
+// Independently check delivered entry bytes, not a temporary bundler chunk.
+for (const match of html.matchAll(/<(?:script|link)[^>]+(?:src|href)="([^"]+)"[^>]+integrity="(sha256-[^"]+)"/g)) {
+  const code = await readFile(path.join(dist, match[1].slice(1)))
+  assert.equal(match[2], `sha256-${createHash('sha256').update(code).digest('base64')}`, 'Stale entry SRI')
+}
+assert.match(html, /integrity="sha256-/)
+const policy = JSON.parse(await readFile('node_modules/.cache/finco-security/policy.json', 'utf8'))
+assert.match(policy.strictCsp, /strict-dynamic/)
+assert(!policy.strictCsp.split('script-src-attr')[0].includes('unsafe-inline'))
 
 const manifest = JSON.parse(await readFile(path.join(dist, '.vite/manifest.json'), 'utf8'))
 const entry = Object.keys(manifest).find(key => manifest[key].isEntry)

@@ -49,11 +49,13 @@ template = template.replace('listen 8080;', `listen 127.0.0.1:${port};`)
   .replaceAll('${NGINX_RESOLVER}', '127.0.0.1')
   .replaceAll('${BACKEND_URL}', backendOrigin)
   .replaceAll('${FINCO_TRUSTED_TYPES_REPORT_ONLY}', process.env.FINCO_TRUSTED_TYPES_REPORT_ONLY === 'true' ? 'true' : 'false')
+const cspMaps = (await readFile('node_modules/.cache/finco-security/csp-map.conf.template', 'utf8')).replaceAll('${FINCO_STRICT_CSP_MODE}', process.env.FINCO_STRICT_CSP_MODE || 'compatibility')
 const localUser = process.getuid?.() === 0 ? 'user root root;' : ''
 const config = `${localUser} daemon off; master_process off; pid ${work}/nginx.pid; error_log ${work}/error.log;
 events { worker_connections 128; }
 http { types { text/html html; text/css css; application/javascript js; application/json json; image/png png; image/svg+xml svg; font/woff2 woff2; text/plain txt; }
 client_body_temp_path ${work}/client; proxy_temp_path ${work}/proxy; fastcgi_temp_path ${work}/fastcgi; uwsgi_temp_path ${work}/uwsgi; scgi_temp_path ${work}/scgi;
+${cspMaps}
 ${template}
 }`
 const configPath = path.join(work, 'nginx.conf')
@@ -95,26 +97,44 @@ try {
     assert.equal(catalog.specVersion, '1.0')
     assert.deepEqual(catalog.entries, [])
 
-    browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] })
+    const proxyUrl = process.env.FINCO_BROWSER_PROXY === 'true' && process.env.HTTPS_PROXY ? new URL(process.env.HTTPS_PROXY) : null
+    const proxy = proxyUrl ? { server: proxyUrl.origin, username: decodeURIComponent(proxyUrl.username), password: decodeURIComponent(proxyUrl.password), bypass: '127.0.0.1,localhost' } : undefined
+    browser = await chromium.launch({ headless: true, args: ['--no-sandbox'], proxy })
     for (const width of [390, 768, 1024, 1440]) {
       for (const reducedMotion of ['no-preference', 'reduce']) {
         const context = await browser.newContext({ viewport: { width, height: 1000 }, reducedMotion, serviceWorkers: 'block' })
+        // Production Clerk keys require the existing authorized browser origin.
+        // Only the app host is served by the local GET-only nginx fixture;
+        // provider HTTPS requests retain their actual host and tenant.
+        const browserOrigin = process.env.FINCO_CONFIGURED_CLERK_CHECK === 'true' ? 'https://fincopilot.app' : origin
+        if (browserOrigin !== origin) await context.route('https://fincopilot.app/**', async route => {
+          const url = new URL(route.request().url())
+          const response = await route.fetch({ url: origin + url.pathname + url.search })
+          await route.fulfill({ response })
+        })
+        await context.addInitScript(() => {
+          window.__fincoCspViolations = []
+          document.addEventListener('securitypolicyviolation', event => window.__fincoCspViolations.push(event.effectiveDirective))
+        })
         const page = await context.newPage()
         const errors = []
         page.on('pageerror', error => errors.push(error.message))
-        await page.goto(origin + '/login', { waitUntil: 'networkidle' })
+        await page.goto(browserOrigin + '/login', { waitUntil: 'networkidle' })
+        await page.locator('input[type=email]').waitFor()
+        if (process.env.FINCO_CONFIGURED_CLERK_CHECK === 'true') assert.equal(await page.getByRole('button', { name: /Google/ }).count(), 1, 'Configured Google login missing')
         await page.evaluate(() => document.fonts.ready)
         await page.waitForTimeout(800)
         assert.equal(await page.locator('main').count(), 1)
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false)
         assert.deepEqual(errors, [])
+        if (process.env.FINCO_STRICT_CSP_MODE === 'enforce') assert.deepEqual(await page.evaluate(() => window.__fincoCspViolations), [], 'Strict CSP blocked an app resource')
         const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()
         assert.deepEqual(axe.violations.map(item => ({ id: item.id, impact: item.impact, targets: item.nodes.map(node => node.target) })), [])
         const resources = await page.evaluate(() => performance.getEntriesByType('resource').map(resource => ({ name: new URL(resource.name).pathname, transfer: resource.transferSize, decoded: resource.decodedBodySize })))
         assert(!resources.some(resource => /app-layout|CartesianChart|chat-panel|pt-BR/.test(resource.name)), 'Signed-out page loaded a private/heavy module')
         if (width < 1024) assert(!resources.some(resource => /auth-brand-panel/.test(resource.name)), 'Hidden desktop decoration loaded on mobile')
         if (reducedMotion === 'no-preference' && [390, 1440].includes(width)) await page.screenshot({ path: path.join(output, `${width}.png`), fullPage: true })
-        await page.locator('input[type=email]').focus()
+          await page.locator('input[type=email]').focus()
         // Preserve the actual visible order: email, verification link, recovery
         // link, password. Do not change product navigation to satisfy a test.
         for (const selector of ['a[href="/request-verification"]', 'a[href="/forgot-password"]', 'input[type=password]']) {

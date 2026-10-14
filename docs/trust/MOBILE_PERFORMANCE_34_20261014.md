@@ -38,6 +38,59 @@ Static caches do not include financial APIs or credential-bearing recovery pages
   public development needs FINCO_ALLOW_PUBLIC_DEV_SERVER=true and a specific host.
   Do not use this opt-in as the fix for production.
 
+## Resumed completion — phase 2
+
+The interrupted worktree was recovered without overwriting the branch. Phase 1
+is commit e43a837; the changes below are the remaining implementation on the same
+branch. Main is unchanged. The earlier DOWN/530 observation is historical:
+at the latest pre-rollout check the existing Tunnel was healthy with four
+connections and served HTTP 200, but its frontend still served Vite development.
+The existing DNS and Tunnel ingress have not been changed.
+
+- Clerk provider and Clerk login/register/guard implementations now load at
+  explicit boundaries; existing tenant and auth options are preserved. The same
+  live public Clerk publishable key is configured only for this preview branch.
+- Anonymous auth pages no longer fetch unused billing catalog/campaign data;
+  pricing, authenticated entitlements and upgrade-dialog behavior remain tested.
+  Upgrade UI loads when first requested and remains mounted for close animation.
+- Desktop blur effects retain their original parameters using LazyMotion.
+  A build-derived Inter Latin body-font hint reduces the text-render waterfall.
+- SRI hashes are computed from final on-disk Vite bytes for entry scripts,
+  modulepreloads and the hinted login chunk. The PWA hashes the finalized HTML.
+  An independent build guard rejects stale integrity. Artifact-bound nginx and
+  Helm strict CSP enforce/report-only profiles are available; compatibility
+  remains default pending real Clerk/OAuth/payment and edge-RUM acceptance.
+  Trusted Types enforcement remains off; no permissive default policy is added.
+- Cloudflare scoped cache safety rules and HTTPS HSTS/nosniff have been applied
+  and read back. Exact before/applied/rollback policy is in
+  cloudflare-mobile-policy-20261014.json. No unrelated zone rules were replaced.
+- Existing Cloudflare RUM was already enabled; it is retained. The pre-rollout
+  24-hour aggregate at 2026-10-14T12:18:42.565Z contains 214 metric events,
+  LCP samples 137, INP 63 and CLS 145. p75 LCP 12.416 s, INP 272 ms,
+  CLS 0.003. LCP/INP API values are microseconds. Events are not visitors;
+  these historical dev-origin results do not measure the optimized deployment.
+- A streaming Cloudflare frontend proxy is implemented and privacy-tested.
+  Its immutable verified Vercel artifact serves public assets while exact
+  same-origin API requests continue through the unchanged Tunnel. Frontend
+  subrequests omit cookies, authorization, query tokens and private paths.
+  It has no storage bindings or request logs. Rollout remains a separate
+  acceptance gate: implementation is not evidence of deployment.
+
+Phase-2 verification before interruption: 121 Vitest files / 920 tests passed,
+360 UI route/viewport/theme visits passed, PWA privacy/offline/update checks passed,
+and strict CSP enforcement passed eight local viewport/motion cases with zero
+blocked resources and zero axe violations. Entry static graph is 214,229 gzip
+bytes without Clerk config and 214,289 with the existing public Clerk config,
+17 chunks, below the 300 KiB budget. Native Worker privacy tests: seven passed.
+The final configured-Clerk browser run was interrupted without a result and is
+not counted as passed. Real provider transactions remain unverified.
+
+Latest isolated phase-2 local lab (synthetic public config, not live PSI):
+performance 77, accessibility 100, Best Practices 100, SEO 100, FCP 3.183 s,
+LCP 4.027 s, TBT 219 ms, CLS 0, transfer 447,843 bytes. It preceded the final SRI
+metadata pass; no performance claim is made for the configured provider profile.
+Scores vary; LCP still exceeds 2.5 s and TBT exceeds 200 ms.
+
 ## 34-point ledger
 
 Status: **Implemented** means committed source and local verification, not live
@@ -51,7 +104,7 @@ No claim that 34 independent issues are all resolved or that performance is 100.
 | 2 | HMR/WebSocket errors on public domain | Development client expected a local HMR socket. Production HTML has no Vite client/source entry; public dev host requires explicit opt-in. | Implemented; build gate and nginx browser checks pass. Live retest external. |
 | 3 | Unminified JavaScript | Vite production already minified; wrong serving mode caused the source report. Enforce actual production output rather than add redundant minifier. | Build passes; hashed JS, no public sourcemaps or dev HTML. |
 | 4 | Excessive initial transfer | Private shell, desktop decoration, locales and whole fonts loaded initially. Split actual import boundaries and fonts. | Measured signed-out payload reduction; comparison below. No resource deleted. |
-| 5 | Unused initial JavaScript | Signed-out page statically imported private application code. Lazy AppLayout remains inside ProtectedRoute. | Entry graph 247,082 gzip bytes, 17 chunks; 300 KiB gate. Remaining library overhead retained. |
+| 5 | Unused initial JavaScript | Signed-out page statically imported private application code. Lazy AppLayout remains inside ProtectedRoute. | Phase-2 entry graph 214,229 gzip bytes, 17 chunks; 300 KiB gate. Remaining library overhead retained. |
 | 6 | Recharts on login | AppLayout pulled chart modules into public entry. Preserve charts, load after authenticated shell. | Build traversal/browser resource checks exclude CartesianChart/private shell from signed-out login. |
 | 7 | Motion/decorative loading | Hidden desktop brand still imported effects on mobile. Load AuthBrandPanel only at existing 1024px breakpoint. | 390/768px checks exclude brand chunk; effects remain on desktop. Shared form Motion retained. |
 | 8 | Icon library overhead | Import graph rather than deleting icons; retain Vite tree-shaking and private shell isolation. | Build gate, 360 route checks pass. No claim that every used icon byte can be removed. |
@@ -66,21 +119,21 @@ No claim that 34 independent issues are all resolved or that performance is 100.
 | 17 | Full heading fonts | Whole 162,732-byte semibold font on Latin login. Disjoint Latin/Europe/other WOFF2 subsets, hashed asset caching. | Latin semibold 67,648 bytes; generator checks all 2,512 codepoints, outlines and advances for all 4 weights. Originals/OFL retained. |
 | 18 | Cache/compression policy | Static content and credentials need different policies; nginx add_header inheritance could drop security. | Actual nginx checks: hashed assets immutable, HTML/SW/recovery/API no-store, missing files 404; gzip enabled. Helm/Vercel source validated; live edge external. |
 | 19 | Forced reflow | Browser layout work must be measured, not blindly rewrite UI. Preserve behavior and inspect lab trace. | Latest local forced-reflow audit passes; this does not certify all interactions/routes. |
-| 20 | Cloudflare legacy beacon | Source report includes edge-injected external analytics. Not application code; removal would change analytics. | Provider retained. Current local legacy-JS audit passes; live provider investigation external. |
+| 20 | Cloudflare legacy beacon | Source report includes edge-injected external analytics. Not application code; removal would change analytics. | Provider retained; existing Cloudflare RUM collector/rules verified enabled. Historical field aggregates recorded above. No claim of controlling the vendor’s legacy bundle. |
 | 21 | Missing main landmark | AuthShell used a div. Replace outer element with semantic main without changing classes/layout. | One main; axe WCAG AA zero violations across 8 screen/motion cases. |
 | 22 | Missing description | index.html lacked summary metadata. Add honest app description. | Production HTML guard and local SEO audit pass. |
 | 23 | robots timeout/invalid discovery | Missing static file/fallback and unavailable origin. Add robots, block private endpoints, keep catalog discovery in HTML. | Actual nginx text/plain 200; local Lighthouse robots audit passes. Live timeout requires restored tunnel. |
 | 24 | llms.txt timeout | Static public app description absent/unavailable. Add factual llms text without private data. | Actual nginx text/plain 200; no SPA HTML fallback. Live fetch external. |
 | 25 | Catalog HTML/schema error | Machine route returned shell/incorrect content. Add well-known static ARD v1 catalog + alias, entries=[] for no verified public capability. | Actual Lighthouse 13.5 schema validator accepts; nginx application/json 200. No fake agent API advertised. |
 | 26 | CSP missing | Add enforced compatibility baseline, object/base/frame restrictions, provider HTTPS access. | Headers verified. unsafe-inline/https remain; strict script CSP needs real provider acceptance. Not a strict-XSS certification. |
-| 27 | HSTS missing | Add max-age=31536000 on trusted forwarded HTTPS; no indiscriminate subdomain/preload changes. | Actual nginx HTTPS-forwarded header pass; absent on plain HTTP. Edge deployment external. |
+| 27 | HSTS missing | Add max-age=31536000 on trusted forwarded HTTPS; no indiscriminate subdomain/preload changes. | Actual nginx HTTPS-forwarded header pass; absent on plain HTTP. Cloudflare HTTPS HSTS/nosniff policy applied and read back; frontend rollout acceptance tracked separately. |
 | 28 | COOP missing | same-origin-allow-popups protects baseline while allowing existing OAuth/payment popups. | Actual header pass; full cross-origin isolation not enabled. Real Google/Clerk/payments external. |
 | 29 | Frame/clickjacking protection | Add X-Frame-Options DENY and CSP frame-ancestors none across locations. | Actual HTML/JS/SW/discovery header tests pass; embedding deliberately disallowed. |
 | 30 | Trusted Types missing | Enforcement can break provider/editor/PDF DOM sinks. Add explicit nginx/Helm opt-in report-only staging mode; default off to avoid unsolicited inspector issues. | Reporting configuration present; NO enforcement/completion claim. Real compatibility and reviewed policy external. |
 | 31 | Filter/blur animation observation | Deleting effects would change UI. Preserve animation and load hidden desktop component only when displayed. | Settled before/after screenshot comparison 0 differing pixels at 390/1440; reduced-motion browser checks pass. |
 | 32 | Keyboard/assistive technology | Preserve visible tab sequence; animated heading generic aria-label caused a desktop axe issue. Use sr-only text + aria-hidden animated words. | 8 axe cases zero violations, keyboard order pass. Physical TalkBack/VoiceOver external. |
 | 33 | Structured data | Add factual WebApplication JSON-LD, no invented prices/reviews. | Build JSON parse/type/name checks and local SEO pass; rich-result eligibility not promised. |
-| 34 | No field vitals / CrUX | Traffic cannot be simulated into CrUX. Add explicit opt-in lazy CLS/INP/LCP local summary events without URL/query/account/financial data. | Unit tests pass; no collector/network destination invented. Collector review, real traffic, field acceptance external. |
+| 34 | No field vitals / CrUX | Traffic cannot be simulated into CrUX. Add explicit opt-in lazy CLS/INP/LCP local summary events without URL/query/account/financial data. | Unit tests pass; no collector/network destination invented. Existing Cloudflare RUM verified and pre-rollout p75 aggregates recorded above. New-deployment field acceptance and CrUX require subsequent real traffic. |
 
 ## Final paired local laboratory result
 

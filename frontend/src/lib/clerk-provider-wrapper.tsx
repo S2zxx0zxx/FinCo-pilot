@@ -1,22 +1,13 @@
-import { type ReactNode } from 'react'
-import { ClerkProvider } from '@clerk/clerk-react'
+import { lazy, Suspense, type ReactNode } from 'react'
+import { FinCoRouteLoader } from '@/transitions/finco-route-loader'
+const ConfiguredClerkProvider = lazy(() => import('./clerk-provider'))
 
-import { CLERK_PUBLISHABLE_KEY, isClerkConfigured } from './clerk-config'
+import { isClerkConfigured } from './clerk-config'
 
 export function ClerkProviderWrapper({ children }: { children: ReactNode }) {
   if (!isClerkConfigured) {
     return <>{children}</>
   }
 
-  return (
-    <ClerkProvider
-      publishableKey={CLERK_PUBLISHABLE_KEY}
-      signInUrl="/login"
-      signUpUrl="/sign-up"
-      signInFallbackRedirectUrl="/"
-      signUpFallbackRedirectUrl="/"
-    >
-      {children}
-    </ClerkProvider>
-  )
+  return <Suspense fallback={<FinCoRouteLoader />}><ConfiguredClerkProvider>{children}</ConfiguredClerkProvider></Suspense>
 }

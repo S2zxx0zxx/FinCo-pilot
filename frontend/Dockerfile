@@ -29,6 +29,7 @@ FROM nginxinc/nginx-unprivileged:alpine
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY default.conf.template /etc/nginx/templates/default.conf.template
 COPY security-headers.conf /etc/nginx/finco-security-headers.conf
+COPY --from=build /app/node_modules/.cache/finco-security/csp-map.conf.template /etc/nginx/templates/00-finco-csp.conf.template
 
 # Have the image derive the DNS resolver from /etc/resolv.conf, so the same
 # image proxies to the backend on Docker, Podman, Kubernetes and Railway with
@@ -37,6 +38,7 @@ COPY security-headers.conf /etc/nginx/finco-security-headers.conf
 # NGINX_RESOLVER explicitly still overrides both.
 ENV NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1
 ENV FINCO_TRUSTED_TYPES_REPORT_ONLY=false
+ENV FINCO_STRICT_CSP_MODE=compatibility
 COPY --chmod=755 docker-entrypoint.d/19-resolver.envsh /docker-entrypoint.d/
 
 EXPOSE 8080

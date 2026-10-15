@@ -6,7 +6,7 @@ Marketing only. This package does not replace or import the authenticated Vite a
 
 - Node 22; from landing/: npm install; npm run dev; npm run verify.
 - Root directory for any separate preview Vercel project: landing.
-- Preview builds are **noindex**. Only explicit `NEXT_PUBLIC_MARKETING_INDEXABLE=true` in a Vercel production deployment enables indexing after domain ownership and URL strategy are approved.
+- Preview builds are **noindex**. Indexing requires all three: `VERCEL_ENV=production`, explicit `NEXT_PUBLIC_MARKETING_INDEXABLE=true`, and an approved owned HTTPS origin in `NEXT_PUBLIC_MARKETING_URL`. Missing/invalid publication configuration fails closed. Do not enable before host, content and CTA acceptance.
 - The CI-generated reviewed package-lock.json is committed; CI now uses deterministic npm ci.
 - Public-only environment variable NEXT_PUBLIC_FINCO_APP_URL points to the existing authenticated application origin. Default: https://fincopilot.app. Never configure secrets or provider keys here.
 
@@ -45,3 +45,13 @@ Browser tools (Playwright, axe-core, Lighthouse) are pinned in the lockfile; CI 
 ## 13 October refinement
 
 See docs/DESIGN_SELECTION_20261013.md and docs/SPACEUI_PREVIEW_REVIEW_20261013.json for current preview outcomes and exact source selections. Meter, Timeline, Separator and callback-ref useInView are direct-source adaptations. A fresh `.next` production build is used for final acceptance; stale local route caches must not be treated as evidence for a new revision. No added runtime dependencies.
+
+## Organic discovery implementation (PR #89)
+
+Four static public candidates: home, /features, /how-it-works, /guides/import-transactions. They preserve the existing app destinations and do not query finance APIs or load analytics. Documentation is source-backed review copy with deployment/permission limitations; not a production-readiness claim.
+
+The approved marketing origin determines canonical, OpenGraph, WebSite/Breadcrumb URLs and sitemap. Preview builds remain noindex/nofollow with an empty sitemap and disallow-all robots. Explicit production fixtures generate only the four fixed public URLs, with no invented lastmod or private paths. The restrictive crawler list preserves observed training/user-agent policy; review edge policy before release.
+
+`node scripts/verify-discovery.mjs` validates actual prerendered bytes for the current build environment. `node tests/discovery-browser.mjs` covers documentation mobile/keyboard/axe/no-JS/no-external-request behavior against a local running production build. `node tests/scorecard-browser.mjs` validates the local report dashboard. CI tests excluded-preview and explicit-production fixture builds without deployment.
+
+The pure attribution helper is not connected to a collector. Any actual tracking needs verified consent, property ownership and a reviewed minimal event specification. See docs/growth in the repository root for the ledger, blockers and operations.

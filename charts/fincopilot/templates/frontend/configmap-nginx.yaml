@@ -147,6 +147,7 @@ data:
             try_files $uri =404;
         }
         location = /robots.txt { default_type text/plain; try_files $uri =404; }
+        location = /sitemap.xml { default_type application/xml; try_files $uri =404; }
         location = /llms.txt { default_type text/plain; try_files $uri =404; }
         location = /.well-known/ai-catalog.json { default_type application/json; try_files $uri =404; }
         location = /ai-catalog.json { default_type application/json; try_files $uri =404; }

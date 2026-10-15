@@ -124,6 +124,9 @@ server {
 
     # Machine-readable endpoints must never fall through to the SPA shell.
     location = /robots.txt { default_type text/plain; try_files $uri =404; }
+    # No eligible public sitemap belongs to the private app. Never return SPA
+    # HTML disguised as a successful XML document; marketing owns its sitemap.
+    location = /sitemap.xml { default_type application/xml; try_files $uri =404; }
     location = /llms.txt { default_type text/plain; try_files $uri =404; }
     location = /.well-known/ai-catalog.json { default_type application/json; try_files $uri =404; }
     location = /ai-catalog.json { default_type application/json; try_files /.well-known/ai-catalog.json =404; }

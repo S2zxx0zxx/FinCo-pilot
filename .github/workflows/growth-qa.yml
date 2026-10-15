@@ -1,0 +1,76 @@
+name: Growth privacy and reporting
+on:
+  pull_request:
+    paths:
+      - 'scripts/growth*.py'
+      - 'scripts/test_growth*.py'
+      - 'docs/growth/**'
+      - '.github/workflows/growth-qa.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/growth*.py'
+      - 'scripts/test_growth*.py'
+      - 'docs/growth/**'
+      - '.github/workflows/growth-qa.yml'
+permissions:
+  contents: read
+jobs:
+  growth-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.12'
+      - name: Verify offline public-probe and report privacy contracts
+        run: python3 -m unittest discover -s scripts -p 'test_growth*.py' -v
+      - name: Verify complete task ledger and unknown baseline
+        run: |
+          python3 - <<'PY'
+          import csv
+          from pathlib import Path
+          import sys
+          sys.path.insert(0, 'scripts')
+          from growth_report import build_report
+          rows = list(csv.DictReader(Path('docs/growth/TASK_REGISTER.csv').open()))
+          assert [row['id'] for row in rows] == [f'ORG-{n:03}' for n in range(1, 53)]
+          assert all(row['next_action'] and row['evidence_scope'] for row in rows)
+          assert all(metric['value'] is None for metric in build_report()['metrics'].values())
+          print('PASS: 52 tracked tasks; no fabricated outcome baseline')
+          PY
+
+  product-proof:
+    name: Synthetic manual-account and import proof
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      DEPLOYMENT_ENVIRONMENT: development
+      SECRET_KEY: synthetic-growth-ci-only-signing-key-not-for-deployment
+      CREDENTIALS_DIRECTORY: ''
+      AGENTS_ENABLED: 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version-file: backend/.python-version
+          cache: pip
+      - name: Install existing locked product-test dependencies
+        run: |
+          pip install -q uv==0.12.10
+          uv export --frozen --all-extras --no-emit-project -o /tmp/finco-growth-product.txt
+          pip install --require-hashes -r /tmp/finco-growth-product.txt
+          pip install --no-deps -e .
+      - name: Prove manual accounts and transaction preview/import with synthetic fixtures
+        # App config keeps its valid PostgreSQL default; no app lifespan is started.
+        # Existing conftest overrides sessions with in-memory SQLite and synthetic identities.
+        # This does not contact production or certify external identity/payment providers.
+        run: pytest -ra -W error tests/test_accounts_api.py tests/test_import_api.py tests/test_import_service.py

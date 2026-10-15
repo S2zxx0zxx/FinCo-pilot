@@ -14,7 +14,7 @@
       "destination": "/.well-known/ai-catalog.json"
     },
     {
-      "source": "/((?!welcome(?:/|$)|api(?:/|$)|mcp(?:/|$)|static(?:/|$)|src(?:/|$)|node_modules(?:/|$)|@vite(?:/|$)|\\.vite(?:/|$)|\\.well-known(?:/|$)|robots\\.txt$|llms\\.txt$).*)",
+      "source": "/((?!welcome(?:/|$)|api(?:/|$)|mcp(?:/|$)|static(?:/|$)|src(?:/|$)|node_modules(?:/|$)|@vite(?:/|$)|\\.vite(?:/|$)|\\.well-known(?:/|$)|sitemap\\.xml$|robots\\.txt$|llms\\.txt$).*)",
       "destination": "/index.html"
     }
   ],

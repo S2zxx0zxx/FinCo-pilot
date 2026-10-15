@@ -38,7 +38,10 @@ for template in "$PWD/default.conf.template" /tmp/finco-helm-nginx.template; do
     grep -qi '^Cache-Control: no-store' /tmp/finco-edge-headers
     grep -qi '^Referrer-Policy: no-referrer' /tmp/finco-edge-headers
     grep -q 'FinCo-Pilot' /tmp/finco-edge-body
+    grep -q 'name="robots" content="noindex"' /tmp/finco-edge-body
   done
+  code=$(curl -sS -o /dev/null -w '%{http_code}' 'http://127.0.0.1:18080/sitemap.xml')
+  [ "$code" = '404' ]
   mv dist/index.html dist/index.html.recovery-ci
   code=$(curl -sS -D /tmp/finco-edge-headers -o /dev/null -w '%{http_code}' \
     'http://127.0.0.1:18080/reset-password?token=synthetic-recovery-query-marker')

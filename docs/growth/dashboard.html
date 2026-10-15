@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>FinCo-Pilot organic growth scorecard</title>
+<style>
+  :root{color-scheme:dark;font:16px/1.6 system-ui,sans-serif;background:#101716;color:#f0f5ef}body{max-width:1050px;margin:auto;padding:32px 20px}h1{font-size:clamp(28px,5vw,44px);line-height:1.2}h2{font-size:22px}p{max-width:80ch;color:#c0ccc2}a{color:#c5f4a5}label{display:block;font-weight:600}input,button{font:inherit;max-width:100%;margin:12px 0;padding:12px;border:1px solid #79917f;border-radius:8px}button{background:#c5f4a5;color:#112019;cursor:pointer}input:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid #f2d881;outline-offset:3px}.panel{padding:22px;border:1px solid #53655a;border-radius:14px;margin:24px 0}.table-scroll{overflow:auto}table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:12px;border-bottom:1px solid #53655a}th{color:#c5f4a5}.unknown{color:#d7dfd4}#status{min-height:2em}small{color:#becabd}footer{margin-top:32px;border-top:1px solid #53655a;padding-top:20px}
+</style>
+<header><p>FINCO-PILOT / ORGANIC GROWTH</p><h1>Evidence before outcomes</h1><p>This review dashboard starts with unknown values. Import a report generated locally from authorized aggregate exports. It does not connect to your accounts or show live production analytics.</p></header>
+<main>
+  <section class="panel" aria-labelledby="import-heading"><h2 id="import-heading">Load a sanitized report</h2><label for="report">Report JSON (up to 1 MiB)</label><input id="report" type="file" accept="application/json,.json"><button id="clear" type="button">Clear report</button><p id="status" role="status" aria-live="polite">No account data loaded.</p><small>Local processing only. No external scripts, network requests, uploads or persistent browser storage.</small></section>
+  <section aria-labelledby="metrics-heading"><h2 id="metrics-heading">Outcome scorecard</h2><p id="period">Reporting interval: unknown</p><div class="table-scroll" tabindex="0" role="region" aria-label="Growth metrics"><table><caption>Unknown is not zero. Export-derived values retain their reporting limitations.</caption><thead><tr><th scope="col">Metric</th><th scope="col">Value</th><th scope="col">Evidence status</th></tr></thead><tbody id="metrics"></tbody></table></div></section>
+  <section class="panel" aria-labelledby="comparison-heading"><h2 id="comparison-heading">Comparable-period review</h2><p id="comparison-status">No comparable-period report loaded. Missing evidence is not growth.</p><ul id="comparison-values"></ul></section>
+  <section class="panel" aria-labelledby="limits-heading"><h2 id="limits-heading">Interpretation</h2><ul><li>GSC/Bing impressions are not visits or users.</li><li>Search totals cover exported query rows; they may exclude anonymized or truncated rows.</li><li>Signup and activation rates require the same deduplicated, consent-eligible cohort.</li><li>AI referrals and actual citations are different measures.</li><li>Passing CI, deployment, live verification and observed business results are separate stages.</li></ul></section>
+</main>
+<footer><a href="https://github.com/S2zxx0zxx/FinCo-pilot/pull/89">Review the implementation and task ledger in PR #89</a></footer>
+<script>
+  'use strict';
+  const labels={google_clicks:'Google clicks',google_impressions:'Google impressions',google_brand_clicks:'Google branded clicks',google_nonbrand_clicks:'Google nonbrand clicks',bing_clicks:'Bing clicks',bing_impressions:'Bing impressions',bing_brand_clicks:'Bing branded clicks',bing_nonbrand_clicks:'Bing nonbrand clicks',organic_visits:'Organic visits',organic_signups:'Organic signups',organic_activated:'Activated organic signups',signup_conversion_rate:'Signup conversion rate',activation_rate:'Activation rate',observed_ai_citations:'Observed AI citations'};
+  const table=document.getElementById('metrics'),status=document.getElementById('status'),file=document.getElementById('report');
+  function render(report){
+    table.replaceChildren();
+    for(const [key,label] of Object.entries(labels)){
+      const metric=report?.metrics?.[key]??{value:null,status:'unknown'};
+      if(!['unknown','export-derived'].includes(metric.status)||!(metric.value===null||typeof metric.value==='number'&&Number.isFinite(metric.value)&&metric.value>=0))throw Error('Invalid metric');
+      if(metric.status==='unknown'&&metric.value!==null)throw Error('Unknown values must be null');
+      if(key.endsWith('_rate')&&metric.value!==null&&metric.value>1)throw Error('Invalid rate');
+      if(!key.endsWith('_rate')&&metric.value!==null&&!Number.isSafeInteger(metric.value))throw Error('Invalid count');
+      const row=document.createElement('tr');
+      for(const text of [label,metric.value===null?'Unknown':key.endsWith('_rate')?(metric.value*100).toFixed(2)+'%':metric.value.toLocaleString('en'),metric.status]){const cell=document.createElement('td');cell.textContent=text;row.append(cell)}
+      table.append(row);
+    }
+    const comparison=report?.comparison, comparisonStatus=document.getElementById('comparison-status'), comparisonList=document.getElementById('comparison-values');
+    comparisonList.replaceChildren();
+    comparisonStatus.textContent='No comparable-period report loaded. Missing evidence is not growth.';
+    if(comparison){
+      if(!['not-comparable','comparable-by-supplied-contract'].includes(comparison.status)||!comparison.metrics||typeof comparison.metrics!=='object')throw Error('Invalid comparison');
+      comparisonStatus.textContent=comparison.status==='not-comparable'?'Periods are not comparable. No growth conclusion is available.':'Descriptive changes from operator-confirmed comparable periods; this does not prove causal uplift.';
+      for(const [key,metric] of Object.entries(comparison.metrics)){
+        if(!Object.hasOwn(labels,key)||!metric||!['unknown','export-derived'].includes(metric.status))throw Error('Invalid comparison metric');
+        for(const field of ['current','previous','absolute_change','relative_change','percentage_point_change'])if(!(metric[field]===null||typeof metric[field]==='number'&&Number.isFinite(metric[field])))throw Error('Invalid comparison value');
+        if(comparison.status==='not-comparable'&&[metric.absolute_change,metric.relative_change,metric.percentage_point_change].some(value=>value!==null))throw Error('Unsupported change');
+        if(metric.status==='unknown'&&[metric.absolute_change,metric.relative_change,metric.percentage_point_change].some(value=>value!==null))throw Error('Unknown change');
+        if(metric.absolute_change===null)continue;
+        if(metric.status!=='export-derived'||metric.current===null||metric.previous===null||metric.current<0||metric.previous<0||Math.abs(metric.current-metric.previous-metric.absolute_change)>1e-9)throw Error('Inconsistent change');
+        if(key.endsWith('_rate')){if(metric.current>1||metric.previous>1||metric.percentage_point_change===null||Math.abs(metric.percentage_point_change-metric.absolute_change*100)>1e-9)throw Error('Invalid rate change')}
+        else if(![metric.current,metric.previous,metric.absolute_change].every(Number.isSafeInteger)||metric.percentage_point_change!==null)throw Error('Invalid count change');
+        if(metric.previous===0?metric.relative_change!==null:metric.relative_change===null||Math.abs(metric.relative_change-metric.absolute_change/metric.previous)>1e-9)throw Error('Invalid relative change');
+        if(metric.current!==report.metrics[key]?.value)throw Error('Comparison does not match report');
+        const item=document.createElement('li'),change=key.endsWith('_rate')?metric.percentage_point_change.toFixed(2)+' percentage points':metric.absolute_change.toLocaleString('en');
+        item.textContent=labels[key]+': '+(metric.absolute_change>0?'+':'')+change+(metric.previous===0?' (zero baseline; percentage change undefined)':'');
+        comparisonList.append(item);
+      }
+    }
+    const period=report?.period;
+    if(period?.start&&period?.end&&/^\d{4}-\d{2}-\d{2}$/.test(period.start)&&/^\d{4}-\d{2}-\d{2}$/.test(period.end))document.getElementById('period').textContent='Reporting interval: '+period.start+' to '+period.end;
+    else document.getElementById('period').textContent='Reporting interval: unknown';
+  }
+  file.addEventListener('change',async()=>{try{const selected=file.files[0];if(!selected)return;if(selected.size>1048576)throw Error('Too large');const report=JSON.parse(await selected.text());if(report.schema_version!==1||!report.metrics)throw Error('Unknown report format');render(report);status.textContent='Sanitized report loaded locally. Export-derived data is not independently verified.'}catch{render(null);status.textContent='Report rejected. Use the documented sanitized aggregate report format.'}});
+  document.getElementById('clear').addEventListener('click',()=>{file.value='';render(null);status.textContent='No account data loaded.'});render(null);
+</script>
+</html>

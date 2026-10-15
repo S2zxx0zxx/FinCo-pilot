@@ -32,7 +32,7 @@ services:
   backend:
     build: ./backend
     restart: unless-stopped
-    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --no-access-log --host 0.0.0.0 --port 8000"
     environment:
       DEPLOYMENT_ENVIRONMENT: development
       DATABASE_URL: postgresql+asyncpg://fincoqa:${FINCO_QA_DB_PASSWORD:?}@db:5432/fincopa

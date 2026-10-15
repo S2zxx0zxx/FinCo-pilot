@@ -40,6 +40,7 @@ spec:
           imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
           command:
             - uvicorn
+            - --no-access-log
             - app.main:app
             - --host
             - 0.0.0.0

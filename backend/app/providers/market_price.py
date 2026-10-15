@@ -250,7 +250,7 @@ class YFinanceProvider(MarketPriceProvider):
         except _rate_limit_exception_types():
             raise MarketPriceRateLimitedError("Yahoo Finance rate-limited the search")
         except Exception as e:  # pragma: no cover — upstream flakiness, not logic
-            logger.warning("yfinance search failed for %r: %s", query, e)
+            logger.warning("yfinance search failed (%s)", type(e).__name__)
             return []
 
     @staticmethod
@@ -284,7 +284,7 @@ class YFinanceProvider(MarketPriceProvider):
                 # unable to distinguish "no data" from "request blew up".
             )
         except Exception as e:  # pragma: no cover — upstream flakiness
-            logger.warning("yfinance batch download failed for %d symbols: %s", len(symbols), e)
+            logger.warning("yfinance batch download failed (%s)", type(e).__name__)
             return out
 
         if df is None or df.empty:
@@ -358,7 +358,7 @@ class YFinanceProvider(MarketPriceProvider):
                 f"Yahoo Finance rate-limited while quoting {symbol}"
             )
         except Exception as e:  # pragma: no cover
-            logger.warning("yfinance quote failed for %s: %s", symbol, e)
+            logger.warning("yfinance quote failed (%s)", type(e).__name__)
             return None
 
 

@@ -568,20 +568,16 @@ class PluggyProvider(BankProvider):
                     pass
                 code_desc = str(body.get("codeDescription") or "").upper()
                 logger.info(
-                    "Pluggy refresh rejected for item %s (code=%s): %s",
-                    item_id,
-                    code_desc or "<no code>",
-                    trigger_resp.text[:200],
+                    "Pluggy refresh rejected (status=%s; user_action=%s)",
+                    trigger_resp.status_code,
+                    code_desc in _PLUGGY_REFRESH_USER_ACTION_CODES,
                 )
                 if code_desc in _PLUGGY_REFRESH_USER_ACTION_CODES:
                     return "needs_user_action"
                 return "failed"
             if trigger_resp.status_code >= 400:
                 logger.warning(
-                    "Pluggy refresh returned %s for item %s: %s",
-                    trigger_resp.status_code,
-                    item_id,
-                    trigger_resp.text[:200],
+                    "Pluggy refresh failed (status=%s)", trigger_resp.status_code,
                 )
                 return "failed"
 

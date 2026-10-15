@@ -124,7 +124,7 @@ async def exchange_clerk_session(
     try:
         verified = await verify_clerk_session_auto(payload.token)
     except ClerkTokenError as exc:
-        logger.warning("Clerk session token verification failed: %s", exc)
+        logger.warning("Clerk session token verification failed (%s)", type(exc).__name__)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired Clerk session token",

@@ -199,7 +199,7 @@ services:
   backend:
     <<: *backend-base
     command:
-      sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port
+      sh -c "alembic upgrade head && uvicorn app.main:app --no-access-log --host 0.0.0.0 --port
       8000 --reload"
     ports:
       - "${BACKEND_PORT:-8000}:8000"
@@ -257,7 +257,7 @@ services:
   mcp-server:
     <<: *backend-base
     profiles: [agents]
-    command: uvicorn mcp_server.main:app --host 0.0.0.0 --port 8765
+    command: uvicorn mcp_server.main:app --no-access-log --host 0.0.0.0 --port 8765
     ports:
       - "${AGENTS_MCP_EXTERNAL_HOST_PORT:-127.0.0.1:8765}:8765"
 

@@ -217,7 +217,7 @@ services:
       python -m scripts.verify_production_postgres &&
       python -m scripts.verify_production_redis --redis-only &&
       python -m scripts.verify_production_object_storage &&
-      uvicorn app.main:app --host 0.0.0.0 --port 8000"
+      uvicorn app.main:app --no-access-log --host 0.0.0.0 --port 8000"
     # Loopback-only diagnostics. Public traffic must reach the backend through
     # the bundled frontend/reverse proxy so trusted-proxy rate limiting cannot
     # be bypassed with spoofed X-Forwarded-For headers.
@@ -303,7 +303,7 @@ services:
   mcp-server:
     <<: *backend-base
     profiles: [agents]
-    command: uvicorn mcp_server.main:app --host 0.0.0.0 --port 8765
+    command: uvicorn mcp_server.main:app --no-access-log --host 0.0.0.0 --port 8765
     ports:
       - "${AGENTS_MCP_EXTERNAL_HOST_PORT:-127.0.0.1:8765}:8765"
 

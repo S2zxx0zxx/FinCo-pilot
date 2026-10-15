@@ -1,0 +1,775 @@
+{
+  "scope": "Source logger calls only. Not third-party/runtime log sink attestation. Templates contain no runtime values.",
+  "sites": [
+    {
+      "path": "backend/app/agents/api/chat.py",
+      "line": 104,
+      "level": "error",
+      "template": "Agent chat stream failed (%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/agents/api/conversations.py",
+      "line": 161,
+      "level": "error",
+      "template": "title generation failed for conversation %s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/agents/mcp/client.py",
+      "line": 171,
+      "level": "warning",
+      "template": "Configured MCP server unreachable (%s). Its tools are unavailable for this conversation.",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/agents/mcp/client.py",
+      "line": 233,
+      "level": "warning",
+      "template": "Configured MCP server unreachable (%s) while resolving a tool.",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/agents/runtime/executor.py",
+      "line": 785,
+      "level": "warning",
+      "template": "Tool call failed (kind=%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/agents/runtime/executor.py",
+      "line": 480,
+      "level": "warning",
+      "template": "MCP discovery failed; running without tools",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/agents/runtime/executor.py",
+      "line": 554,
+      "level": "warning",
+      "template": "provider resolution failed; falling back to legacy path",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/agents/runtime/executor.py",
+      "line": 446,
+      "level": "warning",
+      "template": "context primer failed; continuing without it",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/agents/runtime/executor.py",
+      "line": 505,
+      "level": "error",
+      "template": "MCP tool declares unknown capability; hiding it",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/agents/runtime/executor.py",
+      "line": 597,
+      "level": "warning",
+      "template": "LLM provider call failed (kind=%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/agents/runtime/executor.py",
+      "line": 606,
+      "level": "warning",
+      "template": "provider stream failed",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/agents/runtime/executor.py",
+      "line": 658,
+      "level": "warning",
+      "template": "failed to record llm usage",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/agents/services/embedding.py",
+      "line": 53,
+      "level": "info",
+      "template": "loading native embedder %s (cache=%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/agents/tasks/ingest.py",
+      "line": 64,
+      "level": "warning",
+      "template": "Knowledge read failed (%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/agents/tasks/ingest.py",
+      "line": 71,
+      "level": "warning",
+      "template": "Knowledge parse failed (%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/agents/tasks/ingest.py",
+      "line": 81,
+      "level": "warning",
+      "template": "Knowledge embedding failed (%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/api/assets.py",
+      "line": 83,
+      "level": "warning",
+      "template": "Market search failed (%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/api/checkout.py",
+      "line": 444,
+      "level": "info",
+      "template": "Razorpay captured payment verified (user=%s reservation=%s order=%s payment=%s offer=%s amount=%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/api/checkout.py",
+      "line": 95,
+      "level": "error",
+      "template": "Razorpay credentials are not configured (key_id=%s, key_secret=%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/api/checkout.py",
+      "line": 108,
+      "level": "error",
+      "template": "Live Razorpay checkout refused: full lifecycle/provider operational acceptance is pending.",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/api/checkout.py",
+      "line": 325,
+      "level": "warning",
+      "template": "Razorpay signature mismatch (user=%s order=%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/api/checkout.py",
+      "line": 85,
+      "level": "error",
+      "template": "Razorpay package is not installed",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/api/checkout.py",
+      "line": 340,
+      "level": "error",
+      "template": "Razorpay verification fetch failed (user=%s order=%s payment=%s): %s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/api/checkout.py",
+      "line": 398,
+      "level": "warning",
+      "template": "Razorpay order note mismatch (%s) reservation=%s user=%s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/api/clerk_auth.py",
+      "line": 82,
+      "level": "warning",
+      "template": "Clerk verified email lookup unavailable",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/api/clerk_auth.py",
+      "line": 102,
+      "level": "warning",
+      "template": "Clerk active session lookup unavailable",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/api/clerk_auth.py",
+      "line": 127,
+      "level": "warning",
+      "template": "Clerk session token verification failed (%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/api/import_transactions.py",
+      "line": 48,
+      "level": "info",
+      "template": "Import preview requested: size=%d bytes",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/api/import_transactions.py",
+      "line": 126,
+      "level": "info",
+      "template": "Import preview parsed: format=%s, transactions=%d",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/api/import_transactions.py",
+      "line": 117,
+      "level": "error",
+      "template": "Failed to parse import file: size=%d bytes, error_type=%s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/api/passkeys.py",
+      "line": 180,
+      "level": "warning",
+      "template": "Passkey verification rejected",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/api/password_recovery.py",
+      "line": 75,
+      "level": "warning",
+      "template": "Account email request could not be completed (%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/api/password_recovery.py",
+      "line": 80,
+      "level": "warning",
+      "template": "Account email capacity release unavailable",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/core/auth.py",
+      "line": 76,
+      "level": "info",
+      "template": "Registered user %s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/core/auth.py",
+      "line": 125,
+      "level": "info",
+      "template": "Password reset email processed for user %s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/core/auth.py",
+      "line": 196,
+      "level": "info",
+      "template": "Verification email processed for user %s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/core/auth.py",
+      "line": 163,
+      "level": "warning",
+      "template": "Password change notification could not be completed for user %s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/core/auth.py",
+      "line": 114,
+      "level": "warning",
+      "template": "Initial verification request could not be scheduled for user %s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/core/sentry_monitoring.py",
+      "line": 95,
+      "level": "info",
+      "template": "Privacy-safe Sentry error instrumentation enabled for %s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/core/sentry_monitoring.py",
+      "line": 57,
+      "level": "warning",
+      "template": "Sentry enabled but DSN is not configured; telemetry disabled",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/core/sentry_monitoring.py",
+      "line": 61,
+      "level": "warning",
+      "template": "Sentry DSN configuration invalid; telemetry disabled",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/main.py",
+      "line": 112,
+      "level": "info",
+      "template": "Startup: warmed Tesouro Direto price cache",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/main.py",
+      "line": 280,
+      "level": "info",
+      "template": "Agents feature enabled \u2014 mounted /api/agents routes",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/main.py",
+      "line": 374,
+      "level": "error",
+      "template": "Request failed reference=%s method=%s route=%s status=%s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/main.py",
+      "line": 114,
+      "level": "error",
+      "template": "Startup: Tesouro Direto cache warm failed",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/main.py",
+      "line": 282,
+      "level": "error",
+      "template": "Agents feature flag is on but import failed; routes not mounted",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/main.py",
+      "line": 305,
+      "level": "error",
+      "template": "Readiness database check failed",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/main.py",
+      "line": 314,
+      "level": "error",
+      "template": "Readiness Redis check failed",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/main.py",
+      "line": 345,
+      "level": "error",
+      "template": "Unhandled request failure reference=%s method=%s route=%s kind=%s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/providers/enable_banking.py",
+      "line": 607,
+      "level": "warning",
+      "template": "Enable Banking pagination loop detected for account %s (repeated continuation key); stopping pagination",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/providers/market_price.py",
+      "line": 253,
+      "level": "warning",
+      "template": "yfinance search failed (%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/providers/market_price.py",
+      "line": 287,
+      "level": "warning",
+      "template": "yfinance batch download failed (%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/providers/market_price.py",
+      "line": 361,
+      "level": "warning",
+      "template": "yfinance quote failed (%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/providers/pluggy.py",
+      "line": 619,
+      "level": "info",
+      "template": "Pluggy refresh for item %s timed out after %ss; proceeding with cached data",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/providers/pluggy.py",
+      "line": 570,
+      "level": "info",
+      "template": "Pluggy refresh rejected (status=%s; user_action=%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/providers/pluggy.py",
+      "line": 579,
+      "level": "warning",
+      "template": "Pluggy refresh failed (status=%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/providers/pluggy.py",
+      "line": 554,
+      "level": "warning",
+      "template": "Pluggy refresh PATCH failed for item %s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/providers/pluggy.py",
+      "line": 594,
+      "level": "warning",
+      "template": "Pluggy item poll returned %s for %s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/providers/simplefin.py",
+      "line": 177,
+      "level": "warning",
+      "template": "SimpleFIN %s returned a non-authentication warning (%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/services/admin_bootstrap_service.py",
+      "line": 99,
+      "level": "info",
+      "template": "First admin bootstrap completed user_id=%s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/services/asset_import_service.py",
+      "line": 371,
+      "level": "warning",
+      "template": "Bulk price lookup failed; falling back to quotes",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/services/asset_import_service.py",
+      "line": 381,
+      "level": "warning",
+      "template": "Quote lookup failed for %s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/services/asset_service.py",
+      "line": 1080,
+      "level": "warning",
+      "template": "Market price refresh failed (%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/services/asset_service.py",
+      "line": 1136,
+      "level": "warning",
+      "template": "Yahoo rate-limited the batch fetch; skipping this cycle",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/services/asset_service.py",
+      "line": 1139,
+      "level": "warning",
+      "template": "Batch price fetch failed; using per-asset fallback (%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/services/asset_service.py",
+      "line": 1159,
+      "level": "warning",
+      "template": "Yahoo rate-limited mid-refresh after %d assets; halting",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/services/attachment_service.py",
+      "line": 203,
+      "level": "warning",
+      "template": "Transaction attachment cleanup deferred (%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/services/connection_service.py",
+      "line": 1647,
+      "level": "info",
+      "template": "Connection %s sync requested by workspace member %s; importing as owner %s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/services/connection_service.py",
+      "line": 272,
+      "level": "warning",
+      "template": "Optional holdings fetch failed (%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/services/connection_service.py",
+      "line": 1576,
+      "level": "info",
+      "template": "Skipping optional credit-card bills sync (%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/services/connection_service.py",
+      "line": 1686,
+      "level": "warning",
+      "template": "Optional institution logo fetch failed (%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/services/email_service.py",
+      "line": 60,
+      "level": "warning",
+      "template": "Transactional email skipped because SMTP is not configured",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/services/email_service.py",
+      "line": 36,
+      "level": "warning",
+      "template": "Transactional email submission failed (%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/services/fx_rate_service.py",
+      "line": 133,
+      "level": "info",
+      "template": "Synced %d FX rates for %s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/services/fx_rate_service.py",
+      "line": 246,
+      "level": "error",
+      "template": "No FX rate found for %s -> %s on %s; refusing to fabricate a conversion",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/services/fx_rate_service.py",
+      "line": 238,
+      "level": "warning",
+      "template": "No FX rate found for %s -> %s on %s; unsafe development fallback returned 1",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/services/fx_rate_service.py",
+      "line": 173,
+      "level": "info",
+      "template": "On-demand sync fetched %d rates for %s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/services/fx_rate_service.py",
+      "line": 179,
+      "level": "warning",
+      "template": "On-demand FX rate sync failed for %s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/services/invoice_archive.py",
+      "line": 132,
+      "level": "warning",
+      "template": "Could not file the issued document for invoice %s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/services/invoice_attachment_service.py",
+      "line": 286,
+      "level": "warning",
+      "template": "Invoice attachment cleanup deferred (%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/services/storage_compensation.py",
+      "line": 26,
+      "level": "warning",
+      "template": "Upload compensation deferred (%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/services/support_service.py",
+      "line": 365,
+      "level": "info",
+      "template": "Support ticket created reference=%s provider_ticket=%s user=%s category=%s tier=%s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/services/support_service.py",
+      "line": 180,
+      "level": "error",
+      "template": "Zoho returned an unexpected API domain; using configured domain",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/services/support_service.py",
+      "line": 347,
+      "level": "error",
+      "template": "Support provider delivery unconfirmed reference=%s request_reference=%s user=%s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/services/support_service.py",
+      "line": 249,
+      "level": "error",
+      "template": "Support provider ticket creation failed: %s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/tasks/asset_tasks.py",
+      "line": 133,
+      "level": "info",
+      "template": "Asset growth rules complete: %d values created",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/tasks/asset_tasks.py",
+      "line": 165,
+      "level": "info",
+      "template": "Market-price refresh complete: %d refreshed, %d skipped, %d rate-limited",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/tasks/asset_tasks.py",
+      "line": 162,
+      "level": "error",
+      "template": "Market-price refresh failed",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/tasks/asset_tasks.py",
+      "line": 122,
+      "level": "error",
+      "template": "Failed to apply growth rule for asset %s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/tasks/asset_tasks.py",
+      "line": 117,
+      "level": "info",
+      "template": "Growth rule applied for asset %s: %d values created",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/tasks/fx_backfill_tasks.py",
+      "line": 97,
+      "level": "info",
+      "template": "Backfill complete: %s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/tasks/fx_backfill_tasks.py",
+      "line": 71,
+      "level": "warning",
+      "template": "Failed to sync historical FX for %s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/tasks/fx_rate_tasks.py",
+      "line": 127,
+      "level": "info",
+      "template": "FX rate sync complete: %d rates synced",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/tasks/fx_rate_tasks.py",
+      "line": 139,
+      "level": "info",
+      "template": "Recurring FX re-stamp complete: %d records updated",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/tasks/fx_rate_tasks.py",
+      "line": 152,
+      "level": "info",
+      "template": "Fallback FX heal complete: %d transactions healed",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/tasks/fx_rate_tasks.py",
+      "line": 124,
+      "level": "debug",
+      "template": "FX sync skipped (fx_sync_mode=%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/tasks/fx_rate_tasks.py",
+      "line": 136,
+      "level": "debug",
+      "template": "Recurring FX re-stamp skipped (fx_sync_mode=%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/tasks/fx_rate_tasks.py",
+      "line": 149,
+      "level": "debug",
+      "template": "Fallback FX heal skipped (fx_sync_mode=%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/tasks/recurring_tasks.py",
+      "line": 52,
+      "level": "info",
+      "template": "Recurring generation complete: %d transactions created",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/tasks/recurring_tasks.py",
+      "line": 41,
+      "level": "error",
+      "template": "Failed to generate recurring transactions for user %s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/tasks/recurring_tasks.py",
+      "line": 38,
+      "level": "info",
+      "template": "Generated %d recurring transactions for user %s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/tasks/sync_tasks.py",
+      "line": 271,
+      "level": "info",
+      "template": "Background sync fan-out queued %d connections",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/tasks/sync_tasks.py",
+      "line": 149,
+      "level": "info",
+      "template": "Bank sync already running for %s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/tasks/sync_tasks.py",
+      "line": 87,
+      "level": "warning",
+      "template": "Failed to release bank-sync lock %s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/tasks/sync_tasks.py",
+      "line": 117,
+      "level": "warning",
+      "template": "Bank-sync lock heartbeat failed for %s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/tasks/sync_tasks.py",
+      "line": 241,
+      "level": "error",
+      "template": "Bank sync failed (%s)",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/tasks/sync_tasks.py",
+      "line": 109,
+      "level": "warning",
+      "template": "Bank-sync lock ownership lost for %s",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/app/vercel_entry.py",
+      "line": 67,
+      "level": "error",
+      "template": "API bootstrap blocked by invalid configuration",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/mcp_server/main.py",
+      "line": 182,
+      "level": "error",
+      "template": "MCP tool execution unavailable",
+      "traceback_requested": false
+    },
+    {
+      "path": "backend/mcp_server/main.py",
+      "line": 156,
+      "level": "error",
+      "template": "MCP discovery unavailable",
+      "traceback_requested": false
+    }
+  ]
+}

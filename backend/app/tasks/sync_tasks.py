@@ -84,7 +84,7 @@ async def _release_lock(redis_client, key: str, token: str) -> None:
     try:
         await redis_client.eval(script, 1, key, token)
     except Exception:
-        logger.warning("Failed to release bank-sync lock %s", key, exc_info=True)
+        logger.warning("Failed to release bank-sync lock %s", key, exc_info=False)
 
 
 async def _renew_lock(redis_client, key: str, token: str, ttl_seconds: int) -> None:
@@ -114,7 +114,7 @@ async def _renew_lock(redis_client, key: str, token: str, ttl_seconds: int) -> N
         # Redis availability is already a readiness dependency. A temporary
         # renewal failure should not throw away a financial sync in progress;
         # idempotency protects a possible retry.
-        logger.warning("Bank-sync lock heartbeat failed for %s", key, exc_info=True)
+        logger.warning("Bank-sync lock heartbeat failed for %s", key, exc_info=False)
 
 
 async def _sync_one_celery(
@@ -221,29 +221,29 @@ async def _sync_one_celery(
                 "provider_refresh": provider_refresh_outcome,
             }
 
-    except SessionExpiredError as exc:
+    except SessionExpiredError:
         async with session_maker() as session:
             conn = await session.get(BankConnection, conn_uuid)
             if conn:
                 conn.last_sync_status = "action_required"
-                conn.last_sync_error = str(exc)[:1000]
+                conn.last_sync_error = "Bank connection requires reauthorization. Please reconnect."
                 await session.commit()
         raise
-    except ProviderUserActionRequired as exc:
+    except ProviderUserActionRequired:
         async with session_maker() as session:
             conn = await session.get(BankConnection, conn_uuid)
             if conn:
                 conn.last_sync_status = "action_required"
-                conn.last_sync_error = str(exc)[:1000]
+                conn.last_sync_error = "Bank connection requires reauthorization. Please reconnect."
                 await session.commit()
         raise
     except Exception as exc:
-        logger.exception("Bank sync failed for connection %s", connection_id)
+        logger.error("Bank sync failed (%s)", type(exc).__name__)
         async with session_maker() as session:
             conn = await session.get(BankConnection, conn_uuid)
             if conn:
                 conn.last_sync_status = "error"
-                conn.last_sync_error = str(exc)[:1000] or type(exc).__name__
+                conn.last_sync_error = "Bank synchronization failed. Please retry or reconnect."
                 await session.commit()
         raise
     finally:
@@ -283,9 +283,9 @@ def sync_single_connection(
         return asyncio.run(
             _sync_one_celery(connection_id, user_id, trigger_provider_refresh)
         )
-    except Exception as exc:
+    except Exception:
         return {
             "status": "error",
             "connection_id": connection_id,
-            "error": str(exc),
+            "error": "Bank synchronization failed. Please retry or reconnect.",
         }

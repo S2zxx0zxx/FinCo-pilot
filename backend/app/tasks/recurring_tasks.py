@@ -38,7 +38,7 @@ async def _generate_all() -> int:
                         logger.info("Generated %d recurring transactions for user %s", count, user_id)
                         total += count
             except Exception:
-                logger.exception("Failed to generate recurring transactions for user %s", user_id)
+                logger.error("Failed to generate recurring transactions for user %s", user_id)
 
     finally:
         await engine.dispose()

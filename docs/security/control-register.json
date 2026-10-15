@@ -414,7 +414,7 @@
     "owner": "Codex: engineering evidence; founder: external acceptance; counsel: legal interpretation",
     "baseline_sha": "7736a24e7d520b9f08dd91d38e895b5d240f8a09",
     "status": "BLOCKED_EXTERNAL_ACCEPTANCE",
-    "local_result": "Added disposable native PostgreSQL proof for stale editor denial after committed downgrade and downgrade serialization behind an in-flight writer; actual lock waits observed by pg_blocking_pids in the test; first CI execution pending",
+    "local_result": "Disposable native PostgreSQL proof PASSED in CI 38742341693 / job 116446980953: stale editor denied after committed downgrade; in-flight writer serialized before downgrade; actual pg_blocking_pids lock waits checked",
     "source_paths": [
       "backend/app/core/workspace_context.py"
     ],
@@ -424,7 +424,7 @@
       "backend/scripts/verify_role_downgrade_postgres.py"
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
-    "blocker_and_next_step": "Run native concurrency proof successfully; production topology/isolation acceptance remains separate",
+    "blocker_and_next_step": "Reconfirm final-head CI; deployed topology/isolation and release acceptance remain separate",
     "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
@@ -1119,7 +1119,7 @@
     "owner": "Codex: engineering evidence; founder: external acceptance; counsel: legal interpretation",
     "baseline_sha": "7736a24e7d520b9f08dd91d38e895b5d240f8a09",
     "status": "BLOCKED_EXTERNAL_ACCEPTANCE",
-    "local_result": "Prior import/AI/MCP/executor/bank diagnostic fixes plus raw knowledge read/embed exception and traceback redaction; malformed parser failures now transition to failed; regression cases reproduced before fixes; optional holdings/bills/market and institution-logo fallback diagnostics now omit raw payloads/tracebacks/queries; three additional regressions reproduced, affected suite 145 passed",
+    "local_result": "Prior import/AI/MCP/executor/bank diagnostic fixes plus raw knowledge read/embed exception and traceback redaction; malformed parser failures now transition to failed; regression cases reproduced before fixes; optional holdings/bills/market and institution-logo fallback diagnostics now omit raw payloads/tracebacks/queries; three additional regressions reproduced, affected suite 145 passed; custom-agent SSE and bank task-result/stored-error boundaries sanitized; application/MCP traceback logging prohibited; safe route-template correlation and raw-URL access-log container defaults; boundary/provider/auth/agent suite 113 passed, final boundary/Pluggy/MCP/entrypoint suite 35 passed",
     "source_paths": [
       "backend/app/api/import_transactions.py",
       "backend/app/agents/mcp/client.py",
@@ -1131,10 +1131,12 @@
       "backend/tests/test_agents_connection_service.py",
       "backend/tests/test_agent_error_privacy.py",
       "backend/tests/test_agents_providers_streaming.py",
-      "backend/tests/test_connections_api.py"
+      "backend/tests/test_connections_api.py",
+      "backend/tests/test_error_boundary_privacy.py",
+      "backend/tests/test_optional_provider_log_privacy.py"
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
-    "blocker_and_next_step": "Follow-up exact-head CI; remaining API/log surfaces and actual sanitized telemetry acceptance",
+    "blocker_and_next_step": "Final source full regression/CI; third-party/runtime sink and actual sanitized telemetry/forensics/retention acceptance; no universal serializer/log safety attestation",
     "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
@@ -1735,7 +1737,7 @@
     "owner": "Codex: engineering evidence; founder: external acceptance; counsel: legal interpretation",
     "baseline_sha": "7736a24e7d520b9f08dd91d38e895b5d240f8a09",
     "status": "BLOCKED_EXTERNAL_ACCEPTANCE",
-    "local_result": "Existing Renovate retained; daily ChatGPT change-watch created; pinned weekly advisory/static audit workflow added, execution acceptance pending",
+    "local_result": "Existing Renovate retained; daily ChatGPT change-watch created; pinned weekly advisory/static audit workflow added, manual advisory CI executions passed; scheduled delivery acceptance pending",
     "source_paths": [
       "renovate.json",
       ".github/workflows/security-audit.yml"

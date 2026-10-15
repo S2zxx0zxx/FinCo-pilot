@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.services import agent_service, knowledge_service
 from app.core.database import get_async_session
+from app.core.upload_limits import read_bounded_upload
 from app.core.workspace_context import (
     WorkspaceContext,
     current_workspace,
@@ -68,7 +69,9 @@ async def upload_knowledge(
             status_code=403,
             detail="system copilot knowledge is policy-managed",
         )
-    payload = await file.read()
+    payload = await read_bounded_upload(
+        file, max_bytes=knowledge_service.file_size_limit_mb() * 1024 * 1024,
+    )
     try:
         doc = await knowledge_service.upload_doc(
             session,

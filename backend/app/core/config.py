@@ -202,6 +202,9 @@ class Settings(BaseSettings):
     fx_allow_unsafe_1to1_fallback: bool = True
     require_fx_provider: bool = False
 
+    # Import parser input budget, independent of attachment storage limits.
+    import_max_file_size_mb: int = Field(default=10, ge=1, le=100)
+
     # Storage
     storage_provider: str = "local"  # local|s3
     require_object_storage: bool = False

@@ -380,3 +380,38 @@ async def test_import_with_category_override(
     logs_resp = await client.get("/api/import-logs", headers=auth_headers)
     log = next(entry for entry in logs_resp.json() if entry["id"] == import_log_id)
     assert log["transaction_count"] == 1
+
+
+@pytest.mark.asyncio
+async def test_import_failure_does_not_log_financial_bytes_or_filename(
+    client, auth_headers, monkeypatch, caplog,
+):
+    import logging
+    from app.services import import_service
+
+    def fail(content):
+        raise ValueError('synthetic-private-ledger in parser exception')
+
+    monkeypatch.setattr(import_service, 'parse_ofx', fail)
+    with caplog.at_level(logging.INFO, logger='app.api.import_transactions'):
+        response = await client.post(
+            '/api/transactions/import/preview', headers=auth_headers,
+            files={'file': ('synthetic-private-ledger.ofx', b'synthetic-private-ledger', 'application/octet-stream')},
+        )
+    assert response.status_code == 400
+    assert 'synthetic-private-ledger' not in caplog.text
+    assert 'synthetic-private-ledger' not in response.text
+    assert 'ValueError' in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_successful_import_does_not_log_private_filename(client, auth_headers, caplog):
+    import logging
+
+    with caplog.at_level(logging.INFO, logger='app.api.import_transactions'):
+        response = await client.post(
+            '/api/transactions/import/preview', headers=auth_headers,
+            files={'file': ('synthetic-private-ledger.csv', b'date,description,amount\n2026-01-10,COFFEE,-12.50\n', 'text/csv')},
+        )
+    assert response.status_code == 200
+    assert 'synthetic-private-ledger' not in caplog.text

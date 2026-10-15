@@ -1,0 +1,114 @@
+{
+  "observed_at_utc": "2026-10-15T12:04:09.054062+00:00",
+  "baseline_sha": "7736a24e7d520b9f08dd91d38e895b5d240f8a09",
+  "source_blueprint_sha256": "8c1e8ecbb36ff9d9a79ad446c5f9601a9ba150d6c842be1dcfa08c58078e2adf",
+  "backend_baseline": {
+    "command": "uv run --frozen pytest -n 4 --dist loadfile -q --tb=short",
+    "passed": 5146,
+    "skipped": 7,
+    "seconds": 370.95,
+    "database": "SQLite synthetic fixtures, optional vectors shimmed",
+    "scope": "Collected before final patch additions; native PostgreSQL monthly/reporting cases skipped"
+  },
+  "privacy_reproduction": {
+    "connection_before": {
+      "failed": 4,
+      "passed": 21
+    },
+    "mcp_before": {
+      "failed": 2,
+      "passed": 18
+    },
+    "import_before": {
+      "failed": 2,
+      "passed": 16
+    },
+    "after": {
+      "command": "pytest tests/test_import_api.py tests/test_import_service.py tests/test_import_warnings.py tests/test_agents_connection_service.py tests/test_agents_mcp_client.py -q",
+      "passed": 184,
+      "seconds": 22.64
+    }
+  },
+  "frontend": {
+    "tests_passed": 920,
+    "build": "PASS",
+    "lint": "PASS",
+    "entry_gzip_bytes": 214234,
+    "source_maps": "absent per production verifier"
+  },
+  "worker": {
+    "passed": 7
+  },
+  "static": {
+    "ruff_whole_backend": "PASS",
+    "ty_whole_backend": "PASS",
+    "bandit_total_candidates": 30,
+    "bandit_medium_candidates": 2,
+    "bandit_medium_review": "identifier quoting in disaster_recovery inventory and fixed table names; no confirmed SQL injection; low findings not exhaustively triaged"
+  },
+  "advisories": {
+    "pip_audit": "no known vulnerabilities reported",
+    "npm_audit": {
+      "total": 0
+    },
+    "limit": "Dated scan of pinned runtime/export and npm lock; not proof of no unknown vulnerabilities"
+  },
+  "secret_scan": {
+    "repository_checker": "PASS",
+    "history": {
+      "scope": "all reachable refs, UTF-8 blobs, six repository token-pattern families; synthetic markers excluded; not entropy or all-provider scanning",
+      "text_blobs": 3211,
+      "candidates": []
+    },
+    "detect_secrets_version": "1.5.0",
+    "candidate_counts": {
+      "Secret Keyword": 356,
+      "Basic Auth Credentials": 22,
+      "Hex High Entropy String": 844,
+      "IBM Cloud IAM Key": 1,
+      "Base64 High Entropy String": 4
+    },
+    "candidate_triage": "INCOMPLETE; hashes/fixtures/locale keys create noise, never auto-dismiss every candidate",
+    "network_verification": false,
+    "initial_scanner_retry": "Python multiprocessing default required a socket unavailable in environment; reran using fork and --no-verify"
+  },
+  "cloudflare": {
+    "tunnel_status": "healthy",
+    "connections": 4,
+    "ingress": "http service on host.docker.internal port 3000",
+    "zone_ssl": "full",
+    "minimum_tls": "1.0",
+    "always_use_https": "off",
+    "hsts_max_age": 31536000,
+    "origin_certificate": "NOT_VERIFIED"
+  },
+  "github": {
+    "branch_protected": false,
+    "rulesets_response": [],
+    "open_prs": [
+      90,
+      89,
+      85,
+      60
+    ],
+    "merged_baseline_pr": 88
+  },
+  "neon": {
+    "project_region": "aws-ap-southeast-1",
+    "actual_apex_binding": "UNKNOWN",
+    "customer_rows_read": false,
+    "history_retention_seconds": 21600,
+    "network_note": "account metadata does not block public connections; credential/role and actual runtime checks remain separate"
+  },
+  "automation": {
+    "created": true,
+    "id": "6ad0c10aeb3c8191be0d7b00f402fa54",
+    "title": "FinCo-Pilot Security Watch",
+    "frequency": "daily condition-watch",
+    "timezone": "Asia/Kolkata",
+    "first_delivery": "NOT_YET_VERIFIED"
+  },
+  "production_writes": false,
+  "native_postgres_restore": "BLOCKED: no local native server/Docker or authorised disposable target/backup selected",
+  "provider_browser_acceptance": "BLOCKED: no owner-controlled staged login/MFA/bank/payment accounts supplied"
+}

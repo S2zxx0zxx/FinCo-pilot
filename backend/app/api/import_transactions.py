@@ -5,7 +5,9 @@ from typing import Optional
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.database import get_async_session
+from app.core.upload_limits import read_bounded_upload
 from app.core.workspace_context import (
     WorkspaceContext,
     current_workspace,
@@ -38,12 +40,14 @@ async def preview_import(
     ctx: WorkspaceContext = Depends(current_workspace),
     session: AsyncSession = Depends(get_async_session),
 ):
-    content = await file.read()
+    content = await read_bounded_upload(
+        file, max_bytes=get_settings().import_max_file_size_mb * 1024 * 1024,
+    )
     filename = file.filename or ""
 
     logger.info(
-        "Import preview requested: filename=%s, size=%d bytes, content_type=%s",
-        filename, len(content), file.content_type,
+        "Import preview requested: size=%d bytes",
+        len(content),
     )
 
     # column_mapping arrives as a JSON-encoded form field (FinCo-Pilot field -> CSV header)
@@ -111,20 +115,17 @@ async def preview_import(
                         detected_format = "csv"
     except Exception as e:
         logger.error(
-            "Failed to parse import file: filename=%s, size=%d bytes, "
-            "content_type=%s, first_100_bytes=%r, error=%s",
-            filename, len(content), file.content_type,
-            content[:100], e,
-            exc_info=True,
+            "Failed to parse import file: size=%d bytes, error_type=%s",
+            len(content), type(e).__name__,
         )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Failed to parse file: {str(e)}",
+            detail="Failed to parse file. Check the file format and column mapping, then retry.",
         )
 
     logger.info(
-        "Import preview parsed: filename=%s, format=%s, transactions=%d",
-        filename, detected_format, len(transactions),
+        "Import preview parsed: format=%s, transactions=%d",
+        detected_format, len(transactions),
     )
 
     transactions = await import_service.enrich_with_category_suggestions(

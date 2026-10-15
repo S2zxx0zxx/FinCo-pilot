@@ -1,0 +1,4434 @@
+[
+  {
+    "source": "backend/app/models/account.py",
+    "model": "Account",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "connection_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "external_id",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "name",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "display_name",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "masked_number",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "type",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "balance",
+        "type": "Mapped[Decimal]"
+      },
+      {
+        "field": "currency",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "balance_primary",
+        "type": "Mapped[Optional[Decimal]]"
+      },
+      {
+        "field": "credit_limit",
+        "type": "Mapped[Optional[Decimal]]"
+      },
+      {
+        "field": "statement_close_day",
+        "type": "Mapped[Optional[int]]"
+      },
+      {
+        "field": "payment_due_day",
+        "type": "Mapped[Optional[int]]"
+      },
+      {
+        "field": "minimum_payment",
+        "type": "Mapped[Optional[Decimal]]"
+      },
+      {
+        "field": "card_brand",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "card_level",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "institution_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "is_closed",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "closed_at",
+        "type": "Mapped[Optional[datetime]]"
+      },
+      {
+        "field": "connection",
+        "type": "Mapped[Optional['BankConnection']]"
+      },
+      {
+        "field": "institution",
+        "type": "Mapped[Optional['Institution']]"
+      },
+      {
+        "field": "transactions",
+        "type": "Mapped[list['Transaction']]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/account_deletion.py",
+    "model": "AccountDeletion",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "active_user_id",
+        "type": "Mapped[uuid.UUID | None]"
+      },
+      {
+        "field": "tracking_digest",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "state",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "blockers",
+        "type": "Mapped[list]"
+      },
+      {
+        "field": "manifest",
+        "type": "Mapped[dict]"
+      },
+      {
+        "field": "review",
+        "type": "Mapped[dict]"
+      },
+      {
+        "field": "receipts",
+        "type": "Mapped[dict]"
+      },
+      {
+        "field": "lease_token",
+        "type": "Mapped[str | None]"
+      },
+      {
+        "field": "lease_until",
+        "type": "Mapped[datetime | None]"
+      },
+      {
+        "field": "error_code",
+        "type": "Mapped[str | None]"
+      },
+      {
+        "field": "requested_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "primary_deleted_at",
+        "type": "Mapped[datetime | None]"
+      },
+      {
+        "field": "completed_at",
+        "type": "Mapped[datetime | None]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/account_deletion.py",
+    "model": "AccountDeletionHold",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "evidence_sha256",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "reason",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "verified_by",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "verified_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "released_at",
+        "type": "Mapped[datetime | None]"
+      },
+      {
+        "field": "released_by",
+        "type": "Mapped[str | None]"
+      },
+      {
+        "field": "release_evidence_sha256",
+        "type": "Mapped[str | None]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/account_deletion.py",
+    "model": "AccountDeletionEvent",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "deletion_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "event_type",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "actor_id",
+        "type": "Mapped[str | None]"
+      },
+      {
+        "field": "details",
+        "type": "Mapped[dict]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/app_settings.py",
+    "model": "AppSetting",
+    "fields": [
+      {
+        "field": "key",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "value",
+        "type": "Mapped[str]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/asset.py",
+    "model": "Asset",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "name",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "type",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "currency",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "units",
+        "type": "Mapped[Optional[Decimal]]"
+      },
+      {
+        "field": "valuation_method",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "purchase_date",
+        "type": "Mapped[Optional[date]]"
+      },
+      {
+        "field": "purchase_price",
+        "type": "Mapped[Optional[Decimal]]"
+      },
+      {
+        "field": "sell_date",
+        "type": "Mapped[Optional[date]]"
+      },
+      {
+        "field": "sell_price",
+        "type": "Mapped[Optional[Decimal]]"
+      },
+      {
+        "field": "growth_type",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "growth_rate",
+        "type": "Mapped[Optional[Decimal]]"
+      },
+      {
+        "field": "growth_frequency",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "growth_start_date",
+        "type": "Mapped[Optional[date]]"
+      },
+      {
+        "field": "purchase_price_primary",
+        "type": "Mapped[Optional[Decimal]]"
+      },
+      {
+        "field": "is_archived",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "position",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "connection_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "external_id",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "source",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "isin",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "maturity_date",
+        "type": "Mapped[Optional[date]]"
+      },
+      {
+        "field": "external_metadata",
+        "type": "Mapped[Optional[dict[str, Any]]]"
+      },
+      {
+        "field": "group_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "ticker",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "ticker_exchange",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "last_price",
+        "type": "Mapped[Optional[Decimal]]"
+      },
+      {
+        "field": "last_price_at",
+        "type": "Mapped[Optional[datetime]]"
+      },
+      {
+        "field": "average_price",
+        "type": "Mapped[Optional[Decimal]]"
+      },
+      {
+        "field": "realized_gain",
+        "type": "Mapped[Optional[Decimal]]"
+      },
+      {
+        "field": "logo_url",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "values",
+        "type": "Mapped[list['AssetValue']]"
+      },
+      {
+        "field": "transactions",
+        "type": "Mapped[list['AssetTransaction']]"
+      },
+      {
+        "field": "group",
+        "type": "Mapped[Optional['AssetGroup']]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/asset_group.py",
+    "model": "AssetGroup",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "name",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "icon",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "color",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "position",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "source",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "connection_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "external_id",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "institution_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "user",
+        "type": "Mapped['User']"
+      },
+      {
+        "field": "assets",
+        "type": "Mapped[list['Asset']]"
+      },
+      {
+        "field": "institution",
+        "type": "Mapped[Optional['Institution']]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/asset_transaction.py",
+    "model": "AssetTransaction",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "asset_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "kind",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "quantity",
+        "type": "Mapped[Decimal]"
+      },
+      {
+        "field": "price",
+        "type": "Mapped[Decimal]"
+      },
+      {
+        "field": "fee",
+        "type": "Mapped[Decimal]"
+      },
+      {
+        "field": "date",
+        "type": "Mapped[_date]"
+      },
+      {
+        "field": "source",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "external_id",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "notes",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "import_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "asset",
+        "type": "Mapped['Asset']"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/asset_value.py",
+    "model": "AssetValue",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "asset_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "amount",
+        "type": "Mapped[Decimal]"
+      },
+      {
+        "field": "price",
+        "type": "Mapped[Optional[Decimal]]"
+      },
+      {
+        "field": "date",
+        "type": "Mapped[_date]"
+      },
+      {
+        "field": "source",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "asset",
+        "type": "Mapped['Asset']"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/bank_connection.py",
+    "model": "BankConnection",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "provider",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "external_id",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "institution_name",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "display_name",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "logo_url",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "credentials",
+        "type": "Mapped[Optional[dict]]"
+      },
+      {
+        "field": "settings",
+        "type": "Mapped[Optional[dict]]"
+      },
+      {
+        "field": "status",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "last_sync_at",
+        "type": "Mapped[Optional[datetime]]"
+      },
+      {
+        "field": "last_sync_started_at",
+        "type": "Mapped[Optional[datetime]]"
+      },
+      {
+        "field": "last_provider_refresh_at",
+        "type": "Mapped[Optional[datetime]]"
+      },
+      {
+        "field": "last_sync_status",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "last_sync_error",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "user",
+        "type": "Mapped['User']"
+      },
+      {
+        "field": "accounts",
+        "type": "Mapped[list['Account']]"
+      },
+      {
+        "field": "institutions",
+        "type": "Mapped[list['Institution']]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/billing_usage.py",
+    "model": "BillingUsageCounter",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "metric",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "period_start",
+        "type": "Mapped[date]"
+      },
+      {
+        "field": "used",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "updated_at",
+        "type": "Mapped[datetime]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/budget.py",
+    "model": "Budget",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "category_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "amount",
+        "type": "Mapped[Decimal]"
+      },
+      {
+        "field": "month",
+        "type": "Mapped[date]"
+      },
+      {
+        "field": "is_recurring",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "currency",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "amount_primary",
+        "type": "Mapped[Optional[Decimal]]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "user",
+        "type": "Mapped['User']"
+      },
+      {
+        "field": "category",
+        "type": "Mapped['Category']"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/category.py",
+    "model": "Category",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "group_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "name",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "icon",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "color",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "is_system",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "is_hidden",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "treat_as_transfer",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "is_ignored",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "user",
+        "type": "Mapped['User']"
+      },
+      {
+        "field": "group",
+        "type": "Mapped[Optional['CategoryGroup']]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/category_group.py",
+    "model": "CategoryGroup",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "name",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "icon",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "color",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "position",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "is_system",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "is_hidden",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "user",
+        "type": "Mapped['User']"
+      },
+      {
+        "field": "categories",
+        "type": "Mapped[list['Category']]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/collection.py",
+    "model": "Collection",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "name",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "icon",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "color",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "position",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "accounts",
+        "type": "Mapped[list['Account']]"
+      },
+      {
+        "field": "asset_groups",
+        "type": "Mapped[list['AssetGroup']]"
+      },
+      {
+        "field": "user",
+        "type": "Mapped['User']"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/credit_card_bill.py",
+    "model": "CreditCardBill",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "account_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "external_id",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "due_date",
+        "type": "Mapped[_date]"
+      },
+      {
+        "field": "total_amount",
+        "type": "Mapped[Decimal]"
+      },
+      {
+        "field": "currency",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "minimum_payment",
+        "type": "Mapped[Optional[Decimal]]"
+      },
+      {
+        "field": "raw_data",
+        "type": "Mapped[Optional[dict]]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "updated_at",
+        "type": "Mapped[datetime]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/external_auth_identity.py",
+    "model": "ExternalAuthIdentity",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "provider",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "issuer",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "provider_subject",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/fx_rate.py",
+    "model": "FxRate",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "base_currency",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "quote_currency",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "date",
+        "type": "Mapped[_date]"
+      },
+      {
+        "field": "rate",
+        "type": "Mapped[Decimal]"
+      },
+      {
+        "field": "source",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/goal.py",
+    "model": "Goal",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "name",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "target_amount",
+        "type": "Mapped[Decimal]"
+      },
+      {
+        "field": "current_amount",
+        "type": "Mapped[Decimal]"
+      },
+      {
+        "field": "initial_amount",
+        "type": "Mapped[Decimal]"
+      },
+      {
+        "field": "currency",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "target_amount_primary",
+        "type": "Mapped[Optional[Decimal]]"
+      },
+      {
+        "field": "current_amount_primary",
+        "type": "Mapped[Optional[Decimal]]"
+      },
+      {
+        "field": "target_date",
+        "type": "Mapped[Optional[date]]"
+      },
+      {
+        "field": "tracking_type",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "account_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "asset_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "asset_group_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "status",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "icon",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "color",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "position",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "metadata_json",
+        "type": "Mapped[Optional[Any]]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "updated_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "user",
+        "type": "Mapped['User']"
+      },
+      {
+        "field": "account",
+        "type": "Mapped[Optional['Account']]"
+      },
+      {
+        "field": "asset",
+        "type": "Mapped[Optional['Asset']]"
+      },
+      {
+        "field": "asset_group",
+        "type": "Mapped[Optional['AssetGroup']]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/group.py",
+    "model": "Group",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "name",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "kind",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "default_currency",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "icon",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "color",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "is_archived",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "notes",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "user",
+        "type": "Mapped['User']"
+      },
+      {
+        "field": "members",
+        "type": "Mapped[list['GroupMember']]"
+      },
+      {
+        "field": "settlements",
+        "type": "Mapped[list['GroupSettlement']]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/group.py",
+    "model": "GroupMember",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "group_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "name",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "linked_user_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "email",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "is_self",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "group",
+        "type": "Mapped['Group']"
+      },
+      {
+        "field": "splits",
+        "type": "Mapped[list['TransactionSplit']]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/group_settlement.py",
+    "model": "GroupSettlement",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "group_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "from_member_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "to_member_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "amount",
+        "type": "Mapped[Decimal]"
+      },
+      {
+        "field": "currency",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "date",
+        "type": "Mapped[_date]"
+      },
+      {
+        "field": "transaction_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "receiver_transaction_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "notes",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "group",
+        "type": "Mapped['Group']"
+      },
+      {
+        "field": "from_member",
+        "type": "Mapped['GroupMember']"
+      },
+      {
+        "field": "to_member",
+        "type": "Mapped['GroupMember']"
+      },
+      {
+        "field": "transaction",
+        "type": "Mapped[Optional['Transaction']]"
+      },
+      {
+        "field": "receiver_transaction",
+        "type": "Mapped[Optional['Transaction']]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/import_log.py",
+    "model": "ImportLog",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "account_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "entity",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "filename",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "format",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "transaction_count",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "total_credit",
+        "type": "Mapped[Decimal]"
+      },
+      {
+        "field": "total_debit",
+        "type": "Mapped[Decimal]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "account",
+        "type": "Mapped[Optional['Account']]"
+      },
+      {
+        "field": "transactions",
+        "type": "Mapped[list['Transaction']]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/institution.py",
+    "model": "Institution",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "connection_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "external_id",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "name",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "logo_url",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "connection",
+        "type": "Mapped['BankConnection']"
+      },
+      {
+        "field": "accounts",
+        "type": "Mapped[list['Account']]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/invoice.py",
+    "model": "Invoice",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "payee_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "document_type",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "direction",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "corrects_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "origin",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "external_source",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "external_id",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "number",
+        "type": "Mapped[Optional[int]]"
+      },
+      {
+        "field": "series",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "external_number",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "status",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "issue_date",
+        "type": "Mapped[_date]"
+      },
+      {
+        "field": "due_date",
+        "type": "Mapped[_date]"
+      },
+      {
+        "field": "competence_date",
+        "type": "Mapped[Optional[_date]]"
+      },
+      {
+        "field": "sent_at",
+        "type": "Mapped[Optional[datetime]]"
+      },
+      {
+        "field": "currency",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "subtotal",
+        "type": "Mapped[Decimal]"
+      },
+      {
+        "field": "discount",
+        "type": "Mapped[Decimal]"
+      },
+      {
+        "field": "tax_total",
+        "type": "Mapped[Decimal]"
+      },
+      {
+        "field": "total",
+        "type": "Mapped[Decimal]"
+      },
+      {
+        "field": "notes",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "internal_notes",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "snapshot",
+        "type": "Mapped[Optional[dict[str, Any]]]"
+      },
+      {
+        "field": "custom_fields",
+        "type": "Mapped[Optional[dict[str, Any]]]"
+      },
+      {
+        "field": "share_token",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "updated_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "payee",
+        "type": "Mapped[Optional['Payee']]"
+      },
+      {
+        "field": "lines",
+        "type": "Mapped[list['InvoiceLine']]"
+      },
+      {
+        "field": "allocations",
+        "type": "Mapped[list['InvoiceAllocation']]"
+      },
+      {
+        "field": "attachments",
+        "type": "Mapped[list['InvoiceAttachment']]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/invoice.py",
+    "model": "InvoiceLine",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "invoice_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "description",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "quantity",
+        "type": "Mapped[Decimal]"
+      },
+      {
+        "field": "unit",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "unit_price",
+        "type": "Mapped[Decimal]"
+      },
+      {
+        "field": "tax_rate",
+        "type": "Mapped[Optional[Decimal]]"
+      },
+      {
+        "field": "total",
+        "type": "Mapped[Decimal]"
+      },
+      {
+        "field": "position",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "invoice",
+        "type": "Mapped['Invoice']"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/invoice.py",
+    "model": "InvoiceAllocation",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "invoice_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "transaction_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "credit_note_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "amount",
+        "type": "Mapped[Decimal]"
+      },
+      {
+        "field": "method",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "allocated_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "invoice",
+        "type": "Mapped['Invoice']"
+      },
+      {
+        "field": "transaction",
+        "type": "Mapped[Optional['Transaction']]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/invoice.py",
+    "model": "InvoiceSettings",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "preset",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "document_required",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "initial_state",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "tax_fields",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "default_payment_terms_days",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "number_prefix",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "series",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "next_number",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "logo_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "issuer_display_name",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "footer_note",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "payment_details",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "accent_color",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "template",
+        "type": "Mapped[Optional[dict[str, Any]]]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "updated_at",
+        "type": "Mapped[datetime]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/invoice_attachment.py",
+    "model": "InvoiceAttachment",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "invoice_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "source",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "external_id",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "kind",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "is_primary",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "document_number",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "issued_at",
+        "type": "Mapped[Optional[_date]]"
+      },
+      {
+        "field": "filename",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "storage_key",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "content_type",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "size",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "invoice",
+        "type": "Mapped['Invoice']"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/loan.py",
+    "model": "Loan",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "name",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "principal",
+        "type": "Mapped[Decimal]"
+      },
+      {
+        "field": "annual_rate",
+        "type": "Mapped[Decimal]"
+      },
+      {
+        "field": "term_months",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "first_due_date",
+        "type": "Mapped[date]"
+      },
+      {
+        "field": "currency",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "paid_installments",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "archived",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "version",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "updated_at",
+        "type": "Mapped[datetime]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/mcp_approval.py",
+    "model": "MCPApproval",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "token_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "tool_name",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "arguments",
+        "type": "Mapped[dict]"
+      },
+      {
+        "field": "status",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "expires_at",
+        "type": "Mapped[datetime]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/mcp_token.py",
+    "model": "ExternalMCPToken",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "credential_stamp",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "allow_writes",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "revoked",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "expires_at",
+        "type": "Mapped[datetime]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/passkey.py",
+    "model": "UserPasskey",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "credential_id",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "public_key",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "sign_count",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "name",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "transports",
+        "type": "Mapped[Optional[list[str]]]"
+      },
+      {
+        "field": "aaguid",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "device_type",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "backed_up",
+        "type": "Mapped[Optional[bool]]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "last_used_at",
+        "type": "Mapped[Optional[datetime]]"
+      },
+      {
+        "field": "user",
+        "type": "Mapped['User']"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/payee.py",
+    "model": "Payee",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "name",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "type",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "source",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "is_favorite",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "notes",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "email",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "phone",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "address",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "website",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "user",
+        "type": "Mapped['User']"
+      },
+      {
+        "field": "transactions",
+        "type": "Mapped[list['Transaction']]"
+      },
+      {
+        "field": "tax_ids",
+        "type": "Mapped[list['PayeeTaxId']]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/payee.py",
+    "model": "PayeeTaxId",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "payee_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "kind",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "value",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "payee",
+        "type": "Mapped['Payee']"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/payee.py",
+    "model": "PayeeMapping",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "target_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "target",
+        "type": "Mapped['Payee']"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/payment_activation.py",
+    "model": "PaymentActivation",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "provider",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "mode",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "account_id",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "provider_key_id",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "payment_id",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "order_id",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "reservation_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "source_event_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "plan",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "billing_interval",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "amount_minor",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "currency",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "period_start",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "period_end",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "applied_at",
+        "type": "Mapped[datetime]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/payment_cancellation.py",
+    "model": "PaymentCancellation",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "mandate_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "mode",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "account_id",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "provider_key_id",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "provider_subscription_id",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "state",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "requested_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "confirmed_at",
+        "type": "Mapped[datetime | None]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/payment_recovery.py",
+    "model": "PaymentRecovery",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "mandate_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "source_event_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "mode",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "account_id",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "invoice_id",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "provider_state",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "period_start",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "period_end",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "paid_through",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "grace_until",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "observed_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "resolved_at",
+        "type": "Mapped[datetime | None]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/payment_refund.py",
+    "model": "PaymentRefund",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "source_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "source_kind",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "mode",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "account_id",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "provider_key_id",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "payment_id",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "amount_minor",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "currency",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "operator_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "evidence_sha256",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "state",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "requested_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "refund_id",
+        "type": "Mapped[str | None]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/payment_refund.py",
+    "model": "RefundObservation",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "mode",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "account_id",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "payment_id",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "refund_id",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "amount_minor",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "currency",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "state",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "observed_at",
+        "type": "Mapped[datetime]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/payment_renewal.py",
+    "model": "RenewalMandate",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "active_user_id",
+        "type": "Mapped[uuid.UUID | None]"
+      },
+      {
+        "field": "activation_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "subscription_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "mode",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "account_id",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "provider_key_id",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "provider_plan_id",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "provider_subscription_id",
+        "type": "Mapped[str | None]"
+      },
+      {
+        "field": "plan",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "billing_interval",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "amount_minor",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "currency",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "total_count",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "starts_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "requested_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "state",
+        "type": "Mapped[str]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/payment_renewal.py",
+    "model": "RenewalCycle",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "mandate_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "source_event_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "mode",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "account_id",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "provider_subscription_id",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "invoice_id",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "payment_id",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "amount_minor",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "currency",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "period_start",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "period_end",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "applied_at",
+        "type": "Mapped[datetime]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/payment_webhook.py",
+    "model": "PaymentWebhookEvent",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "provider",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "mode",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "account_id",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "body_sha256",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "event_type",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "delivery_hint",
+        "type": "Mapped[str | None]"
+      },
+      {
+        "field": "state",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "snapshot_ciphertext",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "received_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "processing_attempts",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "next_attempt_at",
+        "type": "Mapped[datetime | None]"
+      },
+      {
+        "field": "processing_error",
+        "type": "Mapped[str | None]"
+      },
+      {
+        "field": "processed_at",
+        "type": "Mapped[datetime | None]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/pricing_offer.py",
+    "model": "PricingCampaign",
+    "fields": [
+      {
+        "field": "code",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "state",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "catalog_version",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "version",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "presale_starts_at",
+        "type": "Mapped[Optional[datetime]]"
+      },
+      {
+        "field": "presale_ends_at",
+        "type": "Mapped[Optional[datetime]]"
+      },
+      {
+        "field": "public_launch_at",
+        "type": "Mapped[Optional[datetime]]"
+      },
+      {
+        "field": "updated_by_user_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "updated_at",
+        "type": "Mapped[datetime]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/pricing_offer.py",
+    "model": "CheckoutReservation",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "plan",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "billing_interval",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "offer_code",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "campaign_code",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "campaign_version",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "founder_wave",
+        "type": "Mapped[Optional[int]]"
+      },
+      {
+        "field": "founder_position",
+        "type": "Mapped[Optional[int]]"
+      },
+      {
+        "field": "amount_minor",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "currency",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "renewal_amount_minor",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "renewal_interval",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "service_period_days",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "service_starts_at",
+        "type": "Mapped[Optional[datetime]]"
+      },
+      {
+        "field": "status",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "provider",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "provider_order_state",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "provider_key_id",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "provider_receipt",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "provider_started_at",
+        "type": "Mapped[Optional[datetime]]"
+      },
+      {
+        "field": "provider_order_id",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "provider_payment_id",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "reserved_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "expires_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "verified_at",
+        "type": "Mapped[Optional[datetime]]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "updated_at",
+        "type": "Mapped[datetime]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/pricing_offer.py",
+    "model": "FoundingMember",
+    "fields": [
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "wave",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "founder_position",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "offer_code",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "reservation_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "status",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "claimed_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "revoked_at",
+        "type": "Mapped[Optional[datetime]]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/pricing_offer.py",
+    "model": "PricingAuditEvent",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "actor_user_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "event_type",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "entity_type",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "entity_id",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "payload",
+        "type": "Mapped[dict]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/reconciliation.py",
+    "model": "ReconciliationRule",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "node",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "strategy_id",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "origin",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "name",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "position",
+        "type": "Mapped[Optional[int]]"
+      },
+      {
+        "field": "config",
+        "type": "Mapped[dict[str, Any]]"
+      },
+      {
+        "field": "deleted",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "policy_version",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "updated_at",
+        "type": "Mapped[datetime]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/reconciliation.py",
+    "model": "ReconciliationSuggestion",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "transaction_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "expectation_kind",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "expectation_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "group_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "strategy_id",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "node",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "amount",
+        "type": "Mapped[Decimal]"
+      },
+      {
+        "field": "scores",
+        "type": "Mapped[dict[str, Any]]"
+      },
+      {
+        "field": "status",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "resolved_at",
+        "type": "Mapped[Optional[datetime]]"
+      },
+      {
+        "field": "resolved_by",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "transaction",
+        "type": "Mapped['Transaction']"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/reconciliation.py",
+    "model": "ReconciliationEvent",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "action",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "transaction_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "expectation_kind",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "expectation_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "amount",
+        "type": "Mapped[Decimal]"
+      },
+      {
+        "field": "strategy_id",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "detail",
+        "type": "Mapped[dict[str, Any]]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/recurring_transaction.py",
+    "model": "RecurringTransaction",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "account_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "category_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "description",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "amount",
+        "type": "Mapped[Decimal]"
+      },
+      {
+        "field": "currency",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "type",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "frequency",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "weekend_adjustment",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "day_of_month",
+        "type": "Mapped[Optional[int]]"
+      },
+      {
+        "field": "start_date",
+        "type": "Mapped[date]"
+      },
+      {
+        "field": "end_date",
+        "type": "Mapped[Optional[date]]"
+      },
+      {
+        "field": "is_active",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "auto_generate",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "next_occurrence",
+        "type": "Mapped[date]"
+      },
+      {
+        "field": "amount_primary",
+        "type": "Mapped[Optional[Decimal]]"
+      },
+      {
+        "field": "fx_rate_used",
+        "type": "Mapped[Optional[Decimal]]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "user",
+        "type": "Mapped['User']"
+      },
+      {
+        "field": "account",
+        "type": "Mapped[Optional['Account']]"
+      },
+      {
+        "field": "category",
+        "type": "Mapped[Optional['Category']]"
+      },
+      {
+        "field": "transactions",
+        "type": "Mapped[list['Transaction']]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/rule.py",
+    "model": "Rule",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "name",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "conditions_op",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "conditions",
+        "type": "Mapped[list]"
+      },
+      {
+        "field": "actions",
+        "type": "Mapped[list]"
+      },
+      {
+        "field": "priority",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "is_active",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "user",
+        "type": "Mapped['User']"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/subscription.py",
+    "model": "Subscription",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "plan",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "status",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "billing_interval",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "current_period_start",
+        "type": "Mapped[Optional[datetime]]"
+      },
+      {
+        "field": "current_period_end",
+        "type": "Mapped[Optional[datetime]]"
+      },
+      {
+        "field": "recovery_due_at",
+        "type": "Mapped[Optional[datetime]]"
+      },
+      {
+        "field": "grace_until",
+        "type": "Mapped[Optional[datetime]]"
+      },
+      {
+        "field": "paid_term_refunded",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "cancel_at_period_end",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "provider",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "provider_customer_id",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "provider_subscription_id",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "updated_at",
+        "type": "Mapped[datetime]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/transaction.py",
+    "model": "Transaction",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "account_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "category_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "external_id",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "description",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "original_description",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "description_is_rule_managed",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "amount",
+        "type": "Mapped[Decimal]"
+      },
+      {
+        "field": "currency",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "date",
+        "type": "Mapped[_date]"
+      },
+      {
+        "field": "effective_date",
+        "type": "Mapped[_date]"
+      },
+      {
+        "field": "type",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "source",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "status",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "payee",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "payee_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "notes",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "raw_data",
+        "type": "Mapped[Optional[dict]]"
+      },
+      {
+        "field": "import_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "transfer_pair_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "transfer_amount_explicit",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "amount_primary",
+        "type": "Mapped[Optional[Decimal]]"
+      },
+      {
+        "field": "fx_rate_used",
+        "type": "Mapped[Optional[Decimal]]"
+      },
+      {
+        "field": "installment_number",
+        "type": "Mapped[Optional[int]]"
+      },
+      {
+        "field": "total_installments",
+        "type": "Mapped[Optional[int]]"
+      },
+      {
+        "field": "installment_total_amount",
+        "type": "Mapped[Optional[Decimal]]"
+      },
+      {
+        "field": "installment_purchase_date",
+        "type": "Mapped[Optional[_date]]"
+      },
+      {
+        "field": "installment_series_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "effective_bill_date",
+        "type": "Mapped[Optional[_date]]"
+      },
+      {
+        "field": "bill_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "is_ignored",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "exclude_from_pnl",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "recurring_transaction_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "account",
+        "type": "Mapped['Account']"
+      },
+      {
+        "field": "category",
+        "type": "Mapped[Optional['Category']]"
+      },
+      {
+        "field": "bill",
+        "type": "Mapped[Optional['CreditCardBill']]"
+      },
+      {
+        "field": "payee_entity",
+        "type": "Mapped[Optional['Payee']]"
+      },
+      {
+        "field": "recurring_transaction",
+        "type": "Mapped[Optional['RecurringTransaction']]"
+      },
+      {
+        "field": "import_log",
+        "type": "Mapped[Optional['ImportLog']]"
+      },
+      {
+        "field": "attachments",
+        "type": "Mapped[list['TransactionAttachment']]"
+      },
+      {
+        "field": "splits",
+        "type": "Mapped[list['TransactionSplit']]"
+      },
+      {
+        "field": "is_shared",
+        "type": "bool"
+      },
+      {
+        "field": "attachment_count",
+        "type": "int"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/transaction_attachment.py",
+    "model": "TransactionAttachment",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "transaction_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "filename",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "storage_key",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "content_type",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "size",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "transaction",
+        "type": "Mapped['Transaction']"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/transaction_split.py",
+    "model": "TransactionSplit",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "transaction_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "group_member_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "share_amount",
+        "type": "Mapped[Decimal]"
+      },
+      {
+        "field": "share_type",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "share_pct",
+        "type": "Mapped[Optional[Decimal]]"
+      },
+      {
+        "field": "notes",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "transaction",
+        "type": "Mapped['Transaction']"
+      },
+      {
+        "field": "member",
+        "type": "Mapped['GroupMember']"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/user.py",
+    "model": "User",
+    "fields": [
+      {
+        "field": "preferences",
+        "type": "Mapped[Optional[dict]]"
+      },
+      {
+        "field": "recovery_code_hashes",
+        "type": "Mapped[Optional[list[str]]]"
+      },
+      {
+        "field": "auth_epoch",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "totp_secret",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "is_2fa_enabled",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "oidc_issuer",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "oidc_subject",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "categories",
+        "type": "Mapped[list['Category']]"
+      },
+      {
+        "field": "category_groups",
+        "type": "Mapped[list['CategoryGroup']]"
+      },
+      {
+        "field": "bank_connections",
+        "type": "Mapped[list['BankConnection']]"
+      },
+      {
+        "field": "passkeys",
+        "type": "Mapped[list['UserPasskey']]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/workspace.py",
+    "model": "Workspace",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "name",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "kind",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "created_by_user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "is_archived",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "managed_by_user_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "billing_owner_user_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "default_currency",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "locale",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "legal_name",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "address",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "tax_jurisdiction",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "icon",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "color",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "members",
+        "type": "Mapped[list['WorkspaceMember']]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/workspace.py",
+    "model": "WorkspaceTaxId",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "kind",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "value",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/workspace.py",
+    "model": "WorkspaceMember",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "role",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "invited_by_user_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "joined_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "workspace",
+        "type": "Mapped['Workspace']"
+      },
+      {
+        "field": "user",
+        "type": "Mapped['User']"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/workspace_deletion.py",
+    "model": "WorkspaceDeletion",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "requester_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "active_workspace_id",
+        "type": "Mapped[uuid.UUID | None]"
+      },
+      {
+        "field": "tracking_digest",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "state",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "blockers",
+        "type": "Mapped[list]"
+      },
+      {
+        "field": "manifest",
+        "type": "Mapped[dict]"
+      },
+      {
+        "field": "review",
+        "type": "Mapped[dict]"
+      },
+      {
+        "field": "receipts",
+        "type": "Mapped[dict]"
+      },
+      {
+        "field": "lease_token",
+        "type": "Mapped[str | None]"
+      },
+      {
+        "field": "lease_until",
+        "type": "Mapped[datetime | None]"
+      },
+      {
+        "field": "error_code",
+        "type": "Mapped[str | None]"
+      },
+      {
+        "field": "requested_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "primary_deleted_at",
+        "type": "Mapped[datetime | None]"
+      },
+      {
+        "field": "completed_at",
+        "type": "Mapped[datetime | None]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/workspace_deletion.py",
+    "model": "WorkspaceDeletionHold",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "evidence_sha256",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "reason",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "verified_by",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "verified_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "released_at",
+        "type": "Mapped[datetime | None]"
+      },
+      {
+        "field": "released_by",
+        "type": "Mapped[str | None]"
+      },
+      {
+        "field": "release_evidence_sha256",
+        "type": "Mapped[str | None]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/models/workspace_deletion.py",
+    "model": "WorkspaceDeletionEvent",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "deletion_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "event_type",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "actor_id",
+        "type": "Mapped[str | None]"
+      },
+      {
+        "field": "details",
+        "type": "Mapped[dict]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/agents/models/agent.py",
+    "model": "Agent",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "name",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "description",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "system_prompt",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "icon",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "color",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "connection_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "provider",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "model",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "temperature",
+        "type": "Mapped[float]"
+      },
+      {
+        "field": "max_history_messages",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "top_n",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "similarity_threshold",
+        "type": "Mapped[float]"
+      },
+      {
+        "field": "extra",
+        "type": "Mapped[dict]"
+      },
+      {
+        "field": "auto_context",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "is_archived",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "is_default",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "updated_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "tools",
+        "type": "Mapped[list['AgentTool']]"
+      },
+      {
+        "field": "conversations",
+        "type": "Mapped[list['Conversation']]"
+      },
+      {
+        "field": "knowledge_docs",
+        "type": "Mapped[list['KnowledgeDoc']]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/agents/models/agent.py",
+    "model": "AgentTool",
+    "fields": [
+      {
+        "field": "agent_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "server",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "tool_name",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "enabled",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "agent",
+        "type": "Mapped['Agent']"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/agents/models/connection.py",
+    "model": "LlmConnection",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "name",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "kind",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "base_url",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "api_key_encrypted",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "default_model",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "extra",
+        "type": "Mapped[dict]"
+      },
+      {
+        "field": "is_default",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "updated_at",
+        "type": "Mapped[datetime]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/agents/models/conversation.py",
+    "model": "Conversation",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "agent_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "workspace_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "channel",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "title",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "updated_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "agent",
+        "type": "Mapped['Agent']"
+      },
+      {
+        "field": "messages",
+        "type": "Mapped[list['Message']]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/agents/models/conversation.py",
+    "model": "Message",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "conversation_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "ordinal",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "role",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "content",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "tool_calls",
+        "type": "Mapped[Optional[list]]"
+      },
+      {
+        "field": "tool_result",
+        "type": "Mapped[Optional[dict]]"
+      },
+      {
+        "field": "citations",
+        "type": "Mapped[Optional[list]]"
+      },
+      {
+        "field": "input_tokens",
+        "type": "Mapped[Optional[int]]"
+      },
+      {
+        "field": "output_tokens",
+        "type": "Mapped[Optional[int]]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "conversation",
+        "type": "Mapped['Conversation']"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/agents/models/knowledge.py",
+    "model": "KnowledgeDoc",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "agent_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "title",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "source",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "mime",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "storage_path",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "size_bytes",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "status",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "error",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "chunk_count",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "pinned",
+        "type": "Mapped[bool]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "updated_at",
+        "type": "Mapped[datetime]"
+      },
+      {
+        "field": "agent",
+        "type": "Mapped['Agent']"
+      },
+      {
+        "field": "chunks",
+        "type": "Mapped[list['KnowledgeChunk']]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/agents/models/knowledge.py",
+    "model": "KnowledgeChunk",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "doc_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "agent_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "ordinal",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "content",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "embedding",
+        "type": "Mapped[Optional[list[float]]]"
+      },
+      {
+        "field": "embedding_model",
+        "type": "Mapped[Optional[str]]"
+      },
+      {
+        "field": "doc",
+        "type": "Mapped['KnowledgeDoc']"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  },
+  {
+    "source": "backend/app/agents/models/usage.py",
+    "model": "LlmUsage",
+    "fields": [
+      {
+        "field": "id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "user_id",
+        "type": "Mapped[uuid.UUID]"
+      },
+      {
+        "field": "agent_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "conversation_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "message_id",
+        "type": "Mapped[Optional[uuid.UUID]]"
+      },
+      {
+        "field": "provider",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "model",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "kind",
+        "type": "Mapped[str]"
+      },
+      {
+        "field": "input_tokens",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "output_tokens",
+        "type": "Mapped[int]"
+      },
+      {
+        "field": "cost_usd",
+        "type": "Mapped[Optional[float]]"
+      },
+      {
+        "field": "latency_ms",
+        "type": "Mapped[Optional[int]]"
+      },
+      {
+        "field": "created_at",
+        "type": "Mapped[datetime]"
+      }
+    ],
+    "live_data": "NOT_INSPECTED",
+    "purpose_basis_retention": "OWNER_REVIEW_REQUIRED"
+  }
+]

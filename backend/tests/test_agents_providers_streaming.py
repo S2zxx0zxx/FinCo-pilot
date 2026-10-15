@@ -309,3 +309,18 @@ async def test_anthropic_embed_raises_not_supported():
     provider = AnthropicProvider(api_key="sk-test")
     with pytest.raises(LLMNotSupportedError):
         await provider.embed(["a"], model="x")
+
+
+@pytest.mark.parametrize('module', ['openai', 'anthropic'])
+@pytest.mark.parametrize('status', [400, 401, 403, 429, 500, 503])
+def test_provider_error_preserves_status_without_relaying_body(module, status):
+    import importlib
+    from app.agents.providers.base import LLMError
+
+    provider = importlib.import_module(f'app.agents.providers.{module}')
+    with pytest.raises(LLMError) as error:
+        provider._raise_for_status(status, 'synthetic-secret account=123')
+    assert error.value.status == status
+    assert 'synthetic-secret' not in str(error.value)
+    assert 'account=123' not in str(error.value)
+    assert error.value.retryable is (status not in (401, 403))

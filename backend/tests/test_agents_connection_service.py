@@ -348,3 +348,45 @@ def test_routing_hint_only_fires_inside_a_container(monkeypatch):
 
     monkeypatch.setattr(cs, "_in_container", lambda: False)
     assert cs._routing_hint("http://192.168.1.152:1234") == ""
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("kind", ["openai", "anthropic"])
+async def test_probe_does_not_relay_upstream_error_body(fake_httpx, kind):
+    fake_httpx.queue.append(_FakeResp(status_code=500, text="synthetic-secret account=123"))
+    out = await cs.test_connection(_conn(kind=kind))
+    assert "HTTP 500" in out["detail"]
+    assert "synthetic-secret" not in str(out)
+    assert "account=123" not in str(out)
+
+
+@pytest.mark.asyncio
+async def test_probe_network_error_redacts_credentials_and_query(monkeypatch):
+    import httpx
+
+    class Fails:
+        def __init__(self, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            raise httpx.ConnectError("synthetic-secret in upstream exception")
+
+        async def __aexit__(self, *args):
+            return False
+
+    monkeypatch.setattr(httpx, "AsyncClient", Fails)
+    out = await cs.test_connection(_conn(
+        kind="ollama", base_url="http://name:synthetic-secret@localhost:11434/private-token?key=synthetic-secret",
+    ))
+    assert "synthetic-secret" not in str(out)
+    assert "private-token" not in str(out)
+    assert "ConnectError" in out["detail"]
+    assert "localhost:11434" in out["detail"]
+
+
+@pytest.mark.asyncio
+async def test_probe_malformed_provider_payload_does_not_relay_exception(fake_httpx):
+    fake_httpx.queue.append(_FakeResp(json_body=ValueError("synthetic-secret")))
+    out = await cs.test_connection(_conn(kind="anthropic"))
+    assert out["ok"] is False
+    assert "synthetic-secret" not in str(out)

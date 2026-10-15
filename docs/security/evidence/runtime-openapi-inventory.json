@@ -1,0 +1,4764 @@
+[
+  {
+    "path": "/api/auth/login",
+    "method": "POST",
+    "operation": "login_api_auth_login_post",
+    "security": [],
+    "tags": [
+      "auth"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/auth/logout",
+    "method": "POST",
+    "operation": "logout_api_auth_logout_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "auth"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/auth/2fa/setup",
+    "method": "POST",
+    "operation": "setup_2fa_api_auth_2fa_setup_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "auth"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/auth/2fa/enable",
+    "method": "POST",
+    "operation": "enable_2fa_api_auth_2fa_enable_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "auth"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/auth/2fa/disable",
+    "method": "POST",
+    "operation": "disable_2fa_api_auth_2fa_disable_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "auth"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/auth/2fa/verify",
+    "method": "POST",
+    "operation": "verify_2fa_api_auth_2fa_verify_post",
+    "security": [],
+    "tags": [
+      "auth"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/auth/2fa/recovery-codes",
+    "method": "POST",
+    "operation": "regenerate_recovery_codes_api_auth_2fa_recovery_codes_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "auth"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/auth/passkeys",
+    "method": "GET",
+    "operation": "list_passkeys_api_auth_passkeys_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "auth"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/auth/passkeys/register/options",
+    "method": "POST",
+    "operation": "passkey_registration_options_api_auth_passkeys_register_options_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "auth"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/auth/passkeys/register/verify",
+    "method": "POST",
+    "operation": "verify_passkey_registration_api_auth_passkeys_register_verify_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "auth"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/auth/passkeys/{passkey_id}",
+    "method": "DELETE",
+    "operation": "delete_passkey_api_auth_passkeys__passkey_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "auth"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/auth/passkeys/authenticate/options",
+    "method": "POST",
+    "operation": "passkey_authentication_options_api_auth_passkeys_authenticate_options_post",
+    "security": [],
+    "tags": [
+      "auth"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/auth/passkeys/authenticate/verify",
+    "method": "POST",
+    "operation": "verify_passkey_authentication_api_auth_passkeys_authenticate_verify_post",
+    "security": [],
+    "tags": [
+      "auth"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/auth/passkeys/2fa/options",
+    "method": "POST",
+    "operation": "passkey_second_factor_options_api_auth_passkeys_2fa_options_post",
+    "security": [],
+    "tags": [
+      "auth"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/auth/passkeys/2fa/verify",
+    "method": "POST",
+    "operation": "verify_passkey_second_factor_api_auth_passkeys_2fa_verify_post",
+    "security": [],
+    "tags": [
+      "auth"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/auth/oidc/config",
+    "method": "GET",
+    "operation": "oidc_config_api_auth_oidc_config_get",
+    "security": [],
+    "tags": [
+      "auth"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/auth/oidc/login",
+    "method": "GET",
+    "operation": "oidc_login_api_auth_oidc_login_get",
+    "security": [],
+    "tags": [
+      "auth"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/auth/oidc/callback",
+    "method": "GET",
+    "operation": "oidc_callback_api_auth_oidc_callback_get",
+    "security": [],
+    "tags": [
+      "auth"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/auth/clerk/config",
+    "method": "GET",
+    "operation": "get_clerk_config_api_auth_clerk_config_get",
+    "security": [],
+    "tags": [
+      "clerk_auth"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/auth/clerk/exchange",
+    "method": "POST",
+    "operation": "exchange_clerk_session_api_auth_clerk_exchange_post",
+    "security": [],
+    "tags": [
+      "clerk_auth"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/auth/register",
+    "method": "POST",
+    "operation": "register_register_api_auth_register_post",
+    "security": [],
+    "tags": [
+      "auth"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/auth/reset-password",
+    "method": "POST",
+    "operation": "reset_reset_password_api_auth_reset_password_post",
+    "security": [],
+    "tags": [
+      "auth"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/auth/forgot-password",
+    "method": "POST",
+    "operation": "forgot_password_api_auth_forgot_password_post",
+    "security": [],
+    "tags": [
+      "auth"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/auth/verify",
+    "method": "POST",
+    "operation": "verify_verify_api_auth_verify_post",
+    "security": [],
+    "tags": [
+      "auth"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/auth/request-verify-token",
+    "method": "POST",
+    "operation": "request_verification_api_auth_request_verify_token_post",
+    "security": [],
+    "tags": [
+      "auth"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/users/lookup",
+    "method": "GET",
+    "operation": "lookup_user_by_email_api_users_lookup_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "users"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/users/directory",
+    "method": "GET",
+    "operation": "list_users_directory_api_users_directory_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "users"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/users/me",
+    "method": "GET",
+    "operation": "users_current_user_api_users_me_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "users"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/users/me",
+    "method": "PATCH",
+    "operation": "users_patch_current_user_api_users_me_patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "users"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/users/{id}",
+    "method": "GET",
+    "operation": "users_user_api_users__id__get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "users"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/users/{id}",
+    "method": "PATCH",
+    "operation": "users_patch_user_api_users__id__patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "users"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/users/{id}",
+    "method": "DELETE",
+    "operation": "users_delete_user_api_users__id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "users"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/billing/catalog",
+    "method": "GET",
+    "operation": "pricing_catalog_api_billing_catalog_get",
+    "security": [],
+    "tags": [
+      "billing"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/billing/founder-campaign",
+    "method": "GET",
+    "operation": "founder_campaign_api_billing_founder_campaign_get",
+    "security": [],
+    "tags": [
+      "billing"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/billing/entitlements",
+    "method": "GET",
+    "operation": "current_entitlements_api_billing_entitlements_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "billing"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/billing/renewal",
+    "method": "GET",
+    "operation": "renewal_status_api_billing_renewal_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "billing"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/billing/renewal",
+    "method": "POST",
+    "operation": "renewal_enrollment_api_billing_renewal_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "billing"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/billing/cancellation",
+    "method": "GET",
+    "operation": "cancellation_status_api_billing_cancellation_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "billing"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/billing/cancellation",
+    "method": "POST",
+    "operation": "cancellation_request_api_billing_cancellation_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "billing"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/billing/refunds",
+    "method": "GET",
+    "operation": "refund_status_api_billing_refunds_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "billing"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/billing/refunds/operator",
+    "method": "POST",
+    "operation": "issue_refund_api_billing_refunds_operator_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "billing"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/billing/refunds/operator/payments",
+    "method": "GET",
+    "operation": "refundable_payments_api_billing_refunds_operator_payments_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "billing"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/checkout/create-order",
+    "method": "POST",
+    "operation": "create_order_api_checkout_create_order_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "checkout"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/checkout/cancel-reservation",
+    "method": "POST",
+    "operation": "cancel_checkout_reservation_api_checkout_cancel_reservation_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "checkout"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/checkout/verify-payment",
+    "method": "POST",
+    "operation": "verify_payment_api_checkout_verify_payment_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "checkout"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/checkout/status",
+    "method": "GET",
+    "operation": "checkout_status_api_checkout_status_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "checkout"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/webhooks/razorpay",
+    "method": "POST",
+    "operation": "razorpay_webhook_api_webhooks_razorpay_post",
+    "security": [],
+    "tags": [
+      "payment-webhooks"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/categories",
+    "method": "GET",
+    "operation": "list_categories_api_categories_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "categories"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/categories",
+    "method": "POST",
+    "operation": "create_category_api_categories_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "categories"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/categories/{category_id}/rule-usage",
+    "method": "GET",
+    "operation": "category_rule_usage_api_categories__category_id__rule_usage_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "categories"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/categories/{category_id}",
+    "method": "PATCH",
+    "operation": "update_category_api_categories__category_id__patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "categories"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/categories/{category_id}",
+    "method": "DELETE",
+    "operation": "delete_category_api_categories__category_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "categories"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/category-groups",
+    "method": "GET",
+    "operation": "list_groups_api_category_groups_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "category-groups"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/category-groups",
+    "method": "POST",
+    "operation": "create_group_api_category_groups_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "category-groups"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/category-groups/{group_id}",
+    "method": "PATCH",
+    "operation": "update_group_api_category_groups__group_id__patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "category-groups"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/category-groups/{group_id}",
+    "method": "DELETE",
+    "operation": "delete_group_api_category_groups__group_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "category-groups"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/rules",
+    "method": "GET",
+    "operation": "list_rules_api_rules_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "rules"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/rules",
+    "method": "POST",
+    "operation": "create_rule_api_rules_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "rules"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/rules/preview",
+    "method": "POST",
+    "operation": "preview_rule_api_rules_preview_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "rules"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/rules/export",
+    "method": "GET",
+    "operation": "export_rules_api_rules_export_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "rules"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/rules/import",
+    "method": "POST",
+    "operation": "import_rules_api_rules_import_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "rules"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/rules/{rule_id}",
+    "method": "PATCH",
+    "operation": "update_rule_api_rules__rule_id__patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "rules"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/rules/{rule_id}",
+    "method": "DELETE",
+    "operation": "delete_rule_api_rules__rule_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "rules"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/rules/packs",
+    "method": "GET",
+    "operation": "list_rule_packs_api_rules_packs_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "rules"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/rules/packs/{pack_code}/install",
+    "method": "POST",
+    "operation": "install_rule_pack_api_rules_packs__pack_code__install_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "rules"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/rules/apply-all",
+    "method": "POST",
+    "operation": "apply_all_rules_api_rules_apply_all_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "rules"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/reconciliation/rules",
+    "method": "GET",
+    "operation": "list_rules_api_reconciliation_rules_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "reconciliation"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/reconciliation/rules",
+    "method": "POST",
+    "operation": "create_rule_api_reconciliation_rules_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "reconciliation"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/reconciliation/rules/{node}/{strategy_id}",
+    "method": "PATCH",
+    "operation": "update_rule_api_reconciliation_rules__node___strategy_id__patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "reconciliation"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/reconciliation/rules/{node}/{strategy_id}",
+    "method": "DELETE",
+    "operation": "delete_rule_api_reconciliation_rules__node___strategy_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "reconciliation"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/reconciliation/rules/{node}/order",
+    "method": "PUT",
+    "operation": "reorder_rules_api_reconciliation_rules__node__order_put",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "reconciliation"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/reconciliation/rules/{node}/{strategy_id}/reset",
+    "method": "POST",
+    "operation": "reset_rule_api_reconciliation_rules__node___strategy_id__reset_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "reconciliation"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/reconciliation/rules/export",
+    "method": "GET",
+    "operation": "export_rules_api_reconciliation_rules_export_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "reconciliation"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/reconciliation/rules/import",
+    "method": "POST",
+    "operation": "import_rules_api_reconciliation_rules_import_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "reconciliation"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/reconciliation/suggestions",
+    "method": "GET",
+    "operation": "list_suggestions_api_reconciliation_suggestions_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "reconciliation"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/reconciliation/suggestions/{suggestion_id}/accept",
+    "method": "POST",
+    "operation": "accept_suggestion_api_reconciliation_suggestions__suggestion_id__accept_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "reconciliation"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/reconciliation/suggestions/{suggestion_id}/decline",
+    "method": "POST",
+    "operation": "decline_suggestion_api_reconciliation_suggestions__suggestion_id__decline_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "reconciliation"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/reconciliation/history",
+    "method": "GET",
+    "operation": "list_history_api_reconciliation_history_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "reconciliation"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/transactions",
+    "method": "GET",
+    "operation": "list_transactions_api_transactions_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "transactions"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/transactions",
+    "method": "POST",
+    "operation": "create_transaction_api_transactions_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "transactions"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/transactions/calendar",
+    "method": "GET",
+    "operation": "transaction_calendar_api_transactions_calendar_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "transactions"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/transactions/export",
+    "method": "GET",
+    "operation": "export_transactions_api_transactions_export_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "transactions"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/transactions/bulk-categorize",
+    "method": "PATCH",
+    "operation": "bulk_categorize_api_transactions_bulk_categorize_patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "transactions"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/transactions/bulk-add-tags",
+    "method": "PATCH",
+    "operation": "bulk_add_tags_api_transactions_bulk_add_tags_patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "transactions"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/transactions/bulk-remove-tags",
+    "method": "PATCH",
+    "operation": "bulk_remove_tags_api_transactions_bulk_remove_tags_patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "transactions"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/transactions/bulk-add-to-group",
+    "method": "PATCH",
+    "operation": "bulk_add_to_group_api_transactions_bulk_add_to_group_patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "transactions"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/transactions/transfer",
+    "method": "POST",
+    "operation": "create_transfer_api_transactions_transfer_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "transactions"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/transactions/link-transfer",
+    "method": "POST",
+    "operation": "link_transfer_api_transactions_link_transfer_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "transactions"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/transactions/{transaction_id}/create-counterpart",
+    "method": "POST",
+    "operation": "create_counterpart_api_transactions__transaction_id__create_counterpart_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "transactions"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/transactions/{transaction_id}/transfer-candidates",
+    "method": "GET",
+    "operation": "get_transfer_candidates_api_transactions__transaction_id__transfer_candidates_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "transactions"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/transactions/{transaction_id}/transfer-pair",
+    "method": "GET",
+    "operation": "get_transfer_pair_api_transactions__transaction_id__transfer_pair_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "transactions"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/transactions/{transaction_id}",
+    "method": "GET",
+    "operation": "get_transaction_api_transactions__transaction_id__get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "transactions"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/transactions/{transaction_id}",
+    "method": "PATCH",
+    "operation": "update_transaction_api_transactions__transaction_id__patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "transactions"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/transactions/{transaction_id}",
+    "method": "DELETE",
+    "operation": "delete_transaction_api_transactions__transaction_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "transactions"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/transactions/installments",
+    "method": "POST",
+    "operation": "create_installment_series_api_transactions_installments_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "transactions"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/transactions/{transaction_id}/ignore",
+    "method": "PATCH",
+    "operation": "toggle_ignore_transaction_api_transactions__transaction_id__ignore_patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "transactions"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/transactions/{transaction_id}/unlink-recurring",
+    "method": "PATCH",
+    "operation": "unlink_recurring_transaction_api_transactions__transaction_id__unlink_recurring_patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "transactions"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/transactions/bulk-delete",
+    "method": "POST",
+    "operation": "bulk_delete_transactions_api_transactions_bulk_delete_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "transactions"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/transactions/import/preview",
+    "method": "POST",
+    "operation": "preview_import_api_transactions_import_preview_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "import"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/transactions/import",
+    "method": "POST",
+    "operation": "import_transactions_api_transactions_import_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "import"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/import-logs",
+    "method": "GET",
+    "operation": "list_import_logs_api_import_logs_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "import-logs"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/import-logs/{import_log_id}",
+    "method": "DELETE",
+    "operation": "delete_import_log_api_import_logs__import_log_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "import-logs"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/accounts",
+    "method": "GET",
+    "operation": "list_accounts_api_accounts_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "accounts"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/accounts",
+    "method": "POST",
+    "operation": "create_account_api_accounts_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "accounts"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/accounts/{account_id}/summary",
+    "method": "GET",
+    "operation": "get_account_summary_api_accounts__account_id__summary_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "accounts"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/accounts/{account_id}/balance-history",
+    "method": "GET",
+    "operation": "get_account_balance_history_api_accounts__account_id__balance_history_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "accounts"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/accounts/{account_id}/bills",
+    "method": "GET",
+    "operation": "get_account_bills_api_accounts__account_id__bills_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "accounts"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/accounts/{account_id}",
+    "method": "GET",
+    "operation": "get_account_api_accounts__account_id__get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "accounts"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/accounts/{account_id}",
+    "method": "PATCH",
+    "operation": "update_account_api_accounts__account_id__patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "accounts"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/accounts/{account_id}",
+    "method": "DELETE",
+    "operation": "delete_account_api_accounts__account_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "accounts"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/accounts/{account_id}/close",
+    "method": "POST",
+    "operation": "close_account_api_accounts__account_id__close_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "accounts"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/accounts/{account_id}/reopen",
+    "method": "POST",
+    "operation": "reopen_account_api_accounts__account_id__reopen_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "accounts"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/connections/providers",
+    "method": "GET",
+    "operation": "get_available_providers_api_connections_providers_get",
+    "security": [],
+    "tags": [
+      "connections"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/connections/connect-token",
+    "method": "POST",
+    "operation": "create_connect_token_api_connections_connect_token_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "connections"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/connections",
+    "method": "GET",
+    "operation": "list_connections_api_connections_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "connections"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/connections/oauth/url",
+    "method": "POST",
+    "operation": "get_oauth_url_api_connections_oauth_url_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "connections"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/connections/{provider}/institutions",
+    "method": "GET",
+    "operation": "list_provider_institutions_api_connections__provider__institutions_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "connections"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/connections/oauth/callback",
+    "method": "POST",
+    "operation": "oauth_callback_api_connections_oauth_callback_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "connections"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/connections/{connection_id}/oauth/reauth-url",
+    "method": "POST",
+    "operation": "get_reauth_url_api_connections__connection_id__oauth_reauth_url_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "connections"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/connections/{connection_id}/sync",
+    "method": "POST",
+    "operation": "sync_connection_api_connections__connection_id__sync_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "connections"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/connections/{connection_id}/reconnect-token",
+    "method": "POST",
+    "operation": "get_reconnect_token_api_connections__connection_id__reconnect_token_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "connections"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/connections/{connection_id}/settings",
+    "method": "PATCH",
+    "operation": "update_settings_api_connections__connection_id__settings_patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "connections"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/connections/{connection_id}",
+    "method": "DELETE",
+    "operation": "delete_connection_api_connections__connection_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "connections"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/connections/transfers/detect",
+    "method": "POST",
+    "operation": "detect_transfers_api_connections_transfers_detect_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "connections"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/connections/transfers/{pair_id}",
+    "method": "DELETE",
+    "operation": "unlink_transfer_api_connections_transfers__pair_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "connections"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/recurring-transactions",
+    "method": "GET",
+    "operation": "list_recurring_transactions_api_recurring_transactions_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "recurring-transactions"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/recurring-transactions",
+    "method": "POST",
+    "operation": "create_recurring_transaction_api_recurring_transactions_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "recurring-transactions"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/recurring-transactions/{recurring_id}",
+    "method": "PATCH",
+    "operation": "update_recurring_transaction_api_recurring_transactions__recurring_id__patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "recurring-transactions"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/recurring-transactions/{recurring_id}",
+    "method": "DELETE",
+    "operation": "delete_recurring_transaction_api_recurring_transactions__recurring_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "recurring-transactions"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/recurring-transactions/generate",
+    "method": "POST",
+    "operation": "generate_recurring_transactions_api_recurring_transactions_generate_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "recurring-transactions"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/budgets",
+    "method": "GET",
+    "operation": "list_budgets_api_budgets_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "budgets"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/budgets",
+    "method": "POST",
+    "operation": "create_budget_api_budgets_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "budgets"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/budgets/{budget_id}",
+    "method": "PATCH",
+    "operation": "update_budget_api_budgets__budget_id__patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "budgets"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/budgets/{budget_id}",
+    "method": "DELETE",
+    "operation": "delete_budget_api_budgets__budget_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "budgets"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/budgets/comparison",
+    "method": "GET",
+    "operation": "budget_comparison_api_budgets_comparison_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "budgets"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/goals",
+    "method": "GET",
+    "operation": "list_goals_api_goals_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "goals"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/goals",
+    "method": "POST",
+    "operation": "create_goal_api_goals_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "goals"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/goals/summary",
+    "method": "GET",
+    "operation": "goal_summary_api_goals_summary_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "goals"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/goals/{goal_id}",
+    "method": "GET",
+    "operation": "get_goal_api_goals__goal_id__get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "goals"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/goals/{goal_id}",
+    "method": "PATCH",
+    "operation": "update_goal_api_goals__goal_id__patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "goals"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/goals/{goal_id}",
+    "method": "DELETE",
+    "operation": "delete_goal_api_goals__goal_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "goals"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/loans",
+    "method": "GET",
+    "operation": "list_loans_api_loans_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "loans"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/loans",
+    "method": "POST",
+    "operation": "create_loan_api_loans_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "loans"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/loans/{loan_id}",
+    "method": "GET",
+    "operation": "get_loan_api_loans__loan_id__get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "loans"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/loans/{loan_id}",
+    "method": "PATCH",
+    "operation": "update_loan_api_loans__loan_id__patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "loans"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/groups",
+    "method": "GET",
+    "operation": "list_groups_api_groups_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "groups"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/groups",
+    "method": "POST",
+    "operation": "create_group_api_groups_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "groups"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/groups/{group_id}",
+    "method": "GET",
+    "operation": "get_group_api_groups__group_id__get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "groups"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/groups/{group_id}",
+    "method": "PATCH",
+    "operation": "update_group_api_groups__group_id__patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "groups"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/groups/{group_id}",
+    "method": "DELETE",
+    "operation": "delete_group_api_groups__group_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "groups"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/groups/{group_id}/members",
+    "method": "GET",
+    "operation": "list_members_api_groups__group_id__members_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "groups"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/groups/{group_id}/members",
+    "method": "POST",
+    "operation": "create_member_api_groups__group_id__members_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "groups"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/groups/{group_id}/members/{member_id}",
+    "method": "PATCH",
+    "operation": "update_member_api_groups__group_id__members__member_id__patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "groups"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/groups/{group_id}/members/{member_id}",
+    "method": "DELETE",
+    "operation": "delete_member_api_groups__group_id__members__member_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "groups"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/groups/{group_id}/transactions",
+    "method": "GET",
+    "operation": "list_group_transactions_api_groups__group_id__transactions_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "groups"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/groups/{group_id}/balances",
+    "method": "GET",
+    "operation": "get_balances_api_groups__group_id__balances_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "groups"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/groups/{group_id}/settlements",
+    "method": "GET",
+    "operation": "list_settlements_api_groups__group_id__settlements_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "groups"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/groups/{group_id}/settlements",
+    "method": "POST",
+    "operation": "create_settlement_api_groups__group_id__settlements_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "groups"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/groups/{group_id}/settlements/{settlement_id}",
+    "method": "PATCH",
+    "operation": "update_settlement_api_groups__group_id__settlements__settlement_id__patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "groups"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/groups/{group_id}/settlements/{settlement_id}",
+    "method": "DELETE",
+    "operation": "delete_settlement_api_groups__group_id__settlements__settlement_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "groups"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/assets/market/search",
+    "method": "GET",
+    "operation": "market_search_api_assets_market_search_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "assets"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/assets/market/quote",
+    "method": "GET",
+    "operation": "market_quote_api_assets_market_quote_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "assets"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/assets/{asset_id}/refresh-price",
+    "method": "POST",
+    "operation": "refresh_asset_price_api_assets__asset_id__refresh_price_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "assets"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/assets",
+    "method": "GET",
+    "operation": "list_assets_api_assets_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "assets"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/assets",
+    "method": "POST",
+    "operation": "create_asset_api_assets_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "assets"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/assets/portfolio-trend",
+    "method": "GET",
+    "operation": "portfolio_trend_api_assets_portfolio_trend_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "assets"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/assets/transactions",
+    "method": "GET",
+    "operation": "list_workspace_transactions_api_assets_transactions_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "assets"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/assets/import/template",
+    "method": "GET",
+    "operation": "asset_import_template_api_assets_import_template_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "assets"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/assets/import/preview",
+    "method": "POST",
+    "operation": "preview_asset_import_api_assets_import_preview_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "assets"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/assets/import",
+    "method": "POST",
+    "operation": "import_asset_orders_api_assets_import_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "assets"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/assets/buy",
+    "method": "POST",
+    "operation": "buy_into_holding_api_assets_buy_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "assets"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/assets/{asset_id}/transactions",
+    "method": "GET",
+    "operation": "list_asset_transactions_api_assets__asset_id__transactions_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "assets"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/assets/{asset_id}/transactions",
+    "method": "POST",
+    "operation": "add_asset_transaction_api_assets__asset_id__transactions_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "assets"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/assets/transactions/{tx_id}",
+    "method": "PATCH",
+    "operation": "update_asset_transaction_api_assets_transactions__tx_id__patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "assets"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/assets/transactions/{tx_id}",
+    "method": "DELETE",
+    "operation": "delete_asset_transaction_api_assets_transactions__tx_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "assets"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/assets/{asset_id}",
+    "method": "GET",
+    "operation": "get_asset_api_assets__asset_id__get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "assets"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/assets/{asset_id}",
+    "method": "PATCH",
+    "operation": "update_asset_api_assets__asset_id__patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "assets"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/assets/{asset_id}",
+    "method": "DELETE",
+    "operation": "delete_asset_api_assets__asset_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "assets"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/assets/{asset_id}/values",
+    "method": "GET",
+    "operation": "list_asset_values_api_assets__asset_id__values_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "assets"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/assets/{asset_id}/values",
+    "method": "POST",
+    "operation": "add_asset_value_api_assets__asset_id__values_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "assets"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/assets/{asset_id}/value-trend",
+    "method": "GET",
+    "operation": "get_asset_value_trend_api_assets__asset_id__value_trend_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "assets"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/assets/values/{value_id}",
+    "method": "DELETE",
+    "operation": "delete_asset_value_api_assets_values__value_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "assets"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/asset-groups",
+    "method": "GET",
+    "operation": "list_groups_api_asset_groups_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "asset-groups"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/asset-groups",
+    "method": "POST",
+    "operation": "create_group_api_asset_groups_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "asset-groups"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/asset-groups/{group_id}",
+    "method": "PATCH",
+    "operation": "update_group_api_asset_groups__group_id__patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "asset-groups"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/asset-groups/{group_id}",
+    "method": "DELETE",
+    "operation": "delete_group_api_asset_groups__group_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "asset-groups"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/collections",
+    "method": "GET",
+    "operation": "list_collections_api_collections_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "collections"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/collections",
+    "method": "POST",
+    "operation": "create_collection_api_collections_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "collections"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/collections/{collection_id}",
+    "method": "PATCH",
+    "operation": "update_collection_api_collections__collection_id__patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "collections"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/collections/{collection_id}",
+    "method": "DELETE",
+    "operation": "delete_collection_api_collections__collection_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "collections"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/dashboard/summary",
+    "method": "GET",
+    "operation": "get_summary_api_dashboard_summary_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "dashboard"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/dashboard/spending-by-category",
+    "method": "GET",
+    "operation": "get_spending_by_category_api_dashboard_spending_by_category_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "dashboard"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/dashboard/monthly-trend",
+    "method": "GET",
+    "operation": "get_monthly_trend_api_dashboard_monthly_trend_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "dashboard"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/dashboard/balance-history",
+    "method": "GET",
+    "operation": "get_balance_history_api_dashboard_balance_history_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "dashboard"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/dashboard/projected-transactions",
+    "method": "GET",
+    "operation": "get_projected_transactions_api_dashboard_projected_transactions_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "dashboard"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/dashboard/spending-plan",
+    "method": "POST",
+    "operation": "spending_plan_api_dashboard_spending_plan_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "dashboard"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/reports/net-worth",
+    "method": "GET",
+    "operation": "get_net_worth_api_reports_net_worth_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "reports"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/reports/income-expenses",
+    "method": "GET",
+    "operation": "get_income_expenses_api_reports_income_expenses_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "reports"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/reports/cash-flow",
+    "method": "GET",
+    "operation": "get_cash_flow_api_reports_cash_flow_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "reports"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/search",
+    "method": "GET",
+    "operation": "global_search_api_search_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "search"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/setup/status",
+    "method": "GET",
+    "operation": "get_setup_status_api_setup_status_get",
+    "security": [],
+    "tags": [
+      "setup"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/setup/create-admin",
+    "method": "POST",
+    "operation": "create_admin_api_setup_create_admin_post",
+    "security": [],
+    "tags": [
+      "setup"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/currencies",
+    "method": "GET",
+    "operation": "list_currencies_api_currencies_get",
+    "security": [],
+    "tags": [
+      "currencies"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/fx-rates/refresh",
+    "method": "POST",
+    "operation": "refresh_rates_api_fx_rates_refresh_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "fx-rates"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/fx-rates/status",
+    "method": "GET",
+    "operation": "rates_status_api_fx_rates_status_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "fx-rates"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/export/backup",
+    "method": "GET",
+    "operation": "backup_api_export_backup_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "export"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/export/backup",
+    "method": "POST",
+    "operation": "backup_protected_api_export_backup_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "export"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/transactions/{transaction_id}/attachments",
+    "method": "POST",
+    "operation": "upload_attachment_api_transactions__transaction_id__attachments_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "attachments"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/transactions/{transaction_id}/attachments",
+    "method": "GET",
+    "operation": "list_attachments_api_transactions__transaction_id__attachments_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "attachments"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/transactions/{transaction_id}/attachments/{attachment_id}",
+    "method": "GET",
+    "operation": "download_attachment_api_transactions__transaction_id__attachments__attachment_id__get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "attachments"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/transactions/{transaction_id}/attachments/{attachment_id}",
+    "method": "PATCH",
+    "operation": "rename_attachment_api_transactions__transaction_id__attachments__attachment_id__patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "attachments"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/transactions/{transaction_id}/attachments/{attachment_id}",
+    "method": "DELETE",
+    "operation": "delete_attachment_api_transactions__transaction_id__attachments__attachment_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "attachments"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/fiscal/jurisdictions",
+    "method": "GET",
+    "operation": "list_jurisdictions_api_fiscal_jurisdictions_get",
+    "security": [],
+    "tags": [
+      "fiscal"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/fiscal/tax-id-kinds",
+    "method": "GET",
+    "operation": "list_tax_id_kinds_api_fiscal_tax_id_kinds_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "fiscal"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/payees",
+    "method": "GET",
+    "operation": "list_payees_api_payees_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "payees"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/payees",
+    "method": "POST",
+    "operation": "create_payee_api_payees_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "payees"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/payees/{payee_id}",
+    "method": "GET",
+    "operation": "get_payee_api_payees__payee_id__get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "payees"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/payees/{payee_id}",
+    "method": "PATCH",
+    "operation": "update_payee_api_payees__payee_id__patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "payees"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/payees/{payee_id}",
+    "method": "DELETE",
+    "operation": "delete_payee_api_payees__payee_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "payees"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/payees/{payee_id}/summary",
+    "method": "GET",
+    "operation": "get_payee_summary_api_payees__payee_id__summary_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "payees"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/payees/merge",
+    "method": "POST",
+    "operation": "merge_payees_api_payees_merge_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "payees"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/payees/bulk-delete",
+    "method": "POST",
+    "operation": "bulk_delete_payees_api_payees_bulk_delete_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "payees"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/invoices/settings",
+    "method": "GET",
+    "operation": "read_settings_api_invoices_settings_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/invoices/settings",
+    "method": "PATCH",
+    "operation": "write_settings_api_invoices_settings_patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/invoices/facets",
+    "method": "GET",
+    "operation": "read_facets_api_invoices_facets_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/invoices/summary",
+    "method": "GET",
+    "operation": "read_summary_api_invoices_summary_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/invoices/issuer",
+    "method": "GET",
+    "operation": "read_issuer_api_invoices_issuer_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/invoices/issuer",
+    "method": "PATCH",
+    "operation": "write_issuer_api_invoices_issuer_patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/invoices",
+    "method": "GET",
+    "operation": "list_invoices_api_invoices_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/invoices",
+    "method": "POST",
+    "operation": "create_invoice_api_invoices_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/invoices/{invoice_id}",
+    "method": "GET",
+    "operation": "get_invoice_api_invoices__invoice_id__get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/invoices/{invoice_id}",
+    "method": "PATCH",
+    "operation": "update_invoice_api_invoices__invoice_id__patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/invoices/{invoice_id}",
+    "method": "DELETE",
+    "operation": "delete_invoice_api_invoices__invoice_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/invoices/{invoice_id}/issue",
+    "method": "POST",
+    "operation": "issue_invoice_api_invoices__invoice_id__issue_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/invoices/{invoice_id}/void",
+    "method": "POST",
+    "operation": "void_invoice_api_invoices__invoice_id__void_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/invoices/{invoice_id}/uncollectible",
+    "method": "POST",
+    "operation": "write_off_invoice_api_invoices__invoice_id__uncollectible_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/invoices/{invoice_id}/reopen",
+    "method": "POST",
+    "operation": "reopen_invoice_api_invoices__invoice_id__reopen_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/invoices/{invoice_id}/allocations",
+    "method": "POST",
+    "operation": "create_allocation_api_invoices__invoice_id__allocations_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/invoices/{invoice_id}/allocations/{allocation_id}",
+    "method": "DELETE",
+    "operation": "remove_allocation_api_invoices__invoice_id__allocations__allocation_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/invoices/{invoice_id}/document",
+    "method": "GET",
+    "operation": "read_document_api_invoices__invoice_id__document_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/invoices/settings/logo",
+    "method": "POST",
+    "operation": "upload_logo_api_invoices_settings_logo_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/invoices/settings/logo",
+    "method": "DELETE",
+    "operation": "remove_logo_api_invoices_settings_logo_delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/invoices/logo/{logo_id}",
+    "method": "GET",
+    "operation": "read_logo_api_invoices_logo__logo_id__get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/invoices/{invoice_id}/pdf",
+    "method": "GET",
+    "operation": "download_pdf_api_invoices__invoice_id__pdf_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/invoices/{invoice_id}/share",
+    "method": "POST",
+    "operation": "create_share_link_api_invoices__invoice_id__share_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/invoices/{invoice_id}/share",
+    "method": "DELETE",
+    "operation": "revoke_share_link_api_invoices__invoice_id__share_delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/invoices/{invoice_id}/attachments",
+    "method": "POST",
+    "operation": "upload_attachment_api_invoices__invoice_id__attachments_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/invoices/{invoice_id}/attachments",
+    "method": "GET",
+    "operation": "list_attachments_api_invoices__invoice_id__attachments_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/invoices/{invoice_id}/attachments/{attachment_id}",
+    "method": "GET",
+    "operation": "download_attachment_api_invoices__invoice_id__attachments__attachment_id__get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/invoices/{invoice_id}/attachments/{attachment_id}",
+    "method": "PATCH",
+    "operation": "update_attachment_api_invoices__invoice_id__attachments__attachment_id__patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/invoices/{invoice_id}/attachments/{attachment_id}",
+    "method": "DELETE",
+    "operation": "delete_attachment_api_invoices__invoice_id__attachments__attachment_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/public/invoices/{token}",
+    "method": "GET",
+    "operation": "read_shared_invoice_api_public_invoices__token__get",
+    "security": [],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/public/invoices/{token}/logo",
+    "method": "GET",
+    "operation": "read_shared_logo_api_public_invoices__token__logo_get",
+    "security": [],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/public/invoices/{token}/pdf",
+    "method": "GET",
+    "operation": "download_shared_pdf_api_public_invoices__token__pdf_get",
+    "security": [],
+    "tags": [
+      "invoices"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/settings/attachments",
+    "method": "GET",
+    "operation": "get_attachment_settings_api_settings_attachments_get",
+    "security": [],
+    "tags": [
+      "settings"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/workspaces",
+    "method": "GET",
+    "operation": "list_my_workspaces_api_workspaces_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "workspaces"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/workspaces",
+    "method": "POST",
+    "operation": "create_workspace_endpoint_api_workspaces_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "workspaces"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/workspaces/current",
+    "method": "GET",
+    "operation": "get_current_workspace_api_workspaces_current_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "workspaces"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/workspaces/{workspace_id}",
+    "method": "PATCH",
+    "operation": "update_workspace_api_workspaces__workspace_id__patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "workspaces"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/workspaces/{workspace_id}/members",
+    "method": "GET",
+    "operation": "list_workspace_members_api_workspaces__workspace_id__members_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "workspaces"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/workspaces/{workspace_id}/members",
+    "method": "POST",
+    "operation": "invite_member_api_workspaces__workspace_id__members_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "workspaces"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/workspaces/{workspace_id}/members/{member_user_id}",
+    "method": "PATCH",
+    "operation": "change_member_role_api_workspaces__workspace_id__members__member_user_id__patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "workspaces"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/workspaces/{workspace_id}/members/{member_user_id}",
+    "method": "DELETE",
+    "operation": "remove_workspace_member_api_workspaces__workspace_id__members__member_user_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "workspaces"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/workspaces/{workspace_id}/stats",
+    "method": "GET",
+    "operation": "workspace_stats_api_workspaces__workspace_id__stats_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "workspaces"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/workspaces/{workspace_id}/archive",
+    "method": "POST",
+    "operation": "archive_workspace_endpoint_api_workspaces__workspace_id__archive_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "workspaces"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/admin/users",
+    "method": "GET",
+    "operation": "list_users_api_admin_users_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "admin"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/admin/users",
+    "method": "POST",
+    "operation": "create_user_api_admin_users_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "admin"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/admin/users/{user_id}",
+    "method": "GET",
+    "operation": "get_user_api_admin_users__user_id__get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "admin"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/admin/users/{user_id}",
+    "method": "PATCH",
+    "operation": "update_user_api_admin_users__user_id__patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "admin"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/admin/users/{user_id}",
+    "method": "DELETE",
+    "operation": "delete_user_api_admin_users__user_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "admin"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/admin/settings/{key}",
+    "method": "GET",
+    "operation": "get_setting_api_admin_settings__key__get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "admin"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/admin/settings/{key}",
+    "method": "PATCH",
+    "operation": "update_setting_api_admin_settings__key__patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "admin"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/admin/registration-status",
+    "method": "GET",
+    "operation": "registration_status_api_admin_registration_status_get",
+    "security": [],
+    "tags": [
+      "admin"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/admin/default-colors",
+    "method": "GET",
+    "operation": "default_colors_api_admin_default_colors_get",
+    "security": [],
+    "tags": [
+      "admin"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/admin/accounting-mode",
+    "method": "GET",
+    "operation": "accounting_mode_api_admin_accounting_mode_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "admin"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/admin/number-format",
+    "method": "GET",
+    "operation": "number_format_api_admin_number_format_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "admin"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/admin/date-format",
+    "method": "GET",
+    "operation": "date_format_api_admin_date_format_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "admin"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/admin/pricing/campaign",
+    "method": "GET",
+    "operation": "read_campaign_api_admin_pricing_campaign_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "admin-pricing"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/admin/pricing/campaign",
+    "method": "PATCH",
+    "operation": "patch_campaign_api_admin_pricing_campaign_patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "admin-pricing"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/admin/pricing/provider-catalog",
+    "method": "GET",
+    "operation": "provider_catalog_status_api_admin_pricing_provider_catalog_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "admin-pricing"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/admin/pricing/audit",
+    "method": "GET",
+    "operation": "pricing_audit_api_admin_pricing_audit_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "admin-pricing"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/account-deletion/preview",
+    "method": "GET",
+    "operation": "preview_api_account_deletion_preview_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "account-deletion"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/account-deletion",
+    "method": "POST",
+    "operation": "request_api_account_deletion_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "account-deletion"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/account-deletion/mine",
+    "method": "GET",
+    "operation": "mine_api_account_deletion_mine_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "account-deletion"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/account-deletion/{identity}/status",
+    "method": "GET",
+    "operation": "status_api_account_deletion__identity__status_get",
+    "security": [],
+    "tags": [
+      "account-deletion"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/account-deletion/{identity}/cancel",
+    "method": "POST",
+    "operation": "cancel_api_account_deletion__identity__cancel_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "account-deletion"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/account-deletion/operator/requests",
+    "method": "GET",
+    "operation": "operator_requests_api_account_deletion_operator_requests_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "account-deletion"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/account-deletion/operator/{identity}",
+    "method": "GET",
+    "operation": "operator_request_api_account_deletion_operator__identity__get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "account-deletion"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/account-deletion/operator/holds",
+    "method": "POST",
+    "operation": "add_hold_api_account_deletion_operator_holds_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "account-deletion"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/account-deletion/operator/holds/{identity}/release",
+    "method": "POST",
+    "operation": "release_hold_api_account_deletion_operator_holds__identity__release_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "account-deletion"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/account-deletion/operator/{identity}/review",
+    "method": "POST",
+    "operation": "review_api_account_deletion_operator__identity__review_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "account-deletion"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/account-deletion/operator/{identity}/receipt",
+    "method": "POST",
+    "operation": "receipt_api_account_deletion_operator__identity__receipt_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "account-deletion"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/account-deletion/operator/{identity}/execute",
+    "method": "POST",
+    "operation": "execute_api_account_deletion_operator__identity__execute_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "account-deletion"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/account-deletion/operator/{identity}/backup-proof",
+    "method": "POST",
+    "operation": "backup_proof_api_account_deletion_operator__identity__backup_proof_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "account-deletion"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/workspace-deletion/workspaces",
+    "method": "GET",
+    "operation": "deletion_workspaces_api_workspace_deletion_workspaces_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "workspace-deletion"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/workspace-deletion/preview/{workspace_id}",
+    "method": "GET",
+    "operation": "preview_api_workspace_deletion_preview__workspace_id__get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "workspace-deletion"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/workspace-deletion",
+    "method": "POST",
+    "operation": "request_api_workspace_deletion_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "workspace-deletion"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/workspace-deletion/mine",
+    "method": "GET",
+    "operation": "mine_api_workspace_deletion_mine_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "workspace-deletion"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/workspace-deletion/{identity}/status",
+    "method": "GET",
+    "operation": "status_api_workspace_deletion__identity__status_get",
+    "security": [],
+    "tags": [
+      "workspace-deletion"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/workspace-deletion/{identity}/cancel",
+    "method": "POST",
+    "operation": "cancel_api_workspace_deletion__identity__cancel_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "workspace-deletion"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/workspace-deletion/operator/requests",
+    "method": "GET",
+    "operation": "operator_requests_api_workspace_deletion_operator_requests_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "workspace-deletion"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/workspace-deletion/operator/{identity}",
+    "method": "GET",
+    "operation": "operator_request_api_workspace_deletion_operator__identity__get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "workspace-deletion"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/workspace-deletion/operator/holds",
+    "method": "POST",
+    "operation": "add_hold_api_workspace_deletion_operator_holds_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "workspace-deletion"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/workspace-deletion/operator/holds/{identity}/release",
+    "method": "POST",
+    "operation": "release_hold_api_workspace_deletion_operator_holds__identity__release_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "workspace-deletion"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/workspace-deletion/operator/{identity}/review",
+    "method": "POST",
+    "operation": "review_api_workspace_deletion_operator__identity__review_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "workspace-deletion"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/workspace-deletion/operator/{identity}/receipt",
+    "method": "POST",
+    "operation": "receipt_api_workspace_deletion_operator__identity__receipt_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "workspace-deletion"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/workspace-deletion/operator/{identity}/execute",
+    "method": "POST",
+    "operation": "execute_api_workspace_deletion_operator__identity__execute_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "workspace-deletion"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/workspace-deletion/operator/{identity}/backup-proof",
+    "method": "POST",
+    "operation": "backup_proof_api_workspace_deletion_operator__identity__backup_proof_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "workspace-deletion"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/workspace-deletion/{identity}/detach-manager",
+    "method": "POST",
+    "operation": "detach_manager_api_workspace_deletion__identity__detach_manager_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "workspace-deletion"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/workspace-deletion/{identity}/transfer-billing",
+    "method": "POST",
+    "operation": "transfer_billing_api_workspace_deletion__identity__transfer_billing_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "workspace-deletion"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/workspace-deletion/operator/{identity}/repair-billing",
+    "method": "POST",
+    "operation": "repair_billing_api_workspace_deletion_operator__identity__repair_billing_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "workspace-deletion"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/support/info",
+    "method": "GET",
+    "operation": "get_support_info_api_support_info_get",
+    "security": [],
+    "tags": [
+      "support"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/support/tickets",
+    "method": "POST",
+    "operation": "submit_support_ticket_api_support_tickets_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "support"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/privacy-policy",
+    "method": "GET",
+    "operation": "get_privacy_policy_api_privacy_policy_get",
+    "security": [],
+    "tags": [
+      "info"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/terms",
+    "method": "GET",
+    "operation": "get_terms_api_terms_get",
+    "security": [],
+    "tags": [
+      "info"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/info",
+    "method": "GET",
+    "operation": "get_app_info_api_info_get",
+    "security": [],
+    "tags": [
+      "info"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/info",
+    "method": "GET",
+    "operation": "get_agents_info_api_agents_info_get",
+    "security": [],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/connections",
+    "method": "GET",
+    "operation": "list_connections_api_agents_connections_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/connections",
+    "method": "POST",
+    "operation": "create_connection_api_agents_connections_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/connections/{conn_id}",
+    "method": "GET",
+    "operation": "get_connection_api_agents_connections__conn_id__get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/connections/{conn_id}",
+    "method": "PATCH",
+    "operation": "update_connection_api_agents_connections__conn_id__patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/connections/{conn_id}",
+    "method": "DELETE",
+    "operation": "delete_connection_api_agents_connections__conn_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/connections/{conn_id}/test",
+    "method": "POST",
+    "operation": "test_connection_api_agents_connections__conn_id__test_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/conversations",
+    "method": "GET",
+    "operation": "list_conversations_api_agents_conversations_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/conversations/{conversation_id}",
+    "method": "GET",
+    "operation": "get_conversation_api_agents_conversations__conversation_id__get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/conversations/{conversation_id}",
+    "method": "PATCH",
+    "operation": "rename_conversation_api_agents_conversations__conversation_id__patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/conversations/{conversation_id}",
+    "method": "DELETE",
+    "operation": "delete_conversation_api_agents_conversations__conversation_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/conversations/{conversation_id}/messages",
+    "method": "GET",
+    "operation": "list_messages_api_agents_conversations__conversation_id__messages_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/conversations/{conversation_id}/generate-title",
+    "method": "POST",
+    "operation": "generate_title_api_agents_conversations__conversation_id__generate_title_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/mcp-tokens",
+    "method": "POST",
+    "operation": "create_mcp_token_api_agents_mcp_tokens_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/mcp-tokens",
+    "method": "GET",
+    "operation": "list_mcp_tokens_api_agents_mcp_tokens_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/mcp-tokens/{token_id}",
+    "method": "DELETE",
+    "operation": "revoke_mcp_token_api_agents_mcp_tokens__token_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/mcp-tokens/approvals",
+    "method": "GET",
+    "operation": "list_approvals_api_agents_mcp_tokens_approvals_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/mcp-tokens/approvals/{approval_id}/approve",
+    "method": "POST",
+    "operation": "approve_action_api_agents_mcp_tokens_approvals__approval_id__approve_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/mcp-tokens/approvals/{approval_id}/reject",
+    "method": "POST",
+    "operation": "reject_action_api_agents_mcp_tokens_approvals__approval_id__reject_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents",
+    "method": "GET",
+    "operation": "list_agents_api_agents_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents",
+    "method": "POST",
+    "operation": "create_agent_api_agents_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/copilot",
+    "method": "GET",
+    "operation": "get_core_copilot_api_agents_copilot_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/default",
+    "method": "GET",
+    "operation": "get_default_agent_api_agents_default_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/{agent_id}",
+    "method": "GET",
+    "operation": "get_agent_api_agents__agent_id__get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/{agent_id}",
+    "method": "PATCH",
+    "operation": "update_agent_api_agents__agent_id__patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/{agent_id}",
+    "method": "DELETE",
+    "operation": "delete_agent_api_agents__agent_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/{agent_id}/tools",
+    "method": "GET",
+    "operation": "get_agent_tools_api_agents__agent_id__tools_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/{agent_id}/tools",
+    "method": "PUT",
+    "operation": "put_agent_tools_api_agents__agent_id__tools_put",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/{agent_id}/chat",
+    "method": "POST",
+    "operation": "chat_api_agents__agent_id__chat_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/{agent_id}/knowledge",
+    "method": "GET",
+    "operation": "list_knowledge_api_agents__agent_id__knowledge_get",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/{agent_id}/knowledge",
+    "method": "POST",
+    "operation": "upload_knowledge_api_agents__agent_id__knowledge_post",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/{agent_id}/knowledge/{doc_id}/pin",
+    "method": "PATCH",
+    "operation": "toggle_pin_api_agents__agent_id__knowledge__doc_id__pin_patch",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/agents/{agent_id}/knowledge/{doc_id}",
+    "method": "DELETE",
+    "operation": "delete_knowledge_api_agents__agent_id__knowledge__doc_id__delete",
+    "security": [
+      {
+        "OAuth2PasswordBearer": []
+      }
+    ],
+    "tags": [
+      "agents"
+    ],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/health/live",
+    "method": "GET",
+    "operation": "health_check_api_health_live_get",
+    "security": [],
+    "tags": [],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/health",
+    "method": "GET",
+    "operation": "health_check_api_health_get",
+    "security": [],
+    "tags": [],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  },
+  {
+    "path": "/api/health/ready",
+    "method": "GET",
+    "operation": "readiness_check_api_health_ready_get",
+    "security": [],
+    "tags": [],
+    "authorization_result": "Schema declaration only; service-level A/B tests required"
+  }
+]

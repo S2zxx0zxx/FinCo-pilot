@@ -192,12 +192,15 @@ try {
         page.on('request', request => pending.add(new URL(request.url()).pathname))
         page.on('requestfinished', request => pending.delete(new URL(request.url()).pathname))
         page.on('requestfailed', request => pending.delete(new URL(request.url()).pathname))
+        let navigationError = null
+        // Each page starts empty. The visible form and final URL are the readiness
+        // contract; an engine may finish navigation without resolving its milestone.
+        void page.goto(browserOrigin + '/login', { waitUntil:'commit' }).catch(error=>{navigationError=error.message})
         try {
-          // Readiness is the usable form, not an engine's navigation milestone.
-          await page.goto(browserOrigin + '/login', { waitUntil: 'commit' })
           await page.locator('input[type=email]').waitFor()
+          assert.equal(new URL(page.url()).pathname,'/login')
         } catch (error) {
-          const diagnostics={width,reducedMotion,url:page.url(),pending:[...pending],errors,nginxError:(await readFile(path.join(work,'error.log'),'utf8')).slice(-6000)}
+          const diagnostics={width,reducedMotion,url:page.url(),navigationError,pending:[...pending],errors,nginxError:(await readFile(path.join(work,'error.log'),'utf8')).slice(-6000)}
           console.log('Login readiness diagnostics',JSON.stringify(diagnostics))
           await writeFile(path.join(output, 'login-readiness-failure.json'), JSON.stringify(diagnostics,null,2))
           throw error

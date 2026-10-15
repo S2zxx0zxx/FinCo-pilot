@@ -1,0 +1,77 @@
+{
+  "scope": "Local nginx /login, signed out, same synthetic GET-only public configuration; no real provider/financial data. Single paired runs; not live PSI or CrUX.",
+  "baseCommit": "f30f7222c00a4320b4aba42a645681dc487c662d",
+  "branch": "fix/mobile-performance-34-20261014",
+  "tool": {
+    "lighthouse": "13.5.0",
+    "browser": "Chromium 141",
+    "formFactor": "mobile",
+    "throttling": {
+      "rttMs": 150,
+      "throughputKbps": 1638.4,
+      "requestLatencyMs": 562.5,
+      "downloadThroughputKbps": 1474.5600000000002,
+      "uploadThroughputKbps": 675,
+      "cpuSlowdownMultiplier": 4
+    }
+  },
+  "baseline": {
+    "mode": "local nginx production template, synthetic public config, no real login",
+    "scores": {
+      "performance": 0.32,
+      "accessibility": 0.98,
+      "best-practices": 1,
+      "seo": 0.82
+    },
+    "metrics": {
+      "first-contentful-paint": 14403.948999999999,
+      "largest-contentful-paint": 14797.931999999999,
+      "total-blocking-time": 1142.0085,
+      "cumulative-layout-shift": 0,
+      "speed-index": 14403.948999999999,
+      "total-byte-weight": 2283677
+    }
+  },
+  "optimized": {
+    "mode": "local nginx production template, synthetic public config, no real login",
+    "scores": {
+      "performance": 0.71,
+      "accessibility": 1,
+      "best-practices": 1,
+      "seo": 1
+    },
+    "metrics": {
+      "first-contentful-paint": 3616.3990000000003,
+      "largest-contentful-paint": 4433.665,
+      "total-blocking-time": 264.8669999999995,
+      "cumulative-layout-shift": 0,
+      "speed-index": 3616.3990000000003,
+      "total-byte-weight": 488777
+    }
+  },
+  "mainThreadMs": {
+    "baseline": 7610.3239999999905,
+    "optimized": 1405.368000000002
+  },
+  "acceptance": {
+    "vitestFiles": 119,
+    "vitestTests": 912,
+    "routeVisits": 360,
+    "routeFailures": 0,
+    "nginxViewportMotionCases": 8,
+    "wcagViolations": 0,
+    "settledLoginPixelDifferencesOver8": {
+      "390": 0,
+      "1440": 0
+    },
+    "npmAuditVulnerabilities": 0,
+    "filesDeleted": 0
+  },
+  "externalPending": [
+    "Origin image build and rollout; Cloudflare Tunnel DOWN/zero connections, public HTTP530",
+    "Real Google/Clerk/bank/payment flows",
+    "Strict CSP/Trusted Types compatibility and enforcement",
+    "Physical devices and screen readers",
+    "Reviewed metrics collector and real field traffic"
+  ]
+}

@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /login
+Allow: /register
+Allow: /pricing
+Allow: /support
+Allow: /terms
+Allow: /privacy
+Disallow: /api/
+Disallow: /mcp
+Disallow: /reset-password
+Disallow: /verify-email
+Disallow: /sso-callback
+Disallow: /auth/
+Disallow: /oauth/
+Disallow: /i/

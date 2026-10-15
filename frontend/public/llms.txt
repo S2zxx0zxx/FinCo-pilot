@@ -1,0 +1,14 @@
+# FinCo-Pilot
+
+> A financial workspace for managing accounts, transactions, budgets and reports.
+
+Private financial data and all account actions require authentication and the
+existing workspace permissions. This document grants no access or authorization.
+No public agent API is advertised by this catalog.
+
+## Public pages
+- [Sign in](https://fincopilot.app/login): Access an existing account.
+- [Pricing](https://fincopilot.app/pricing): View available plans.
+- [Support](https://fincopilot.app/support): View the configured support options.
+- [Terms](https://fincopilot.app/terms): Terms page; content depends on operator configuration.
+- [Privacy](https://fincopilot.app/privacy): Privacy page; content depends on operator configuration.

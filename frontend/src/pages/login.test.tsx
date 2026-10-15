@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { screen, waitFor } from '@testing-library/react'
+import { act, screen, waitFor } from '@testing-library/react'
 import type { AxiosError } from 'axios'
 
 import LoginPage from '@/pages/login'
@@ -65,6 +65,18 @@ async function renderLogin() {
 }
 
 describe('LoginPage', () => {
+  it('keeps the route wait until the server selects sign-in methods', async () => {
+    let resolveConfig!: (config: { enabled: boolean; provider_name: string; local_auth_enabled: boolean }) => void
+    api.auth.oidcConfig.mockReturnValue(new Promise(resolve => { resolveConfig = resolve }))
+    renderWithProviders(<LoginPage />, { route: '/login' })
+    expect(screen.getByRole('status', { name: /Opening/i })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: t('auth.login') })).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(t('auth.email'))).not.toBeInTheDocument()
+    await act(async () => resolveConfig({ enabled: false, provider_name: 'OIDC', local_auth_enabled: true }))
+    expect(await screen.findByLabelText(t('auth.email'))).toBeInTheDocument()
+    expect(screen.queryByRole('status', { name: /Opening/i })).not.toBeInTheDocument()
+  })
+
   it('renders the credentials form', async () => {
     await renderLogin()
 

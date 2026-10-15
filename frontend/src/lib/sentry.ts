@@ -61,8 +61,9 @@ export function initSentry(): boolean {
   const environment = ['production', 'staging', 'preview', 'development', 'test'].includes(rawEnvironment)
     ? rawEnvironment : 'unknown'
 
-  const pkg = '@sentry/react'
-  import(/* @vite-ignore */ pkg)
+  // Statically analyzable dynamic import: a bare @vite-ignore package name
+  // cannot resolve in a production browser without an import map.
+  import('@sentry/react')
     .then((Sentry) => {
       Sentry.init({
         dsn,
@@ -72,7 +73,7 @@ export function initSentry(): boolean {
         replaysSessionSampleRate: 0,
         replaysOnErrorSampleRate: 0,
         beforeBreadcrumb: () => null,
-        beforeSend: (event: unknown) => sanitizeSentryEvent(event as object),
+        beforeSend: (event) => sanitizeSentryEvent(event),
       })
       sentryModule = Sentry
       initialized = true

@@ -1,0 +1,58 @@
+{
+  "mode": "local nginx production template, synthetic public config, no real login",
+  "scores": {
+    "performance": 0.77,
+    "accessibility": 1,
+    "best-practices": 1,
+    "seo": 1
+  },
+  "metrics": {
+    "first-contentful-paint": 3183.125,
+    "largest-contentful-paint": 4026.5,
+    "total-blocking-time": 219,
+    "cumulative-layout-shift": 0,
+    "speed-index": 3183.125,
+    "total-byte-weight": 447843
+  },
+  "provenance": "Phase-2 default/local-auth synthetic GET-only fixture; before final SRI metadata; not live or configured provider acceptance",
+  "entryGzipBytes": {
+    "default": 214229,
+    "existingClerkConfigured": 214289
+  },
+  "verification": {
+    "vitestFiles": 121,
+    "vitestTests": 920,
+    "uiVisits": 360,
+    "strictCspLocalCases": 8,
+    "workerPrivacyTests": 7,
+    "configuredClerkBrowser": {
+      "cases": 8,
+      "axeViolations": 0,
+      "googleAndEmailControls": "present",
+      "scope": "Real Clerk HTTPS tenant; app-host GETs supplied by local nginx synthetic API fixture; no actual signin"
+    },
+    "strictCspConfiguredClerk": {
+      "cases": 8,
+      "blockedResources": 0,
+      "scope": "same anonymous local app-host fixture, no real OAuth or payment callback"
+    },
+    "githubCi": {
+      "sourceCommit": "6bcb6584afaa3468337284b5226bb957961e200a",
+      "runId": 38588814538,
+      "jobs": 7,
+      "conclusion": "success",
+      "additionalWorkerPrivacyRunId": 38588815168,
+      "workerPrivacyConclusion": "success"
+    }
+  },
+  "historicalPreRolloutRum": {
+    "observedAt": "2026-10-14T12:18:42.565Z",
+    "metricEvents": 214,
+    "lcpSamples": 137,
+    "inpSamples": 63,
+    "clsSamples": 145,
+    "p75LcpSeconds": 12.416,
+    "p75InpMilliseconds": 272,
+    "p75Cls": 0.003
+  }
+}

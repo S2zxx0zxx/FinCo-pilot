@@ -29,6 +29,14 @@ docker compose up --build
 
 Open `http://localhost:3000` and create an account.
 
+The default frontend serves an optimized production build through nginx on
+port 3000. For explicit source watching/live reload, use
+`docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build`.
+Public Clerk/Razorpay/Sentry browser settings are build-time configuration;
+rebuild the frontend when those settings change. See
+[the mobile performance acceptance ledger](docs/trust/MOBILE_PERFORMANCE_34_20261014.md)
+for the existing Tunnel origin and safe frontend-only rollout checks.
+
 <p align="center">
   <img src="docs/screenshot.png" width="800" alt="FinCo-Pilot dashboard" />
 </p>

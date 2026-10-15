@@ -6,6 +6,9 @@ python3 - <<'PY'
 from pathlib import Path
 text = Path('../charts/fincopilot/templates/frontend/configmap-nginx.yaml').read_text()
 block = text.split('  default.conf.template: |\n', 1)[1]
+# This fixture covers the default reporting-off mode; Helm render is checked
+# separately by helm-checks. The nginx body has only this Helm expression.
+block = block.replace('{{ .Values.config.frontendTrustedTypesReportOnly | default false }}', 'false')
 Path('/tmp/finco-helm-nginx.template').write_text('\n'.join(line[4:] for line in block.splitlines()) + '\n')
 PY
 cleanup() {
@@ -17,8 +20,11 @@ for template in "$PWD/default.conf.template" /tmp/finco-helm-nginx.template; do
   docker run --rm -d --name finco-recovery-edge-ci \
     -p 127.0.0.1:18080:8080 \
     -e BACKEND_URL=http://127.0.0.1:8000 -e NGINX_RESOLVER=127.0.0.11 \
+    -e FINCO_TRUSTED_TYPES_REPORT_ONLY=false -e FINCO_STRICT_CSP_MODE=compatibility \
     -v "$PWD/dist:/usr/share/nginx/html:ro" \
     -v "$template:/etc/nginx/templates/default.conf.template:ro" \
+    -v "$PWD/security-headers.conf:/etc/nginx/finco-security-headers.conf:ro" \
+  -v "$PWD/node_modules/.cache/finco-security/csp-map.conf.template:/etc/nginx/templates/00-finco-csp.conf.template:ro" \
     nginxinc/nginx-unprivileged:alpine >/dev/null
   ready=false
   for _ in $(seq 1 15); do

@@ -1,0 +1,89 @@
+{
+  "accountId": "3673b5484e1cbd3decced2af27b94631",
+  "zoneId": "f78303d46bb6ca1f5fc894aa64c16df3",
+  "host": "fincopilot.app",
+  "before": {
+    "browser_cache_ttl": 14400,
+    "security_header": {
+      "strict_transport_security": {
+        "enabled": false,
+        "max_age": 0,
+        "include_subdomains": false,
+        "preload": false,
+        "nosniff": false
+      }
+    },
+    "cacheRuleset": null
+  },
+  "desired": {
+    "name": "FinCo frontend cache safety",
+    "kind": "zone",
+    "phase": "http_request_cache_settings",
+    "rules": [
+      {
+        "ref": "finco_dynamic_no_edge_cache",
+        "description": "FinCo HTML/API/recovery/discovery bypass; preserve data privacy",
+        "expression": "(http.host eq \"fincopilot.app\" and not starts_with(http.request.uri.path, \"/static/\"))",
+        "action": "set_cache_settings",
+        "action_parameters": {
+          "cache": false,
+          "browser_ttl": {
+            "mode": "respect_origin"
+          }
+        },
+        "enabled": true
+      },
+      {
+        "ref": "finco_hashed_assets_respect_origin",
+        "description": "FinCo hashed static assets respect origin; errors never stored",
+        "expression": "(http.host eq \"fincopilot.app\" and starts_with(http.request.uri.path, \"/static/\"))",
+        "action": "set_cache_settings",
+        "action_parameters": {
+          "cache": true,
+          "browser_ttl": {
+            "mode": "respect_origin"
+          },
+          "edge_ttl": {
+            "mode": "respect_origin",
+            "status_code_ttl": [
+              {
+                "status_code_range": {
+                  "from": 400,
+                  "to": 999
+                },
+                "value": -1
+              }
+            ]
+          }
+        },
+        "enabled": true
+      }
+    ]
+  },
+  "hsts": {
+    "strict_transport_security": {
+      "enabled": true,
+      "max_age": 31536000,
+      "include_subdomains": false,
+      "preload": false,
+      "nosniff": true
+    }
+  },
+  "rollback": "Restore original security_header; delete ONLY cache ruleset 8334b97a29674e758814d6bc9787a62d after checking refs. Browser Cache TTL 14400 was not changed; scoped cache rules override it. Never delete managed rulesets or alter DNS/Tunnel.",
+  "applied": {
+    "cacheRulesetId": "8334b97a29674e758814d6bc9787a62d",
+    "cacheRulesetVersion": "1",
+    "securityHeaderReadback": {
+      "strict_transport_security": {
+        "enabled": true,
+        "max_age": 31536000,
+        "include_subdomains": false,
+        "preload": false,
+        "nosniff": true
+      }
+    },
+    "mainDomainHstsVerified": true,
+    "tunnelStatusAtRecheck": "healthy",
+    "connections": 4
+  }
+}

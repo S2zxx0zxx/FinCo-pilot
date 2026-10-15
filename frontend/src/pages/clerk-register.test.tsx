@@ -24,7 +24,7 @@ beforeEach(() => {
 it('sends incomplete signup to username completion and never attempts a local token exchange', async () => {
   mocks.signUpWithPassword.mockResolvedValue({ status: 'needs_requirements' })
   const { user } = renderWithProviders(<RegisterPage />, { route: '/register' })
-  await user.type(screen.getByLabelText(t('auth.email')), 'new@example.com')
+  await user.type(await screen.findByLabelText(t('auth.email')), 'new@example.com')
   await user.type(screen.getByLabelText(t('auth.password')), 'sufficient-password')
   await user.type(screen.getByLabelText(t('auth.confirmPassword')), 'sufficient-password')
   await user.click(screen.getByRole('button', { name: t('auth.register') }))

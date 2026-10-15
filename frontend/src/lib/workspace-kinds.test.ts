@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 
-import i18n from '@/lib/i18n'
+import i18n, { i18nReady } from '@/lib/i18n'
 import {
   WORKSPACE_KINDS,
   WORKSPACE_KIND_ICON,
@@ -8,6 +8,10 @@ import {
 } from '@/lib/workspace-kinds'
 
 describe('WORKSPACE_KINDS', () => {
+  beforeAll(async () => {
+    await i18nReady
+    await i18n.loadLanguages('pt-BR')
+  })
   it('has no duplicates', () => {
     expect(new Set(WORKSPACE_KINDS).size).toBe(WORKSPACE_KINDS.length)
   })

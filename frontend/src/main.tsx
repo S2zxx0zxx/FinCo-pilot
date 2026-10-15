@@ -37,4 +37,11 @@ void i18nReady.then(() => {
     </StrictMode>,
   )
   retireBootSurface()
+  if (import.meta.env.VITE_WEB_VITALS_ENABLED === 'true') {
+    // Observer registrations use buffered measurements; allow critical UI to
+    // commit first and keep this optional library off the default entry path.
+    window.requestAnimationFrame(() => {
+      void import('./lib/web-vitals').then(module => module.initWebVitals()).catch(() => {})
+    })
+  }
 })

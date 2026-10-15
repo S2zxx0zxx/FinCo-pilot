@@ -20,11 +20,33 @@ data:
         ~^/(reset-password|verify-email)([?]|$) "no-store";
     }
 
+    map $finco_forwarded_proto $finco_hsts {
+        default "";
+        https "max-age=31536000";
+    }
+
+    map "{{ .Values.config.frontendTrustedTypesReportOnly | default false }}" $finco_tt_policy {
+        default "";
+        true "require-trusted-types-for 'script'";
+    }
+
     server {
         listen 8080;
         add_header Cache-Control $finco_recovery_cache_control always;
         access_log /var/log/nginx/access.log finco_private;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "DENY" always;
         add_header Referrer-Policy "no-referrer" always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(self)" always;
+        add_header Cross-Origin-Opener-Policy "same-origin-allow-popups" always;
+        add_header Strict-Transport-Security $finco_hsts always;
+        add_header Content-Security-Policy $finco_csp always;
+        add_header Content-Security-Policy-Report-Only $finco_strict_report always;
+        add_header Content-Security-Policy-Report-Only $finco_tt_policy always;
+        gzip on;
+        gzip_vary on;
+        gzip_min_length 1024;
+        gzip_types text/plain text/css application/javascript application/json image/svg+xml;
         root /usr/share/nginx/html;
         index index.html;
 
@@ -36,6 +58,17 @@ data:
         # is derived from the pod's own /etc/resolv.conf (cluster DNS) by the
         # image's docker-entrypoint.d/19-resolver.envsh.
         location /api/ {
+            proxy_hide_header Cache-Control;
+            add_header X-Content-Type-Options "nosniff" always;
+            add_header X-Frame-Options "DENY" always;
+            add_header Referrer-Policy "no-referrer" always;
+            add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(self)" always;
+            add_header Cross-Origin-Opener-Policy "same-origin-allow-popups" always;
+            add_header Strict-Transport-Security $finco_hsts always;
+            add_header Content-Security-Policy $finco_csp always;
+        add_header Content-Security-Policy-Report-Only $finco_strict_report always;
+            add_header Content-Security-Policy-Report-Only $finco_tt_policy always;
+            add_header Cache-Control "no-store" always;
             resolver ${NGINX_RESOLVER} valid=5s;
             set $upstream ${BACKEND_URL};
             proxy_pass $upstream;
@@ -47,6 +80,15 @@ data:
 
         # Never cache index.html so new deployments are always picked up immediately
         location = /index.html {
+            add_header X-Content-Type-Options "nosniff" always;
+            add_header X-Frame-Options "DENY" always;
+            add_header Referrer-Policy "no-referrer" always;
+            add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(self)" always;
+            add_header Cross-Origin-Opener-Policy "same-origin-allow-popups" always;
+            add_header Strict-Transport-Security $finco_hsts always;
+            add_header Content-Security-Policy $finco_csp always;
+        add_header Content-Security-Policy-Report-Only $finco_strict_report always;
+            add_header Content-Security-Policy-Report-Only $finco_tt_policy always;
             add_header Cache-Control "no-store, no-cache, must-revalidate";
             try_files $uri =404;
         }
@@ -55,6 +97,55 @@ data:
             error_log /dev/null;
             try_files /index.html =404;
         }
+
+        location = /sw.js {
+            add_header X-Content-Type-Options "nosniff" always;
+            add_header X-Frame-Options "DENY" always;
+            add_header Referrer-Policy "no-referrer" always;
+            add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(self)" always;
+            add_header Cross-Origin-Opener-Policy "same-origin-allow-popups" always;
+            add_header Strict-Transport-Security $finco_hsts always;
+            add_header Content-Security-Policy $finco_csp always;
+        add_header Content-Security-Policy-Report-Only $finco_strict_report always;
+            add_header Content-Security-Policy-Report-Only $finco_tt_policy always;
+            add_header Cache-Control "no-store, no-cache, must-revalidate";
+            add_header Service-Worker-Allowed "/";
+            try_files $uri =404;
+        }
+        location = /manifest.webmanifest {
+            add_header X-Content-Type-Options "nosniff" always;
+            add_header X-Frame-Options "DENY" always;
+            add_header Referrer-Policy "no-referrer" always;
+            add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(self)" always;
+            add_header Cross-Origin-Opener-Policy "same-origin-allow-popups" always;
+            add_header Strict-Transport-Security $finco_hsts always;
+            add_header Content-Security-Policy $finco_csp always;
+        add_header Content-Security-Policy-Report-Only $finco_strict_report always;
+            add_header Content-Security-Policy-Report-Only $finco_tt_policy always;
+            default_type application/manifest+json;
+            add_header Cache-Control "no-cache, must-revalidate";
+            try_files $uri =404;
+        }
+        location ^~ /static/ {
+            add_header X-Content-Type-Options "nosniff" always;
+            add_header X-Frame-Options "DENY" always;
+            add_header Referrer-Policy "no-referrer" always;
+            add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(self)" always;
+            add_header Cross-Origin-Opener-Policy "same-origin-allow-popups" always;
+            add_header Strict-Transport-Security $finco_hsts always;
+            add_header Content-Security-Policy $finco_csp always;
+        add_header Content-Security-Policy-Report-Only $finco_strict_report always;
+            add_header Content-Security-Policy-Report-Only $finco_tt_policy always;
+            add_header Cache-Control "public, max-age=31536000, immutable";
+            try_files $uri =404;
+        }
+        location = /robots.txt { default_type text/plain; try_files $uri =404; }
+        location = /llms.txt { default_type text/plain; try_files $uri =404; }
+        location = /.well-known/ai-catalog.json { default_type application/json; try_files $uri =404; }
+        location = /ai-catalog.json { default_type application/json; try_files $uri =404; }
+        location ~ ^/(src|node_modules)/ { return 404; }
+        location = /@vite/client { return 404; }
+        location = /.vite/manifest.json { return 404; }
 
         # SPA fallback — serve index.html for all non-file routes
         location / {

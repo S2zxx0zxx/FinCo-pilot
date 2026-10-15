@@ -1,0 +1,175 @@
+/** Actual nginx production-template acceptance with synthetic GET-only API.
+ * Does not certify live Clerk, bank, payments, financial data or physical devices.
+ * NGINX_BIN may point to a locally compiled nginx. No app credentials required.
+ */
+import assert from 'node:assert/strict'
+import { spawn, spawnSync } from 'node:child_process'
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import http from 'node:http'
+import path from 'node:path'
+import os from 'node:os'
+import { chromium } from 'playwright'
+import AxeBuilder from '@axe-core/playwright'
+
+const work = await mkdtemp(path.join(os.tmpdir(), 'finco-nginx-'))
+const output = process.env.FINCO_PERF_OUTPUT || work
+await mkdir(output, { recursive: true })
+await mkdir(path.join(work, 'logs'), { recursive: true })
+const publicConfig = {
+  '/api/auth/oidc/config': { enabled: false, local_auth_enabled: true, passkey_enabled: false },
+  '/api/setup/status': { has_users: true, setup_available: false, minimum_password_length: 8 },
+  '/api/admin/registration-status': { enabled: true },
+  '/api/info': { features: { agents: false } },
+  '/api/admin/default-colors': { light: null, dark: null },
+  // These are unauthenticated public GET contracts, not private entitlements.
+  '/api/billing/catalog': { prices: [{ plan: 'free', interval: 'none', amount_minor: 0, currency: 'INR' }], pro_annual_saving_minor: 0, tax_display_mode: 'unconfigured' },
+  '/api/billing/founder-campaign': { state: 'paused', live: false, waves: [], total_capacity: 0, total_claimed: 0, total_held: 0, total_available: 0 },
+}
+const backend = http.createServer((request, response) => {
+  const endpoint = new URL(request.url, 'http://localhost').pathname
+  response.setHeader('Content-Type', 'application/json')
+  if (request.method !== 'GET') response.writeHead(405).end(JSON.stringify({ detail: 'Test fixture: writes forbidden' }))
+  else if (publicConfig[endpoint]) response.end(JSON.stringify(publicConfig[endpoint]))
+  else response.writeHead(401).end(JSON.stringify({ detail: 'Test fixture: authentication required' }))
+})
+await new Promise(resolve => backend.listen(0, '127.0.0.1', resolve))
+const backendOrigin = `http://127.0.0.1:${backend.address().port}`
+const probe = http.createServer()
+await new Promise(resolve => probe.listen(0, '127.0.0.1', resolve))
+const port = probe.address().port
+await new Promise(resolve => probe.close(resolve))
+const origin = `http://127.0.0.1:${port}`
+const dist = path.resolve(process.env.FINCO_PERF_DIST || 'dist')
+const labOnly = process.env.FINCO_PERF_LAB_ONLY === 'true'
+let template = await readFile(process.env.FINCO_PERF_TEMPLATE || 'default.conf.template', 'utf8')
+template = template.replace('listen 8080;', `listen 127.0.0.1:${port};`)
+  .replaceAll('/usr/share/nginx/html', dist)
+  .replaceAll('/etc/nginx/finco-security-headers.conf', path.resolve('security-headers.conf'))
+  .replaceAll('/var/log/nginx/access.log', path.join(work, 'access.log'))
+  .replaceAll('${NGINX_RESOLVER}', '127.0.0.1')
+  .replaceAll('${BACKEND_URL}', backendOrigin)
+  .replaceAll('${FINCO_TRUSTED_TYPES_REPORT_ONLY}', process.env.FINCO_TRUSTED_TYPES_REPORT_ONLY === 'true' ? 'true' : 'false')
+const cspMaps = (await readFile('node_modules/.cache/finco-security/csp-map.conf.template', 'utf8')).replaceAll('${FINCO_STRICT_CSP_MODE}', process.env.FINCO_STRICT_CSP_MODE || 'compatibility')
+const localUser = process.getuid?.() === 0 ? 'user root root;' : ''
+const config = `${localUser} daemon off; master_process off; pid ${work}/nginx.pid; error_log ${work}/error.log;
+events { worker_connections 128; }
+http { types { text/html html; text/css css; application/javascript js; application/json json; image/png png; image/svg+xml svg; font/woff2 woff2; text/plain txt; }
+client_body_temp_path ${work}/client; proxy_temp_path ${work}/proxy; fastcgi_temp_path ${work}/fastcgi; uwsgi_temp_path ${work}/uwsgi; scgi_temp_path ${work}/scgi;
+${cspMaps}
+${template}
+}`
+const configPath = path.join(work, 'nginx.conf')
+await writeFile(configPath, config)
+const executable = process.env.NGINX_BIN || 'nginx'
+const checked = spawnSync(executable, ['-t', '-p', `${work}/`, '-c', configPath], { encoding: 'utf8' })
+assert.equal(checked.status, 0, checked.stderr || checked.error?.message)
+const nginx = spawn(executable, ['-p', `${work}/`, '-c', configPath], { stdio: ['ignore', 'pipe', 'pipe'] })
+let browser
+const results = []
+try {
+  let ready = false
+  for (let attempt = 0; attempt < 30; attempt++) {
+    try { ready = (await fetch(origin)).ok; if (ready) break } catch { /* startup */ }
+    await new Promise(resolve => setTimeout(resolve, 100))
+  }
+  assert(ready, await readFile(path.join(work, 'error.log'), 'utf8'))
+  if (!labOnly) {
+    const html = await (await fetch(origin)).text()
+    assert(!html.includes('/@vite/client') && !html.includes('/src/main.tsx'))
+    const script = html.match(/<script[^>]+src="([^"]+)"/)?.[1]
+    assert(script)
+    for (const endpoint of ['/', '/login', '/index.html', '/sw.js', '/manifest.webmanifest', script, '/robots.txt', '/llms.txt', '/.well-known/ai-catalog.json', '/ai-catalog.json']) {
+      const response = await fetch(origin + endpoint, { headers: { 'X-Forwarded-Proto': 'https' } })
+      assert.equal(response.status, 200, endpoint)
+      assert.equal(response.headers.get('x-frame-options'), 'DENY', endpoint)
+      assert.equal(response.headers.get('x-content-type-options'), 'nosniff', endpoint)
+      assert.equal(response.headers.get('cross-origin-opener-policy'), 'same-origin-allow-popups', endpoint)
+      assert.equal(response.headers.get('strict-transport-security'), 'max-age=31536000', endpoint)
+      assert.match(response.headers.get('content-security-policy') || '', /frame-ancestors 'none'/, endpoint)
+    }
+    assert.equal((await fetch(origin)).headers.get('strict-transport-security'), null, 'No HSTS on plain local HTTP')
+    assert.match((await fetch(origin + script)).headers.get('cache-control'), /immutable/)
+    assert.match((await fetch(origin + '/sw.js')).headers.get('cache-control'), /no-store/)
+    assert.match((await fetch(origin + '/reset-password?token=synthetic')).headers.get('cache-control'), /no-store/)
+    for (const endpoint of ['/static/missing.js', '/src/main.tsx', '/node_modules/missing.js', '/@vite/client', '/.vite/manifest.json']) assert.equal((await fetch(origin + endpoint)).status, 404, endpoint)
+    assert.match((await fetch(origin + '/robots.txt')).headers.get('content-type'), /text\/plain/)
+    const catalog = await (await fetch(origin + '/.well-known/ai-catalog.json')).json()
+    assert.equal(catalog.specVersion, '1.0')
+    assert.deepEqual(catalog.entries, [])
+
+    const proxyUrl = process.env.FINCO_BROWSER_PROXY === 'true' && process.env.HTTPS_PROXY ? new URL(process.env.HTTPS_PROXY) : null
+    const proxy = proxyUrl ? { server: proxyUrl.origin, username: decodeURIComponent(proxyUrl.username), password: decodeURIComponent(proxyUrl.password), bypass: '127.0.0.1,localhost' } : undefined
+    browser = await chromium.launch({ headless: true, args: ['--no-sandbox'], proxy })
+    for (const width of [390, 768, 1024, 1440]) {
+      for (const reducedMotion of ['no-preference', 'reduce']) {
+        const context = await browser.newContext({ viewport: { width, height: 1000 }, reducedMotion, serviceWorkers: 'block' })
+        // Production Clerk keys require the existing authorized browser origin.
+        // Only the app host is served by the local GET-only nginx fixture;
+        // provider HTTPS requests retain their actual host and tenant.
+        const browserOrigin = process.env.FINCO_CONFIGURED_CLERK_CHECK === 'true' ? 'https://fincopilot.app' : origin
+        if (browserOrigin !== origin) await context.route('https://fincopilot.app/**', async route => {
+          const url = new URL(route.request().url())
+          const response = await route.fetch({ url: origin + url.pathname + url.search })
+          await route.fulfill({ response })
+        })
+        await context.addInitScript(() => {
+          window.__fincoCspViolations = []
+          document.addEventListener('securitypolicyviolation', event => window.__fincoCspViolations.push(event.effectiveDirective))
+        })
+        const page = await context.newPage()
+        const errors = []
+        page.on('pageerror', error => errors.push(error.message))
+        await page.goto(browserOrigin + '/login', { waitUntil: 'networkidle' })
+        await page.locator('input[type=email]').waitFor()
+        if (process.env.FINCO_CONFIGURED_CLERK_CHECK === 'true') assert.equal(await page.getByRole('button', { name: /Google/ }).count(), 1, 'Configured Google login missing')
+        await page.evaluate(() => document.fonts.ready)
+        await page.waitForTimeout(800)
+        assert.equal(await page.locator('main').count(), 1)
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false)
+        assert.deepEqual(errors, [])
+        if (process.env.FINCO_STRICT_CSP_MODE === 'enforce') assert.deepEqual(await page.evaluate(() => window.__fincoCspViolations), [], 'Strict CSP blocked an app resource')
+        const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()
+        assert.deepEqual(axe.violations.map(item => ({ id: item.id, impact: item.impact, targets: item.nodes.map(node => node.target) })), [])
+        const resources = await page.evaluate(() => performance.getEntriesByType('resource').map(resource => ({ name: new URL(resource.name).pathname, transfer: resource.transferSize, decoded: resource.decodedBodySize })))
+        assert(!resources.some(resource => /app-layout|CartesianChart|chat-panel|pt-BR/.test(resource.name)), 'Signed-out page loaded a private/heavy module')
+        if (width < 1024) assert(!resources.some(resource => /auth-brand-panel/.test(resource.name)), 'Hidden desktop decoration loaded on mobile')
+        if (reducedMotion === 'no-preference' && [390, 1440].includes(width)) await page.screenshot({ path: path.join(output, `${width}.png`), fullPage: true })
+          await page.locator('input[type=email]').focus()
+        // Preserve the actual visible order: email, verification link, recovery
+        // link, password. Do not change product navigation to satisfy a test.
+        for (const selector of ['a[href="/request-verification"]', 'a[href="/forgot-password"]', 'input[type=password]']) {
+          await page.keyboard.press('Tab')
+          assert.equal(await page.locator(selector).evaluate(element => document.activeElement === element), true, `Tab target: ${selector}`)
+        }
+        results.push({ width, reducedMotion, axeViolations: axe.violations.length, decodedBytes: resources.reduce((total, resource) => total + resource.decoded, 0), jsRequests: resources.filter(resource => resource.name.endsWith('.js')).length, resources })
+        await context.close()
+      }
+    }
+  }
+  // Optional local lab measurement; configuration API above is synthetic.
+  if (process.env.PERF_TOOLS_ROOT) {
+    const { default: lighthouse } = await import(path.join(process.env.PERF_TOOLS_ROOT, 'node_modules/lighthouse/core/index.js'))
+    const { launch } = await import(path.join(process.env.PERF_TOOLS_ROOT, 'node_modules/chrome-launcher/dist/index.js'))
+    // Explicit loopback debug port also supports the pinned Chromium 141,
+    // whose stderr format predates launcher's dynamic-port discovery.
+    const debugProbe = http.createServer()
+    await new Promise(resolve => debugProbe.listen(0, '127.0.0.1', resolve))
+    const debugPort = debugProbe.address().port
+    await new Promise(resolve => debugProbe.close(resolve))
+    const chrome = await launch({ port: debugPort, chromePath: process.env.LIGHTHOUSE_CHROME_PATH || chromium.executablePath(), chromeFlags: ['--headless', '--no-sandbox', '--disable-dev-shm-usage'] })
+    try {
+      const { lhr } = await lighthouse(origin + '/login', { port: chrome.port, output: 'json', logLevel: 'error', onlyCategories: ['performance', 'accessibility', 'best-practices', 'seo'] })
+      await writeFile(path.join(output, 'lighthouse.json'), JSON.stringify(lhr))
+      const metrics = Object.fromEntries(['first-contentful-paint', 'largest-contentful-paint', 'total-blocking-time', 'cumulative-layout-shift', 'speed-index', 'total-byte-weight'].map(id => [id, lhr.audits[id].numericValue]))
+      const summary = { mode: 'local nginx production template, synthetic public config, no real login', scores: Object.fromEntries(Object.entries(lhr.categories).map(([key, category]) => [key, category.score])), metrics }
+      await writeFile(path.join(output, 'lab-summary.json'), JSON.stringify(summary, null, 2))
+      console.log(JSON.stringify(summary))
+    } finally { await chrome.kill() }
+  }
+  await writeFile(path.join(output, 'browser.json'), JSON.stringify(results, null, 2))
+  console.log(JSON.stringify({ mode: 'synthetic public config', nginxHeaders: labOnly ? 'not run (lab-only mode)' : 'passed', browserCases: results.length, cases: results.map(({ resources: _resources, ...result }) => result) }))
+} finally {
+  await browser?.close()
+  nginx.kill('SIGTERM')
+  await new Promise(resolve => backend.close(resolve))
+}

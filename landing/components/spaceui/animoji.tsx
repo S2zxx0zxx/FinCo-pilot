@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { useMediaQuery } from '@/hooks/use-media-query'
 import Image from 'next/image'
+import { landingAsset } from '@/lib/asset'
 import emojiRegex from 'emoji-regex'
 import type { EmojiSource } from '@usespaceui/emoji'
 import { useInView } from 'motion/react'
@@ -56,7 +57,7 @@ function EmojiGlyph({ emoji, source, className, localAssets }: { emoji: string; 
     return () => { active = false }
   }, [emoji, source, reducedMotion, localAssets, inView])
   const src = localAssets && emoji === '🧭'
-    ? (!reducedMotion && inView ? '/emoji/compass.webp' : '/emoji/compass-still.webp')
+    ? landingAsset(!reducedMotion && inView ? '/emoji/compass.webp' : '/emoji/compass-still.webp')
     : resolved
   const [failed, setFailed] = React.useState(false)
   React.useEffect(() => setFailed(false), [src])

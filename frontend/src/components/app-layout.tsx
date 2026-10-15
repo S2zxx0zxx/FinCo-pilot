@@ -201,7 +201,7 @@ export function AppLayout() {
               on the main destinations. */}
           <div className="flex h-16 min-h-16 items-center justify-between px-5 border-b border-sidebar-border shrink-0">
             <Link
-              to="/"
+              to="/dashboard"
               className="flex items-center gap-2.5 -mx-1 px-1 py-1 rounded-md hover:bg-sidebar-accent transition-colors"
               onClick={() => setSidebarOpen(false)}
               aria-label={t('app.name')}
@@ -270,8 +270,8 @@ export function AppLayout() {
               }
 
               const isActive =
-                item.path === '/'
-                  ? location.pathname === '/'
+                item.path === '/dashboard'
+                  ? location.pathname === '/dashboard'
                   : location.pathname.startsWith(item.path)
               const Icon = item.icon
               return (
@@ -420,7 +420,7 @@ export function AppLayout() {
           <Menu size={20} />
         </button>
         <Link
-          to="/"
+          to="/dashboard"
           className="flex items-center gap-2 -mx-1 px-1 py-1 rounded-md hover:bg-sidebar-accent transition-colors"
           aria-label={t('app.name')}
           title={t('nav.dashboard')}
@@ -481,7 +481,7 @@ export function AppLayout() {
         {/* Main content */}
         <main className="flex-1 min-w-0 min-h-screen lg:ml-[16.5rem]">
           <div className="finco-shell-toolbar hidden lg:flex h-16 items-center justify-between gap-4 px-8 border-b border-muted">
-            <Link to="/" className="text-sm font-semibold">{t('app.name')}</Link>
+            <Link to="/dashboard" className="text-sm font-semibold">{t('app.name')}</Link>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <span>{t('frontend.workspace')}</span><span aria-hidden="true">/</span><span className="font-medium text-foreground">{activeTitle}</span>
             </div>

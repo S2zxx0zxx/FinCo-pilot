@@ -305,7 +305,7 @@ function LocalRegisterContainer() {
         currency_display: currency,
         language: lang,
       })
-      navigate('/')
+      navigate('/dashboard')
     } catch (err) {
       const axiosErr = err as AxiosError
       if (isServerUnreachable(err)) {

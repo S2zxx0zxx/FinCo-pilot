@@ -33,7 +33,7 @@ const server = createServer(async (req, res) => {
     res.end(JSON.stringify(fixture))
     return
   }
-  if (url.pathname === '/poison' || (badShell && url.pathname === '/')) {
+  if (url.pathname === '/poison' || (badShell && url.pathname === '/index.html')) {
     res.setHeader('Content-Type', 'text/html')
     res.end('<!doctype html><title>Proxy sign-in</title><p>synthetic-private-document</p>')
     return
@@ -87,7 +87,7 @@ try {
   ]) {
     const context = await browser.newContext({ ...device, name: undefined, reducedMotion: 'reduce' })
     const page = await context.newPage()
-    await page.goto(base + '/')
+    await page.goto(base + '/dashboard')
     await page.waitForFunction(() => navigator.serviceWorker.controller !== null)
     await page.reload()
     await page.waitForFunction(() => document.querySelector('#root')?.childElementCount > 0)
@@ -114,7 +114,7 @@ try {
     await page.goto(base + '/verify-email?token=synthetic-token')
     await page.goto(base + '/poison')
     const inventory = await cached(page)
-    assert(inventory.some(x => new URL(x.url).pathname === '/'))
+    assert(inventory.some(x => new URL(x.url).pathname === '/index.html'))
     assert(!inventory.some(x => /synthetic-private-document|synthetic-recovery-marker|synthetic-financial-marker/.test(x.text)))
     assert(!inventory.some(x => /\/api(?:\/|$)|\/mcp(?:\/|$)|token=/.test(x.url) || /token=/.test(x.responseUrl)))
     await context.setOffline(true)
@@ -159,7 +159,7 @@ try {
   badShell = true
   const context = await browser.newContext()
   const page = await context.newPage()
-  await page.goto(base + '/')
+  await page.goto(base + '/dashboard')
   await page.evaluate(() => navigator.serviceWorker.register('/sw.js'))
   await eventually(() => page.evaluate(async () => !(await navigator.serviceWorker.getRegistration())?.installing))
   assert(!(await cached(page)).some(x => x.text.includes('synthetic-private-document')))

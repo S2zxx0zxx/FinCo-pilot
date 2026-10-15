@@ -8,7 +8,7 @@ import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import http from 'node:http'
 import path from 'node:path'
 import os from 'node:os'
-import { chromium } from 'playwright'
+import { chromium, firefox, webkit } from 'playwright'
 import AxeBuilder from '@axe-core/playwright'
 
 const work = await mkdtemp(path.join(os.tmpdir(), 'finco-nginx-'))
@@ -74,7 +74,7 @@ try {
   }
   assert(ready, await readFile(path.join(work, 'error.log'), 'utf8'))
   if (!labOnly) {
-    const html = await (await fetch(origin)).text()
+    const html = await (await fetch(origin + '/index.html')).text()
     assert(!html.includes('/@vite/client') && !html.includes('/src/main.tsx'))
     const script = html.match(/<script[^>]+src="([^"]+)"/)?.[1]
     assert(script)
@@ -99,7 +99,70 @@ try {
 
     const proxyUrl = process.env.FINCO_BROWSER_PROXY === 'true' && process.env.HTTPS_PROXY ? new URL(process.env.HTTPS_PROXY) : null
     const proxy = proxyUrl ? { server: proxyUrl.origin, username: decodeURIComponent(proxyUrl.username), password: decodeURIComponent(proxyUrl.password), bypass: '127.0.0.1,localhost' } : undefined
-    browser = await chromium.launch({ headless: true, args: ['--no-sandbox'], proxy })
+    browser = await ({chromium,firefox,webkit}[process.env.FINCO_ENTRY_BROWSER || 'chromium']).launch({ headless: true, args: ['--no-sandbox'], proxy })
+    // Public marketing must be delivered before the finance SPA or auth SDK.
+    const redirect = await fetch(origin + '/?token=synthetic-private', { redirect: 'manual' })
+    assert.equal(redirect.status, 302)
+    assert.equal(redirect.headers.get('location'), '/welcome/', 'Proxy-safe relative redirect required')
+    for (const width of [320, 390, 768, 1440]) {
+      const context = await browser.newContext({ viewport: { width, height: 1000 }, reducedMotion:'reduce', serviceWorkers:'block' })
+      const page = await context.newPage(), errors = [], api = []
+      page.on('pageerror', error => errors.push(error.message))
+      await page.addInitScript(() => { window.__fincoCspViolations=[];document.addEventListener('securitypolicyviolation', event => window.__fincoCspViolations.push(event.effectiveDirective)) })
+      page.on('request', request => { if(new URL(request.url()).pathname.startsWith('/api/'))api.push(request.url()) })
+      await context.route('**/*', route => new URL(route.request().url()).origin === origin ? route.continue() : route.abort())
+      await page.goto(origin, { waitUntil:'networkidle' })
+      assert.equal(new URL(page.url()).pathname, '/welcome/')
+      await page.getByRole('heading',{level:1}).waitFor()
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false)
+      assert.equal(await page.getByRole('heading',{level:1}).count(),1)
+      assert.deepEqual(api,[], 'Marketing must not request auth/financial APIs')
+      assert(!await page.locator('script[src*="/static/index-"]').count(),'Marketing loaded finance SPA')
+      if(width===320||width===390){
+        await page.getByRole('button',{name:'Open navigation',exact:true}).click()
+        await page.getByRole('navigation',{name:'Mobile navigation'}).waitFor()
+        await page.keyboard.press('Escape')
+        assert.equal(await page.getByRole('button',{name:'Open navigation',exact:true}).evaluate(el=>el===document.activeElement),true)
+      }
+      await page.getByRole('button',{name:'What is FinCo-Pilot?',exact:true}).click()
+      await page.getByText(/FinCo-Pilot is a personal finance workspace/).waitFor()
+      assert.deepEqual(errors,[])
+      if(process.env.FINCO_STRICT_CSP_MODE==='enforce')assert.deepEqual(await page.evaluate(()=>window.__fincoCspViolations),[],'Marketing blocked by strict CSP')
+      const axe=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze()
+      assert.deepEqual(axe.violations.map(item=>({id:item.id,targets:item.nodes.map(n=>n.target)})),[])
+      for(const target of ['/login','/register','/pricing','/privacy','/terms','/support']) assert(await page.locator(`a[href="${target}"]`).count(),`Missing same-origin CTA ${target}`)
+      await page.evaluate(()=>window.scrollTo(0,0))
+      if(width===390||width===1440)await page.screenshot({path:path.join(output,`landing-connected-${width}.png`),fullPage:true})
+      results.push({mode:'public-entry',width,path:'/welcome/',apiRequests:0,axeViolations:0})
+      await page.locator('a[href="/pricing"]').last().click()
+      await page.getByRole('heading',{name:'A plan for where you are. And what’s next.'}).waitFor()
+      assert.equal(new URL(page.url()).pathname,'/pricing')
+      if(process.env.FINCO_CONFIGURED_CLERK_CHECK!=='true'){
+        await page.goto(origin+'/dashboard',{waitUntil:'networkidle'})
+        await page.locator('input[type=email]').waitFor()
+        assert.equal(new URL(page.url()).pathname,'/login','Anonymous dashboard must stay protected')
+      }
+      await context.close()
+    }
+    if(process.env.FINCO_CONFIGURED_CLERK_CHECK!=='true') {
+      const installed=await browser.newContext({serviceWorkers:'block',reducedMotion:'reduce'})
+      await installed.addInitScript(()=>{
+        const original=window.matchMedia.bind(window)
+        window.matchMedia=query=>{
+          const result=original(query)
+          if(query==='(display-mode: standalone)')Object.defineProperty(result,'matches',{value:true})
+          return result
+        }
+      })
+      const page=await installed.newPage()
+      await page.goto(origin)
+      await page.waitForURL('**/login')
+      assert.equal(new URL(page.url()).pathname,'/login','Legacy installed root must hand off to protected app')
+      await installed.close()
+    }
+    const missingMarketing = await fetch(origin+'/welcome/_next/static/missing.js')
+    assert.equal(missingMarketing.status,404)
+    assert.match(missingMarketing.headers.get('cache-control') || '',/no-store/)
     for (const width of [390, 768, 1024, 1440]) {
       for (const reducedMotion of ['no-preference', 'reduce']) {
         const context = await browser.newContext({ viewport: { width, height: 1000 }, reducedMotion, serviceWorkers: 'block' })

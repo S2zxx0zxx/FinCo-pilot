@@ -13,7 +13,7 @@ it('mounts signup completion outside the protected dashboard with an explicit lo
   sdk.configured = true
   renderWithProviders(<ClerkSignUpPage />, { route: '/sign-up#/continue' })
   expect(screen.getByText('Required account fields')).toBeInTheDocument()
-  expect(sdk.signUp).toHaveBeenCalledWith({ routing: 'hash', signInUrl: '/login', fallbackRedirectUrl: '/' })
+  expect(sdk.signUp).toHaveBeenCalledWith({ routing: 'hash', signInUrl: '/login', fallbackRedirectUrl: '/dashboard' })
 })
 it('keeps local registration available when Clerk is disabled', () => {
   sdk.configured = false

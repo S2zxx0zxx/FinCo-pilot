@@ -1,0 +1,47 @@
+name: Connected Public Landing
+on:
+  push:
+    branches: ['feat/activate-landing-*']
+  pull_request:
+    paths: ['frontend/**', 'landing/**', '.github/workflows/public-entry.yml', 'docker-compose*.yml', 'charts/**']
+concurrency:
+  group: public-entry-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  entry:
+    name: Public entry (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '22'
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - run: sudo apt-get update && sudo apt-get install -y nginx
+      - run: npx playwright install --with-deps ${{ matrix.browser }}
+      - run: node scripts/verify-nginx-browser.mjs
+        timeout-minutes: 6
+        env:
+          NGINX_BIN: /usr/sbin/nginx
+          FINCO_ENTRY_BROWSER: ${{ matrix.browser }}
+          FINCO_STRICT_CSP_MODE: enforce
+          FINCO_PERF_OUTPUT: public-entry-qa
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: always()
+        with:
+          name: public-entry-${{ matrix.browser }}
+          path: frontend/public-entry-qa/
+          retention-days: 7

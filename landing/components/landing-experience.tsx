@@ -24,6 +24,7 @@ import { Separator } from '@/components/spaceui/separator'
 import { Avatar, AvatarFallback } from '@/components/spaceui/avatar'
 import { ProductScreens } from '@/components/product-screens'
 import { LandingSoundProvider, SoundToggle, useLandingSound } from '@/components/landing-sound'
+import { InstalledAppHandoff } from '@/components/installed-app-handoff'
 import { APP_LINKS } from '@/lib/links'
 
 type View = 'overview' | 'budgets' | 'activity'
@@ -234,5 +235,5 @@ function Footer() {
 }
 
 export function LandingExperience() {
-  return <LandingSoundProvider><MotionConfig reducedMotion="user"><div className="marketing-page"><a className="skip-link" href="#main-content">Skip to content</a><Navigation/><main id="main-content"><Hero/><ProofLine/><WhyFinCo/><ProductScreens/><Experience/><HowItWorks/><Privacy/><Questions/><FinalCTA/></main><Footer/></div></MotionConfig></LandingSoundProvider>
+  return <LandingSoundProvider><InstalledAppHandoff /><MotionConfig reducedMotion="user"><div className="marketing-page"><a className="skip-link" href="#main-content">Skip to content</a><Navigation/><main id="main-content"><Hero/><ProofLine/><WhyFinCo/><ProductScreens/><Experience/><HowItWorks/><Privacy/><Questions/><FinalCTA/></main><Footer/></div></MotionConfig></LandingSoundProvider>
 }

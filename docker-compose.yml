@@ -206,8 +206,8 @@ services:
 
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: frontend/Dockerfile
       # Only public browser configuration is embedded in this build. Backend
       # credentials, Clerk secret keys and Sentry upload tokens are never args.
       args:

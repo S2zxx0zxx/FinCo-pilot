@@ -3,7 +3,7 @@
   "short_name": "FinCo",
   "description": "Privacy-first personal finance, budgets, goals, assets, invoices and insights in one fast workspace.",
   "id": "/",
-  "start_url": "/",
+  "start_url": "/dashboard",
   "scope": "/",
   "lang": "en-IN",
   "dir": "ltr",
@@ -37,7 +37,7 @@
     {
       "name": "Dashboard",
       "short_name": "Dashboard",
-      "url": "/",
+      "url": "/dashboard",
       "icons": [{ "src": "/android-icon-192x192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {

@@ -57,8 +57,8 @@ services:
 
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: frontend/Dockerfile.dev
     restart: unless-stopped
     ports:
       - "127.0.0.1:3300:5173"

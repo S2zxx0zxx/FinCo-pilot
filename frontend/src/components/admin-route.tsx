@@ -13,7 +13,7 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!token || !user?.is_superuser) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/dashboard" replace />
   }
 
   return <>{children}</>

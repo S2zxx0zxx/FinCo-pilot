@@ -41,7 +41,7 @@ export default function SetupPage() {
 
   useEffect(() => {
     if (token) {
-      navigate('/', { replace: true })
+      navigate('/dashboard', { replace: true })
       return
     }
     Promise.all([
@@ -73,7 +73,7 @@ export default function SetupPage() {
       const { access_token } = await setup.createAdmin(email, password, currency, name, currentLang, setupToken)
       localStorage.removeItem('onboarding_completed')
       loginWithToken(access_token)
-      navigate('/')
+      navigate('/dashboard')
     } catch {
       setError(t('setup.error'))
     } finally {

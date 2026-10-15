@@ -30,8 +30,15 @@ data:
         true "require-trusted-types-for 'script'";
     }
 
+    map $status $finco_marketing_asset_cache {
+        default "no-store";
+        200 "public, max-age=31536000, immutable";
+        304 "public, max-age=31536000, immutable";
+    }
+
     server {
         listen 8080;
+        absolute_redirect off;
         add_header Cache-Control $finco_recovery_cache_control always;
         access_log /var/log/nginx/access.log finco_private;
         add_header X-Content-Type-Options "nosniff" always;
@@ -148,6 +155,35 @@ data:
         location = /.vite/manifest.json { return 404; }
 
         # SPA fallback — serve index.html for all non-file routes
+        location = / { return 302 /welcome/; }
+        location = /welcome { return 302 /welcome/; }
+        location ^~ /welcome/_next/static/ {
+            add_header X-Content-Type-Options "nosniff" always;
+            add_header X-Frame-Options "DENY" always;
+            add_header Referrer-Policy "no-referrer" always;
+            add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(self)" always;
+            add_header Cross-Origin-Opener-Policy "same-origin-allow-popups" always;
+            add_header Strict-Transport-Security $finco_hsts always;
+            add_header Content-Security-Policy $finco_csp always;
+        add_header Content-Security-Policy-Report-Only $finco_strict_report always;
+            add_header Content-Security-Policy-Report-Only $finco_tt_policy always;
+            add_header Cache-Control $finco_marketing_asset_cache always;
+            try_files $uri =404;
+        }
+        location ^~ /welcome/ {
+            add_header X-Content-Type-Options "nosniff" always;
+            add_header X-Frame-Options "DENY" always;
+            add_header Referrer-Policy "no-referrer" always;
+            add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(self)" always;
+            add_header Cross-Origin-Opener-Policy "same-origin-allow-popups" always;
+            add_header Strict-Transport-Security $finco_hsts always;
+            add_header Content-Security-Policy $finco_csp always;
+        add_header Content-Security-Policy-Report-Only $finco_strict_report always;
+            add_header Content-Security-Policy-Report-Only $finco_tt_policy always;
+            add_header Cache-Control "no-store" always;
+            try_files $uri $uri/ =404;
+        }
+
         location / {
             try_files $uri $uri/ /index.html;
         }

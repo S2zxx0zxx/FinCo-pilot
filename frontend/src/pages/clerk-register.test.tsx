@@ -30,5 +30,5 @@ it('sends incomplete signup to username completion and never attempts a local to
   await user.click(screen.getByRole('button', { name: t('auth.register') }))
   await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/sign-up#/continue'))
   expect(mocks.loginWithClerk).not.toHaveBeenCalled()
-  expect(mocks.navigate).not.toHaveBeenCalledWith('/')
+  expect(mocks.navigate).not.toHaveBeenCalledWith('/dashboard')
 })

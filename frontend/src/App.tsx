@@ -73,6 +73,8 @@ const queryClient = new QueryClient({
   },
 })
 
+const PublicHome = lazy(() => import('@/pages/public-home'))
+
 function App() {
   return (
     <ThemeProvider>
@@ -87,6 +89,7 @@ function App() {
                   <WorkspaceProvider>
                     <Suspense fallback={<FinCoRouteLoader />}>
                       <Routes>
+                        <Route path="/" element={<PublicHome />} />
                         <Route path="/setup" element={<SetupPage />} />
                         <Route path="/forgot-password" element={<AccountRecovery key="forgot" mode="forgot" />} />
                         <Route path="/reset-password" element={<AccountRecovery key="reset" mode="reset" />} />
@@ -118,7 +121,7 @@ function App() {
                             </ProtectedRoute>
                           }
                         >
-                          <Route path="/" element={<DashboardPage />} />
+                          <Route path="/dashboard" element={<DashboardPage />} />
                           <Route path="/loans" element={<ModuleRoute module="accounts"><LoansPage /></ModuleRoute>} />
                           <Route path="/spending-plan" element={<ModuleRoute module="accounts"><SpendingPlanPage /></ModuleRoute>} />
                           <Route path="/transactions" element={<ModuleRoute module="transactions"><TransactionsPage /></ModuleRoute>} />

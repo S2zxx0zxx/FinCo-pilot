@@ -15,8 +15,8 @@ export default function SSOCallbackPage() {
     void clerk.handleRedirectCallback({
       signInUrl: '/login',
       signUpUrl: '/sign-up',
-      signInFallbackRedirectUrl: '/',
-      signUpFallbackRedirectUrl: '/',
+      signInFallbackRedirectUrl: '/dashboard',
+      signUpFallbackRedirectUrl: '/dashboard',
       // Google verifies email, but cannot supply an app-specific username.
       continueSignUpUrl: '/sign-up#/continue',
     }).catch(() => {

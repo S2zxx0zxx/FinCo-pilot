@@ -51,3 +51,19 @@ assert.deepEqual(data.entries, [], 'Do not advertise an unverified public agent 
 assert.match(await readFile(path.join(dist, 'llms.txt'), 'utf8'), /^# FinCo-Pilot/)
 assert.match(await readFile(path.join(dist, 'robots.txt'), 'utf8'), /Disallow: \/api\//)
 console.log(JSON.stringify({ entryChunks: seen.size, entryGzipBytes, budgetBytes: 300 * 1024, discoveryFiles: 'valid', sourceMaps: 'absent' }, null, 2))
+
+// The same production artifact must contain the real Next.js marketing entry.
+const marketing = await readFile(path.join(dist, 'welcome/index.html'), 'utf8')
+assert(marketing.includes('FinCo-Pilot') && marketing.includes('main-content'), 'Landing is missing')
+assert(!marketing.includes('finco-app-shell'), 'Finance shell must not replace marketing')
+for (const destination of ['/login','/register','/pricing','/privacy','/terms','/support']) assert(marketing.includes(`href="${destination}"`), `Landing CTA missing: ${destination}`)
+for (const match of marketing.matchAll(/<script\b[^>]*src="([^"]+)"[^>]*integrity="(sha256-[^"]+)"/g)) {
+  assert.match(match[1], /^\/welcome\/_next\/static\//)
+  const code = await readFile(path.join(dist, match[1].slice(1)))
+  assert.equal(match[2], `sha256-${createHash('sha256').update(code).digest('base64')}`, 'Stale marketing SRI')
+  assert(policy.strictCsp.includes(`'${match[2]}'`), 'Marketing SRI absent from strict CSP')
+}
+const install = JSON.parse(await readFile(path.join(dist,'manifest.webmanifest'),'utf8'))
+assert.equal(install.id, '/') // Preserve existing installation identity.
+assert.equal(install.start_url, '/dashboard')
+console.log('Connected Next.js marketing, same-origin CTAs, marketing SRI/CSP and PWA start URL verified.')

@@ -14,6 +14,6 @@ export function AgentsRoute({ children }: { children: React.ReactNode }) {
       </div>
     )
   }
-  if (!agentsEnabled) return <Navigate to="/" replace />
+  if (!agentsEnabled) return <Navigate to="/dashboard" replace />
   return <>{children}</>
 }

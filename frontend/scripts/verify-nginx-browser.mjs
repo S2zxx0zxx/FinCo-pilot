@@ -127,8 +127,18 @@ try {
         await page.keyboard.press('Escape')
         assert.equal(await page.getByRole('button',{name:'Open navigation',exact:true}).evaluate(el=>el===document.activeElement),true)
       }
-      await page.getByRole('button',{name:'What is FinCo-Pilot?',exact:true}).click()
+      // faq-1 is deliberately open by default. Clicking it closes the answer;
+      // exercise a default-closed item so hydration timing cannot invert intent.
       await page.getByText(/FinCo-Pilot is a personal finance workspace/).waitFor()
+      const faq = page.getByRole('button',{name:'Can I use FinCo-Pilot on my phone?',exact:true})
+      const answer = page.getByText(/The web application includes responsive screens/)
+      assert.equal(await faq.getAttribute('aria-expanded'),'false')
+      await faq.click()
+      await answer.waitFor()
+      assert.equal(await faq.getAttribute('aria-expanded'),'true')
+      await faq.click()
+      await answer.waitFor({state:'hidden'})
+      assert.equal(await faq.getAttribute('aria-expanded'),'false')
       assert.deepEqual(errors,[])
       if(process.env.FINCO_STRICT_CSP_MODE==='enforce')assert.deepEqual(await page.evaluate(()=>window.__fincoCspViolations),[],'Marketing blocked by strict CSP')
       const axe=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze()

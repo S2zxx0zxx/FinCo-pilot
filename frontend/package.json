@@ -12,6 +12,7 @@
     "dev:docker": "node ../scripts/dev-frontend.mjs",
     "test": "vitest run",
     "test:pwa": "node scripts/verify-pwa-browser.mjs",
+    "test:pricing": "node scripts/verify-pricing-browser.mjs",
     "test:spaceui": "node scripts/verify-spaceui-browser.mjs",
     "verify:production": "node scripts/verify-production-build.mjs"
   },

@@ -76,7 +76,7 @@ test('a development HTML fallback is never returned as a working MCP endpoint', 
 test('public home reaches marketing without exposing auth or queries to another origin', async () => {
   let calls = 0
   const response = await handleRequest(new Request('https://fincopilot.app/?token=synthetic-private', { headers: { Cookie:'synthetic' } }), env, async () => { calls++; throw new Error('No upstream needed') })
-  assert.equal(response.status,302);assert.equal(response.headers.get('location'),'/welcome/');assert.equal(calls,0)
+  assert.equal(response.status,302);assert.equal(response.headers.get('location'),'/welcome/');assert.equal(response.headers.get('referrer-policy'),'no-referrer');assert.equal(calls,0)
   assert.equal(frontendPath('/dashboard'),'/index.html')
   assert.equal(frontendPath('/welcome/'),'/welcome/index.html')
   assert.equal(frontendPath('/welcome/_next/static/chunks/hash.js'),'/welcome/_next/static/chunks/hash.js')

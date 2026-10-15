@@ -99,7 +99,8 @@ try {
 
     const proxyUrl = process.env.FINCO_BROWSER_PROXY === 'true' && process.env.HTTPS_PROXY ? new URL(process.env.HTTPS_PROXY) : null
     const proxy = proxyUrl ? { server: proxyUrl.origin, username: decodeURIComponent(proxyUrl.username), password: decodeURIComponent(proxyUrl.password), bypass: '127.0.0.1,localhost' } : undefined
-    browser = await ({chromium,firefox,webkit}[process.env.FINCO_ENTRY_BROWSER || 'chromium']).launch({ headless: true, args: ['--no-sandbox'], proxy })
+    const browserName = process.env.FINCO_ENTRY_BROWSER || 'chromium'
+    browser = await ({chromium,firefox,webkit}[browserName]).launch({ headless: true, args: browserName==='chromium' ? ['--no-sandbox'] : [], proxy })
     // Public marketing must be delivered before the finance SPA or auth SDK.
     const redirect = await fetch(origin + '/?token=synthetic-private', { redirect: 'manual' })
     assert.equal(redirect.status, 302)
@@ -114,6 +115,7 @@ try {
       await page.goto(origin, { waitUntil:'networkidle' })
       assert.equal(new URL(page.url()).pathname, '/welcome/')
       await page.getByRole('heading',{level:1}).waitFor()
+      await page.getByRole('button',{name:'What is FinCo-Pilot?',exact:true}).waitFor()
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false)
       assert.equal(await page.getByRole('heading',{level:1}).count(),1)
       assert.deepEqual(api,[], 'Marketing must not request auth/financial APIs')
@@ -138,7 +140,7 @@ try {
       await page.getByRole('heading',{name:'A plan for where you are. And what’s next.'}).waitFor()
       assert.equal(new URL(page.url()).pathname,'/pricing')
       if(process.env.FINCO_CONFIGURED_CLERK_CHECK!=='true'){
-        await page.goto(origin+'/dashboard',{waitUntil:'networkidle'})
+        await page.goto(origin+'/dashboard',{waitUntil:'domcontentloaded'})
         await page.locator('input[type=email]').waitFor()
         assert.equal(new URL(page.url()).pathname,'/login','Anonymous dashboard must stay protected')
       }
@@ -182,7 +184,7 @@ try {
         const page = await context.newPage()
         const errors = []
         page.on('pageerror', error => errors.push(error.message))
-        await page.goto(browserOrigin + '/login', { waitUntil: 'networkidle' })
+        await page.goto(browserOrigin + '/login', { waitUntil: 'domcontentloaded' })
         await page.locator('input[type=email]').waitFor()
         if (process.env.FINCO_CONFIGURED_CLERK_CHECK === 'true') assert.equal(await page.getByRole('button', { name: /Google/ }).count(), 1, 'Configured Google login missing')
         await page.evaluate(() => document.fonts.ready)

@@ -10,7 +10,7 @@ This branch packages the **existing Next.js landing**, not a replacement design,
 
 | Request / action | Result |
 |---|---|
-| Public `/` | Temporary **relative** redirect to `/welcome/`; incoming query is not forwarded. Relative Location preserves HTTPS behind the existing Tunnel. |
+| Public `/` | Temporary redirect to `/welcome/`; Nginx/Worker use a **relative** Location and drop the incoming query. Vercel controls platform redirect normalization/query handling; its existing no-referrer policy remains in place. Relative Location preserves HTTPS behind the existing Tunnel. |
 | `/welcome/` | Exported Next.js landing HTML and hydration; no finance SPA, auth SDK or financial API bootstrap. |
 | `/welcome/_next/static/*` | Namespaced content-hashed scripts, CSS and fonts; actual files only, missing files 404. |
 | `/welcome/product/*`, `/welcome/emoji/*` | Existing self-hosted, licensed product screenshots and emoji, namespaced to avoid app asset conflicts. |

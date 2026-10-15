@@ -8,11 +8,11 @@ function marketingMiddleware(directory: string): Connect.NextHandleFunction {
     const pathname = new URL(request.url || '/', 'http://localhost').pathname
     if ((pathname === '/' || pathname === '/welcome' || pathname.startsWith('/welcome/')) && request.method !== 'GET' && request.method !== 'HEAD') { response.writeHead(405).end(); return }
     if (pathname === '/') {
-      response.writeHead(302, { Location: '/welcome/', 'Cache-Control': 'no-store' }).end()
+      response.writeHead(302, { Location: '/welcome/', 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer' }).end()
       return
     }
     if (pathname === '/welcome') {
-      response.writeHead(302, { Location: '/welcome/', 'Cache-Control': 'no-store' }).end()
+      response.writeHead(302, { Location: '/welcome/', 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer' }).end()
       return
     }
     if (!pathname.startsWith('/welcome/')) { next(); return }

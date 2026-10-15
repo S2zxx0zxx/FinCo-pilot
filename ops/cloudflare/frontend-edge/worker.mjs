@@ -70,7 +70,7 @@ export async function handleRequest(request, env, fetchImpl = fetch) {
     } catch { return unavailable(502) }
   }
   if (!['GET', 'HEAD'].includes(request.method)) return unavailable(405)
-  if (url.pathname === '/') return new Response(null, { status: 302, headers: { Location: '/welcome/', 'Cache-Control': 'no-store' } })
+  if (url.pathname === '/') return new Response(null, { status: 302, headers: { Location: '/welcome/', 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY' } })
   let origin
   try {
     origin = new URL(env.FRONTEND_DEPLOYMENT_ORIGIN)

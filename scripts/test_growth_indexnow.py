@@ -88,6 +88,20 @@ class IndexNowTests(unittest.TestCase):
         self.assertEqual(len(calls), 4)
         self.assertEqual(sum(body is not None for _, body in calls), 1)
 
+    def test_same_origin_namespace_uses_only_actual_public_welcome_urls(self):
+        result = notify.prepare_batch('https://fincopilot.app', ['/', '/features'], KEY, base_path='/welcome')
+        self.assertEqual(result['urlList'], ['https://fincopilot.app/welcome/', 'https://fincopilot.app/welcome/features/'])
+        self.assertEqual(result['keyLocation'], 'https://fincopilot.app/' + KEY + '.txt')
+        for prefix in ['/api', '/i/token', '/welcome?token=x', 'https://evil.test']:
+            with self.assertRaises(ValueError):
+                notify.prepare_batch(ORIGIN, ['/features'], KEY, base_path=prefix)
+
+    def test_namespace_dry_run_does_not_activate_notifications(self):
+        result = notify.execute('https://fincopilot.app', ['/features'], KEY, base_path='/welcome')
+        self.assertEqual(result['network_requests'], 0)
+        self.assertEqual(result['urls'], ['https://fincopilot.app/welcome/features/'])
+        self.assertEqual(result['mode'], 'dry-run')
+
     def test_redirect_handler_never_creates_redirected_request(self):
         self.assertIsNone(notify.NoRedirects().redirect_request(None, None, 302, '', {}, 'https://evil.test'))
 

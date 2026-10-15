@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { getMarketingConfig, marketingUrl, sitemapEntries, serializeJsonLd, RESTRICTED_CRAWLERS } from '../lib/marketing.ts'
+import { getMarketingConfig, marketingUrl, sitemapEntries, serializeJsonLd, marketingSocialImage, websiteSchema, RESTRICTED_CRAWLERS } from '../lib/marketing.ts'
 
 const production = { VERCEL_ENV: 'production', NEXT_PUBLIC_MARKETING_INDEXABLE: 'true', NEXT_PUBLIC_MARKETING_URL: 'https://discover.fincopilot.app' }
 
@@ -44,4 +44,19 @@ test('restricted training and user agents retain the observed policy independent
   assert.ok(RESTRICTED_CRAWLERS.includes('GPTBot'))
   assert.ok(RESTRICTED_CRAWLERS.includes('ChatGPT-User'))
   assert.ok(!RESTRICTED_CRAWLERS.includes('OAI-SearchBot'))
+})
+
+
+test('same-origin static export uses actual welcome paths for canonical, sitemap, schema and social image', () => {
+  const exported = { ...production, NEXT_PUBLIC_MARKETING_URL: 'https://fincopilot.app', FINCO_EXPORT_MARKETING: 'true' }
+  assert.equal(marketingUrl('/', exported), 'https://fincopilot.app/welcome/')
+  assert.equal(marketingUrl('/features', exported), 'https://fincopilot.app/welcome/features/')
+  assert.equal(marketingUrl('/guides/import-transactions', exported), 'https://fincopilot.app/welcome/guides/import-transactions/')
+  assert.equal(marketingSocialImage(exported), 'https://fincopilot.app/welcome/social-card.png')
+  assert.equal(websiteSchema(exported).url, marketingUrl('/', exported))
+  assert.equal(websiteSchema(exported)['@id'], marketingUrl('/', exported) + '#website')
+  for (const entry of sitemapEntries(exported)) assert.ok(new URL(entry.url).pathname.startsWith('/welcome/'))
+  assert.deepEqual(sitemapEntries({ ...exported, VERCEL_ENV: 'preview' }), [])
+  assert.equal(marketingUrl('/features', production), 'https://discover.fincopilot.app/features')
+  assert.equal(marketingSocialImage(production), 'https://discover.fincopilot.app/social-card.png')
 })

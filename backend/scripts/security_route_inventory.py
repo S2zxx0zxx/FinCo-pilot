@@ -58,12 +58,15 @@ def runtime_inventory() -> dict:
 from app.core.config import Settings
 # Settings anchors .env to the checkout; disabling it is required even in a fresh cwd.
 Settings.model_config = {**Settings.model_config, "env_file": None}
+from app.agents.config import AgentSettings
+AgentSettings.model_config = {**AgentSettings.model_config, "env_file": None}
 import tests.conftest
 import inspect, json, os, re
 from pathlib import Path
 from fastapi.routing import APIRoute
 from app.main import app
 from tests.test_write_permission_coverage import _dependency_names, ALLOWLIST
+from tests.test_read_permission_coverage import PUBLIC_READ_POLICIES
 root = Path(os.environ["FINCO_INVENTORY_ROOT"])
 rows = []
 def walk(routes, prefix='', parent_deps=()):
@@ -81,7 +84,9 @@ def walk(routes, prefix='', parent_deps=()):
                 rows.append({'method': method, 'path': prefix + route.path,
                     'source': str(path.relative_to(root)) if path.is_relative_to(root) else 'generated-library-route',
                     'handler': route.endpoint.__name__, 'dependency_names': sorted(names),
-                    'permission_category': category, 'explicit_policy': policy, 'service_ownership_tests_required': True})
+                    'permission_category': category, 'explicit_policy': policy,
+                    'public_read_policy': PUBLIC_READ_POLICIES.get(route.path) if method == 'GET' else None,
+                    'service_ownership_tests_required': True})
 walk(app.routes)
 operations = []
 for path, methods in app.openapi()['paths'].items():

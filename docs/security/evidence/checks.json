@@ -179,7 +179,8 @@
       "passed": 86,
       "seconds": 24.09
     },
-    "scope": "Unrelated user exclusion, preserved shared peers/manager, archive exclusion, explicit self-hosted instance opt-in and unauthenticated denial. Uses typed UUID binding consistent with existing workspace service; native proof pending final CI."
+    "scope": "Unrelated user exclusion, preserved shared peers/manager, archive exclusion, explicit self-hosted instance opt-in and unauthenticated denial. Uses typed UUID binding consistent with existing workspace service; native proof pending final CI.",
+    "native_result": "Passed native PostgreSQL scope/byte-budget step on candidate 6886691 run 38736347033"
   },
   "initial_candidate_ci": {
     "sha": "b30740707d8d64f304980f23b7ba13f5638147aa",
@@ -198,5 +199,21 @@
       "uv": "0.12.10"
     },
     "local_high_confidence_high_severity_bandit": "PASS"
+  },
+  "read_write_gate_review": {
+    "tests_passed": 215,
+    "seconds": 4.56,
+    "scope": "All read routes require auth or explicit reviewed public/independent credential; supplements existing write gates and object-level fixtures; never proves object ownership alone"
+  },
+  "native_final_app_candidate": {
+    "sha": "6886691da5b28ca592f0bcba9c38268e0be389ae",
+    "run": 38736347033,
+    "postgres_job": 116426503856,
+    "postgres": "success",
+    "redis_worker": "success",
+    "frontend": "success",
+    "advisory_run": 38736347103,
+    "advisory": "success",
+    "backend_coverage": "in progress at this documentation checkpoint"
   }
 }

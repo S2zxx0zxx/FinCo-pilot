@@ -277,13 +277,14 @@
     "owner": "Codex: engineering evidence; founder: external acceptance; counsel: legal interpretation",
     "baseline_sha": "7736a24e7d520b9f08dd91d38e895b5d240f8a09",
     "status": "BLOCKED_EXTERNAL_ACCEPTANCE",
-    "local_result": "352 OpenAPI and 353 runtime route-method entries mapped",
+    "local_result": "352 OpenAPI and 353 runtime route-method entries mapped; all GETs now require auth or explicit public/narrow-credential policy; read/write/directory fixture set 215 passed; service-level ownership remains separate",
     "source_paths": [
       "backend/app/core/workspace_context.py"
     ],
     "test_paths": [
       "backend/tests/test_write_permission_coverage.py",
-      "backend/tests/test_write_permission_gate.py"
+      "backend/tests/test_write_permission_gate.py",
+      "backend/tests/test_read_permission_coverage.py"
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Effective service-level policy review and staged A/B matrix",

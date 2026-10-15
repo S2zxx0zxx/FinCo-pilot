@@ -20,7 +20,34 @@ for (const match of html.matchAll(/<(?:script|link)[^>]+(?:src|href)="([^"]+)"[^
   assert.equal(match[2], `sha256-${createHash('sha256').update(code).digest('base64')}`, 'Stale entry SRI')
 }
 assert.match(html, /integrity="sha256-/)
+
+// Sign-in waterfall regression: build-derived, origin-local module hints must
+// refer to real chunks and the exact final JS bytes. Never pull Clerk modules
+// on public marketing, recovery, or authenticated route navigation.
+const hintSource = html.match(/const h=(\\{[^;]+\\});const p=location.pathname/)
+assert(hintSource, 'Route-specific public login hints missing')
+const hint = JSON.parse(hintSource[1])
+for (const [chunkKey, sriKey] of [
+  ['login', 'loginIntegrity'],
+  ['clerkLogin', 'clerkLoginIntegrity'],
+  ['clerkAdapter', 'clerkAdapterIntegrity'],
+]) {
+  const moduleUrl = hint[chunkKey]
+  if (chunkKey !== 'login' && moduleUrl === null) continue
+  assert.match(moduleUrl, /^\\/static\\/[\\w.-]+\\.js$/, `Invalid ${chunkKey} module path`)
+  const bytes = await readFile(path.join(dist, moduleUrl.slice(1)))
+  assert.equal(hint[sriKey], `sha256-${createHash('sha256').update(bytes).digest('base64')}`,
+    `Missing/stale ${chunkKey} hint SRI`)
+}
+assert.equal(Boolean(hint.clerkLogin), Boolean(hint.clerkAdapter),
+  'Clerk sign-in modules must be hinted together')
+assert(html.includes("if((p==='/login'||p==='/sign-in')&&h.clerkLogin&&h.clerkAdapter)"),
+  'Clerk module preload must remain restricted to sign-in routes')
 const policy = JSON.parse(await readFile('node_modules/.cache/finco-security/policy.json', 'utf8'))
+for (const sriKey of ['loginIntegrity', 'clerkLoginIntegrity', 'clerkAdapterIntegrity']) {
+  if (hint[sriKey]) assert(policy.strictCsp.includes(`'${hint[sriKey]}'`),
+    `Sign-in module ${sriKey} missing from strict CSP`)
+}
 assert.match(policy.strictCsp, /strict-dynamic/)
 assert(!policy.strictCsp.split('script-src-attr')[0].includes('unsafe-inline'))
 

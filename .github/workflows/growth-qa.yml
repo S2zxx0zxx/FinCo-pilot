@@ -52,7 +52,6 @@ jobs:
         working-directory: backend
     env:
       DEPLOYMENT_ENVIRONMENT: development
-      DATABASE_URL: 'sqlite+aiosqlite:///:memory:'
       SECRET_KEY: synthetic-growth-ci-only-signing-key-not-for-deployment
       CREDENTIALS_DIRECTORY: ''
       AGENTS_ENABLED: 'true'
@@ -71,6 +70,7 @@ jobs:
           pip install --require-hashes -r /tmp/finco-growth-product.txt
           pip install --no-deps -e .
       - name: Prove manual accounts and transaction preview/import with synthetic fixtures
-        # Existing conftest uses in-memory SQLite and synthetic identities.
+        # App config keeps its valid PostgreSQL default; no app lifespan is started.
+        # Existing conftest overrides sessions with in-memory SQLite and synthetic identities.
         # This does not contact production or certify external identity/payment providers.
         run: pytest -ra -W error tests/test_accounts_api.py tests/test_import_api.py tests/test_import_service.py

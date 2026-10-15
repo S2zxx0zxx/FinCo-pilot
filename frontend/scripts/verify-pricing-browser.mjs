@@ -3,6 +3,7 @@
  * login, payment, bank connection or AI service, and sends no external writes.
  */
 import { spawn } from 'node:child_process'
+import { stripVTControlCharacters } from 'node:util'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { chromium, firefox, webkit } from 'playwright'
 import AxeBuilder from '@axe-core/playwright'
@@ -12,9 +13,15 @@ const output = process.env.PRICING_QA_OUTPUT
 const port = 4276
 const server = spawn(process.execPath, ['node_modules/vite/bin/vite.js', 'preview', '--host', '127.0.0.1', '--port', String(port)], { stdio: ['ignore', 'pipe', 'pipe'] })
 await new Promise((resolve, reject) => {
-  server.stdout.on('data', data => { if (data.toString().includes('Local:')) resolve() })
-  server.on('error', reject)
-  server.on('exit', code => reject(new Error(`Preview exited: ${code}`)))
+  let log = ''
+  const timer = setTimeout(() => { server.kill(); reject(new Error('Pricing preview did not become ready within 20s: ' + log)) }, 20_000)
+  server.stdout.on('data', data => {
+    log = (log + stripVTControlCharacters(data.toString())).slice(-4000)
+    if (log.includes('Local:')) { clearTimeout(timer); resolve() }
+  })
+  server.stderr.on('data', data => { log = (log + stripVTControlCharacters(data.toString())).slice(-4000) })
+  server.on('error', error => { clearTimeout(timer); reject(error) })
+  server.on('exit', code => { clearTimeout(timer); reject(new Error(`Preview exited: ${code}: ${log}`)) })
 })
 
 const modules = ['transactions','accounts','import','reports','assets','budgets','goals','recurring','categories','payees','split_groups','rules','invoices']
@@ -56,11 +63,14 @@ const fixed = {
   '/api/support/info': { email: null, portal_url: null, help_center_url: null },
 }
 
+console.log('Pricing preview ready')
 const results = []
+let axeScans = 0
 let browser
 try {
   const engine = process.env.PRICING_QA_BROWSER || 'chromium'
   browser = await ({chromium,firefox,webkit}[engine]).launch({headless:true})
+  console.log('Pricing browser launched:',engine)
   if(output) await mkdir(output,{recursive:true})
   for(const signedIn of (process.env.PRICING_QA_ACCOUNT_ONLY ? [true] : [false,true])) {
     for(const theme of ['light','dark']) {
@@ -77,6 +87,7 @@ try {
       const page=await context.newPage(),errors=[]
       page.on('pageerror',e=>errors.push(e.message))
       for(const width of [320,375,390,620,768,920,921,1024,1440]){
+        console.log('Pricing visit',JSON.stringify({signedIn,theme,width}))
         await page.setViewportSize({width,height:1000})
         await page.goto(`http://127.0.0.1:${port}/pricing?plan=pro`,{waitUntil:'networkidle'})
         await page.getByRole('heading',{name:'A plan for where you are. And what’s next.'}).waitFor()
@@ -97,6 +108,7 @@ try {
         await page.getByText(/No. Selecting a plan only updates/).waitFor()
         if(width===390||width===1440){
           const axe=await new AxeBuilder({page}).analyze()
+          axeScans++
           if(output && axe.violations.length){await writeFile(`${output}/axe-failure.json`,JSON.stringify(axe.violations,null,2));await page.screenshot({path:`${output}/failure.png`,fullPage:true})}
           assert.deepEqual(axe.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)})),[],`axe ${width} ${theme} signedIn=${signedIn}`)
           if(output)await page.screenshot({path:`${output}/pricing-${width}-${theme}-${signedIn?'account':'guest'}.png`,fullPage:true})
@@ -120,5 +132,5 @@ try {
     }
   }
   if(output)await writeFile(`${output}/results.json`,JSON.stringify({mode:'local-contract-fixtures',results},null,2))
-  console.log(`Pricing acceptance: ${results.length} visits; keyboard, annual/auth handoff, Max monthly, FAQ, comparison, no overflow; axe 8 scans; no external writes.`)
+  console.log(`Pricing acceptance: ${results.length} visits; keyboard, annual/auth handoff, Max monthly, FAQ, comparison, no overflow; axe ${axeScans} scans; no external writes.`)
 } finally { await browser?.close();server.kill() }

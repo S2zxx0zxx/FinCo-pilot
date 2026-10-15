@@ -4,6 +4,9 @@ on:
     branches: ['feat/spaceui-pricing-*']
   pull_request:
     paths: ['frontend/**', '.github/workflows/pricing-spaceui.yml']
+concurrency:
+  group: pricing-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
@@ -33,6 +36,7 @@ jobs:
       - run: npx vitest run src/pages/pricing-checkout.test.tsx src/components/spaceui/pricing-experience.test.tsx src/billing
       - run: npx playwright install --with-deps ${{ matrix.browser }}
       - run: node scripts/verify-pricing-browser.mjs
+        timeout-minutes: 5
         env:
           PRICING_QA_BROWSER: ${{ matrix.browser }}
           PRICING_QA_OUTPUT: pricing-qa

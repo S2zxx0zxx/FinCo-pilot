@@ -82,10 +82,11 @@ All 15 quota metrics are represented, plus advanced reports and Agents capabilit
 ## Verification receipt
 
 - Complete frontend Vitest suite: **934 passed / 122 files**; after adding the Max annual regression, affected pricing/billing suite: **49 passed / 10 files** (one additional test; full suite not redundantly rerun).
-- Zero-warning whole-frontend ESLint and TypeScript pass. Production build and artifact/SRI/discovery check pass; entry graph 214,837 gzip bytes versus 307,200 budget; no public source maps.
+- Zero-warning whole-frontend ESLint and TypeScript pass. Production build and artifact/SRI/discovery check pass; entry graph 214,843 gzip bytes versus 307,200 budget; no public source maps.
 - Chromium local contract acceptance: **36 visits**, widths 320/375/390/620/768/920/921/1024/1440, light/dark, guest/signed-in. No horizontal overflow. Annual Pro ₹999 and Max monthly ₹349, tab ArrowRight, FAQ, annual auth handoff and management anchor pass; **8 axe scans**, zero violations. External requests/mutations blocked.
 - Browser review found and fixed inactive mobile tab contrast (3.02:1 before fix) and 2px signed-in Refunds action overflow at 320px. No hidden overflow workaround; button rows wrap and retain >=44px targets.
 - Inspected rendered 390px light guest and 1440px dark guest screenshots; signed-in dark 390px reviewed separately. CI uploads final screenshots for each engine.
+- Initial remote CI exposed an ANSI-coloured Vite log readiness hang in the verification harness, not the product. The runner now strips ANSI control sequences, drains stderr, prints visit progress and fails readiness after 20 seconds; browser steps have a five-minute deadline. Forced-colour GitHub Actions environment was reproduced locally; corrected harness completed 18 signed-in visits with clean accessibility checks.
 - Local Firefox failed with sandbox/runtime library error; WebKit requires absent OS libraries. System package install is unavailable in this workspace. These are not product test passes; the dedicated GitHub workflow installs required dependencies and must verify both engines before final handoff. Browser responses are local synthetic contract fixtures, with external requests and mutations blocked. They do not certify provider payments or production readiness.
 
 ## Remaining external acceptance

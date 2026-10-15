@@ -1,0 +1,48 @@
+name: Pricing Space UI
+on:
+  push:
+    branches: ['feat/spaceui-pricing-*']
+  pull_request:
+    paths: ['frontend/**', '.github/workflows/pricing-spaceui.yml']
+concurrency:
+  group: pricing-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  pricing:
+    name: Pricing browser (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint -- --max-warnings=0
+      - run: npm run build
+      - run: npx vitest run src/pages/pricing-checkout.test.tsx src/components/spaceui/pricing-experience.test.tsx src/billing
+      - run: npx playwright install --with-deps ${{ matrix.browser }}
+      - run: node scripts/verify-pricing-browser.mjs
+        timeout-minutes: 5
+        env:
+          PRICING_QA_BROWSER: ${{ matrix.browser }}
+          PRICING_QA_OUTPUT: pricing-qa
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: always()
+        with:
+          name: pricing-${{ matrix.browser }}
+          path: frontend/pricing-qa/
+          retention-days: 7

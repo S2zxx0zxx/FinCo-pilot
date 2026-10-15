@@ -531,7 +531,7 @@
       "path": "/api/assets/market/search",
       "handler": "market_search",
       "source": "backend/app/api/assets.py",
-      "line": 59,
+      "line": 61,
       "explicit_dependencies": [
         "Depends(current_active_user)"
       ],
@@ -543,7 +543,7 @@
       "path": "/api/assets/market/quote",
       "handler": "market_quote",
       "source": "backend/app/api/assets.py",
-      "line": 86,
+      "line": 88,
       "explicit_dependencies": [
         "Depends(current_active_user)"
       ],
@@ -555,7 +555,7 @@
       "path": "/api/assets/{asset_id}/refresh-price",
       "handler": "refresh_asset_price",
       "source": "backend/app/api/assets.py",
-      "line": 110,
+      "line": 112,
       "explicit_dependencies": [
         "Depends(current_writable_workspace)",
         "Depends(get_async_session)"
@@ -568,7 +568,7 @@
       "path": "/api/assets",
       "handler": "list_assets",
       "source": "backend/app/api/assets.py",
-      "line": 175,
+      "line": 177,
       "explicit_dependencies": [
         "Depends(current_workspace)",
         "Depends(get_async_session)"
@@ -581,7 +581,7 @@
       "path": "/api/assets/portfolio-trend",
       "handler": "portfolio_trend",
       "source": "backend/app/api/assets.py",
-      "line": 197,
+      "line": 199,
       "explicit_dependencies": [
         "Depends(current_workspace)",
         "Depends(get_async_session)"
@@ -594,7 +594,7 @@
       "path": "/api/assets/transactions",
       "handler": "list_workspace_transactions",
       "source": "backend/app/api/assets.py",
-      "line": 213,
+      "line": 215,
       "explicit_dependencies": [
         "Depends(current_workspace)",
         "Depends(get_async_session)"
@@ -607,7 +607,7 @@
       "path": "/api/assets/import/template",
       "handler": "asset_import_template",
       "source": "backend/app/api/assets.py",
-      "line": 227,
+      "line": 229,
       "explicit_dependencies": [
         "Depends(current_workspace)"
       ],
@@ -619,7 +619,7 @@
       "path": "/api/assets/import/preview",
       "handler": "preview_asset_import",
       "source": "backend/app/api/assets.py",
-      "line": 239,
+      "line": 241,
       "explicit_dependencies": [
         "Depends(current_workspace)",
         "Depends(get_async_session)"
@@ -632,7 +632,7 @@
       "path": "/api/assets/import",
       "handler": "import_asset_orders",
       "source": "backend/app/api/assets.py",
-      "line": 300,
+      "line": 304,
       "explicit_dependencies": [
         "Depends(current_writable_workspace)",
         "Depends(get_async_session)"
@@ -645,7 +645,7 @@
       "path": "/api/assets/buy",
       "handler": "buy_into_holding",
       "source": "backend/app/api/assets.py",
-      "line": 320,
+      "line": 324,
       "explicit_dependencies": [
         "Depends(current_writable_workspace)",
         "Depends(get_async_session)"
@@ -658,7 +658,7 @@
       "path": "/api/assets/{asset_id}/transactions",
       "handler": "list_asset_transactions",
       "source": "backend/app/api/assets.py",
-      "line": 339,
+      "line": 343,
       "explicit_dependencies": [
         "Depends(current_workspace)",
         "Depends(get_async_session)"
@@ -671,7 +671,7 @@
       "path": "/api/assets/{asset_id}/transactions",
       "handler": "add_asset_transaction",
       "source": "backend/app/api/assets.py",
-      "line": 355,
+      "line": 359,
       "explicit_dependencies": [
         "Depends(current_writable_workspace)",
         "Depends(get_async_session)"
@@ -684,7 +684,7 @@
       "path": "/api/assets/transactions/{tx_id}",
       "handler": "update_asset_transaction",
       "source": "backend/app/api/assets.py",
-      "line": 370,
+      "line": 374,
       "explicit_dependencies": [
         "Depends(current_writable_workspace)",
         "Depends(get_async_session)"
@@ -697,7 +697,7 @@
       "path": "/api/assets/transactions/{tx_id}",
       "handler": "delete_asset_transaction",
       "source": "backend/app/api/assets.py",
-      "line": 385,
+      "line": 389,
       "explicit_dependencies": [
         "Depends(current_writable_workspace)",
         "Depends(get_async_session)"
@@ -710,7 +710,7 @@
       "path": "/api/assets/{asset_id}",
       "handler": "get_asset",
       "source": "backend/app/api/assets.py",
-      "line": 399,
+      "line": 403,
       "explicit_dependencies": [
         "Depends(current_workspace)",
         "Depends(get_async_session)"
@@ -723,7 +723,7 @@
       "path": "/api/assets",
       "handler": "create_asset",
       "source": "backend/app/api/assets.py",
-      "line": 411,
+      "line": 415,
       "explicit_dependencies": [
         "Depends(current_writable_workspace)",
         "Depends(get_async_session)"
@@ -736,7 +736,7 @@
       "path": "/api/assets/{asset_id}",
       "handler": "update_asset",
       "source": "backend/app/api/assets.py",
-      "line": 420,
+      "line": 424,
       "explicit_dependencies": [
         "Depends(current_writable_workspace)",
         "Depends(get_async_session)"
@@ -749,7 +749,7 @@
       "path": "/api/assets/{asset_id}",
       "handler": "delete_asset",
       "source": "backend/app/api/assets.py",
-      "line": 436,
+      "line": 440,
       "explicit_dependencies": [
         "Depends(current_writable_workspace)",
         "Depends(get_async_session)"
@@ -762,7 +762,7 @@
       "path": "/api/assets/{asset_id}/values",
       "handler": "list_asset_values",
       "source": "backend/app/api/assets.py",
-      "line": 447,
+      "line": 451,
       "explicit_dependencies": [
         "Depends(current_workspace)",
         "Depends(get_async_session)"
@@ -775,7 +775,7 @@
       "path": "/api/assets/{asset_id}/value-trend",
       "handler": "get_asset_value_trend",
       "source": "backend/app/api/assets.py",
-      "line": 459,
+      "line": 463,
       "explicit_dependencies": [
         "Depends(current_workspace)",
         "Depends(get_async_session)"
@@ -788,7 +788,7 @@
       "path": "/api/assets/{asset_id}/values",
       "handler": "add_asset_value",
       "source": "backend/app/api/assets.py",
-      "line": 472,
+      "line": 476,
       "explicit_dependencies": [
         "Depends(current_writable_workspace)",
         "Depends(get_async_session)"
@@ -801,7 +801,7 @@
       "path": "/api/assets/values/{value_id}",
       "handler": "delete_asset_value",
       "source": "backend/app/api/assets.py",
-      "line": 485,
+      "line": 489,
       "explicit_dependencies": [
         "Depends(current_writable_workspace)",
         "Depends(get_async_session)"
@@ -1980,7 +1980,7 @@
       "path": "/api/transactions/import/preview",
       "handler": "preview_import",
       "source": "backend/app/api/import_transactions.py",
-      "line": 23,
+      "line": 25,
       "explicit_dependencies": [
         "Depends(current_workspace)",
         "Depends(get_async_session)"
@@ -1993,7 +1993,7 @@
       "path": "/api/transactions/import",
       "handler": "import_transactions",
       "source": "backend/app/api/import_transactions.py",
-      "line": 152,
+      "line": 153,
       "explicit_dependencies": [
         "Depends(current_writable_workspace)",
         "Depends(get_async_session)"
@@ -3621,7 +3621,7 @@
       "path": "/api/users/lookup",
       "handler": "lookup_user_by_email",
       "source": "backend/app/api/user_lookup.py",
-      "line": 38,
+      "line": 40,
       "explicit_dependencies": [
         "Depends(current_active_user)",
         "Depends(get_async_session)"
@@ -3634,7 +3634,7 @@
       "path": "/api/users/directory",
       "handler": "list_users_directory",
       "source": "backend/app/api/user_lookup.py",
-      "line": 53,
+      "line": 55,
       "explicit_dependencies": [
         "Depends(current_active_user)",
         "Depends(get_async_session)"
@@ -4317,7 +4317,7 @@
       "path": "/api/agents/{agent_id}/knowledge",
       "handler": "list_knowledge",
       "source": "backend/app/agents/api/knowledge.py",
-      "line": 38,
+      "line": 39,
       "explicit_dependencies": [
         "Depends(current_workspace)",
         "Depends(get_async_session)"
@@ -4330,7 +4330,7 @@
       "path": "/api/agents/{agent_id}/knowledge",
       "handler": "upload_knowledge",
       "source": "backend/app/agents/api/knowledge.py",
-      "line": 56,
+      "line": 57,
       "explicit_dependencies": [
         "Depends(current_writable_workspace)",
         "Depends(get_async_session)"
@@ -4343,7 +4343,7 @@
       "path": "/api/agents/{agent_id}/knowledge/{doc_id}/pin",
       "handler": "toggle_pin",
       "source": "backend/app/agents/api/knowledge.py",
-      "line": 96,
+      "line": 99,
       "explicit_dependencies": [
         "Depends(current_writable_workspace)",
         "Depends(get_async_session)"
@@ -4356,7 +4356,7 @@
       "path": "/api/agents/{agent_id}/knowledge/{doc_id}",
       "handler": "delete_knowledge",
       "source": "backend/app/agents/api/knowledge.py",
-      "line": 118,
+      "line": 121,
       "explicit_dependencies": [
         "Depends(current_writable_workspace)",
         "Depends(get_async_session)"

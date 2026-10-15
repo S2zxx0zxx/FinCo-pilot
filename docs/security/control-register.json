@@ -4,7 +4,7 @@
     "task": "Authentication route inventory",
     "owner": "Codex: engineering evidence; founder: external acceptance; counsel: legal interpretation",
     "baseline_sha": "7736a24e7d520b9f08dd91d38e895b5d240f8a09",
-    "status": "BLOCKED_EXTERNAL_ACCEPTANCE",
+    "status": "VERIFIED_BOUNDED_SCOPE",
     "local_result": "Authentication endpoints and inherited gates inventoried",
     "source_paths": [
       "backend/app/api/custom_auth.py",
@@ -17,8 +17,14 @@
       "backend/tests/test_oidc_auth.py"
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
-    "blocker_and_next_step": "Owner-controlled staged login acceptance",
-    "local_deliverable_status": "COMPLETE_BOUNDED_SCOPE"
+    "blocker_and_next_step": "Inventory completed for this source snapshot; refresh when routes change. Provider user-journey acceptance is tracked separately.",
+    "local_deliverable_status": "COMPLETE_BOUNDED_SCOPE",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/custom_auth.py",
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/clerk_auth.py",
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/oidc_auth.py"
+    ]
   },
   {
     "id": "SEC-002",
@@ -36,7 +42,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Real Google signup, callback, username completion and provider outage test accounts",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/clerk_auth.py"
+    ]
   },
   {
     "id": "SEC-003",
@@ -54,7 +64,12 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": " legacy mapping must not follow email alone;Owner-reviewed existing-account mapping evidence",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/clerk_auth.py",
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/models/external_auth_identity.py"
+    ]
   },
   {
     "id": "SEC-004",
@@ -72,7 +87,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Deployed switches and configured-provider acceptance",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/auth_policy.py"
+    ]
   },
   {
     "id": "SEC-005",
@@ -90,7 +109,12 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Real mail delivery and native concurrent reset acceptance",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/auth.py"
+    ],
+    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate."
   },
   {
     "id": "SEC-006",
@@ -109,7 +133,12 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Independent app issuer migration decision and live provider validation",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/auth.py",
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/clerk_sessions.py"
+    ]
   },
   {
     "id": "SEC-007",
@@ -127,7 +156,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Provider session revocation and configured expiry evidence",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/auth.py"
+    ]
   },
   {
     "id": "SEC-008",
@@ -144,7 +177,12 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Native Redis contention acceptance",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/mfa_challenge.py"
+    ],
+    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate."
   },
   {
     "id": "SEC-009",
@@ -162,7 +200,12 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Owner-controlled MFA/recovery device acceptance",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/two_factor.py"
+    ],
+    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate."
   },
   {
     "id": "SEC-010",
@@ -179,7 +222,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Real authenticator/device acceptance",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/passkeys.py"
+    ]
   },
   {
     "id": "SEC-011",
@@ -197,7 +244,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Full sensitive-operation policy and configured-provider staging acceptance",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/account_deletion.py"
+    ]
   },
   {
     "id": "SEC-012",
@@ -214,7 +265,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": " local tests passed;Cross-tab/device and upstream logout evidence",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/custom_auth.py"
+    ]
   },
   {
     "id": "SEC-013",
@@ -232,7 +287,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Effective service-level policy review and staged A/B matrix",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/workspace_context.py"
+    ]
   },
   {
     "id": "SEC-014",
@@ -240,7 +299,7 @@
     "owner": "Codex: engineering evidence; founder: external acceptance; counsel: legal interpretation",
     "baseline_sha": "7736a24e7d520b9f08dd91d38e895b5d240f8a09",
     "status": "BLOCKED_EXTERNAL_ACCEPTANCE",
-    "local_result": "Existing fixture suites exercise finance routes",
+    "local_result": "Existing fixture suites exercise finance routes; unrelated-user bulk directory exposure reproduced and patched; 86 focused directory/group/workspace/config tests passed",
     "source_paths": [
       "backend/app/api/transactions.py",
       "backend/app/services/account_service.py"
@@ -254,7 +313,12 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": " no exhaustive BOLA attestation;Native/staging two-user negative proof for every inventoried resource",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/transactions.py",
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/services/account_service.py"
+    ]
   },
   {
     "id": "SEC-015",
@@ -272,7 +336,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Deployed admin denial and role acceptance",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/admin.py"
+    ]
   },
   {
     "id": "SEC-016",
@@ -291,7 +359,12 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Complete per-operation property policy review and staging tamper proof",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/schemas/user.py",
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/schemas/transaction.py"
+    ]
   },
   {
     "id": "SEC-017",
@@ -310,7 +383,12 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Native/staged A/B search and encrypted export acceptance",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/search.py",
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/export.py"
+    ]
   },
   {
     "id": "SEC-018",
@@ -328,7 +406,12 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Native PostgreSQL downgrade contention proof",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/workspace_context.py"
+    ],
+    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate."
   },
   {
     "id": "SEC-019",
@@ -346,7 +429,12 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Native fence tests with owner-approved disposable DB",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/workspace_context.py"
+    ],
+    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate."
   },
   {
     "id": "SEC-020",
@@ -364,7 +452,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Actual internal service topology and runtime token permissions",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/agents/mcp/auth.py"
+    ]
   },
   {
     "id": "SEC-021",
@@ -382,7 +474,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": " cache audit not exhaustive;Runtime Redis/cache key inventory and cross-tenant sampling",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/services/dashboard_service.py"
+    ]
   },
   {
     "id": "SEC-022",
@@ -401,7 +497,12 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Private bucket and signed-link configured-provider acceptance",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/services/attachment_service.py",
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/providers/s3_storage.py"
+    ]
   },
   {
     "id": "SEC-023",
@@ -419,7 +520,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Native precision/integrity acceptance on disposable DB",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/schemas/transaction.py"
+    ]
   },
   {
     "id": "SEC-024",
@@ -438,7 +543,12 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Sandbox merchant/order/amount/currency acceptance",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/checkout.py"
+    ],
+    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate."
   },
   {
     "id": "SEC-025",
@@ -455,7 +565,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": " no strict-enforcement change;Provider-backed strict report-only observations and approval",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/frontend/build/security-policy.ts"
+    ]
   },
   {
     "id": "SEC-026",
@@ -472,7 +586,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "No authorised staged Clerk/bank/payment CSP session",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/frontend/build/security-policy.ts"
+    ]
   },
   {
     "id": "SEC-027",
@@ -489,7 +607,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Context-specific staged imported/AI content browser proof",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/frontend/src"
+    ]
   },
   {
     "id": "SEC-028",
@@ -506,7 +628,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Actual live scripts/provider activation inventory",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/frontend/package-lock.json"
+    ]
   },
   {
     "id": "SEC-029",
@@ -525,7 +651,12 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Configured cookies/subdomains and cross-site browser validation",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/auth.py",
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/main.py"
+    ]
   },
   {
     "id": "SEC-030",
@@ -543,7 +674,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Real redirect and popup-origin acceptance on staged hosts",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/services/oauth_state.py"
+    ]
   },
   {
     "id": "SEC-031",
@@ -560,7 +695,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": " Worker tests passed;Real browser offline/logout and cache sampling",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/frontend/public/sw.js"
+    ]
   },
   {
     "id": "SEC-032",
@@ -577,7 +716,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": " zone TLS min 1.0 and SSL full observed;Owner-approved edge changes after origin certificate/browser compatibility proof",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/frontend/security-headers.conf"
+    ]
   },
   {
     "id": "SEC-033",
@@ -594,7 +737,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": " exact live Worker artifact unknown;Deployed binding/cache rules and cross-tenant edge acceptance",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/ops/cloudflare/frontend-edge/worker.mjs"
+    ]
   },
   {
     "id": "SEC-034",
@@ -611,7 +758,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": " apex API is JSON 200;Exact running origin artifact and approved staged upstream failure test",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/frontend/default.conf.template"
+    ]
   },
   {
     "id": "SEC-035",
@@ -628,7 +779,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Actual proxy-hop/direct-origin topology acceptance",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/rate_limit.py"
+    ]
   },
   {
     "id": "SEC-036",
@@ -645,7 +800,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": " verification reports source maps absent;Complete public-bundle/CI-artifact secret candidate review",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/frontend/build/security-policy.ts"
+    ]
   },
   {
     "id": "SEC-037",
@@ -653,17 +812,24 @@
     "owner": "Codex: engineering evidence; founder: external acceptance; counsel: legal interpretation",
     "baseline_sha": "7736a24e7d520b9f08dd91d38e895b5d240f8a09",
     "status": "BLOCKED_EXTERNAL_ACCEPTANCE",
-    "local_result": "Export scope and support minimization reviewed",
+    "local_result": "Export scope and support minimization reviewed; unrelated-user bulk directory exposure reproduced and patched; 86 focused directory/group/workspace/config tests passed",
     "source_paths": [
-      "backend/app/api/export.py"
+      "backend/app/api/export.py",
+      "backend/app/api/user_lookup.py"
     ],
     "test_paths": [
       "backend/tests/test_export_api.py",
-      "backend/tests/test_support_api.py"
+      "backend/tests/test_support_api.py",
+      "backend/tests/test_user_lookup_api.py"
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": " serializer audit not universal;Complete per-route response minimization and staged negative sampling",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/export.py",
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/user_lookup.py"
+    ]
   },
   {
     "id": "SEC-038",
@@ -682,7 +848,12 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Owner topology/allowlist decision; approved isolated DNS-rebinding/SSRF test scope",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/agents/services/connection_service.py",
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/providers/simplefin.py"
+    ]
   },
   {
     "id": "SEC-039",
@@ -701,7 +872,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": " import log leakage fixed with negative tests;Native parser dependency and isolated fuzz acceptance",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/services/import_service.py"
+    ]
   },
   {
     "id": "SEC-040",
@@ -709,18 +884,26 @@
     "owner": "Codex: engineering evidence; founder: external acceptance; counsel: legal interpretation",
     "baseline_sha": "7736a24e7d520b9f08dd91d38e895b5d240f8a09",
     "status": "BLOCKED_EXTERNAL_ACCEPTANCE",
-    "local_result": "Knowledge size cap exists",
+    "local_result": "Added bounded byte reads before transaction/asset/knowledge parsers; configurable import default 10 MiB; 43 focused upload/API tests passed",
     "source_paths": [
       "backend/app/api/import_transactions.py",
-      "backend/app/agents/services/knowledge_service.py"
+      "backend/app/agents/services/knowledge_service.py",
+      "backend/app/core/upload_limits.py"
     ],
     "test_paths": [
       "backend/tests/test_import_api.py",
-      "backend/tests/test_agents_ingest.py"
+      "backend/tests/test_agents_ingest.py",
+      "backend/tests/test_upload_limits.py"
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
-    "blocker_and_next_step": " transaction preview reads upload without route byte cap;Owner-approved import limits and disposable resource-budget staging test",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "blocker_and_next_step": "Owner staging acceptance for configurable limit; ingress multipart spool/disk/concurrency and parser CPU/decompression budgets still need isolated measurement",
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/import_transactions.py",
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/agents/services/knowledge_service.py",
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/upload_limits.py"
+    ]
   },
   {
     "id": "SEC-041",
@@ -739,7 +922,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Real configured bank consent revoke and reconcile receipts",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/services/connection_service.py"
+    ]
   },
   {
     "id": "SEC-042",
@@ -757,7 +944,12 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Sandbox signed delivery replay and native inbox worker acceptance",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/payment_webhooks.py"
+    ],
+    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate."
   },
   {
     "id": "SEC-043",
@@ -775,7 +967,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Actual merchant cancellation/refund reconciliation evidence",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/billing.py"
+    ]
   },
   {
     "id": "SEC-044",
@@ -793,7 +989,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Approved staging injection and external AI egress acceptance",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/agents/runtime/executor.py"
+    ]
   },
   {
     "id": "SEC-045",
@@ -811,7 +1011,12 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Native execution contention/replay and external transport acceptance",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/services/mcp_approval_service.py"
+    ],
+    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate."
   },
   {
     "id": "SEC-046",
@@ -830,7 +1035,12 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "No live stress authorisation or accepted per-operation budget",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/rate_limit.py",
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/billing/guards.py"
+    ]
   },
   {
     "id": "SEC-047",
@@ -848,7 +1058,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Actual Redis ACL, scheduler singleton, DLQ and timeout evidence",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/redis_runtime.py"
+    ]
   },
   {
     "id": "SEC-048",
@@ -856,7 +1070,7 @@
     "owner": "Codex: engineering evidence; founder: external acceptance; counsel: legal interpretation",
     "baseline_sha": "7736a24e7d520b9f08dd91d38e895b5d240f8a09",
     "status": "BLOCKED_EXTERNAL_ACCEPTANCE",
-    "local_result": "Eight new privacy cases failed before patch; 184 focused tests passed after patch; remaining API/log surfaces require review",
+    "local_result": "Import/AI/MCP/executor/bank payload redactions: 22 before-patch failures reproduced, affected fixtures passed. Separate directory privacy cases recorded under SEC-037.",
     "source_paths": [
       "backend/app/api/import_transactions.py",
       "backend/app/agents/mcp/client.py",
@@ -865,11 +1079,20 @@
     "test_paths": [
       "backend/tests/test_import_api.py",
       "backend/tests/test_agents_mcp_client.py",
-      "backend/tests/test_agents_connection_service.py"
+      "backend/tests/test_agents_connection_service.py",
+      "backend/tests/test_agent_error_privacy.py",
+      "backend/tests/test_agents_providers_streaming.py",
+      "backend/tests/test_connections_api.py"
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": " focused retest required;Release approval and real telemetry redaction sample; remaining API error surfaces review",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/import_transactions.py",
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/agents/mcp/client.py",
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/agents/services/connection_service.py"
+    ]
   },
   {
     "id": "SEC-049",
@@ -877,7 +1100,7 @@
     "owner": "Codex: engineering evidence; founder: external acceptance; counsel: legal interpretation",
     "baseline_sha": "7736a24e7d520b9f08dd91d38e895b5d240f8a09",
     "status": "BLOCKED_EXTERNAL_ACCEPTANCE",
-    "local_result": "Tree hygiene passed",
+    "local_result": "Tree hygiene and limited 3211-blob history scan passed; 1227 redacted candidate categories recorded; 30 non-obvious locations reviewed",
     "source_paths": [
       "backend/app/core/secret_management.py"
     ],
@@ -886,7 +1109,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": " history 3211 UTF-8 blobs six-pattern scan found zero; entropy candidates remain;Complete candidate triage, other refs and artifact scan; actual leaked credentials require owner rotation",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/secret_management.py"
+    ]
   },
   {
     "id": "SEC-050",
@@ -903,7 +1130,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Private CI artifacts/env metadata access and redacted candidate review",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/.github/workflows/ci.yml"
+    ]
   },
   {
     "id": "SEC-051",
@@ -920,7 +1151,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Actual owners, vault metadata and rotation dates must be supplied without values",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/secret_management.py"
+    ]
   },
   {
     "id": "SEC-052",
@@ -938,7 +1173,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Approved ciphertext/key continuity backup and staged provider rotation",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/credential_keys.py"
+    ]
   },
   {
     "id": "SEC-053",
@@ -955,8 +1194,13 @@
       "backend/tests/test_schema_safety.py"
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
-    "blocker_and_next_step": "Native PostgreSQL migration/rollback tests unavailable locally",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "blocker_and_next_step": "Synthetic PostgreSQL migration/rollback CI passed; actual legacy production schema/backup and approved migration window remain unverified",
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/schema_safety.py"
+    ],
+    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate."
   },
   {
     "id": "SEC-054",
@@ -973,7 +1217,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": " actual SQL grants not inspected;Authorised metadata-only DB grants review; no customer rows",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/database_runtime.py"
+    ]
   },
   {
     "id": "SEC-055",
@@ -990,15 +1238,20 @@
       "backend/tests/test_recovery_evidence.py"
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
-    "blocker_and_next_step": " no actual backup restored;Owner-approved encrypted backup and isolated native PostgreSQL restore target",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "blocker_and_next_step": "Synthetic encrypted native CI restore passed; actual production backup, key custody, isolated target and RTO/RPO evidence remain required",
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/services/disaster_recovery.py"
+    ],
+    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate."
   },
   {
     "id": "SEC-056",
     "task": "Dependency audit + lock integrity",
     "owner": "Codex: engineering evidence; founder: external acceptance; counsel: legal interpretation",
     "baseline_sha": "7736a24e7d520b9f08dd91d38e895b5d240f8a09",
-    "status": "BLOCKED_EXTERNAL_ACCEPTANCE",
+    "status": "VERIFIED_BOUNDED_SCOPE",
     "local_result": "Frozen backend/npm installs and dated advisory scans passed with zero known reports",
     "source_paths": [
       "frontend/package-lock.json"
@@ -1008,7 +1261,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Repeat after dependency changes; unsupported SDK migration requires separate provider compatibility work",
-    "local_deliverable_status": "COMPLETE_BOUNDED_SCOPE"
+    "local_deliverable_status": "COMPLETE_BOUNDED_SCOPE",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/frontend/package-lock.json"
+    ]
   },
   {
     "id": "SEC-057",
@@ -1016,7 +1273,7 @@
     "owner": "Codex: engineering evidence; founder: external acceptance; counsel: legal interpretation",
     "baseline_sha": "7736a24e7d520b9f08dd91d38e895b5d240f8a09",
     "status": "BLOCKED_EXTERNAL_ACCEPTANCE",
-    "local_result": "Actions source review: core CI actions use full commit pins",
+    "local_result": "Existing actions use commit pins; metadata-only pull_request_target label workflows do not check out PR code; added read-only bounded weekly audit workflow",
     "source_paths": [
       ".github/workflows/ci.yml"
     ],
@@ -1025,7 +1282,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "All workflow provenance/action review and configured repository enforcement",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/.github/workflows/ci.yml"
+    ]
   },
   {
     "id": "SEC-058",
@@ -1042,7 +1303,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Administration access/owner approval for reviewed protections",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/.github/workflows/ci.yml"
+    ]
   },
   {
     "id": "SEC-059",
@@ -1060,7 +1325,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Actual production/staging provider separation and current deployed commit",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/config.py"
+    ]
   },
   {
     "id": "SEC-060",
@@ -1077,7 +1346,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": " actual Sentry ingestion not queried;Owner-controlled synthetic runtime telemetry sample/access",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/sentry_monitoring.py"
+    ]
   },
   {
     "id": "SEC-061",
@@ -1094,7 +1367,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": " not owner fact confirmation;Owner legal name, service address and staffed grievance/privacy contact",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/config.py"
+    ]
   },
   {
     "id": "SEC-062",
@@ -1111,7 +1388,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Operator facts, live processor facts and approved public policy verification",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/privacy_policy.py"
+    ]
   },
   {
     "id": "SEC-063",
@@ -1129,7 +1410,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Approved actual terms version, assent evidence and real cancellation receipt",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/terms.py"
+    ]
   },
   {
     "id": "SEC-064",
@@ -1137,7 +1422,7 @@
     "owner": "Codex: engineering evidence; founder: external acceptance; counsel: legal interpretation",
     "baseline_sha": "7736a24e7d520b9f08dd91d38e895b5d240f8a09",
     "status": "BLOCKED_EXTERNAL_ACCEPTANCE",
-    "local_result": "Processing/data/retention register prepared from existing source",
+    "local_result": "Processing/data/retention register prepared from existing source; unrelated-user bulk directory exposure reproduced and patched; 86 focused directory/group/workspace/config tests passed",
     "source_paths": [
       "backend/app/core/processor_inventory.py",
       "backend/app/core/retention.py"
@@ -1148,7 +1433,12 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Owner-approved purpose/basis, field-level retention exceptions and live data flow validation",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/processor_inventory.py",
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/retention.py"
+    ]
   },
   {
     "id": "SEC-065",
@@ -1165,7 +1455,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": " staged commencement, not blanket immediate scope;Counsel confirms Act commencement/corrigenda and entity applicability before exact deadline claim",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/privacy_policy.py"
+    ]
   },
   {
     "id": "SEC-066",
@@ -1182,7 +1476,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": " conditional clock/log operating plan prepared;Real PoC, reportability review, India log sink and retention/time-sync evidence",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/retention.py"
+    ]
   },
   {
     "id": "SEC-067",
@@ -1199,7 +1497,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Actual market/establishment/monitoring facts and counsel/transfer decisions",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/privacy_policy.py"
+    ]
   },
   {
     "id": "SEC-068",
@@ -1216,7 +1518,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Revenue/volume/business model and target-region facts plus counsel",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/privacy_policy.py"
+    ]
   },
   {
     "id": "SEC-069",
@@ -1234,7 +1540,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": " no RBI licence or PCI scope attestation;Licensed partner/contracts, money flow diagram and merchant/PCI assessor scope decision",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/checkout.py"
+    ]
   },
   {
     "id": "SEC-070",
@@ -1251,7 +1561,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": " Neon account metadata proves project region, not live app binding;Actual signed contracts, region evidence and live processing list",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/processor_inventory.py"
+    ]
   },
   {
     "id": "SEC-071",
@@ -1269,7 +1583,12 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Real provider revocation/deletion, holds and backup-expiry receipts",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/account_deletion.py"
+    ],
+    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate."
   },
   {
     "id": "SEC-072",
@@ -1286,14 +1605,18 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Founder/legal contacts and owner/counsel tabletop signoff",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/retention.py"
+    ]
   },
   {
     "id": "SEC-073",
     "task": "Security baseline scoreboard",
     "owner": "Codex: engineering evidence; founder: external acceptance; counsel: legal interpretation",
     "baseline_sha": "7736a24e7d520b9f08dd91d38e895b5d240f8a09",
-    "status": "BLOCKED_EXTERNAL_ACCEPTANCE",
+    "status": "VERIFIED_BOUNDED_SCOPE",
     "local_result": "Evidence scoreboard linked to exact baseline and bounded test scope",
     "source_paths": [
       "docs/security/README.md"
@@ -1303,7 +1626,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Independent release review and production acceptance",
-    "local_deliverable_status": "COMPLETE_BOUNDED_SCOPE"
+    "local_deliverable_status": "COMPLETE_BOUNDED_SCOPE",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/docs/security/README.md"
+    ]
   },
   {
     "id": "SEC-074",
@@ -1320,7 +1647,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Owner signatures and expiry dates for each exception",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/docs/security/OPERATIONS.md"
+    ]
   },
   {
     "id": "SEC-075",
@@ -1328,16 +1659,22 @@
     "owner": "Codex: engineering evidence; founder: external acceptance; counsel: legal interpretation",
     "baseline_sha": "7736a24e7d520b9f08dd91d38e895b5d240f8a09",
     "status": "BLOCKED_EXTERNAL_ACCEPTANCE",
-    "local_result": "Existing Renovate retained",
+    "local_result": "Existing Renovate retained; daily ChatGPT change-watch created; pinned weekly advisory/static audit workflow added, execution acceptance pending",
     "source_paths": [
-      "renovate.json"
+      "renovate.json",
+      ".github/workflows/security-audit.yml"
     ],
     "test_paths": [
       "backend/tests/test_release_gate.py"
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": " daily read-only advisory cadence configured separately;Confirm ongoing run delivery and private advisory permissions",
-    "local_deliverable_status": "COMPLETE_BOUNDED_SCOPE"
+    "local_deliverable_status": "COMPLETE_BOUNDED_SCOPE",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/renovate.json",
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/.github/workflows/security-audit.yml"
+    ]
   },
   {
     "id": "SEC-076",
@@ -1354,7 +1691,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": " role accountability draft prepared;Named human incident lead/deputy and counsel contacts",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/SECURITY.md"
+    ]
   },
   {
     "id": "SEC-077",
@@ -1372,7 +1713,12 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Actual last-good image and staged rollback drill with native data integrity proof",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/docs/trust/FINCO_DISASTER_RECOVERY_RUNBOOK_V1.md"
+    ],
+    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate."
   },
   {
     "id": "SEC-078",
@@ -1389,14 +1735,18 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Automation creation/result and first-run delivery verification",
-    "local_deliverable_status": "COMPLETE_BOUNDED_SCOPE"
+    "local_deliverable_status": "COMPLETE_BOUNDED_SCOPE",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/docs/security/OPERATIONS.md"
+    ]
   },
   {
     "id": "SEC-079",
     "task": "Monitoring budget limits",
     "owner": "Codex: engineering evidence; founder: external acceptance; counsel: legal interpretation",
     "baseline_sha": "7736a24e7d520b9f08dd91d38e895b5d240f8a09",
-    "status": "BLOCKED_EXTERNAL_ACCEPTANCE",
+    "status": "VERIFIED_BOUNDED_SCOPE",
     "local_result": "Bounded monitoring budget: no login, finance APIs, load test or retry loops",
     "source_paths": [
       "docs/security/OPERATIONS.md"
@@ -1406,7 +1756,11 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Account quota/cost observation; increase only by owner-approved budget",
-    "local_deliverable_status": "COMPLETE_BOUNDED_SCOPE"
+    "local_deliverable_status": "COMPLETE_BOUNDED_SCOPE",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/docs/security/OPERATIONS.md"
+    ]
   },
   {
     "id": "SEC-080",
@@ -1423,6 +1777,10 @@
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
     "blocker_and_next_step": "Human provider access roster, review signatures and first quarterly attestation",
-    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED"
+    "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
+    "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "source_links": [
+      "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/docs/security/OPERATIONS.md"
+    ]
   }
 ]

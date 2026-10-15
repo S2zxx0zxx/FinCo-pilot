@@ -34,7 +34,9 @@
     "build": "PASS",
     "lint": "PASS",
     "entry_gzip_bytes": 214234,
-    "source_maps": "absent per production verifier"
+    "source_maps": "absent per production verifier",
+    "current_main_tests_passed": 935,
+    "current_entry_gzip_bytes": 214829
   },
   "worker": {
     "passed": 7
@@ -68,7 +70,7 @@
       "IBM Cloud IAM Key": 1,
       "Base64 High Entropy String": 4
     },
-    "candidate_triage": "INCOMPLETE; hashes/fixtures/locale keys create noise, never auto-dismiss every candidate",
+    "candidate_triage": "1227 candidates categorized in redacted triage. Thirty non-obvious locations reviewed: fixtures, names/references, public identifiers, KDF salt and dev defaults. Heuristic categories are not comprehensive no-secret attestation.",
     "network_verification": false,
     "initial_scanner_retry": "Python multiprocessing default required a socket unavailable in environment; reran using fork and --no-verify"
   },
@@ -91,7 +93,8 @@
       85,
       60
     ],
-    "merged_baseline_pr": 88
+    "merged_baseline_pr": 88,
+    "baseline_run_id": 38713565820
   },
   "neon": {
     "project_region": "aws-ap-southeast-1",
@@ -109,6 +112,91 @@
     "first_delivery": "NOT_YET_VERIFIED"
   },
   "production_writes": false,
-  "native_postgres_restore": "BLOCKED: no local native server/Docker or authorised disposable target/backup selected",
-  "provider_browser_acceptance": "BLOCKED: no owner-controlled staged login/MFA/bank/payment accounts supplied"
+  "native_postgres_restore": "Synthetic CI native PostgreSQL encrypted backup/restore PASS on recorded candidate. Actual production backup restore remains BLOCKED pending approved backup/target/keys.",
+  "provider_browser_acceptance": "BLOCKED: no owner-controlled staged login/MFA/bank/payment accounts supplied",
+  "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+  "main_reconciliation": "Pricing PR #90 merged while audit was running; merged into local candidate without conflict; no backend changes in new main",
+  "first_privacy_full_rerun": {
+    "passed": 5154,
+    "skipped": 7,
+    "seconds": 345.81,
+    "scope": "Initial eight privacy regression cases; before expanded providers/upload/bank changes"
+  },
+  "expanded_focused_checks": {
+    "upload_api": {
+      "passed": 43,
+      "seconds": 23.5
+    },
+    "provider_executor_core": {
+      "passed": 109,
+      "seconds": 20.67
+    },
+    "bank_provider": {
+      "passed": 310,
+      "seconds": 54.45
+    },
+    "provider_body_before": {
+      "failed": 12,
+      "passed": 17
+    },
+    "bank_error_before": {
+      "failed": 2,
+      "passed": 23
+    }
+  },
+  "native_ci": {
+    "candidate": "b30740707d8d64f304980f23b7ba13f5638147aa",
+    "run_id": 38734391388,
+    "postgres_job": 116419868551,
+    "postgres_conclusion": "success",
+    "redis_worker_conclusion": "success",
+    "scope": "Disposable native PostgreSQL/Redis; migration/rollback, reset/MFA, synthetic encrypted backup/restore, webhook/payments, external MCP, account/workspace fencing and seven SQLite-skipped financial cases; not production restore/provider acceptance"
+  },
+  "expanded_frontend_attempt": {
+    "main": "e727498c9481cdcb94f06b6f429933224f9c5b08",
+    "passed": 934,
+    "failed": 1,
+    "reason": "clerk-register existing test exceeded 5s timeout under four workers",
+    "isolated_retest": "1 passed in 1.88s test time",
+    "full_retest": {
+      "passed": 935,
+      "workers": 2,
+      "seconds": 112.9
+    }
+  },
+  "expanded_full_backend": {
+    "passed": 5188,
+    "skipped": 7,
+    "seconds": 386.63,
+    "scope": "Complete expanded redaction/upload/bank code before final scoped-directory addition; directory/config/group coverage tested separately"
+  },
+  "scoped_directory": {
+    "before": {
+      "failed": 2,
+      "passed": 4
+    },
+    "after_focused": {
+      "passed": 86,
+      "seconds": 24.09
+    },
+    "scope": "Unrelated user exclusion, preserved shared peers/manager, archive exclusion, explicit self-hosted instance opt-in and unauthenticated denial. Uses typed UUID binding consistent with existing workspace service; native proof pending final CI."
+  },
+  "initial_candidate_ci": {
+    "sha": "b30740707d8d64f304980f23b7ba13f5638147aa",
+    "run": 38734391388,
+    "conclusion": "all seven job conclusions success",
+    "source_limit": "Before scoped-directory patch and added audit workflow; do not treat as final-head acceptance"
+  },
+  "weekly_workflow": {
+    "file": ".github/workflows/security-audit.yml",
+    "activation": "After approved merge to default branch; workflow itself will be tested on PR",
+    "permissions": "contents:read",
+    "timeout_minutes": 15,
+    "tools": {
+      "pip_audit": "2.10.1",
+      "bandit": "1.9.4",
+      "uv": "0.12.10"
+    },
+    "local_high_confidence_high_severity_bandit": "PASS"
+  }
 }

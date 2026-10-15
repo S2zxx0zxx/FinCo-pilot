@@ -6,7 +6,8 @@ Engineering evidence owner: Codex during explicitly running tasks. Accountable h
 
 | Item | Classification | Current disposition | Close / review trigger |
 |---|---|---|---|
-| Import/AI/MCP diagnostic payload disclosure | Confirmed in isolated synthetic tests; confidentiality regression | Patched on branch; not deployed; no proof of a live breach | Exact-head CI, staging diagnostics and approved release |
+| Import/AI/MCP/bank diagnostic payload disclosure | Confirmed in isolated synthetic tests; confidentiality regression | Patched on branch; not deployed; no proof of a live breach | Exact-head CI, staging diagnostics and approved release |
+| Bulk account directory visible to unrelated users | Confirmed using synthetic A/B accounts; production binding unknown | Scoped directory patch on branch; exact-email invite lookup preserved | Native/staged collaborator/manager acceptance and approved release |
 | Main protection absent in API reads | Confirmed configuration observation | No owner risk acceptance assumed | Reviewed administration policy and effective enforcement proof |
 | TLS min 1.0 / SSL full / permissive CSP | Confirmed zone/header observations | Production change withheld | Origin cert and client/provider tests plus owner release approval |
 | Separate API subdomain unavailable | Confirmed public health observation | No inference apex login is broken | Identify canonical consumer and runtime configuration owner |
@@ -18,7 +19,7 @@ No exception is risk-accepted without a human owner, rationale, expiry and signa
 
 ## Monitoring budget and reporting
 
-Use one security-specific daily change alert alongside existing performance/social tasks. GitHub maximum eight read-only API calls per run; up to three fixed public homepage/health GETs only when needed, no redirects outside the owned domains, no customer/auth/financial endpoints, no retries or load tests. Weekly review consolidates open risks, new routes/dependencies/advisories, test failures and legal changes. Use at most four primary-source legal/advisory lookups in a routine run. Do not auto-fix, merge or deploy from monitoring. Report only meaningful verified changes with timestamp, SHA, evidence, owner and next action; remain silent for unchanged known gaps. Actual automation creation/ID is recorded in checks.json; scheduling success does not prove subsequent delivery or continuous runtime coverage.
+Use one security-specific daily change alert alongside existing performance/social tasks. GitHub maximum eight read-only API calls per run; up to three fixed public homepage/health GETs only when needed, no redirects outside the owned domains, no customer/auth/financial endpoints, no retries or load tests. Weekly review consolidates open risks, new routes/dependencies/advisories, test failures and legal changes. Use at most four primary-source legal/advisory lookups in a routine run. Do not auto-fix, merge or deploy from monitoring. Report only meaningful verified changes with timestamp, SHA, evidence, owner and next action; remain silent for unchanged known gaps. A weekly `Security Advisory Audit` GitHub workflow uses pinned actions/audit tools, contents:read only, a 15-minute cap, no dependency scripts or publication; it must pass before release. Scheduled workflows only activate from the default branch after approved merge. Actual automation creation/ID is recorded in checks.json; scheduling success does not prove subsequent delivery or continuous runtime coverage.
 
 ## Incident handling and clocks
 

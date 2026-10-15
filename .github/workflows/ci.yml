@@ -250,6 +250,13 @@ jobs:
             tests/test_agents_mcp_tools.py::test_aggregate_by_month \
             tests/test_credit_card_accounting_mode.py::TestIncomeExpensesReport::test_monthly_report_follows_mode
 
+      - name: Verify scoped directories and parser byte budgets on native PostgreSQL
+        env:
+          AGENTS_ENABLED: "true"
+          FINCO_DISPOSABLE_DB_TEST: "yes"
+          FINCO_TEST_DATABASE_URL: postgresql+asyncpg://finco_ci:synthetic-ci-password@localhost:5432/finco_ci
+        run: pytest -q -ra -W error tests/test_user_lookup_api.py tests/test_upload_limits.py
+
   redis-worker-smoke:
     name: Redis + Worker Smoke
     runs-on: ubuntu-latest

@@ -14,3 +14,12 @@ Continue independent source work while these are unresolved. Do not request pass
 Account setup instructions: Search Console Domain property uses DNS verification; URL-prefix has other methods. Preserve existing verified properties. Bing can import an existing verified Search Console property. Prefer existing analytics; do not add GA4 merely because a template mentions it.
 
 Sources: [GSC property setup](https://support.google.com/webmasters/answer/34592), [ownership](https://support.google.com/webmasters/answer/9008080), [Bing verification](https://www2.bing.com/webmasters/help/add-and-verify-site-12184f8b), [GA4 web setup](https://developers.google.com/analytics/devguides/collection/ga4/web). No account creation or DNS mutation performed.
+
+## Continuation update
+
+Owner authorized continued reversible implementation in the same PR #89, with final review/merge retained by the owner. That authorizes branch work and safe monitoring configuration; it does not substitute for unavailable authenticated account reads or actual live-release evidence.
+
+- PR #90 pricing main merge e727498 was integrated without overwriting its changes. Separate security PR #91 is not merged into this growth branch.
+- Windsor.ai account setup is owner-reported. Directory/tool inventory still did not expose an installed/authenticated Windsor connection; report/property access remains blocked until a successful authorized read. No repeated account creation or paid activation.
+- Public-host choice is still a release dependency. Branch implementation supports an explicitly configured owned host and does not perform DNS/cutover. Another workstream may prepare landing activation; refresh its current PR/main before release.
+- New public pages, asset copy and distribution drafts remain review-only. Legal entity/contact and real customer outcomes remain owner-provided facts; no invented replacement is supplied.

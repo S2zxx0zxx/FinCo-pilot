@@ -9,3 +9,7 @@
 - Validation: 7 offline probe tests, 4 existing landing source contracts and 7 existing Worker privacy tests passed; secret hygiene and staged whitespace checks passed. One full fixed-eight-URL probe completed and confirmed origin/readiness/sitemap distinctions. Full app/browser suite was not rerun for this docs/tooling-only diff. PR/head recorded in the remote PR and NEXT_SESSION.
 - Rollback: close the unmerged PR, or revert this isolated docs/tooling commit. No infrastructure rollback needed because no infrastructure changed.
 - Production deployed SHA: www has main deployment metadata; apex source UNKNOWN. No release from this growth branch.
+
+## Candidate implementation continuation — 15 October 2026
+
+Same PR #89, latest main pricing PR90 reconciled. Added four prerendered public pages and built-byte discovery contracts, gated canonical/robots/sitemap/schema, app/edge privacy indexing protections and 404 sitemap routing. Added strict-consent offline attribution, aggregate report adapter, local dashboard, browser/privacy CI and editorial/measurement/authority dossiers. Updated all 52 task statuses with explicit residual gates; no deployment/indexing/outcome completion claimed. Existing daily watch updated in place. See IMPLEMENTATION_AND_QA.md for validation and material indexing effects.

@@ -24,7 +24,7 @@ test('frontend shell never forwards credentials, private paths or query tokens',
   })
   assert.equal(response.headers.get('cache-control'), 'no-store')
   assert.equal(response.headers.get('set-cookie'), null)
-  assert.equal(response.headers.get('x-robots-tag'), null)
+  assert.equal(response.headers.get('x-robots-tag'), 'noindex')
 })
 test('only successful static assets are immutable; errors remain no-store', async () => {
   for (const status of [200, 404, 503]) {
@@ -71,4 +71,18 @@ test('a development HTML fallback is never returned as a working MCP endpoint', 
   const response = await handleRequest(new Request('https://fincopilot.app/mcp'), env, async () => new Response('<script src="/@vite/client"></script>', { headers: { 'Content-Type': 'text/html' } }))
   assert.equal(response.status, 503)
   assert(! (await response.text()).includes('@vite'))
+})
+
+test('private shells retain noindex and sitemap absence is a real 404 without an upstream fetch', async () => {
+  for (const path of ['/', '/login', '/accounts', '/i/synthetic', '/reset-password?token=synthetic']) {
+    const response = await handleRequest(new Request('https://fincopilot.app' + path), env,
+      async () => new Response('<html>shell</html>', { headers: { 'Content-Type': 'text/html' } }))
+    assert.equal(response.headers.get('x-robots-tag'), 'noindex', path)
+    assert.match(response.headers.get('cache-control'), /no-store/)
+  }
+  let called = false
+  const response = await handleRequest(new Request('https://fincopilot.app/sitemap.xml'), env,
+    async () => { called = true; return new Response('<html>not xml</html>') })
+  assert.equal(response.status, 404)
+  assert.equal(called, false)
 })

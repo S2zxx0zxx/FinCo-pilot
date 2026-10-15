@@ -35,6 +35,7 @@ export function targetsBackend(pathname) {
 }
 
 export function frontendPath(pathname) {
+  if (pathname === '/sitemap.xml') return null
   if (pathname.startsWith('/static/')) return /^\/static\/[\w.-]+$/.test(pathname) ? pathname : null
   if (PUBLIC_FILES.has(pathname)) return pathname
   if (/^\/(src|node_modules|@vite|\.vite)(\/|$)/.test(pathname)) return null
@@ -61,6 +62,7 @@ export async function handleRequest(request, env, fetchImpl = fetch) {
       if (url.pathname === '/mcp' && /text\/html/i.test(response.headers.get('content-type') || '')) return unavailable(503)
       const headers = new Headers(response.headers)
       headers.set('Cache-Control', 'no-store')
+      headers.set('X-Robots-Tag', 'noindex')
       return new Response(response.body, { status: response.status, statusText: response.statusText, headers })
     } catch { return unavailable(502) }
   }
@@ -85,7 +87,9 @@ export async function handleRequest(request, env, fetchImpl = fetch) {
     if (response.status >= 300 && response.status < 400 && response.status !== 304) return unavailable(502)
     const output = new Headers(response.headers)
     output.delete('Set-Cookie')
-    output.delete('X-Robots-Tag') // Public production domain; upstream preview is noindex.
+    // Never strip upstream indexing exclusions. This artifact is the private
+    // app, not the separately reviewed public marketing site.
+    if (pathname === '/index.html') output.set('X-Robots-Tag', 'noindex')
     output.set('Referrer-Policy', 'no-referrer')
     output.set('X-Content-Type-Options', 'nosniff')
     output.set('X-FinCo-Frontend-Commit', env.FRONTEND_DEPLOYMENT_COMMIT)

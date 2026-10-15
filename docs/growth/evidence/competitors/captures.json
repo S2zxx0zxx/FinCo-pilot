@@ -1,0 +1,30 @@
+[
+  {
+    "name": "monarch",
+    "url": "https://www.monarch.com/features/tracking",
+    "status": "unavailable-in-browser",
+    "observedAt": "2026-10-15T12:35:23.110Z",
+    "screenshot": null
+  },
+  {
+    "name": "ynab",
+    "url": "https://www.ynab.com/features",
+    "status": "unavailable-in-browser",
+    "observedAt": "2026-10-15T12:35:23.147Z",
+    "screenshot": null
+  },
+  {
+    "name": "pocketguard",
+    "url": "https://pocketguard.com/budgeting/",
+    "status": "unavailable-in-browser",
+    "observedAt": "2026-10-15T12:35:23.177Z",
+    "screenshot": null
+  },
+  {
+    "name": "actual",
+    "url": "https://actualbudget.org/docs/transactions/importing/",
+    "status": "unavailable-in-browser",
+    "observedAt": "2026-10-15T12:35:23.208Z",
+    "screenshot": null
+  }
+]

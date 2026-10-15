@@ -1,21 +1,13 @@
 # Resume snapshot
 
-As of 15 October 2026, initial growth execution block. Source base main `7736a24e7d520b9f08dd91d38e895b5d240f8a09`. Branch `feat/organic-growth-baseline-20261015`. Read the baseline, task register and approval queue, then refresh all mutable state.
+15 October 2026. Continue only in draft PR #89: https://github.com/S2zxx0zxx/FinCo-pilot/pull/89 . Branch `feat/organic-growth-baseline-20261015`; main PR90 (`e727498c9481cdcb94f06b6f429933224f9c5b08`) reconciled. Read IMPLEMENTATION_AND_QA.md, TASK_REGISTER.csv, OPERATIONS.md and APPROVAL_QUEUE.md before proceeding. Refresh mutable main/PR/CI/deploy state rather than treating dated evidence as live.
 
-## What actually happened
+The 21-page PDF / 24 sections / ORG-001..052 were read. Branch work now includes four prerendered public pages, explicit origin/indexing gates, canonical/sitemap/robots/schema, app/Worker noindex, no SPA sitemap fallbacks, privacy-safe reporting/attribution and local dashboard, editorial/authority/measurement dossiers, CI contracts and updated existing monitoring. All 52 tasks have explicit implementation/evidence/next-action status. Source/draft readiness does not mean deployed/indexed/measured completion.
 
-Read the 21-page blueprint in full. Fresh GitHub/PR/CI, Cloudflare DNS/Tunnel/routes/bot configuration/Access/RUM inventory, Vercel project/deployment/domain inspection, direct anonymous HTTP and independent public content checks. Created source-safe ledgers and bounded manual audit tool; no growth production release. RESEARCH_2026-10-15.md adds initial product-source inventory, four official competitor text observations and unscored intent seeds. Authorized staging landing HTTP verified initial headline and deliberate noindex; no browser/provider acceptance.
+Verification: frontend 935/935 with bounded workers; original timing failures documented honestly. Landing 10 unit tests/build/typecheck, built-byte preview/production-fixture checks, Python12 and Worker8 passed. New-page Chromium/Firefox responsive/axe/keyboard/no-JS passed; WebKit requires CI OS libraries. Dashboard functional/accessibility/privacy checks pass. Read evidence caveats, not just counts. Inspect new-head terminal GitHub CI after publishing candidate; old initial-head green is insufficient.
 
-Important corrections: Tunnel now healthy/four connections; apex API readiness 200 versus dedicated Vercel API 503. Their root HTML differs; exact apex source/runtime unproved. Both conventional sitemap URLs return SPA HTML. Do not repeat old blanket outage/readiness claims.
+Topology remains source-sensitive: dated apex healthy Tunnel -> owner runtime, www -> Vercel app; readiness 200 on apex does not certify auth/payment/config; dedicated API was503. Conventional sitemap responses were HTML. No DNS/indexing/production release was performed. Coordinate concurrent landing work before final host choice. Other auth/security drafts remain separate.
 
-## Next safe actions
+Owner reports Windsor/account setup; no authenticated Windsor operations/property read currently exposed. Do not repeat installation prompts, claim missing accounts, invent metrics or block independent source work. Remaining gates: exact runtime source, final public architecture, real report access, factual legal/team inputs, isolated provider-backed journey and publication/release review. Daily full-page automation updated in place; hourly speed watch unchanged; future delivery not yet observed.
 
-1. Confirm exact owner-hosted commit/image and runtime profile using a non-secret receipt. Do not infer configuration from readiness alone.
-2. Complete signed-out public/browser checks and latest landing immutable deployment inspection; no private account scraping or auth submissions without isolated test setup.
-3. Get owner choice on concrete A/B/C architecture; preserve all app/identity paths. Prepare hostname-specific SEO changes only on branch; no DNS or indexability toggle before release acceptance.
-4. Obtain authorized GSC/Bing/analytics reports; their current existence/status is unknown, not missing.
-5. Implement approved public origin's server-rendered content/canonical/sitemap/schema and utility noindex with cross-runtime tests. Do not create an invented sitemap of auth/private routes.
-6. Reconcile existing schedules before any organic watch activation. Use bounded deduplicated probes; update historical assumptions only with evidence.
-7. Product-proof inventory -> keyword intent map -> original drafts -> editorial approval. Continue independent source tasks while access is pending.
-
-G0/G1 in progress. G2 proposed/blocked on decision. G3/G4 only baseline/tooling scope; G5-G7 release/operations not complete. Local verification: 7 probe unit tests + 11 existing landing/Worker focused checks passed; secret hygiene and whitespace passed. Full eight-URL live tool run completed; apex 200 ready vs dedicated API 503 not_ready; both sitemap URLs still HTML. Full application/provider/browser acceptance not run. Draft PR: https://github.com/S2zxx0zxx/FinCo-pilot/pull/89. Exact remote head and CI are recorded in PR metadata; re-read before resuming. Never treat this ledger as the full 52-task completion certificate.
+Next: finish candidate publication/CI in the same PR, fix actual regressions, keep full-ledger evidence current. Do not mark draft ready or request merge while full required acceptance remains blocked. No second PR, no auto-merge, no fabricated finish claim.

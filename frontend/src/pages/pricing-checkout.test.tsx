@@ -81,3 +81,23 @@ it('holds the verification fence when success arrives after modal dismissal',asy
   expect(fetcher.mock.calls.filter(call=>call[0]==='/api/checkout/create-order')).toHaveLength(1)
   await act(async()=>{resolve(new Response('{}',{status:200}));await verification})
 })
+
+it('preserves annual URL selection and requests the annual server quote',async()=>{
+  const annualQuote={...quote,interval:'annual',amount:99900,service_period_days:365,renewal_amount_minor:99900}
+  const fetcher=vi.fn().mockResolvedValue(new Response(JSON.stringify(annualQuote),{status:200}))
+  vi.stubGlobal('fetch',(url:string,init?:RequestInit)=>url==='/api/checkout/create-order'?fetcher(url,init):Promise.resolve(new Response(JSON.stringify({available:false}),{status:200})))
+  const {user}=renderWithProviders(<PricingPage/>,{route:'/pricing?plan=pro&interval=annual'})
+  await user.click(screen.getByRole('button',{name:'Continue with Pro'}))
+  expect(JSON.parse(fetcher.mock.calls[0][1].body)).toEqual({plan:'pro',interval:'annual'})
+  expect(options.amount).toBe(99900);expect(opens).toBe(1)
+})
+
+it('keeps Max on monthly even when the Pro interval in the URL is annual',async()=>{
+  const maxQuote={...quote,plan:'max',amount:34900,renewal_amount_minor:34900}
+  const fetcher=vi.fn().mockResolvedValue(new Response(JSON.stringify(maxQuote),{status:200}))
+  vi.stubGlobal('fetch',(url:string,init?:RequestInit)=>url==='/api/checkout/create-order'?fetcher(url,init):Promise.resolve(new Response(JSON.stringify({available:false}),{status:200})))
+  const {user}=renderWithProviders(<PricingPage/>,{route:'/pricing?plan=max&interval=annual'})
+  await user.click(screen.getByRole('button',{name:'Continue with Max'}))
+  expect(JSON.parse(fetcher.mock.calls[0][1].body)).toEqual({plan:'max',interval:'monthly'})
+  expect(options.amount).toBe(34900);expect(opens).toBe(1)
+})

@@ -19,6 +19,6 @@ try {
  await writeFile(new URL('../test-artifacts/lighthouse.json',import.meta.url),result.report[0])
  await writeFile(new URL('../test-artifacts/lighthouse.html',import.meta.url),result.report[1])
  const summary={mode:'Lighthouse simulated mobile, loopback production build; not field INP or physical phone',categories:Object.fromEntries(Object.entries(result.lhr.categories).map(([k,v])=>[k,Math.round(v.score*100)])),metrics:Object.fromEntries(['first-contentful-paint','largest-contentful-paint','total-blocking-time','cumulative-layout-shift','speed-index'].map(k=>[k,{value:result.lhr.audits[k].numericValue,display:result.lhr.audits[k].displayValue}])),resourceTransferBytes:resources.resources.reduce((n,r)=>n+r.transferSize,0)}
- await writeFile(new URL('../docs/PERFORMANCE_BASELINE.json',import.meta.url),JSON.stringify(summary,null,2)+'\n')
+ await writeFile(process.env.LANDING_PERFORMANCE_REPORT || new URL('../docs/PERFORMANCE_BASELINE.json',import.meta.url),JSON.stringify(summary,null,2)+'\n')
  console.log(JSON.stringify(summary,null,2))
 } finally {await browser.close()}

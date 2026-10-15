@@ -5,6 +5,7 @@ No scheduler, writes, retry loop, auth, crawling, URL discovery or launch verdic
 Print only bounded public metadata; raw pages/headers/cookies are never persisted.
 """
 
+import argparse
 import hashlib
 from html.parser import HTMLParser
 import json
@@ -34,13 +35,14 @@ HEADERS = ("content-type", "cache-control", "x-robots-tag", "server")
 class PublicRedirects(urllib.request.HTTPRedirectHandler):
     """Allow only fixed public destinations; never forward to sign-in or tokens."""
 
-    def __init__(self):
+    def __init__(self, budget=MAX_REDIRECTS):
         super().__init__()
         self.count = 0
+        self.budget = budget
 
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         self.count += 1
-        if self.count > MAX_REDIRECTS or newurl not in URLS:
+        if self.count > self.budget or newurl not in URLS:
             raise urllib.error.URLError("redirect_outside_fixed_public_budget")
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
@@ -112,10 +114,10 @@ def summarize(url, status, headers, body, truncated=False):
     return result
 
 
-def probe(url):
+def probe(url, redirect_budget=MAX_REDIRECTS):
     if url not in URLS:
         raise ValueError("Only fixed public URLs are allowed")
-    opener = urllib.request.build_opener(PublicRedirects())
+    opener = urllib.request.build_opener(PublicRedirects(redirect_budget))
     request = urllib.request.Request(url, headers={"User-Agent": "FinCoPilot-Growth-Audit/1.0"})
     try:
         try:
@@ -133,10 +135,15 @@ def probe(url):
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--core', action='store_true', help='Five public probes, one redirect maximum per probe')
+    args = parser.parse_args()
+    selected = URLS[:5] if args.core else URLS
+    redirects = 1 if args.core else MAX_REDIRECTS
     print(json.dumps({
         "scope": "Anonymous fixed-public HTTP observations; not browser, auth, indexing or launch acceptance",
-        "request_budget_including_redirects": len(URLS) * (1 + MAX_REDIRECTS),
-        "observations": [probe(url) for url in URLS],
+        "request_budget_including_redirects": len(selected) * (1 + redirects),
+        "observations": [probe(url, redirects) for url in selected],
     }, indent=2))
 
 

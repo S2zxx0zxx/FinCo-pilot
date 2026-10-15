@@ -1,0 +1,78 @@
+{
+  "engine": "firefox",
+  "pages": [
+    {
+      "path": "/features",
+      "width": 320,
+      "accessibilityViolations": 0,
+      "externalRequests": 0
+    },
+    {
+      "path": "/how-it-works",
+      "width": 320,
+      "accessibilityViolations": 0,
+      "externalRequests": 0
+    },
+    {
+      "path": "/guides/import-transactions",
+      "width": 320,
+      "accessibilityViolations": 0,
+      "externalRequests": 0
+    },
+    {
+      "path": "/features",
+      "width": 390,
+      "accessibilityViolations": 0,
+      "externalRequests": 0
+    },
+    {
+      "path": "/how-it-works",
+      "width": 390,
+      "accessibilityViolations": 0,
+      "externalRequests": 0
+    },
+    {
+      "path": "/guides/import-transactions",
+      "width": 390,
+      "accessibilityViolations": 0,
+      "externalRequests": 0
+    },
+    {
+      "path": "/features",
+      "width": 768,
+      "accessibilityViolations": 0,
+      "externalRequests": 0
+    },
+    {
+      "path": "/how-it-works",
+      "width": 768,
+      "accessibilityViolations": 0,
+      "externalRequests": 0
+    },
+    {
+      "path": "/guides/import-transactions",
+      "width": 768,
+      "accessibilityViolations": 0,
+      "externalRequests": 0
+    },
+    {
+      "path": "/features",
+      "width": 1440,
+      "accessibilityViolations": 0,
+      "externalRequests": 0
+    },
+    {
+      "path": "/how-it-works",
+      "width": 1440,
+      "accessibilityViolations": 0,
+      "externalRequests": 0
+    },
+    {
+      "path": "/guides/import-transactions",
+      "width": 1440,
+      "accessibilityViolations": 0,
+      "externalRequests": 0
+    }
+  ],
+  "scope": "Isolated marketing; no provider or authenticated app acceptance"
+}

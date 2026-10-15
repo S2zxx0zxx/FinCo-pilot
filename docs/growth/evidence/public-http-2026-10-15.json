@@ -1,0 +1,207 @@
+[
+  {
+    "url": "https://fincopilot.app/",
+    "observed_at": "2026-10-15T10:59:47.642498+00:00",
+    "status": 200,
+    "final_url": "https://fincopilot.app/",
+    "headers": {
+      "content-type": "text/html",
+      "cache-control": "no-store, no-cache, must-revalidate",
+      "server": "cloudflare"
+    },
+    "bytes_read": 9271,
+    "sha256": "21e8624d99f065561b77bd270463334337d7fd4930eb28ac13790917d0cbf630",
+    "h1_count": 0,
+    "canonical": [],
+    "meta_robots": [],
+    "cf_error": [],
+    "title": [
+      "FinCo-Pilot"
+    ],
+    "sitemap_xml": false
+  },
+  {
+    "url": "https://fincopilot.app/login",
+    "observed_at": "2026-10-15T10:59:47.706315+00:00",
+    "status": 200,
+    "final_url": "https://fincopilot.app/login",
+    "headers": {
+      "content-type": "text/html",
+      "cache-control": "no-store, no-cache, must-revalidate",
+      "server": "cloudflare"
+    },
+    "bytes_read": 9271,
+    "sha256": "21e8624d99f065561b77bd270463334337d7fd4930eb28ac13790917d0cbf630",
+    "h1_count": 0,
+    "canonical": [],
+    "meta_robots": [],
+    "cf_error": [],
+    "title": [
+      "FinCo-Pilot"
+    ],
+    "sitemap_xml": false
+  },
+  {
+    "url": "https://fincopilot.app/robots.txt",
+    "observed_at": "2026-10-15T10:59:51.751916+00:00",
+    "status": 200,
+    "final_url": "https://fincopilot.app/robots.txt",
+    "headers": {
+      "content-type": "text/plain; charset=utf-8",
+      "server": "cloudflare"
+    },
+    "bytes_read": 3535,
+    "sha256": "e8f91750146f883df79b10a64463f51654ef775d3d52fe72b0b222c7b1e3239f",
+    "h1_count": 0,
+    "canonical": [],
+    "meta_robots": [],
+    "cf_error": [],
+    "title": [],
+    "sitemap_xml": false,
+    "robots_text": "# As a condition of accessing this website, you agree to abide by the following\n# content signals:\n\n# (a)  If a Content-Signal = yes, you may collect content for the corresponding\n#      use.\n# (b)  If a Content-Signal = no, you may not collect content for the\n#      corresponding use.\n# (c)  If the website operator does not include a Content-Signal for a\n#      corresponding use, the website operator neither grants nor restricts\n#      permission via Content-Signal with respect to the corresponding use.\n\n# The content signals and their meanings are:\n\n# search:   building a search index and providing search results (e.g., returning\n#           hyperlinks and short excerpts from your website's contents). Search does not\n#           include providing AI-generated search summaries.\n# ai-input: inputting content into one or more AI models (e.g., retrieval\n#           augmented generation, grounding, or other real-time taking of content for\n#           generative AI search answers).\n# ai-train: training or fine-tuning AI models.\n# use:      how AI systems may consume the content (immediate, reference, or full).\n\n# ANY RESTRICTIONS EXPRESSED VIA CONTENT SIGNALS ARE EXPRESS RESERVATIONS OF\n# RIGHTS UNDER ARTICLE 4 OF THE EUROPEAN UNION DIRECTIVE 2019/790 ON COPYRIGHT\n# AND RELATED RIGHTS IN THE DIGITAL SINGLE MARKET.\n\n# BEGIN Cloudflare Managed content\n\n\nUser-agent: *\nContent-Signal: search=yes,ai-train=no,use=reference\nAllow: /\n\n# Training crawlers\nUser-agent: Amazonbot\nDisallow: /\n\nUser-agent: Applebot-Extended\nDisallow: /\n\nUser-agent: Bytespider\nDisallow: /\n\nUser-agent: CCBot\nDisallow: /\n\nUser-agent: ClaudeBot\nDisallow: /\n\nUser-agent: Diffbot\nDisallow: /\n\nUser-agent: Google-Extended\nDisallow: /\n\nUser-agent: GPTBot\nDisallow: /\n\nUser-agent: omgili\nDisallow: /\n\nUser-agent: anthropic-ai\nDisallow: /\n\nUser-agent: Claude-Web\nDisallow: /\n\nUser-agent: cohere-ai\nDisallow: /\n\nUser-agent: MistralAI-Training\nDisallow: /\n\nUser-agent: meta-externalagent\nDisallow: /\n\nUser-agent: GoogleOther\nDisallow: /\n\nUser-agent: Baiduspider\nDisallow: /\n\nUser-agent: PetalBot\nDisallow: /\n\nUser-agent: AwarioSmartBot\nUser-agent: AwarioRssBot\nDisallow: /\n\nUser-agent: Google-CloudVertexBot\nDisallow: /\n\nUser-agent: QualifiedBot\nDisallow: /\n\nUser-agent: Cotoyogi\nDisallow: /\n\nUser-agent: ICC-Crawler\nDisallow: /\n\nUser-agent: atlassian-bot\nDisallow: /\n\nUser-agent: FishBot\nDisallow: /\n\nUser-agent: BorderxBot\nDisallow: /\n\nUser-agent: NavuBot\nDisallow: /\n\nUser-agent: SemrushBot-SWA\nDisallow: /\n\nUser-agent: WARDBot\nDisallow: /\n\nUser-agent: magpie-crawler\nDisallow: /\n\nUser-agent: KimiBot\nDisallow: /\n\nUser-agent: CitibotSiteCrawler\nDisallow: /\n\n# AI Agents\nUser-agent: Perplexity-User\nDisallow: /\n\nUser-agent: FireCrawl\nDisallow: /\n\nUser-agent: FirecrawlAgent\nDisallow: /\n\nUser-agent: Claude-User\nDisallow: /\n\nUser-agent: ChatGPT-User\nDisallow: /\n\nUser-agent: Google-Agent\nDisallow: /\n\nUser-agent: Google-GeminiNotebook\nUser-agent: Google-NotebookLM\nDisallow: /\n\nUser-agent: MistralAI-User\nDisallow: /\n\nUser-agent: Kimi-User\nDisallow: /\n\nUser-agent: Amzn-User\nDisallow: /\n\nUser-agent: meta-externalfetcher\nDisallow: /\n\nUser-agent: Retool\nDisallow: /\n\nUser-agent: Instapaper\nDisallow: /\n\nUser-agent: ChathiveCrawler\nDisallow: /\n\n# END Cloudflare Managed Content\n\nUser-agent: *\r\nAllow: /login\r\nAllow: /register\r\nAllow: /pricing\r\nAllow: /support\r\nAllow: /terms\r\nAllow: /privacy\r\nDisallow: /api/\r\nDisallow: /mcp\r\nDisallow: /reset-password\r\nDisallow: /verify-email\r\nDisallow: /sso-callback\r\nDisallow: /auth/\r\nDisallow: /oauth/\r\nDisallow: /i/\r\n"
+  },
+  {
+    "url": "https://fincopilot.app/sitemap.xml",
+    "observed_at": "2026-10-15T10:59:51.809417+00:00",
+    "status": 200,
+    "final_url": "https://fincopilot.app/sitemap.xml",
+    "headers": {
+      "content-type": "text/html",
+      "cache-control": "no-store, no-cache, must-revalidate",
+      "server": "cloudflare"
+    },
+    "bytes_read": 9271,
+    "sha256": "21e8624d99f065561b77bd270463334337d7fd4930eb28ac13790917d0cbf630",
+    "h1_count": 0,
+    "canonical": [],
+    "meta_robots": [],
+    "cf_error": [],
+    "title": [
+      "FinCo-Pilot"
+    ],
+    "sitemap_xml": false
+  },
+  {
+    "url": "https://www.fincopilot.app/",
+    "observed_at": "2026-10-15T10:59:55.825581+00:00",
+    "status": 200,
+    "final_url": "https://www.fincopilot.app/",
+    "headers": {
+      "cache-control": "no-store",
+      "content-type": "text/html; charset=utf-8",
+      "server": "Vercel"
+    },
+    "bytes_read": 8853,
+    "sha256": "0f967819535775024f102910c9f71e8f7e35726a548b4289fef976f83f62e335",
+    "h1_count": 0,
+    "canonical": [],
+    "meta_robots": [],
+    "cf_error": [],
+    "title": [
+      "FinCo-Pilot"
+    ],
+    "sitemap_xml": false
+  },
+  {
+    "url": "https://www.fincopilot.app/robots.txt",
+    "observed_at": "2026-10-15T10:59:55.863021+00:00",
+    "status": 200,
+    "final_url": "https://www.fincopilot.app/robots.txt",
+    "headers": {
+      "cache-control": "no-store",
+      "content-type": "text/plain; charset=utf-8",
+      "server": "Vercel"
+    },
+    "bytes_read": 261,
+    "sha256": "66facb8eed7f9ea01e379b573e0b0bb2481fea8846f8c74452d37282e5342608",
+    "h1_count": 0,
+    "canonical": [],
+    "meta_robots": [],
+    "cf_error": [],
+    "title": [],
+    "sitemap_xml": false,
+    "robots_text": "User-agent: *\nAllow: /login\nAllow: /register\nAllow: /pricing\nAllow: /support\nAllow: /terms\nAllow: /privacy\nDisallow: /api/\nDisallow: /mcp\nDisallow: /reset-password\nDisallow: /verify-email\nDisallow: /sso-callback\nDisallow: /auth/\nDisallow: /oauth/\nDisallow: /i/\n"
+  },
+  {
+    "url": "https://www.fincopilot.app/sitemap.xml",
+    "observed_at": "2026-10-15T11:00:00.181236+00:00",
+    "status": 200,
+    "final_url": "https://www.fincopilot.app/sitemap.xml",
+    "headers": {
+      "cache-control": "no-store",
+      "content-type": "text/html; charset=utf-8",
+      "server": "Vercel"
+    },
+    "bytes_read": 8853,
+    "sha256": "0f967819535775024f102910c9f71e8f7e35726a548b4289fef976f83f62e335",
+    "h1_count": 0,
+    "canonical": [],
+    "meta_robots": [],
+    "cf_error": [],
+    "title": [
+      "FinCo-Pilot"
+    ],
+    "sitemap_xml": false
+  },
+  {
+    "url": "https://www.fincopilot.app/privacy",
+    "observed_at": "2026-10-15T11:00:00.195627+00:00",
+    "status": 200,
+    "final_url": "https://www.fincopilot.app/privacy",
+    "headers": {
+      "cache-control": "no-store",
+      "content-type": "text/html; charset=utf-8",
+      "server": "Vercel"
+    },
+    "bytes_read": 8853,
+    "sha256": "0f967819535775024f102910c9f71e8f7e35726a548b4289fef976f83f62e335",
+    "h1_count": 0,
+    "canonical": [],
+    "meta_robots": [],
+    "cf_error": [],
+    "title": [
+      "FinCo-Pilot"
+    ],
+    "sitemap_xml": false
+  },
+  {
+    "url": "https://api.fincopilot.app/api/health/ready",
+    "observed_at": "2026-10-15T11:00:04.742310+00:00",
+    "status": 503,
+    "final_url": "https://api.fincopilot.app/api/health/ready",
+    "headers": {
+      "cache-control": "no-store",
+      "content-type": "application/json",
+      "server": "Vercel"
+    },
+    "bytes_read": 93,
+    "sha256": "d256a1bc8dc7a9c23b18c3cb6842ba96989087a5f7b6cf11abf06c6d4735d566",
+    "h1_count": 0,
+    "canonical": [],
+    "meta_robots": [],
+    "cf_error": [],
+    "title": [],
+    "sitemap_xml": false,
+    "body": "{\"status\":\"not_ready\",\"checks\":{\"configuration\":{\"ok\":false,\"error\":\"InvalidConfiguration\"}}}"
+  },
+  {
+    "url": "https://fincopilot.app/api/health/ready",
+    "observed_at": "2026-10-15T11:00:06.467580+00:00",
+    "status": 200,
+    "final_url": "https://fincopilot.app/api/health/ready",
+    "headers": {
+      "content-type": "application/json",
+      "cache-control": "no-store",
+      "server": "cloudflare"
+    },
+    "bytes_read": 134,
+    "sha256": "302166d0c3dcd7d2b7dbf12d299d98c9c4e245c8aeddec4c26bcaa25e882a644",
+    "h1_count": 0,
+    "canonical": [],
+    "meta_robots": [],
+    "cf_error": [],
+    "title": [],
+    "sitemap_xml": false,
+    "body": "{\"status\":\"ready\",\"checks\":{\"database\":{\"ok\":true},\"redis\":{\"ok\":true},\"fx_provider\":{\"ok\":true,\"required\":false,\"configured\":false}}}"
+  }
+]

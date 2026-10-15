@@ -23,7 +23,7 @@ export function MarketingDocument({ path, title, intro, children }: {
       <h1>{title}</h1><p className="document-intro">{intro}</p>
       {children}
       <section className="document-action" aria-labelledby="document-next"><h2 id="document-next">Explore the application</h2>
-        <p>Account access, enabled features and provider connections depend on the application deployment and your permissions.</p>
+        <p>Available features and connected services depend on your account settings, permissions and plan.</p>
         <a className="document-cta" href={APP_LINKS.register}>Go to sign up</a><a href={APP_LINKS.login}>Log in</a>
       </section>
     </main>

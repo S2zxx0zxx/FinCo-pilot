@@ -4,7 +4,7 @@ import { MarketingDocument } from '@/components/marketing-document'
 export const metadata = pageMetadata('/guides/import-transactions', 'Preview and review a CSV transaction import | FinCo-Pilot', 'Learn how to prepare a small synthetic CSV, review date and amount mappings, check duplicates and avoid treating incomplete transaction history as an account balance.')
 
 export default function ImportGuidePage() {
-  return <MarketingDocument path="/guides/import-transactions" title="Review a transaction import before applying it" intro="A file import is a proposed change to your records. Use the preview to check the interpretation before confirming it. This guide describes the source-supported workflow; test the enabled importer in your own deployment before using real financial records.">
+  return <MarketingDocument path="/guides/import-transactions" title="Review a transaction import before applying it" intro="A file import is a proposed change to your records. Use the preview to check the interpretation before confirming it. Start with a small synthetic file to learn the importer before using real financial records.">
     <section><h2>Prepare a small example</h2><p>The following rows are synthetic. They demonstrate a date, description, signed amount and currency. They do not represent a customer or an actual account.</p>
       <pre tabIndex={0} role="region" aria-label="Synthetic CSV example"><code>{'date,description,amount,currency\n2026-10-01,Sample grocery,-25.00,USD\n2026-10-02,Sample income,100.00,USD'}</code></pre>
       <p>If interpreted as signed amounts, these rows have a net flow of USD 75. That does not establish the account’s current balance: the opening balance and any missing records are still unknown.</p></section>

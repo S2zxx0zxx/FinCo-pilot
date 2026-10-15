@@ -184,8 +184,18 @@ try {
         const page = await context.newPage()
         const errors = []
         page.on('pageerror', error => errors.push(error.message))
-        await page.goto(browserOrigin + '/login', { waitUntil: 'domcontentloaded' })
-        await page.locator('input[type=email]').waitFor()
+        const pending = new Set()
+        page.on('request', request => pending.add(new URL(request.url()).pathname))
+        page.on('requestfinished', request => pending.delete(new URL(request.url()).pathname))
+        page.on('requestfailed', request => pending.delete(new URL(request.url()).pathname))
+        try {
+          // Readiness is the usable form, not an engine's navigation milestone.
+          await page.goto(browserOrigin + '/login', { waitUntil: 'commit' })
+          await page.locator('input[type=email]').waitFor()
+        } catch (error) {
+          await writeFile(path.join(output, 'login-readiness-failure.json'), JSON.stringify({ width, reducedMotion, url:page.url(), pending:[...pending], errors },null,2))
+          throw error
+        }
         if (process.env.FINCO_CONFIGURED_CLERK_CHECK === 'true') assert.equal(await page.getByRole('button', { name: /Google/ }).count(), 1, 'Configured Google login missing')
         await page.evaluate(() => document.fonts.ready)
         await page.waitForTimeout(800)

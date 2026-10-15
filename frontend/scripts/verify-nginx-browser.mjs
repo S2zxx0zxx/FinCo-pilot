@@ -52,8 +52,9 @@ template = template.replace('listen 8080;', `listen 127.0.0.1:${port};`)
 const cspMaps = (await readFile('node_modules/.cache/finco-security/csp-map.conf.template', 'utf8')).replaceAll('${FINCO_STRICT_CSP_MODE}', process.env.FINCO_STRICT_CSP_MODE || 'compatibility')
 const localUser = process.getuid?.() === 0 ? 'user root root;' : ''
 const config = `${localUser} daemon off; master_process off; pid ${work}/nginx.pid; error_log ${work}/error.log;
-events { worker_connections 128; }
+events { worker_connections 1024; }
 http { types { text/html html; text/css css; application/javascript js; application/json json; image/png png; image/svg+xml svg; font/woff2 woff2; text/plain txt; }
+keepalive_timeout 5s;
 client_body_temp_path ${work}/client; proxy_temp_path ${work}/proxy; fastcgi_temp_path ${work}/fastcgi; uwsgi_temp_path ${work}/uwsgi; scgi_temp_path ${work}/scgi;
 ${cspMaps}
 ${template}
@@ -165,6 +166,9 @@ try {
     const missingMarketing = await fetch(origin+'/welcome/_next/static/missing.js')
     assert.equal(missingMarketing.status,404)
     assert.match(missingMarketing.headers.get('cache-control') || '',/no-store/)
+    // Cold-login acceptance is a separate phase from marketing context churn.
+    await browser.close()
+    browser = await ({chromium,firefox,webkit}[browserName]).launch({ headless:true, args:browserName==='chromium'?['--no-sandbox']:[], proxy })
     for (const width of [390, 768, 1024, 1440]) {
       for (const reducedMotion of ['no-preference', 'reduce']) {
         const context = await browser.newContext({ viewport: { width, height: 1000 }, reducedMotion, serviceWorkers: 'block' })
@@ -193,7 +197,9 @@ try {
           await page.goto(browserOrigin + '/login', { waitUntil: 'commit' })
           await page.locator('input[type=email]').waitFor()
         } catch (error) {
-          await writeFile(path.join(output, 'login-readiness-failure.json'), JSON.stringify({ width, reducedMotion, url:page.url(), pending:[...pending], errors },null,2))
+          const diagnostics={width,reducedMotion,url:page.url(),pending:[...pending],errors,nginxError:(await readFile(path.join(work,'error.log'),'utf8')).slice(-6000)}
+          console.log('Login readiness diagnostics',JSON.stringify(diagnostics))
+          await writeFile(path.join(output, 'login-readiness-failure.json'), JSON.stringify(diagnostics,null,2))
           throw error
         }
         if (process.env.FINCO_CONFIGURED_CLERK_CHECK === 'true') assert.equal(await page.getByRole('button', { name: /Google/ }).count(), 1, 'Configured Google login missing')

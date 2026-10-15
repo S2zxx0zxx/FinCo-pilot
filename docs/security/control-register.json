@@ -1119,7 +1119,7 @@
     "owner": "Codex: engineering evidence; founder: external acceptance; counsel: legal interpretation",
     "baseline_sha": "7736a24e7d520b9f08dd91d38e895b5d240f8a09",
     "status": "BLOCKED_EXTERNAL_ACCEPTANCE",
-    "local_result": "Prior import/AI/MCP/executor/bank diagnostic fixes plus raw knowledge read/embed exception and traceback redaction; malformed parser failures now transition to failed; regression cases reproduced before fixes",
+    "local_result": "Prior import/AI/MCP/executor/bank diagnostic fixes plus raw knowledge read/embed exception and traceback redaction; malformed parser failures now transition to failed; regression cases reproduced before fixes; optional holdings/bills/market and institution-logo fallback diagnostics now omit raw payloads/tracebacks/queries; three additional regressions reproduced, affected suite 145 passed",
     "source_paths": [
       "backend/app/api/import_transactions.py",
       "backend/app/agents/mcp/client.py",

@@ -79,8 +79,8 @@ async def market_search(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Market data provider is currently rate-limiting. Try again in a minute.",
         )
-    except Exception:
-        logger.exception("Market search failed for %r", q)
+    except Exception as exc:
+        logger.warning("Market search failed (%s)", type(exc).__name__)
         return []
 
 

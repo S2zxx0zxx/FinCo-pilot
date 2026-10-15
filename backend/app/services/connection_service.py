@@ -268,10 +268,8 @@ async def _sync_holdings(
     try:
         provider = get_provider(connection.provider)
         holdings = await provider.get_holdings(credentials)
-    except Exception:  # noqa: BLE001
-        logger.exception(
-            "Failed to fetch holdings for connection %s", connection.id
-        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Optional holdings fetch failed (%s)", type(exc).__name__)
         return
 
     source = connection.provider
@@ -1575,9 +1573,7 @@ async def _sync_credit_card_bills(
     try:
         bills_data = await provider.get_bills(credentials, account.external_id)
     except Exception as e:  # noqa: BLE001 — provider failures must not fail sync
-        logger.info(
-            "Skipping credit-card bills sync for account %s: %s", account.id, e
-        )
+        logger.info("Skipping optional credit-card bills sync (%s)", type(e).__name__)
         return {}
 
     if not bills_data:
@@ -1686,11 +1682,8 @@ async def sync_connection(
                 logo = _clean_logo_url(await provider.get_institution_logo(credentials))
                 if logo:
                     connection.logo_url = logo
-            except Exception:
-                logger.warning(
-                    "Failed to backfill logo for connection %s", connection.id,
-                    exc_info=True,
-                )
+            except Exception as exc:
+                logger.warning("Optional institution logo fetch failed (%s)", type(exc).__name__)
 
         # When the caller asks for fresh data (typically a user-initiated
         # manual sync), ask the provider to pull from the bank before we

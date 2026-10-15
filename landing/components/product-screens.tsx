@@ -1,5 +1,7 @@
 'use client'
 
+import { landingAsset } from '@/lib/asset'
+
 import { IconChartBar, IconWallet } from '@tabler/icons-react'
 import { Card } from '@/components/spaceui/card'
 import { Tabs, TabsList, TabsTab, TabsPanel } from '@/components/spaceui/tabs'
@@ -20,7 +22,7 @@ export function ProductScreens() {
         {screens.map(screen => <TabsTab value={screen.id} key={screen.id} className="product-tab"><screen.icon aria-hidden="true"/>{screen.title}</TabsTab>)}
       </TabsList>
       {screens.map(screen => <TabsPanel value={screen.id} key={screen.id}>
-        <Card className="product-capture"><picture><source media="(max-width:620px)" srcSet={'/product/' + screen.id + '-mobile.webp'} /><img src={'/product/' + screen.id + '-desktop.webp'} width={1440} height={920} loading="lazy" decoding="async" alt={screen.alt} /></picture></Card>
+        <Card className="product-capture"><picture><source media="(max-width:620px)" srcSet={landingAsset('/product/' + screen.id + '-mobile.webp')} /><img src={landingAsset('/product/' + screen.id + '-desktop.webp')} width={1440} height={920} loading="lazy" decoding="async" alt={screen.alt} /></picture></Card>
         <div className="product-caption"><p>{screen.description}</p><p className="capture-note">Actual application screens · Synthetic sample data · Screenshots, not live accounts</p></div>
       </TabsPanel>)}
     </Tabs>

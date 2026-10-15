@@ -15,7 +15,7 @@ const CACHE_PREFIX = 'finco-pwa-'
 const MAX_STATIC_ENTRIES = 96
 
 const APP_SHELL = [
-  '/',
+  '/index.html',
   '/manifest.webmanifest',
   '/finco-favicon.svg',
   '/finco-pwa-icon.svg',
@@ -35,7 +35,7 @@ const APP_SHELL = [
   '/spaceui/target.webp',
 ]
 
-const PUBLIC_ASSETS = new Set(APP_SHELL.filter((url) => url !== '/'))
+const PUBLIC_ASSETS = new Set(APP_SHELL.filter((url) => url !== '/index.html'))
 
 function publicResponse(response) {
   return response.ok && !response.redirected && response.type !== 'opaque'
@@ -44,7 +44,7 @@ function publicResponse(response) {
 async function isAppShell(response) {
   if (!publicResponse(response) || !response.headers.get('content-type')?.includes('text/html')) return false
   const url = new URL(response.url)
-  if (url.origin !== self.location.origin || url.pathname !== '/' || url.search) return false
+  if (url.origin !== self.location.origin || url.pathname !== '/index.html' || url.search) return false
   return /<meta\s+name=["']finco-app-shell["']\s+content=["']v1["']\s*\/?\s*>/.test(await response.clone().text())
 }
 
@@ -87,11 +87,11 @@ async function warmStaticAssetsFromDocument(response) {
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(SHELL_CACHE).then(async (cache) => {
-      const shellResponse = await fetch('/', { cache: 'no-store' })
+      const shellResponse = await fetch('/index.html', { cache: 'no-store' })
       // Access login HTML, redirects and recovery documents are never shells.
       // Reject the install rather than replace a working offline release.
       if (!(await isAppShell(shellResponse))) throw new Error('Public application shell unavailable')
-      await cache.put('/', shellResponse.clone())
+      await cache.put('/index.html', shellResponse.clone())
       await warmStaticAssetsFromDocument(shellResponse)
       // addAll is intentionally avoided so one optional icon cannot prevent the
       // whole worker from installing on an older deployment.
@@ -133,7 +133,7 @@ async function networkFirstNavigation(request) {
     // URLs and proxy sign-in pages must never replace the offline document.
     return await fetch(request)
   } catch {
-    const cached = await cache.match('/')
+    const cached = await cache.match('/index.html')
     if (cached) return cached
 
     return new Response(
@@ -178,6 +178,9 @@ self.addEventListener('fetch', (event) => {
   // browser Cache Storage.
   if (url.pathname === '/api' || url.pathname.startsWith('/api/') || url.pathname === '/mcp' || url.pathname.startsWith('/mcp/')) return
   if (url.search || request.headers.has('authorization') || ['/reset-password', '/verify-email', '/oauth/callback'].includes(url.pathname)) return
+
+  // Marketing is a separate public document, never the authenticated offline shell.
+  if (url.pathname === '/' || url.pathname === '/welcome' || url.pathname.startsWith('/welcome/')) return
 
   if (request.mode === 'navigate') {
     event.respondWith(networkFirstNavigation(request))

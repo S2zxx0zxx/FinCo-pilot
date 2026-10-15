@@ -11,7 +11,7 @@ vi.mock('@/hooks/use-feature-flags', () => ({ useFeatureFlags }))
 function renderGuard() {
   return renderWithProviders(
     <Routes>
-      <Route path="/" element={<div>home</div>} />
+      <Route path="/dashboard" element={<div>home</div>} />
       <Route
         path="/agents"
         element={

@@ -23,8 +23,16 @@ map "${FINCO_TRUSTED_TYPES_REPORT_ONLY}" $finco_tt_policy {
     true "require-trusted-types-for 'script'";
 }
 
+# Only successful content-hashed Next.js assets receive immutable caching.
+map $status $finco_marketing_asset_cache {
+    default "no-store";
+    200 "public, max-age=31536000, immutable";
+    304 "public, max-age=31536000, immutable";
+}
+
 server {
     listen 8080;
+    absolute_redirect off;
     root /usr/share/nginx/html;
     index index.html;
     server_tokens off;
@@ -116,6 +124,9 @@ server {
 
     # Machine-readable endpoints must never fall through to the SPA shell.
     location = /robots.txt { default_type text/plain; try_files $uri =404; }
+    # No eligible public sitemap belongs to the private app. Never return SPA
+    # HTML disguised as a successful XML document; marketing owns its sitemap.
+    location = /sitemap.xml { default_type application/xml; try_files $uri =404; }
     location = /llms.txt { default_type text/plain; try_files $uri =404; }
     location = /.well-known/ai-catalog.json { default_type application/json; try_files $uri =404; }
     location = /ai-catalog.json { default_type application/json; try_files /.well-known/ai-catalog.json =404; }
@@ -124,6 +135,24 @@ server {
     location ~ ^/(static|src|node_modules)/ { try_files $uri =404; }
     location = /@vite/client { return 404; }
     location = /.vite/manifest.json { return 404; }
+
+    # The original Next.js landing is exported into this image, not an external preview.
+    location = / {
+        include /etc/nginx/finco-security-headers.conf;
+        add_header Cache-Control "no-store" always;
+        return 302 /welcome/;
+    }
+    location = /welcome { return 302 /welcome/; }
+    location ^~ /welcome/_next/static/ {
+        include /etc/nginx/finco-security-headers.conf;
+        add_header Cache-Control $finco_marketing_asset_cache always;
+        try_files $uri =404;
+    }
+    location ^~ /welcome/ {
+        include /etc/nginx/finco-security-headers.conf;
+        add_header Cache-Control "no-store" always;
+        try_files $uri $uri/ =404;
+    }
 
     # SPA fallback — serve index.html for all non-file routes.
     location / {

@@ -24,6 +24,7 @@ import { Separator } from '@/components/spaceui/separator'
 import { Avatar, AvatarFallback } from '@/components/spaceui/avatar'
 import { ProductScreens } from '@/components/product-screens'
 import { LandingSoundProvider, SoundToggle, useLandingSound } from '@/components/landing-sound'
+import { InstalledAppHandoff } from '@/components/installed-app-handoff'
 import { APP_LINKS } from '@/lib/links'
 
 type View = 'overview' | 'budgets' | 'activity'
@@ -73,7 +74,7 @@ const demoData: Record<View, { eyebrow: string; title: string; amount: string; d
 }
 
 function Mark({ compact = false }: { compact?: boolean }) {
-  return <span className="brand-lockup"><span className="brand-symbol"><FinCoLogo size={compact ? 21 : 23} mode="on-dark" /></span><span className="brand-name">FinCo<span className="brand-hyphen">-</span>Pilot<span className="brand-period">.</span></span></span>
+  return <span className="brand-lockup"><span className="brand-symbol"><FinCoLogo size={compact ? 21 : 23} mode="on-light" /></span><span className="brand-name">FinCo<span className="brand-hyphen">-</span>Pilot<span className="brand-period">.</span></span></span>
 }
 
 function ArrowLink({ href, children, light = false, small = false }: { href: string; children: React.ReactNode; light?: boolean; small?: boolean }) {
@@ -230,9 +231,9 @@ function FinalCTA() {
 }
 
 function Footer() {
-  return <footer className="footer"><div className="shell"><div className="footer-top"><div><SpaceLink href="#top" className="brand-link"><Mark compact/></SpaceLink><p>More clarity. Less guesswork.</p></div><div className="footer-links"><SpaceLink href="#why-finco" variant="secondary">Features</SpaceLink><SpaceLink href={APP_LINKS.pricing} variant="secondary">Pricing</SpaceLink><SpaceLink href={APP_LINKS.support} variant="secondary">Support</SpaceLink><SpaceLink href={APP_LINKS.login} variant="secondary">Log in</SpaceLink></div></div><div className="footer-bottom"><span>© 2026 FinCo-Pilot</span><div><SpaceLink href={APP_LINKS.privacy} variant="secondary">Privacy</SpaceLink><SpaceLink href={APP_LINKS.terms} variant="secondary">Terms</SpaceLink></div><SoundToggle /></div></div></footer>
+  return <footer className="footer"><div className="shell"><div className="footer-top"><div><SpaceLink href="#top" className="brand-link"><Mark compact/></SpaceLink><p>More clarity. Less guesswork.</p></div><div className="footer-links"><SpaceLink href="/features" variant="secondary">Features</SpaceLink><SpaceLink href="/how-it-works" variant="secondary">How it works</SpaceLink><SpaceLink href="/guides/import-transactions" variant="secondary">Import guide</SpaceLink><SpaceLink href={APP_LINKS.pricing} variant="secondary">Pricing</SpaceLink><SpaceLink href={APP_LINKS.support} variant="secondary">Support</SpaceLink><SpaceLink href={APP_LINKS.login} variant="secondary">Log in</SpaceLink></div></div><div className="footer-bottom"><span>© 2026 FinCo-Pilot</span><div><SpaceLink href={APP_LINKS.privacy} variant="secondary">Privacy</SpaceLink><SpaceLink href={APP_LINKS.terms} variant="secondary">Terms</SpaceLink></div><SoundToggle /></div></div></footer>
 }
 
 export function LandingExperience() {
-  return <LandingSoundProvider><MotionConfig reducedMotion="user"><div className="marketing-page"><a className="skip-link" href="#main-content">Skip to content</a><Navigation/><main id="main-content"><Hero/><ProofLine/><WhyFinCo/><ProductScreens/><Experience/><HowItWorks/><Privacy/><Questions/><FinalCTA/></main><Footer/></div></MotionConfig></LandingSoundProvider>
+  return <LandingSoundProvider><InstalledAppHandoff /><MotionConfig reducedMotion="user"><div className="marketing-page"><a className="skip-link" href="#main-content">Skip to content</a><Navigation/><main id="main-content"><Hero/><ProofLine/><WhyFinCo/><ProductScreens/><Experience/><HowItWorks/><Privacy/><Questions/><FinalCTA/></main><Footer/></div></MotionConfig></LandingSoundProvider>
 }

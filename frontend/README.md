@@ -1,3 +1,13 @@
+# FinCo-Pilot frontend and public landing
+
+The normal `npm run build` includes the existing Next.js marketing app from `../landing` and the Vite finance app. `/` opens `/welcome/`; `/dashboard` stays protected. Run from a complete repository checkout, not a frontend-only directory copy.
+
+For Docker builds, use repository root: `docker build -f frontend/Dockerfile .`. For local Vite development, run `npm run build:marketing` before `npm run dev`.
+
+See [activation, verification and deployment instructions](docs/ACTIVATE_LANDING_20261015.md).
+
+---
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.

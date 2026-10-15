@@ -24,7 +24,7 @@ test('frontend shell never forwards credentials, private paths or query tokens',
   })
   assert.equal(response.headers.get('cache-control'), 'no-store')
   assert.equal(response.headers.get('set-cookie'), null)
-  assert.equal(response.headers.get('x-robots-tag'), null)
+  assert.equal(response.headers.get('x-robots-tag'), 'noindex')
 })
 test('only successful static assets are immutable; errors remain no-store', async () => {
   for (const status of [200, 404, 503]) {
@@ -71,4 +71,45 @@ test('a development HTML fallback is never returned as a working MCP endpoint', 
   const response = await handleRequest(new Request('https://fincopilot.app/mcp'), env, async () => new Response('<script src="/@vite/client"></script>', { headers: { 'Content-Type': 'text/html' } }))
   assert.equal(response.status, 503)
   assert(! (await response.text()).includes('@vite'))
+})
+
+test('public home reaches marketing without exposing auth or queries to another origin', async () => {
+  let calls = 0
+  const response = await handleRequest(new Request('https://fincopilot.app/?token=synthetic-private', { headers: { Cookie:'synthetic' } }), env, async () => { calls++; throw new Error('No upstream needed') })
+  assert.equal(response.status,302);assert.equal(response.headers.get('location'),'/welcome/');assert.equal(response.headers.get('referrer-policy'),'no-referrer');assert.equal(calls,0)
+  assert.equal(frontendPath('/dashboard'),'/index.html')
+  assert.equal(frontendPath('/welcome/'),'/welcome/index.html')
+  assert.equal(frontendPath('/welcome/_next/static/chunks/hash.js'),'/welcome/_next/static/chunks/hash.js')
+  assert.equal(frontendPath('/welcome/unknown-private-route'),null)
+  assert.equal(frontendPath('/welcome/../index.html'),null)
+})
+
+test('private shells retain noindex and sitemap absence is a real 404 without an upstream fetch', async () => {
+  const home = await handleRequest(new Request('https://fincopilot.app/'), env,
+    async () => new Response('<html>shell</html>', { headers: { 'Content-Type': 'text/html' } }))
+  assert.equal(home.status, 302)
+  assert.equal(home.headers.get('location'), '/welcome/')
+  for (const path of ['/login', '/accounts', '/i/synthetic', '/reset-password?token=synthetic']) {
+    const response = await handleRequest(new Request('https://fincopilot.app' + path), env,
+      async () => new Response('<html>shell</html>', { headers: { 'Content-Type': 'text/html' } }))
+    assert.equal(response.headers.get('x-robots-tag'), 'noindex', path)
+    assert.match(response.headers.get('cache-control'), /no-store/)
+  }
+  let called = false
+  const response = await handleRequest(new Request('https://fincopilot.app/sitemap.xml'), env,
+    async () => { called = true; return new Response('<html>not xml</html>') })
+  assert.equal(response.status, 404)
+  assert.equal(called, false)
+})
+
+
+test('upstream indexing restrictions survive additional private-surface noindex', async () => {
+  for (const path of ['/api/private', '/accounts', '/static/entry-test.js']) {
+    const response = await handleRequest(new Request('https://fincopilot.app' + path), env,
+      async () => new Response('fixture', { headers: { 'X-Robots-Tag': 'nofollow, noarchive, googlebot: nosnippet' } }))
+    const directives = response.headers.get('x-robots-tag')
+    assert.ok(directives.includes('nofollow, noarchive, googlebot: nosnippet'), path)
+    if (!path.startsWith('/static/')) assert.match(directives, /, noindex$/)
+    else assert.equal(directives, 'nofollow, noarchive, googlebot: nosnippet')
+  }
 })

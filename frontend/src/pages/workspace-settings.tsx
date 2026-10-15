@@ -193,7 +193,7 @@ export default function WorkspaceSettingsPage() {
       if (remaining.length > 0) {
         await switchWorkspace(remaining[0].id)
       }
-      navigate('/')
+      navigate('/dashboard')
     },
     onError: (e: unknown) => {
       const detail =

@@ -19,6 +19,7 @@ describe('Google OAuth callback', () => {
     await waitFor(() => expect(clerk.handleRedirectCallback).toHaveBeenCalledTimes(1))
     expect(clerk.handleRedirectCallback).toHaveBeenCalledWith(expect.objectContaining({
       signInUrl: '/login', signUpUrl: '/sign-up', continueSignUpUrl: '/sign-up#/continue',
+      signInFallbackRedirectUrl: '/dashboard', signUpFallbackRedirectUrl: '/dashboard',
     }))
   })
 

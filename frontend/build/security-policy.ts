@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 const otherDirectives = "style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss:; frame-src https:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
@@ -21,7 +21,7 @@ export function compileStrictCsp(html: string) {
       hashes.add(integrity)
     } else if (code.trim()) hashes.add(scriptIntegrity(code))
   }
-  for (const match of html.matchAll(/<link\b(?=[^>]*rel="modulepreload")[^>]*integrity="(sha256-[^"]+)"[^>]*>/g)) hashes.add(match[1])
+  for (const match of html.matchAll(/<link\b(?=[^>]*(?:rel="modulepreload"|as="script"))[^>]*integrity="(sha256-[^"]+)"[^>]*>/g)) hashes.add(match[1])
   const hinted = html.match(/"loginIntegrity":"(sha256-[^"]+)"/)?.[1]
   if (hinted) hashes.add(hinted)
   if (!hashes.size) throw new Error('No trusted entry scripts')
@@ -51,7 +51,25 @@ export async function finalizeSecurityPolicy(root: string) {
     html = html.replace(hint[1], JSON.stringify(data))
   }
   await writeFile(htmlPath, html)
-  const strictCsp = compileStrictCsp(html)
+  // Exported Next.js owns separate HTML documents. Bind their exact scripts
+  // to this same artifact instead of weakening strict CSP for the public entry.
+  const marketing = path.join(root, 'dist/welcome')
+  let marketingHtml = ''
+  for (const file of await readdir(marketing, { recursive: true })) {
+    if (!file.endsWith('.html')) continue
+    const outputPath = path.join(marketing, file)
+    let document = await readFile(outputPath, 'utf8')
+    for (const match of [...document.matchAll(/<script\b[^>]*\bsrc="([^"]+)"[^>]*>/g), ...document.matchAll(/<link\b(?=[^>]*as="script")[^>]*href="([^"]+)"[^>]*>/g)]) {
+      const [tag, src] = match
+      if (!/^\/welcome\/_next\/static\/[\w./%-]+\.js$/.test(src) || src.includes('..')) throw new Error('Unknown marketing script: ' + src)
+      const code = await readFile(path.join(root, 'dist', src.slice(1)))
+      document = document.replace(tag, tag.replace(/\s+integrity="[^"]*"/g, '').replace(/>$/, ` integrity="${scriptIntegrity(code)}" crossorigin="anonymous">`))
+    }
+    await writeFile(outputPath, document)
+    marketingHtml += document
+  }
+  if (!marketingHtml.includes('A plan') && !marketingHtml.includes('FinCo-Pilot')) throw new Error('Marketing export missing')
+  const strictCsp = compileStrictCsp(html + marketingHtml)
   const output = path.join(root, 'node_modules/.cache/finco-security')
   await mkdir(output, { recursive: true })
   // The built-image map belongs to this exact artifact/environment.

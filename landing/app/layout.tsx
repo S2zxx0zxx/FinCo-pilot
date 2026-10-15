@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import localFont from 'next/font/local'
 import './globals.css'
+import { getMarketingConfig, serializeJsonLd, websiteSchema } from '@/lib/marketing'
 
 const fincoFont = localFont({
   src: [
@@ -10,15 +11,15 @@ const fincoFont = localFont({
   ], variable: '--font-finco', display: 'optional', preload: true,
 })
 
-const indexingEnabled = process.env.VERCEL_ENV === 'production' && process.env.NEXT_PUBLIC_MARKETING_INDEXABLE === 'true'
+const marketing = getMarketingConfig()
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://fincopilot.app'),
+  metadataBase: new URL(marketing.origin),
   title: 'FinCo-Pilot | Make sense of all your money',
   description: 'Understand accounts, track spending, plan budgets and keep your financial picture together in one thoughtful workspace.',
   applicationName: 'FinCo-Pilot',
   alternates: { canonical: '/' },
-  robots: { index: indexingEnabled, follow: indexingEnabled },
+  robots: { index: marketing.indexable, follow: marketing.indexable },
   openGraph: {
     type: 'website',
     title: 'FinCo-Pilot | Clarity for your everyday finances',
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
   },
   twitter: { card: 'summary_large_image', images: ['/social-card.png'] },
 }
-export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#080b0c' }
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#ffffff' }
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en" className={fincoFont.variable}><body><div className="relative isolate min-h-svh">{children}</div></body></html>
+  return <html lang="en" className={fincoFont.variable}><body><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(websiteSchema()) }} /><div className="relative isolate min-h-svh">{children}</div></body></html>
 }

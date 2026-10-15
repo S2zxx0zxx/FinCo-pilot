@@ -1,0 +1,34 @@
+[
+  {
+    "name": "actual",
+    "url": "https://actualbudget.org/docs/transactions/importing/",
+    "status": "captured",
+    "observedAt": "2026-10-15T13:24:56.067822+00:00",
+    "screenshot": "actual-2026-10-15.jpg",
+    "method": "Cloud browser viewport; signed-out official public page; no product account access"
+  },
+  {
+    "name": "monarch",
+    "url": "https://www.monarch.com/features/tracking",
+    "status": "captured-cookie-banner-visible",
+    "observedAt": "2026-10-15T13:24:56.068094+00:00",
+    "screenshot": "monarch-2026-10-15.jpg",
+    "method": "Cloud browser viewport; signed-out official public page; no product account access"
+  },
+  {
+    "name": "ynab",
+    "url": "https://www.ynab.com/features",
+    "status": "captured-cookie-banner-visible",
+    "observedAt": "2026-10-15T13:24:56.068292+00:00",
+    "screenshot": "ynab-2026-10-15.jpg",
+    "method": "Cloud browser viewport; signed-out official public page; no product account access"
+  },
+  {
+    "name": "pocketguard",
+    "url": "https://pocketguard.com/",
+    "status": "regional-restriction-in-this-browser",
+    "observedAt": "2026-10-15T13:24:56.068466+00:00",
+    "screenshot": "pocketguard-2026-10-15.jpg",
+    "method": "Cloud browser viewport; signed-out official public page; no product account access"
+  }
+]

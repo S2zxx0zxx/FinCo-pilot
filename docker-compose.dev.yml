@@ -4,8 +4,8 @@
 services:
   frontend:
     build:
-      dockerfile: Dockerfile.dev
-    command: ["npm", "run", "dev", "--", "--port", "8080"]
+      dockerfile: frontend/Dockerfile.dev
+    command: ["sh", "-c", "npm run build:marketing && npm run dev -- --port 8080"]
     environment:
       FINCO_ALLOW_PUBLIC_DEV_SERVER: ${FINCO_ALLOW_PUBLIC_DEV_SERVER:-false}
     volumes:

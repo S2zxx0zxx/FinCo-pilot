@@ -425,14 +425,14 @@ function LocalLoginContainer() {
   const showPasskeyLogin = localAuthEnabled && passkeySupported
   const showAuthDivider = localAuthEnabled && (showPasskeyLogin || oidcEnabled)
   const requestedNext = searchParams.get('next')
-  const safeNext = requestedNext?.startsWith('/') && !requestedNext.startsWith('//') && !requestedNext.includes('://')
+  const safeNext = requestedNext === '/' ? '/dashboard' : requestedNext?.startsWith('/') && !requestedNext.startsWith('//') && !requestedNext.includes('://')
     ? requestedNext
-    : '/'
+    : '/dashboard'
 
   useEffect(() => {
     setPasskeySupported(isPasskeySupported())
     if (token) {
-      navigate('/', { replace: true })
+      navigate(safeNext, { replace: true })
       return
     }
     adminApi.registrationStatus().then(({ enabled }) => {
@@ -447,7 +447,7 @@ function LocalLoginContainer() {
     adminApi.defaultColors().then(({ light, dark }) => {
       setThemeBasedOnSystem(light, dark, resolvedTheme)
     }).catch(() => {})
-  }, [navigate, token, resolvedTheme])
+  }, [navigate, token, resolvedTheme, safeNext])
 
   useEffect(() => {
     if (token || (oidcConfig === null && !oidcConfigFailed)) return

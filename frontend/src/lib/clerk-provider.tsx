@@ -8,7 +8,7 @@ export default function ConfiguredClerkProvider({ children }: { children: ReactN
     publishableKey={CLERK_PUBLISHABLE_KEY}
     signInUrl="/login"
     signUpUrl="/sign-up"
-    signInFallbackRedirectUrl="/"
-    signUpFallbackRedirectUrl="/"
+    signInFallbackRedirectUrl="/dashboard"
+    signUpFallbackRedirectUrl="/dashboard"
   >{children}</ClerkProvider>
 }

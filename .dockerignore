@@ -1,0 +1,13 @@
+
+**/node_modules
+**/dist
+**/.next
+**/.next-export
+**/out
+frontend/public/welcome
+.git
+**/.env
+**/.env.local
+**/.env.production
+
+**/.env*

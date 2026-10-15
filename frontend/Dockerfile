@@ -17,10 +17,11 @@ ENV VITE_SENTRY_ENABLED=$VITE_SENTRY_ENABLED
 ENV VITE_SENTRY_DSN=$VITE_SENTRY_DSN
 ENV VITE_WEB_VITALS_ENABLED=$VITE_WEB_VITALS_ENABLED
 
-COPY package.json package-lock.json .npmrc ./
+COPY frontend/package.json frontend/package-lock.json frontend/.npmrc ./
 RUN npm ci
 
-COPY . .
+COPY frontend/ ./
+COPY landing/ /landing/
 RUN npm run build
 
 # Serve with nginx

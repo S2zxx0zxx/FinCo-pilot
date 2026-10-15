@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run typecheck && vite build && npm run verify:production",
+    "build": "npm run build:marketing && npm run typecheck && vite build && npm run verify:production",
+    "build:marketing": "node scripts/build-marketing.mjs",
     "typecheck": "node ./node_modules/@typescript/native/bin/tsc -b",
     "lint": "eslint .",
     "preview": "vite preview",

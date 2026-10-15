@@ -31,9 +31,9 @@ export default function ClerkLoginContainer() {
   const [totpCode, setTotpCode] = useState('')
 
   const requestedNext = searchParams.get('next')
-  const safeNext = requestedNext?.startsWith('/') && !requestedNext.startsWith('//') && !requestedNext.includes('://')
+  const safeNext = requestedNext === '/' ? '/dashboard' : requestedNext?.startsWith('/') && !requestedNext.startsWith('//') && !requestedNext.includes('://')
     ? requestedNext
-    : '/'
+    : '/dashboard'
 
   useEffect(() => {
     const urlErr = searchParams.get('error')
@@ -44,7 +44,7 @@ export default function ClerkLoginContainer() {
 
   useEffect(() => {
     if (token) {
-      navigate('/', { replace: true })
+      navigate(safeNext, { replace: true })
       return
     }
     if (clerkSession) {

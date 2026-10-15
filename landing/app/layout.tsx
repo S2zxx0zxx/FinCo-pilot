@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   },
   twitter: { card: 'summary_large_image', images: ['/social-card.png'] },
 }
-export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#080b0c' }
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#ffffff' }
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <html lang="en" className={fincoFont.variable}><body><div className="relative isolate min-h-svh">{children}</div></body></html>
 }

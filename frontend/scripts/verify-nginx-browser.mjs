@@ -192,11 +192,12 @@ try {
         page.on('request', request => pending.add(new URL(request.url()).pathname))
         page.on('requestfinished', request => pending.delete(new URL(request.url()).pathname))
         page.on('requestfailed', request => pending.delete(new URL(request.url()).pathname))
+        // Use the same deterministic network boundary as the public phase.
+        // Live provider verification has its own explicitly configured origin.
+        if (browserOrigin === origin) await context.route('**/*', route => new URL(route.request().url()).origin === origin ? route.continue() : route.abort())
         let navigationError = null
-        // Each page starts empty. The visible form and final URL are the readiness
-        // contract; an engine may finish navigation without resolving its milestone.
-        void page.goto(browserOrigin + '/login', { waitUntil:'commit' }).catch(error=>{navigationError=error.message})
         try {
+          await page.goto(browserOrigin + '/login', { waitUntil:'domcontentloaded' }).catch(error => { navigationError=error.message; throw error })
           await page.locator('input[type=email]').waitFor()
           assert.equal(new URL(page.url()).pathname,'/login')
         } catch (error) {

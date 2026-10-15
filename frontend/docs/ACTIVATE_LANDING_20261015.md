@@ -6,6 +6,10 @@ Base: main `e727498c9481cdcb94f06b6f429933224f9c5b08`, including merged pricing 
 
 This branch packages the **existing Next.js landing**, not a replacement design, into the finance frontend's production artifact. It adds no always-running marketing service, preview-origin proxy or new application dependency. Backend/data/schema/tenant permissions, payment order handling and provider credentials are unchanged.
 
+## Requested light appearance
+
+The latest requested appearance changes only marketing colors: white page/header/mobile navigation, light neutral cards, dark headings/body/links, visible dark focus rings and brand mark. Green accents and section colors, component/layout/animation behavior, actual product captures and the finance application theme remain intact. The landing browser theme color is white. Mobile and desktop contrast/overflow are checked against the rebuilt artifact.
+
 ## Route contract
 
 | Request / action | Result |

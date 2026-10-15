@@ -74,7 +74,7 @@ const demoData: Record<View, { eyebrow: string; title: string; amount: string; d
 }
 
 function Mark({ compact = false }: { compact?: boolean }) {
-  return <span className="brand-lockup"><span className="brand-symbol"><FinCoLogo size={compact ? 21 : 23} mode="on-dark" /></span><span className="brand-name">FinCo<span className="brand-hyphen">-</span>Pilot<span className="brand-period">.</span></span></span>
+  return <span className="brand-lockup"><span className="brand-symbol"><FinCoLogo size={compact ? 21 : 23} mode="on-light" /></span><span className="brand-name">FinCo<span className="brand-hyphen">-</span>Pilot<span className="brand-period">.</span></span></span>
 }
 
 function ArrowLink({ href, children, light = false, small = false }: { href: string; children: React.ReactNode; light?: boolean; small?: boolean }) {

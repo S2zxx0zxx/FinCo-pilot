@@ -4,7 +4,7 @@ As of 15 October 2026, initial growth execution block. Source base main `7736a24
 
 ## What actually happened
 
-Read the 21-page blueprint in full. Fresh GitHub/PR/CI, Cloudflare DNS/Tunnel/routes/bot configuration/Access/RUM inventory, Vercel project/deployment/domain inspection, direct anonymous HTTP and independent public content checks. Created source-safe ledgers and bounded manual audit tool; no growth production release.
+Read the 21-page blueprint in full. Fresh GitHub/PR/CI, Cloudflare DNS/Tunnel/routes/bot configuration/Access/RUM inventory, Vercel project/deployment/domain inspection, direct anonymous HTTP and independent public content checks. Created source-safe ledgers and bounded manual audit tool; no growth production release. RESEARCH_2026-10-15.md adds initial product-source inventory, four official competitor text observations and unscored intent seeds. Authorized staging landing HTTP verified initial headline and deliberate noindex; no browser/provider acceptance.
 
 Important corrections: Tunnel now healthy/four connections; apex API readiness 200 versus dedicated Vercel API 503. Their root HTML differs; exact apex source/runtime unproved. Both conventional sitemap URLs return SPA HTML. Do not repeat old blanket outage/readiness claims.
 
@@ -18,4 +18,4 @@ Important corrections: Tunnel now healthy/four connections; apex API readiness 2
 6. Reconcile existing schedules before any organic watch activation. Use bounded deduplicated probes; update historical assumptions only with evidence.
 7. Product-proof inventory -> keyword intent map -> original drafts -> editorial approval. Continue independent source tasks while access is pending.
 
-G0/G1 in progress. G2 proposed/blocked on decision. G3/G4 only baseline/tooling scope; G5-G7 release/operations not complete. Local verification: 7 probe unit tests + 11 existing landing/Worker focused checks passed; secret hygiene and whitespace passed. Full eight-URL live tool run completed; apex 200 ready vs dedicated API 503 not_ready; both sitemap URLs still HTML. Full application/provider/browser acceptance not run. Exact remote PR/head is recorded in the PR metadata. Never treat this ledger as the full 52-task completion certificate.
+G0/G1 in progress. G2 proposed/blocked on decision. G3/G4 only baseline/tooling scope; G5-G7 release/operations not complete. Local verification: 7 probe unit tests + 11 existing landing/Worker focused checks passed; secret hygiene and whitespace passed. Full eight-URL live tool run completed; apex 200 ready vs dedicated API 503 not_ready; both sitemap URLs still HTML. Full application/provider/browser acceptance not run. Draft PR: https://github.com/S2zxx0zxx/FinCo-pilot/pull/89. Exact remote head and CI are recorded in PR metadata; re-read before resuming. Never treat this ledger as the full 52-task completion certificate.

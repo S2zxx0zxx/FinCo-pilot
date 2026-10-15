@@ -207,11 +207,15 @@ try {
         if (browserOrigin === origin) await context.route('**/*', route => new URL(route.request().url()).origin === origin ? route.continue() : route.abort())
         let navigationError = null
         try {
-          await page.goto(browserOrigin + '/login', { waitUntil:'domcontentloaded' }).catch(error => { navigationError=error.message; throw error })
+          // Navigation commit proves the server response; visible form controls
+          // prove usability. A browser lifecycle event alone is neither proof.
+          const response = await page.goto(browserOrigin + '/login', { waitUntil:'commit' }).catch(error => { navigationError=error.message; throw error })
+          assert.equal(response?.status(),200,'Cold login document must succeed')
           await page.locator('input[type=email]').waitFor()
+          if(process.env.FINCO_CONFIGURED_CLERK_CHECK!=='true')await page.locator('input[type=password]').waitFor()
           assert.equal(new URL(page.url()).pathname,'/login')
         } catch (error) {
-          const diagnostics={width,reducedMotion,url:page.url(),navigationError,pending:[...pending],errors,nginxError:(await readFile(path.join(work,'error.log'),'utf8')).slice(-6000)}
+          const diagnostics={width,reducedMotion,url:page.url(),navigationError,pending:[...pending],errors,emailVisible:await page.locator('input[type=email]').isVisible().catch(()=>false),passwordVisible:await page.locator('input[type=password]').isVisible().catch(()=>false),nginxError:(await readFile(path.join(work,'error.log'),'utf8')).slice(-6000)}
           console.log('Login readiness diagnostics',JSON.stringify(diagnostics))
           await writeFile(path.join(output, 'login-readiness-failure.json'), JSON.stringify(diagnostics,null,2))
           throw error

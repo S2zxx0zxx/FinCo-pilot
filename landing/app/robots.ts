@@ -1,6 +1,8 @@
 import type { MetadataRoute } from 'next'
 import { getMarketingConfig, RESTRICTED_CRAWLERS } from '@/lib/marketing'
 
+export const dynamic = 'force-static'
+
 export default function robots(): MetadataRoute.Robots {
   const { origin, indexable } = getMarketingConfig()
   if (!indexable) return { rules: { userAgent: '*', disallow: '/' } }

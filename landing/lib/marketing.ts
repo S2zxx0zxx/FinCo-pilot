@@ -22,12 +22,17 @@ export function getMarketingConfig(env: MarketingEnvironment = process.env) {
   }
   const indexable = env.VERCEL_ENV === 'production' && env.NEXT_PUBLIC_MARKETING_INDEXABLE === 'true'
   if (indexable && !origin) throw new Error('Indexable marketing requires an explicitly approved NEXT_PUBLIC_MARKETING_URL')
-  return { origin: origin ?? 'https://fincopilot.app', indexable }
+  // The combined frontend exports Next into /welcome with trailingSlash=true.
+  // Keep page/schema/social URLs on that actual public namespace.
+  const basePath = env.FINCO_EXPORT_MARKETING === 'true' ? '/welcome' : ''
+  return { origin: origin ?? 'https://fincopilot.app', indexable, basePath }
 }
 
 export function marketingUrl(path: string, env: MarketingEnvironment = process.env) {
   if (!PUBLIC_PAGES.some(page => page.path === path)) throw new Error('Not an approved public marketing path')
-  return new URL(path, getMarketingConfig(env).origin).toString()
+  const { origin, basePath } = getMarketingConfig(env)
+  const publicPath = basePath ? `${basePath}${path === '/' ? '/' : path + '/'}` : path
+  return new URL(publicPath, origin).toString()
 }
 
 export function sitemapEntries(env: MarketingEnvironment = process.env) {
@@ -40,10 +45,15 @@ export function serializeJsonLd(value: unknown) {
   return JSON.stringify(value).replace(/</g, '\\u003c')
 }
 
-export function websiteSchema() {
-  const { origin } = getMarketingConfig()
-  return { '@context': 'https://schema.org', '@type': 'WebSite', '@id': `${origin}/#website`,
-    url: `${origin}/`, name: 'FinCo-Pilot', inLanguage: 'en' }
+export function marketingSocialImage(env: MarketingEnvironment = process.env) {
+  const { origin, basePath } = getMarketingConfig(env)
+  return new URL(`${basePath}/social-card.png`, origin).toString()
+}
+
+export function websiteSchema(env: MarketingEnvironment = process.env) {
+  const home = marketingUrl('/', env)
+  return { '@context': 'https://schema.org', '@type': 'WebSite', '@id': `${home}#website`,
+    url: home, name: 'FinCo-Pilot', inLanguage: 'en' }
 }
 
 /** Retain observed restrictive bot policy; changes require a separate owner policy decision. */

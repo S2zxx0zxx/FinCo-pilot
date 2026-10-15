@@ -36,3 +36,9 @@ Do not infer legal name/address, registered status, licenses, active processors,
 ## Release state
 
 PR #91 remains draft. Final combined checks are required. Production deployment, database conversion, identity remapping, backup copying/cutover, DNS/TLS/permission changes and legal publication remain separate reviewed actions. A passing synthetic CI run does not close these external gates.
+
+## Combined-browser regression follow-up
+
+On candidate cb63bfa, the standalone landing build/typecheck/unit and discovery-byte checks passed, and same-origin public-entry tests passed in Chromium, Firefox and WebKit. The separate documentation browser suite reproduced a serious color-contrast failure at `/features` on 320px in all three engines: old dark-theme paragraph and primary-link colors remained on the newly white main-branch background. Documentation intro/body now use the existing muted text token; documentation active/inline links use dark green; code-block focus uses the dark ring token. The light green CTA surface and its dark text, overall white theme, product auth destinations, copy and interactions remain. Original accessibility assertions are retained. Final full cross-browser results must pass on the corrected candidate; previous failures are preserved as evidence.
+
+The corrected metadata build passed locally: connected marketing, SRI/CSP/discovery and PWA checks; entry bundle 214,911 gzip bytes against 307,200 budget; source maps absent. Ten landing unit tests passed. A local parallel frontend unit run reported three timeouts; no timeout/assertion change was made. Final CI/isolated outcomes are recorded on PR #91, not assumed from the build.

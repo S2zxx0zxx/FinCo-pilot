@@ -6,11 +6,15 @@
       "destination": "https://api.fincopilot.app/api/:path*"
     },
     {
+      "source": "/welcome",
+      "destination": "/welcome/index.html"
+    },
+    {
       "source": "/ai-catalog.json",
       "destination": "/.well-known/ai-catalog.json"
     },
     {
-      "source": "/((?!api(?:/|$)|mcp(?:/|$)|static(?:/|$)|src(?:/|$)|node_modules(?:/|$)|@vite(?:/|$)|\\.vite(?:/|$)|\\.well-known(?:/|$)|sitemap\\.xml$|robots\\.txt$|llms\\.txt$).*)",
+      "source": "/((?!welcome(?:/|$)|api(?:/|$)|mcp(?:/|$)|static(?:/|$)|src(?:/|$)|node_modules(?:/|$)|@vite(?:/|$)|\\.vite(?:/|$)|\\.well-known(?:/|$)|sitemap\\.xml$|robots\\.txt$|llms\\.txt$).*)",
       "destination": "/index.html"
     }
   ],
@@ -94,6 +98,13 @@
           "value": "no-store"
         }
       ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/welcome/",
+      "permanent": false
     }
   ]
 }

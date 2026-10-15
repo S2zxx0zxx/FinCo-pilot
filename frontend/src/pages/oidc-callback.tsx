@@ -16,7 +16,7 @@ export default function OIDCCallbackPage() {
     if (!accessToken) return
     loginWithToken(accessToken)
     window.history.replaceState(null, '', '/auth/oidc/callback')
-    navigate('/', { replace: true })
+    navigate('/dashboard', { replace: true })
   }, [accessToken, loginWithToken, navigate])
 
   return (

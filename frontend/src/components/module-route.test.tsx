@@ -11,7 +11,7 @@ vi.mock('@/contexts/workspace-context', () => ({ useWorkspace }))
 function renderGuard() {
   return renderWithProviders(
     <Routes>
-      <Route path="/" element={<div>home</div>} />
+      <Route path="/dashboard" element={<div>home</div>} />
       <Route
         path="/budgets"
         element={
@@ -54,7 +54,7 @@ describe('ModuleRoute', () => {
 
     renderWithProviders(
       <Routes>
-        <Route path="/" element={<div>home</div>} />
+        <Route path="/dashboard" element={<div>home</div>} />
         <Route
           path="/budgets"
           element={

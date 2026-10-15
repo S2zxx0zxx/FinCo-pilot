@@ -83,7 +83,7 @@ describe('RegisterPage', () => {
     expect(email).toBe('new@example.com')
     expect(password).toBe('sufficiently-long')
     expect(preferences).toEqual({ currency_display: 'INR', language: 'en' })
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith('/'))
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith('/dashboard'))
   })
 
   it('refuses to submit when the two passwords differ', async () => {

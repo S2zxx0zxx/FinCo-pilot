@@ -45,7 +45,7 @@ export default function ClerkRegisterContainer() {
             currency_display: currency,
             language: lang,
           })
-          navigate('/', { replace: true })
+          navigate('/dashboard', { replace: true })
         }
       }).catch(() => { setError(t('auth.registrationError')) })
     }
@@ -78,7 +78,7 @@ export default function ClerkRegisterContainer() {
           currency_display: currency,
           language: lang,
         })
-        navigate('/')
+        navigate('/dashboard')
       }
     } catch (err: unknown) {
       const clerkErr = err as { errors?: Array<{ message?: string; longMessage?: string; code?: string }> }
@@ -104,7 +104,7 @@ export default function ClerkRegisterContainer() {
           currency_display: currency,
           language: lang,
         })
-        navigate('/')
+        navigate('/dashboard')
       } else if (result.status === 'needs_requirements') {
         navigate('/sign-up#/continue')
       } else {

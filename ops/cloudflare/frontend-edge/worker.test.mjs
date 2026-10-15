@@ -73,8 +73,23 @@ test('a development HTML fallback is never returned as a working MCP endpoint', 
   assert(! (await response.text()).includes('@vite'))
 })
 
+test('public home reaches marketing without exposing auth or queries to another origin', async () => {
+  let calls = 0
+  const response = await handleRequest(new Request('https://fincopilot.app/?token=synthetic-private', { headers: { Cookie:'synthetic' } }), env, async () => { calls++; throw new Error('No upstream needed') })
+  assert.equal(response.status,302);assert.equal(response.headers.get('location'),'/welcome/');assert.equal(response.headers.get('referrer-policy'),'no-referrer');assert.equal(calls,0)
+  assert.equal(frontendPath('/dashboard'),'/index.html')
+  assert.equal(frontendPath('/welcome/'),'/welcome/index.html')
+  assert.equal(frontendPath('/welcome/_next/static/chunks/hash.js'),'/welcome/_next/static/chunks/hash.js')
+  assert.equal(frontendPath('/welcome/unknown-private-route'),null)
+  assert.equal(frontendPath('/welcome/../index.html'),null)
+})
+
 test('private shells retain noindex and sitemap absence is a real 404 without an upstream fetch', async () => {
-  for (const path of ['/', '/login', '/accounts', '/i/synthetic', '/reset-password?token=synthetic']) {
+  const home = await handleRequest(new Request('https://fincopilot.app/'), env,
+    async () => new Response('<html>shell</html>', { headers: { 'Content-Type': 'text/html' } }))
+  assert.equal(home.status, 302)
+  assert.equal(home.headers.get('location'), '/welcome/')
+  for (const path of ['/login', '/accounts', '/i/synthetic', '/reset-password?token=synthetic']) {
     const response = await handleRequest(new Request('https://fincopilot.app' + path), env,
       async () => new Response('<html>shell</html>', { headers: { 'Content-Type': 'text/html' } }))
     assert.equal(response.headers.get('x-robots-tag'), 'noindex', path)

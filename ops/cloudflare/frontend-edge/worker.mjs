@@ -36,6 +36,11 @@ export function targetsBackend(pathname) {
 
 export function frontendPath(pathname) {
   if (pathname === '/sitemap.xml') return null
+  if (pathname === '/welcome/' || pathname === '/welcome') return '/welcome/index.html'
+  if (pathname.startsWith('/welcome/')) {
+    // Only static export paths; no private route, query, credential or SPA fallback.
+    return !pathname.includes('..') && /^\/welcome\/[\w./%-]+\.(?:html|txt|js|css|webp|png|svg|ico|woff2|json)$/.test(pathname) ? pathname : null
+  }
   if (pathname.startsWith('/static/')) return /^\/static\/[\w.-]+$/.test(pathname) ? pathname : null
   if (PUBLIC_FILES.has(pathname)) return pathname
   if (/^\/(src|node_modules|@vite|\.vite)(\/|$)/.test(pathname)) return null
@@ -73,6 +78,7 @@ export async function handleRequest(request, env, fetchImpl = fetch) {
     } catch { return unavailable(502) }
   }
   if (!['GET', 'HEAD'].includes(request.method)) return unavailable(405)
+  if (url.pathname === '/') return new Response(null, { status: 302, headers: { Location: '/welcome/', 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY' } })
   let origin
   try {
     origin = new URL(env.FRONTEND_DEPLOYMENT_ORIGIN)
@@ -80,7 +86,7 @@ export async function handleRequest(request, env, fetchImpl = fetch) {
   } catch { return unavailable() }
   const pathname = frontendPath(url.pathname)
   if (!pathname) return unavailable(404)
-  const staticAsset = pathname.startsWith('/static/')
+  const staticAsset = pathname.startsWith('/static/') || pathname.startsWith('/welcome/_next/static/')
   const headers = new Headers()
   for (const name of ['accept', 'accept-encoding', 'if-none-match', 'if-modified-since', 'range']) {
     const value = request.headers.get(name)

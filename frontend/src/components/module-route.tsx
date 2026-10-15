@@ -21,6 +21,6 @@ export function ModuleRoute({
       </div>
     )
   }
-  if (!hasModule(module)) return <Navigate to="/" replace />
+  if (!hasModule(module)) return <Navigate to="/dashboard" replace />
   return <>{children}</>
 }

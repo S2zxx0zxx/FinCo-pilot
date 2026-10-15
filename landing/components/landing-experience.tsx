@@ -24,6 +24,7 @@ import { Separator } from '@/components/spaceui/separator'
 import { Avatar, AvatarFallback } from '@/components/spaceui/avatar'
 import { ProductScreens } from '@/components/product-screens'
 import { LandingSoundProvider, SoundToggle, useLandingSound } from '@/components/landing-sound'
+import { InstalledAppHandoff } from '@/components/installed-app-handoff'
 import { APP_LINKS } from '@/lib/links'
 
 type View = 'overview' | 'budgets' | 'activity'
@@ -73,7 +74,7 @@ const demoData: Record<View, { eyebrow: string; title: string; amount: string; d
 }
 
 function Mark({ compact = false }: { compact?: boolean }) {
-  return <span className="brand-lockup"><span className="brand-symbol"><FinCoLogo size={compact ? 21 : 23} mode="on-dark" /></span><span className="brand-name">FinCo<span className="brand-hyphen">-</span>Pilot<span className="brand-period">.</span></span></span>
+  return <span className="brand-lockup"><span className="brand-symbol"><FinCoLogo size={compact ? 21 : 23} mode="on-light" /></span><span className="brand-name">FinCo<span className="brand-hyphen">-</span>Pilot<span className="brand-period">.</span></span></span>
 }
 
 function ArrowLink({ href, children, light = false, small = false }: { href: string; children: React.ReactNode; light?: boolean; small?: boolean }) {
@@ -234,5 +235,5 @@ function Footer() {
 }
 
 export function LandingExperience() {
-  return <LandingSoundProvider><MotionConfig reducedMotion="user"><div className="marketing-page"><a className="skip-link" href="#main-content">Skip to content</a><Navigation/><main id="main-content"><Hero/><ProofLine/><WhyFinCo/><ProductScreens/><Experience/><HowItWorks/><Privacy/><Questions/><FinalCTA/></main><Footer/></div></MotionConfig></LandingSoundProvider>
+  return <LandingSoundProvider><InstalledAppHandoff /><MotionConfig reducedMotion="user"><div className="marketing-page"><a className="skip-link" href="#main-content">Skip to content</a><Navigation/><main id="main-content"><Hero/><ProofLine/><WhyFinCo/><ProductScreens/><Experience/><HowItWorks/><Privacy/><Questions/><FinalCTA/></main><Footer/></div></MotionConfig></LandingSoundProvider>
 }

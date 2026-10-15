@@ -9,7 +9,7 @@ export default function ClerkSignUpPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-6">
       <h1 className="text-xl font-semibold">Complete your account</h1>
-      <SignUp routing="hash" signInUrl="/login" fallbackRedirectUrl="/" />
+      <SignUp routing="hash" signInUrl="/login" fallbackRedirectUrl="/dashboard" />
     </main>
   )
 }

@@ -11,7 +11,7 @@ vi.mock('@/contexts/auth-context', () => ({ useAuth }))
 function renderGuard() {
   return renderWithProviders(
     <Routes>
-      <Route path="/" element={<div>home</div>} />
+      <Route path="/dashboard" element={<div>home</div>} />
       <Route
         path="/admin"
         element={

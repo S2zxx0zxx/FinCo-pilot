@@ -54,7 +54,7 @@ type StaticItem = {
 }
 
 const NAV_ITEMS: StaticItem[] = [
-  { id: 'nav-dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard, path: '/', keywords: ['home', 'inicio', 'início'] },
+  { id: 'nav-dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard, path: '/dashboard', keywords: ['home', 'inicio', 'início'] },
   { id: 'nav-transactions', labelKey: 'nav.transactions', icon: ArrowLeftRight, path: '/transactions', keywords: ['tx', 'transacoes', 'transações'], module: 'transactions' },
   { id: 'nav-invoices', labelKey: 'nav.invoices', icon: Receipt, path: '/invoices', keywords: ['cobrancas', 'cobranças', 'faturas', 'clientes', 'recebimentos'], module: 'invoices' },
   { id: 'nav-accounts', labelKey: 'nav.accounts', icon: Building2, path: '/accounts', keywords: ['contas'], module: 'accounts' },

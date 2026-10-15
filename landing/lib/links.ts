@@ -14,10 +14,10 @@ function getAppOrigin(): string {
 /** The original Vite finance app remains the only destination for authenticated routes. */
 export const APP_URL = getAppOrigin()
 export const APP_LINKS = {
-  login: new URL('/login', APP_URL).toString(),
-  register: new URL('/register', APP_URL).toString(),
-  pricing: new URL('/pricing', APP_URL).toString(),
-  support: new URL('/support', APP_URL).toString(),
-  privacy: new URL('/privacy', APP_URL).toString(),
-  terms: new URL('/terms', APP_URL).toString(),
+  login: process.env.NEXT_PUBLIC_FINCO_SAME_ORIGIN === 'true' ? '/login' : new URL('/login', APP_URL).toString(),
+  register: process.env.NEXT_PUBLIC_FINCO_SAME_ORIGIN === 'true' ? '/register' : new URL('/register', APP_URL).toString(),
+  pricing: process.env.NEXT_PUBLIC_FINCO_SAME_ORIGIN === 'true' ? '/pricing' : new URL('/pricing', APP_URL).toString(),
+  support: process.env.NEXT_PUBLIC_FINCO_SAME_ORIGIN === 'true' ? '/support' : new URL('/support', APP_URL).toString(),
+  privacy: process.env.NEXT_PUBLIC_FINCO_SAME_ORIGIN === 'true' ? '/privacy' : new URL('/privacy', APP_URL).toString(),
+  terms: process.env.NEXT_PUBLIC_FINCO_SAME_ORIGIN === 'true' ? '/terms' : new URL('/terms', APP_URL).toString(),
 } as const

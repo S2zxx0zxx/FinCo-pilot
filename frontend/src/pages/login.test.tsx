@@ -101,7 +101,7 @@ describe('LoginPage', () => {
         'secret',
       ),
     )
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith('/'))
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith('/dashboard'))
   })
 
   it('asks for the second factor instead of navigating when 2FA is on', async () => {
@@ -117,7 +117,7 @@ describe('LoginPage', () => {
     await user.click(screen.getByRole('button', { name: t('auth.login') }))
 
     expect(await screen.findByText(t('auth.twoFactorTitle'))).toBeInTheDocument()
-    expect(navigate).not.toHaveBeenCalledWith('/')
+    expect(navigate).not.toHaveBeenCalledWith('/dashboard')
   })
 
   it('tells the user their credentials were rejected', async () => {
@@ -177,7 +177,7 @@ describe('LoginPage', () => {
     renderWithProviders(<LoginPage />, { route: '/login' })
 
     await waitFor(() =>
-      expect(navigate).toHaveBeenCalledWith('/', { replace: true }),
+      expect(navigate).toHaveBeenCalledWith('/dashboard', { replace: true }),
     )
   })
 
@@ -214,4 +214,15 @@ describe('LoginPage', () => {
       screen.getByRole('button', { name: t('auth.login') }),
     ).toBeInTheDocument()
   })
+})
+
+
+it.each([
+  ['/login?next=%2F', '/dashboard'],
+  ['/login?next=%2Fpricing%3Fplan%3Dpro%26interval%3Dannual', '/pricing?plan=pro&interval=annual'],
+  ['/login?next=%2F%2Fevil.example', '/dashboard'],
+])('preserves safe auth return paths without returning to marketing: %s', async (route, target) => {
+  authContext.token='jwt'
+  renderWithProviders(<LoginPage />, {route})
+  await waitFor(()=>expect(navigate).toHaveBeenCalledWith(target,{replace:true}))
 })

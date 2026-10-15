@@ -6,6 +6,7 @@ import { readFile, readdir, writeFile } from 'node:fs/promises'
 import { defineConfig, loadEnv, type IndexHtmlTransformContext } from 'vite'
 import { resolveAppVersion } from './build/version.ts'
 import { localQaSessionPlugin } from './build/local-qa-session.ts'
+import { marketingRouterPlugin } from './build/marketing-router.ts'
 import { finalizeSecurityPolicy } from './build/security-policy.ts'
 
 function getFrontendHost(frontendUrl?: string, allowPublicDevelopment = false) {
@@ -48,7 +49,7 @@ export default defineConfig(async ({ mode }) => {
       assetsDir: 'static',
       manifest: true,
     },
-    plugins: [react(), tailwindcss(), localQaSessionPlugin({
+    plugins: [marketingRouterPlugin(import.meta.dirname), react(), tailwindcss(), localQaSessionPlugin({
       mode,
       enabled: (env.FINCO_LOCAL_QA_ENABLED || process.env.FINCO_LOCAL_QA_ENABLED) === 'true',
       frontendUrl,

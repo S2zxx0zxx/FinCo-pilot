@@ -5,10 +5,12 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends git \
 	&& rm -rf /var/lib/apt/lists/*
 
-COPY package.json package-lock.json .npmrc ./
+COPY frontend/package.json frontend/package-lock.json frontend/.npmrc ./
 RUN npm ci
 
-COPY . .
+COPY frontend/ ./
+COPY landing/ /landing/
+RUN npm run build:marketing
 
 EXPOSE 5173
 

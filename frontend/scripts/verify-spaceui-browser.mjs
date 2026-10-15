@@ -54,7 +54,7 @@ const fixed = {
   '/api/currencies': [{code:'INR',symbol:'₹',name:'Indian Rupee',flag:'IN'}],
   '/api/support/info': { email: null, portal_url: null, help_center_url: null },
 }
-const routes = ['/','/transactions','/accounts','/import','/import?tab=investments','/rules','/categories','/collections','/budgets','/recurring','/goals','/assets','/reports','/payees','/groups','/invoices','/workspace/settings','/admin','/agents','/agents/connections','/loans','/spending-plan','/pricing','/support','/accounts/missing','/groups/missing','/invoices/missing','/agents/missing','/oauth/callback','/enable-banking','/assets/import']
+const routes = ['/dashboard','/transactions','/accounts','/import','/import?tab=investments','/rules','/categories','/collections','/budgets','/recurring','/goals','/assets','/reports','/payees','/groups','/invoices','/workspace/settings','/admin','/agents','/agents/connections','/loans','/spending-plan','/pricing','/support','/accounts/missing','/groups/missing','/invoices/missing','/agents/missing','/oauth/callback','/enable-banking','/assets/import']
 const publicRoutes = ['/login','/register','/forgot-password','/reset-password','/verify-email','/request-verification','/setup','/terms','/privacy','/account-deletion','/workspace-deletion','/auth/oidc/callback','/i/missing','/not-a-route']
 let browser
 const results = []
@@ -80,13 +80,13 @@ try {
       const page = await context.newPage()
       let errors = []
       page.on('pageerror', error => errors.push(error.message))
-      for (const path of process.env.SPACEUI_QA_QUICK ? ['/','/transactions','/pricing'] : routes) {
+      for (const path of process.env.SPACEUI_QA_QUICK ? ['/dashboard','/transactions','/pricing'] : routes) {
         errors = []
         await page.goto(`http://127.0.0.1:${port}${path}`, {waitUntil:'networkidle'})
         const state = await page.evaluate(() => ({path:location.pathname,heading:document.querySelector('h1')?.textContent,overflow:document.documentElement.scrollWidth > innerWidth + 1,boundary:document.body.innerText.includes('We could not display this page'),offenders:document.documentElement.scrollWidth>innerWidth+1?[...document.querySelectorAll('body *')].filter(el=>el.getBoundingClientRect().right>innerWidth+1).slice(0,8).map(el=>({tag:el.tagName,class:el.getAttribute('class'),right:el.getBoundingClientRect().right})):[]}))
         results.push({mode:'contract-fixtures',width,theme,requested:path,...state,errors:[...errors]})
         if(process.env.SPACEUI_QA_QUICK)console.log(JSON.stringify(results.at(-1)))
-        if (output && width === 1440 && theme === 'dark' && ['/','/transactions','/pricing'].includes(path)) await page.screenshot({path:`${output}/${path === '/' ? 'dashboard' : path.slice(1)}.png`,fullPage:true})
+        if (output && width === 1440 && theme === 'dark' && ['/dashboard','/transactions','/pricing'].includes(path)) await page.screenshot({path:`${output}/${path === '/dashboard' ? 'dashboard' : path.slice(1)}.png`,fullPage:true})
       }
       if (width === 390) {
         await page.goto(`http://127.0.0.1:${port}/transactions`, {waitUntil:'networkidle'})

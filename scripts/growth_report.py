@@ -9,6 +9,7 @@ import argparse
 import csv
 from datetime import date, datetime, timezone
 import json
+import math
 from pathlib import Path
 import re
 
@@ -64,8 +65,8 @@ def search_totals(path):
     result = {'clicks': 0, 'impressions': 0, 'brand_clicks': 0, 'nonbrand_clicks': 0}
     for row in rows:
         query = row.get('query', row.get('top queries'))
-        if query is None:
-            raise ValueError('Search export requires its query dimension')
+        if query is None or not query.strip() or ('query' in row and 'top queries' in row):
+            raise ValueError('Search export requires one unambiguous nonempty query dimension')
         clicks, impressions = count(row['clicks']), count(row['impressions'])
         if clicks > impressions:
             raise ValueError('Search clicks cannot exceed impressions')
@@ -73,6 +74,8 @@ def search_totals(path):
         result['impressions'] += impressions
         bucket = 'brand_clicks' if re.search(r'\bfinco[\s-]*pilot\b', query, re.I) else 'nonbrand_clicks'
         result[bucket] += clicks
+        if any(value > 2 ** 53 - 1 for value in result.values()):
+            raise ValueError('Aggregate count exceeds safe reporting precision')
     return result
 
 
@@ -90,6 +93,8 @@ def funnel_totals(path):
         totals['organic_visits'] += visits
         totals['organic_signups'] += signups
         totals['organic_activated'] += activated
+        if any(value > 2 ** 53 - 1 for value in totals.values()):
+            raise ValueError('Aggregate count exceeds safe reporting precision')
     if not found:
         raise ValueError('No organic cohort rows')
     totals['signup_conversion_rate'] = totals['organic_signups'] / totals['organic_visits'] if totals['organic_visits'] else None
@@ -118,6 +123,99 @@ def build_report(start=None, end=None, google=None, bing=None, funnel=None):
     return report
 
 
+def validated_metrics(report):
+    """Accept only this sanitized report schema; never echo arbitrary input fields."""
+    if not isinstance(report, dict) or report.get('schema_version') != 1 or not isinstance(report.get('metrics'), dict):
+        raise ValueError('Unknown aggregate report schema')
+    if not set(report['metrics']) <= set(METRICS):
+        raise ValueError('Unknown metric dimension')
+    clean = {}
+    for name in METRICS:
+        metric = report['metrics'].get(name, {'value': None, 'status': 'unknown'})
+        if not isinstance(metric, dict) or set(metric) != {'value', 'status'}:
+            raise ValueError('Invalid aggregate metric schema')
+        value, status = metric['value'], metric['status']
+        if status == 'unknown' and value is None:
+            clean[name] = metric.copy()
+            continue
+        if (status != 'export-derived' or isinstance(value, bool) or not isinstance(value, (int, float))
+                or value < 0 or value > 2 ** 53 - 1 or not math.isfinite(value)):
+            raise ValueError('Invalid measured aggregate value')
+        if name.endswith('_rate'):
+            if value > 1:
+                raise ValueError('Invalid cohort rate')
+        elif not isinstance(value, int) or value > 2 ** 53 - 1:
+            raise ValueError('Aggregate count must be a safe integer')
+        clean[name] = metric.copy()
+    for prefix in ('google', 'bing'):
+        clicks, impressions, branded, nonbrand = (clean[prefix + '_' + key]['value'] for key in ('clicks', 'impressions', 'brand_clicks', 'nonbrand_clicks'))
+        if clicks is not None and impressions is not None and clicks > impressions:
+            raise ValueError('Inconsistent aggregate search counts')
+        if all(value is not None for value in (clicks, branded, nonbrand)) and branded + nonbrand != clicks:
+            raise ValueError('Brand split does not match exported totals')
+    visits, signups, activated = (clean[key]['value'] for key in ('organic_visits', 'organic_signups', 'organic_activated'))
+    if all(value is not None for value in (visits, signups, activated)) and not activated <= signups <= visits:
+        raise ValueError('Inconsistent aggregate organic cohort')
+    for name, numerator, denominator in [('signup_conversion_rate', signups, visits), ('activation_rate', activated, signups)]:
+        value = clean[name]['value']
+        if value is not None and (numerator is None or not denominator or not math.isclose(value, numerator / denominator, abs_tol=1e-12)):
+            raise ValueError('Rate does not match its cohort')
+    return clean
+
+
+def interval(report):
+    period = report.get('period')
+    if not isinstance(period, dict) or set(period) != {'start', 'end'}:
+        raise ValueError('Explicit reporting dates are required')
+    start, end = period['start'], period['end']
+    if not all(isinstance(value, str) and re.fullmatch(r'\d{4}-\d{2}-\d{2}', value) for value in (start, end)):
+        raise ValueError('Explicit ISO reporting dates are required')
+    first, last = date.fromisoformat(start), date.fromisoformat(end)
+    if first > last:
+        raise ValueError('Reporting interval is reversed')
+    return first, last, (last - first).days + 1
+
+
+def compare_reports(current, previous, *, cohorts_confirmed=False):
+    current_metrics, previous_metrics = validated_metrics(current), validated_metrics(previous)
+    current_start, current_end, current_days = interval(current)
+    previous_start, previous_end, previous_days = interval(previous)
+    reasons = []
+    if not cohorts_confirmed:
+        reasons.append('Consent, source definitions and deduplicated cohort comparability have not been confirmed.')
+    if previous_end >= current_start:
+        reasons.append('Periods overlap or are not in chronological order.')
+    if current_days != previous_days:
+        reasons.append('Count windows have unequal durations; choose matched windows before comparing totals.')
+    result = {'status': 'not-comparable' if reasons else 'comparable-by-supplied-contract',
+              'current_period': {'start': current_start.isoformat(), 'end': current_end.isoformat()},
+              'previous_period': {'start': previous_start.isoformat(), 'end': previous_end.isoformat()},
+              'reasons': reasons, 'metrics': {},
+              'limitations': ['Comparability confirmation is supplied by the operator, not independent verification.',
+                              'Period changes are descriptive and do not establish causal uplift.',
+                              'Missing metrics remain unknown; a zero baseline has no defined percentage change.']}
+    for name in METRICS:
+        current_value, previous_value = current_metrics[name]['value'], previous_metrics[name]['value']
+        observed = not reasons and current_value is not None and previous_value is not None
+        delta = current_value - previous_value if observed else None
+        result['metrics'][name] = {'current': current_value, 'previous': previous_value,
+            'absolute_change': delta,
+            'relative_change': delta / previous_value if observed and previous_value else None,
+            'percentage_point_change': delta * 100 if observed and name.endswith('_rate') else None,
+            'status': 'export-derived' if observed else 'unknown'}
+    return result
+
+
+def read_report(path):
+    path = Path(path)
+    if path.stat().st_size > 1024 * 1024:
+        raise ValueError('Sanitized report exceeds size limit')
+    report = json.loads(path.read_text(encoding='utf-8'))
+    validated_metrics(report)
+    interval(report)
+    return report
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--google')
@@ -125,10 +223,16 @@ def main():
     parser.add_argument('--funnel')
     parser.add_argument('--start')
     parser.add_argument('--end')
+    parser.add_argument('--previous', help='Local sanitized report for a previous matched interval')
+    parser.add_argument('--comparable-cohorts', action='store_true', help='Operator confirms unchanged consent/source/cohort definitions')
     args = parser.parse_args()
     try:
         report = build_report(args.start, args.end, args.google, args.bing, args.funnel)
-    except (ValueError, OSError, csv.Error):
+        if args.previous:
+            report['comparison'] = compare_reports(report, read_report(args.previous), cohorts_confirmed=args.comparable_cohorts)
+        elif args.comparable_cohorts:
+            raise ValueError('Comparability confirmation requires a previous report')
+    except (ValueError, OSError, csv.Error, TypeError):
         parser.exit(2, 'Export validation failed; use documented aggregate columns and interval. No raw rows were emitted.\n')
     print(json.dumps(report, indent=2))
 

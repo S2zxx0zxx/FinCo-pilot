@@ -48,3 +48,13 @@ New-head GitHub CI is a separate gate. Historical green checks on the initial le
 8. Observe real indexing and cohort outcomes over reported periods; do not equate deploy success with indexing or growth.
 
 Owner-reported Windsor setup is recorded. Current tools still lack an authenticated Windsor operation/property read; GSC/Bing/GA4 status remains unknown. Existing daily full-page watch was updated in place; its subsequent scheduled delivery is not yet observed. These external gates remain open while independent implementation continues.
+
+## Further continuation — source and review artifacts
+
+The initial final-candidate receipt is in PR89 for `d43ffc4`: all five workflows passed, including all three browser engines and native service checks; the broad backend suite was scope-skipped. Do not apply that green status automatically to a later commit.
+
+Continuation adds the inactive bounded IndexNow implementation, guarded matched-period outcome comparison and dashboard view, and a dedicated CI job running existing synthetic manual-account/transaction-import tests. Offline growth suite now has 25 tests passing locally. Source product-proof acceptance must be read from the continuation's actual CI result. Dashboard import/reset/hostile-input/zero-baseline comparison/axe/no-network checks pass locally at390/1440 widths.
+
+Three official competitor viewport screenshots (Actual, Monarch, YNAB) were successfully captured and visually inspected using the cloud browser after earlier local attempts failed. The Monarch/YNAB consent panels remain visible. PocketGuard displayed a region restriction in that browser; no bypass or global/user-country availability conclusion. Original comparison draft and source matrix are in COMPARISON_EDITORIAL_DRAFT.md. Research captures are not assets to reuse in product marketing.
+
+The manual IndexNow notifier remains offline by default; no live key installation or submission. Maximum seven requests only after explicit approved release and successful preflight. Reports refuse unsupported comparisons, zero-baseline percentages, malformed cohorts and unsafe numeric precision. No real account exports or resource costs were supplied. Source implementation completion does not close these live/evidence gates.

@@ -16,6 +16,17 @@ try {
     await page.locator('#report').setInputFiles({ name: 'synthetic-report.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(report)) })
     await page.getByText('Sanitized report loaded locally.', { exact: false }).waitFor()
     assert.ok((await page.locator('#metrics tr').first().innerText()).includes('5'))
+    const compared = { ...report, comparison: { status: 'comparable-by-supplied-contract', metrics: {
+      google_clicks: { current: 5, previous: 0, absolute_change: 5, relative_change: null, percentage_point_change: null, status: 'export-derived' },
+    } } }
+    await page.locator('#report').setInputFiles({ name: 'synthetic-comparison.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(compared)) })
+    await page.getByText('Descriptive changes from operator-confirmed comparable periods', { exact: false }).waitFor()
+    assert.match(await page.locator('#comparison-values').innerText(), /zero baseline; percentage change undefined/)
+    const inconsistent = structuredClone(compared)
+    inconsistent.comparison.metrics.google_clicks.relative_change = 100
+    await page.locator('#report').setInputFiles({ name: 'inconsistent-comparison.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(inconsistent)) })
+    await page.getByText('Report rejected.', { exact: false }).waitFor()
+    assert.equal(await page.locator('#comparison-values li').count(), 0)
     await page.locator('#report').setInputFiles({ name: 'invalid-report.json', mimeType: 'application/json',
       buffer: Buffer.from(JSON.stringify({ schema_version: 1, metrics: { google_clicks: { value: '<img src=https://evil.test>', status: 'export-derived' } } })) })
     await page.getByText('Report rejected.', { exact: false }).waitFor()
@@ -30,5 +41,5 @@ try {
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1))
     await page.close()
   }
-  console.log('PASS: local scorecard import/reset, hostile input rejection, unknowns, responsive accessibility, zero network requests')
+  console.log('PASS: local scorecard import/reset, hostile input rejection, unknowns, comparable-period/zero-baseline validation, responsive accessibility, zero network requests')
 } finally { await browser.close() }

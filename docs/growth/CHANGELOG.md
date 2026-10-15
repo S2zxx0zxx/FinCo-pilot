@@ -13,3 +13,7 @@
 ## Candidate implementation continuation — 15 October 2026
 
 Same PR #89, latest main pricing PR90 reconciled. Added four prerendered public pages and built-byte discovery contracts, gated canonical/robots/sitemap/schema, app/edge privacy indexing protections and 404 sitemap routing. Added strict-consent offline attribution, aggregate report adapter, local dashboard, browser/privacy CI and editorial/measurement/authority dossiers. Updated all 52 task statuses with explicit residual gates; no deployment/indexing/outcome completion claimed. Existing daily watch updated in place. See IMPLEMENTATION_AND_QA.md for validation and material indexing effects.
+
+## Further continuation — 15 October 2026
+
+Added inactive manual IndexNow with explicit release gate and public key/robots/canonical/noindex checks; matched-window descriptive comparisons with unknown/zero-baseline/cohort controls; local dashboard comparison validation; existing backend manual-account/import proof job. Added three successful official competitor screenshots and a regional restriction receipt, preserving earlier failures, plus an original comparison editorial draft. All52 task records reconciled. Local growth25 and dashboard checks passed; new-head CI remains a separate evidence gate.

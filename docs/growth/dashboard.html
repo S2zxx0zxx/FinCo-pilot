@@ -11,6 +11,7 @@
 <main>
   <section class="panel" aria-labelledby="import-heading"><h2 id="import-heading">Load a sanitized report</h2><label for="report">Report JSON (up to 1 MiB)</label><input id="report" type="file" accept="application/json,.json"><button id="clear" type="button">Clear report</button><p id="status" role="status" aria-live="polite">No account data loaded.</p><small>Local processing only. No external scripts, network requests, uploads or persistent browser storage.</small></section>
   <section aria-labelledby="metrics-heading"><h2 id="metrics-heading">Outcome scorecard</h2><p id="period">Reporting interval: unknown</p><div class="table-scroll" tabindex="0" role="region" aria-label="Growth metrics"><table><caption>Unknown is not zero. Export-derived values retain their reporting limitations.</caption><thead><tr><th scope="col">Metric</th><th scope="col">Value</th><th scope="col">Evidence status</th></tr></thead><tbody id="metrics"></tbody></table></div></section>
+  <section class="panel" aria-labelledby="comparison-heading"><h2 id="comparison-heading">Comparable-period review</h2><p id="comparison-status">No comparable-period report loaded. Missing evidence is not growth.</p><ul id="comparison-values"></ul></section>
   <section class="panel" aria-labelledby="limits-heading"><h2 id="limits-heading">Interpretation</h2><ul><li>GSC/Bing impressions are not visits or users.</li><li>Search totals cover exported query rows; they may exclude anonymized or truncated rows.</li><li>Signup and activation rates require the same deduplicated, consent-eligible cohort.</li><li>AI referrals and actual citations are different measures.</li><li>Passing CI, deployment, live verification and observed business results are separate stages.</li></ul></section>
 </main>
 <footer><a href="https://github.com/S2zxx0zxx/FinCo-pilot/pull/89">Review the implementation and task ledger in PR #89</a></footer>
@@ -29,6 +30,28 @@
       const row=document.createElement('tr');
       for(const text of [label,metric.value===null?'Unknown':key.endsWith('_rate')?(metric.value*100).toFixed(2)+'%':metric.value.toLocaleString('en'),metric.status]){const cell=document.createElement('td');cell.textContent=text;row.append(cell)}
       table.append(row);
+    }
+    const comparison=report?.comparison, comparisonStatus=document.getElementById('comparison-status'), comparisonList=document.getElementById('comparison-values');
+    comparisonList.replaceChildren();
+    comparisonStatus.textContent='No comparable-period report loaded. Missing evidence is not growth.';
+    if(comparison){
+      if(!['not-comparable','comparable-by-supplied-contract'].includes(comparison.status)||!comparison.metrics||typeof comparison.metrics!=='object')throw Error('Invalid comparison');
+      comparisonStatus.textContent=comparison.status==='not-comparable'?'Periods are not comparable. No growth conclusion is available.':'Descriptive changes from operator-confirmed comparable periods; this does not prove causal uplift.';
+      for(const [key,metric] of Object.entries(comparison.metrics)){
+        if(!Object.hasOwn(labels,key)||!metric||!['unknown','export-derived'].includes(metric.status))throw Error('Invalid comparison metric');
+        for(const field of ['current','previous','absolute_change','relative_change','percentage_point_change'])if(!(metric[field]===null||typeof metric[field]==='number'&&Number.isFinite(metric[field])))throw Error('Invalid comparison value');
+        if(comparison.status==='not-comparable'&&[metric.absolute_change,metric.relative_change,metric.percentage_point_change].some(value=>value!==null))throw Error('Unsupported change');
+        if(metric.status==='unknown'&&[metric.absolute_change,metric.relative_change,metric.percentage_point_change].some(value=>value!==null))throw Error('Unknown change');
+        if(metric.absolute_change===null)continue;
+        if(metric.status!=='export-derived'||metric.current===null||metric.previous===null||metric.current<0||metric.previous<0||Math.abs(metric.current-metric.previous-metric.absolute_change)>1e-9)throw Error('Inconsistent change');
+        if(key.endsWith('_rate')){if(metric.current>1||metric.previous>1||metric.percentage_point_change===null||Math.abs(metric.percentage_point_change-metric.absolute_change*100)>1e-9)throw Error('Invalid rate change')}
+        else if(![metric.current,metric.previous,metric.absolute_change].every(Number.isSafeInteger)||metric.percentage_point_change!==null)throw Error('Invalid count change');
+        if(metric.previous===0?metric.relative_change!==null:metric.relative_change===null||Math.abs(metric.relative_change-metric.absolute_change/metric.previous)>1e-9)throw Error('Invalid relative change');
+        if(metric.current!==report.metrics[key]?.value)throw Error('Comparison does not match report');
+        const item=document.createElement('li'),change=key.endsWith('_rate')?metric.percentage_point_change.toFixed(2)+' percentage points':metric.absolute_change.toLocaleString('en');
+        item.textContent=labels[key]+': '+(metric.absolute_change>0?'+':'')+change+(metric.previous===0?' (zero baseline; percentage change undefined)':'');
+        comparisonList.append(item);
+      }
     }
     const period=report?.period;
     if(period?.start&&period?.end&&/^\d{4}-\d{2}-\d{2}$/.test(period.start)&&/^\d{4}-\d{2}-\d{2}$/.test(period.end))document.getElementById('period').textContent='Reporting interval: '+period.start+' to '+period.end;

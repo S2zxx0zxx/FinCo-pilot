@@ -36,3 +36,7 @@ Run the manually invoked, bounded public-only probe with `python3 scripts/growth
 ## Implemented candidate
 
 See `IMPLEMENTATION_AND_QA.md` for source behavior, indexing effects, tests and release/rollback gates. `INTENT_AND_MEASUREMENT_PLAN.md` maps the four public routes and local aggregate reporting. `AUTHORITY_AND_EDITORIAL.md` holds verified brand evidence and unpublished editorial/distribution drafts. `dashboard.html` is a local sanitized-report viewer with an explicit UNKNOWN baseline. TASK_REGISTER.csv distinguishes IN PR / DRAFT READY / PARTIAL / BLOCKED / DEFERRED; none implies live release or measured growth. Existing daily monitoring was updated in place; the public audit command itself does not create a schedule.
+
+## Continuation: protocol and reporting completion
+
+`INDEXNOW_AND_MONTHLY_REPORTING.md` documents the inactive manual IndexNow notifier and guarded matched-period reporting. `COMPARISON_EDITORIAL_DRAFT.md` adds a topic-specific original comparison and three successful official-page screenshots, with a separate PocketGuard regional restriction receipt. Historical capture failures remain dated. Dedicated synthetic manual-account/import CI is added to validate source-backed guide claims; live external provider acceptance is still distinct.

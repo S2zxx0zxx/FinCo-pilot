@@ -42,3 +42,35 @@ jobs:
           assert all(metric['value'] is None for metric in build_report()['metrics'].values())
           print('PASS: 52 tracked tasks; no fabricated outcome baseline')
           PY
+
+  product-proof:
+    name: Synthetic manual-account and import proof
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      DEPLOYMENT_ENVIRONMENT: development
+      DATABASE_URL: 'sqlite+aiosqlite:///:memory:'
+      SECRET_KEY: synthetic-growth-ci-only-signing-key-not-for-deployment
+      CREDENTIALS_DIRECTORY: ''
+      AGENTS_ENABLED: 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version-file: backend/.python-version
+          cache: pip
+      - name: Install existing locked product-test dependencies
+        run: |
+          pip install -q uv==0.12.10
+          uv export --frozen --all-extras --no-emit-project -o /tmp/finco-growth-product.txt
+          pip install --require-hashes -r /tmp/finco-growth-product.txt
+          pip install --no-deps -e .
+      - name: Prove manual accounts and transaction preview/import with synthetic fixtures
+        # Existing conftest uses in-memory SQLite and synthetic identities.
+        # This does not contact production or certify external identity/payment providers.
+        run: pytest -ra -W error tests/test_accounts_api.py tests/test_import_api.py tests/test_import_service.py

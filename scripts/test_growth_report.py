@@ -42,7 +42,8 @@ class ReportingTests(unittest.TestCase):
 
     def test_bad_or_empty_counts_and_inconsistent_cohorts_are_rejected(self):
         for text in ['query,clicks,impressions\n', 'query,clicks,impressions\nx,-1,2\n',
-                     'query,clicks,impressions\nx,3,2\n', 'query,clicks,impressions\nx,,2\n']:
+                     'query,clicks,impressions\nx,3,2\n', 'query,clicks,impressions\nx,,2\n', 'query,clicks,impressions\n,1,2\n',
+                     'query,top queries,clicks,impressions\nx,y,1,2\n']:
             with self.assertRaises(ValueError):
                 report.search_totals(self.fixture(text))
         with self.assertRaises(ValueError):

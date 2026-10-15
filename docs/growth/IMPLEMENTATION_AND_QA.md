@@ -27,7 +27,7 @@ Source-backed editorial drafts, claim review, official competitor text research,
 | WebKit locally | Launch blocked by missing host OS libraries; requires CI browser job with installed dependencies. No local pass claimed |
 | Local dashboard Chromium | 390/1440 widths, import/reset, hostile text, axe and no-network checks passed |
 | Python probe/report privacy contracts | 12 passed |
-| Worker privacy contracts | 8 passed |
+| Worker privacy contracts | 9 passed |
 | Secret hygiene and migration chain | Passed; chain head 109 |
 | Workflow YAML | Parsed locally |
 | Performance | Single local lab run: performance 86, accessibility 100, best practices 100, SEO 69; intentional preview noindex affects SEO. LCP 3438ms, TBT 267.7ms, CLS 0. Shared runtime, not a matched before/after or field result |

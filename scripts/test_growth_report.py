@@ -51,6 +51,9 @@ class ReportingTests(unittest.TestCase):
             report.build_report('2026-10-15', '2026-10-01')
         with self.assertRaises(ValueError):
             report.build_report(google=self.fixture('query,clicks,impressions\nx,1,2\n'))
+        for start, end in [('2026-10-01', None), (None, '2026-10-14'), ('2026-02-30', '2026-03-01')]:
+            with self.assertRaises(ValueError):
+                report.build_report(start, end)
 
 
 if __name__ == '__main__':

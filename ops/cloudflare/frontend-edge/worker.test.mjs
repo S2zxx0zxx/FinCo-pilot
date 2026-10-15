@@ -86,3 +86,15 @@ test('private shells retain noindex and sitemap absence is a real 404 without an
   assert.equal(response.status, 404)
   assert.equal(called, false)
 })
+
+
+test('upstream indexing restrictions survive additional private-surface noindex', async () => {
+  for (const path of ['/api/private', '/accounts', '/static/entry-test.js']) {
+    const response = await handleRequest(new Request('https://fincopilot.app' + path), env,
+      async () => new Response('fixture', { headers: { 'X-Robots-Tag': 'nofollow, noarchive, googlebot: nosnippet' } }))
+    const directives = response.headers.get('x-robots-tag')
+    assert.ok(directives.includes('nofollow, noarchive, googlebot: nosnippet'), path)
+    if (!path.startsWith('/static/')) assert.match(directives, /, noindex$/)
+    else assert.equal(directives, 'nofollow, noarchive, googlebot: nosnippet')
+  }
+})

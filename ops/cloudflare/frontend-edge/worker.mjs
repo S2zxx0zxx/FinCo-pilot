@@ -44,6 +44,12 @@ export function frontendPath(pathname) {
   return '/index.html'
 }
 
+function excludeFromIndexing(headers) {
+  // Keep stricter upstream directives, including crawler-scoped rules.
+  const current = headers.get('X-Robots-Tag') || ''
+  if (!/(?:^|,)\s*noindex\s*(?:,|$)/i.test(current)) headers.append('X-Robots-Tag', 'noindex')
+}
+
 function unavailable(status = 503) {
   return new Response('FinCo-Pilot is temporarily unavailable.', { status, headers: { 'Cache-Control': 'no-store', 'Content-Type': 'text/plain; charset=utf-8', 'X-Content-Type-Options': 'nosniff' } })
 }
@@ -62,7 +68,7 @@ export async function handleRequest(request, env, fetchImpl = fetch) {
       if (url.pathname === '/mcp' && /text\/html/i.test(response.headers.get('content-type') || '')) return unavailable(503)
       const headers = new Headers(response.headers)
       headers.set('Cache-Control', 'no-store')
-      headers.set('X-Robots-Tag', 'noindex')
+      excludeFromIndexing(headers)
       return new Response(response.body, { status: response.status, statusText: response.statusText, headers })
     } catch { return unavailable(502) }
   }
@@ -89,7 +95,7 @@ export async function handleRequest(request, env, fetchImpl = fetch) {
     output.delete('Set-Cookie')
     // Never strip upstream indexing exclusions. This artifact is the private
     // app, not the separately reviewed public marketing site.
-    if (pathname === '/index.html') output.set('X-Robots-Tag', 'noindex')
+    if (pathname === '/index.html') excludeFromIndexing(output)
     output.set('Referrer-Policy', 'no-referrer')
     output.set('X-Content-Type-Options', 'nosniff')
     output.set('X-FinCo-Frontend-Commit', env.FRONTEND_DEPLOYMENT_COMMIT)

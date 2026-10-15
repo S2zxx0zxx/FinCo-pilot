@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import localFont from 'next/font/local'
 import './globals.css'
-import { getMarketingConfig, serializeJsonLd, websiteSchema } from '@/lib/marketing'
+import { getMarketingConfig, marketingUrl, marketingSocialImage, serializeJsonLd, websiteSchema } from '@/lib/marketing'
 
 const fincoFont = localFont({
   src: [
@@ -18,17 +18,17 @@ export const metadata: Metadata = {
   title: 'FinCo-Pilot | Make sense of all your money',
   description: 'Understand accounts, track spending, plan budgets and keep your financial picture together in one thoughtful workspace.',
   applicationName: 'FinCo-Pilot',
-  alternates: { canonical: '/' },
+  alternates: { canonical: marketingUrl('/') },
   robots: { index: marketing.indexable, follow: marketing.indexable },
   openGraph: {
     type: 'website',
     title: 'FinCo-Pilot | Clarity for your everyday finances',
     description: 'Less switching. Less second-guessing. One place to see, plan and understand your money.',
     siteName: 'FinCo-Pilot',
-    url: '/',
-    images: [{ url: '/social-card.png', width: 1200, height: 630, alt: 'FinCo-Pilot: Money makes more sense together.' }],
+    url: marketingUrl('/'),
+    images: [{ url: marketingSocialImage(), width: 1200, height: 630, alt: 'FinCo-Pilot: Money makes more sense together.' }],
   },
-  twitter: { card: 'summary_large_image', images: ['/social-card.png'] },
+  twitter: { card: 'summary_large_image', images: [marketingSocialImage()] },
 }
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#ffffff' }
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

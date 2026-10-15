@@ -32,3 +32,12 @@ test('source attribution and accessibility guards', () => {
   assert.match(read('components/spaceui/tabs.tsx'), /TabsPrimitive/)
   assert.match(read('components/landing-experience.tsx'), /Skip to content/)
 })
+
+// Production Vite's /welcome export must keep Next.js metadata routes static.
+// The route content remains build-time derived from the existing marketing policy.
+test('robots and sitemap support Next.js 16 static marketing export', () => {
+  for (const page of ['robots', 'sitemap']) {
+    assert.match(read(`app/${page}.ts`), /export const dynamic = 'force-static'/)
+  }
+  assert.match(read('lib/marketing.ts'), /NEXT_PUBLIC_MARKETING_INDEXABLE/)
+})

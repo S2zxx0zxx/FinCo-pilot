@@ -42,6 +42,13 @@ jobs:
           NEXT_PUBLIC_MARKETING_INDEXABLE: 'true'
           NEXT_PUBLIC_MARKETING_URL: https://discover.fincopilot.app
         run: npm run build && node scripts/verify-discovery.mjs
+      - name: Verify same-origin excluded export discovery bytes
+        env:
+          FINCO_EXPORT_MARKETING: 'true'
+          VERCEL_ENV: preview
+          NEXT_PUBLIC_MARKETING_URL: https://fincopilot.app
+          NEXT_PUBLIC_MARKETING_INDEXABLE: 'false'
+        run: npm run build && node scripts/verify-discovery.mjs
       - name: Verify dependency vulnerability floor
         run: npm audit --omit=dev --audit-level=high
   browser:

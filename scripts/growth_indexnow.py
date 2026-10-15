@@ -37,15 +37,17 @@ def owned_origin(value):
     return value
 
 
-def prepare_batch(origin, paths, key):
+def prepare_batch(origin, paths, key, *, base_path=""):
     owned_origin(origin)
+    if base_path not in ("", "/welcome"):
+        raise VerificationError("Choose the standalone or approved same-origin marketing namespace")
     if not re.fullmatch(r'[A-Za-z0-9-]{8,128}', key or ''):
         raise VerificationError('A valid IndexNow key must be supplied through FINCO_INDEXNOW_KEY')
     if not paths or len(paths) > len(PUBLIC_PATHS) or len(set(paths)) != len(paths) or any(path not in PUBLIC_PATHS for path in paths):
         raise VerificationError('Choose one to four distinct approved public paths; private/query/token paths are rejected')
     return {'host': urlsplit(origin).hostname, 'key': key,
             'keyLocation': origin + '/' + key + '.txt',
-            'urlList': [origin + path for path in paths]}
+            'urlList': [origin + (base_path + (path if path == '/' else path + '/')) if base_path else origin + path for path in paths]}
 
 
 class NoRedirects(HTTPRedirectHandler):
@@ -104,8 +106,8 @@ def validate_public_page(url, status, headers, body):
         raise VerificationError('Public page requires one exact canonical, one H1 and explicit indexable robots metadata')
 
 
-def execute(origin, paths, key, *, submit=False, release_approved=False, request=transport):
-    batch = prepare_batch(origin, paths, key)
+def execute(origin, paths, key, *, submit=False, release_approved=False, request=transport, base_path=""):
+    batch = prepare_batch(origin, paths, key, base_path=base_path)
     summary = {'mode': 'dry-run', 'origin': origin, 'urls': batch['urlList'], 'network_requests': 0,
                'key_configured': True, 'indexed': 'unknown',
                'limitation': 'Receipt is not proof of crawling or indexing. No automatic retries or repeated submissions.'}
@@ -145,12 +147,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--origin', required=True)
     parser.add_argument('--path', action='append', required=True, dest='paths')
+    parser.add_argument('--base-path', choices=['', '/welcome'], default='')
     parser.add_argument('--submit', action='store_true')
     parser.add_argument('--release-approved', action='store_true')
     args = parser.parse_args()
     try:
         result = execute(args.origin, args.paths, os.environ.get('FINCO_INDEXNOW_KEY'),
-                         submit=args.submit, release_approved=args.release_approved)
+                         submit=args.submit, release_approved=args.release_approved, base_path=args.base_path)
     except (VerificationError, ValueError):
         parser.exit(2, 'IndexNow validation failed. Check documented release gates; no raw URLs, keys or response content emitted.\n')
     print(json.dumps(result, indent=2))

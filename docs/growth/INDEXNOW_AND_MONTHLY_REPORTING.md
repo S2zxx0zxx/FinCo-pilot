@@ -52,3 +52,7 @@ Use these sections with actual evidence; do not fill placeholders with guessed n
 6. Decisions: keep/fix/defer with evidence, uncertainty and the next quarter's prioritized work. No unsupported causal claim, numerical traffic target or forecast.
 
 The existing daily audit prompt includes weekly, monthly and quarterly review duties without another schedule. Configuration is confirmed; subsequent execution/delivery is not observed here. Publication, live property access and actual comparable outcomes remain separate acceptance gates.
+
+## Same-origin landing namespace
+
+After landing activation PR92, the combined artifact serves public marketing at `/welcome/`. A later approved notification for that deployment must use `--base-path /welcome` with logical paths such as `--path /features`; this generates `/welcome/features/`, not the finance shell's `/features`. Standalone marketing retains the empty base path. Both modes remain offline by default; this instruction does not enable indexing or submit any URL.

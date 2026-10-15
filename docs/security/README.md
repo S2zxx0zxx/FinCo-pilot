@@ -43,9 +43,23 @@ Apex delivered compatibility CSP with `unsafe-inline` and broad HTTPS sources, `
 1. Effective GitHub main protection: branch endpoint says protected=false; rulesets list empty. Need administration access and approved required checks/review policy; no protection write performed.
 2. Exact production source/topology/provider mapping: apex and API subdomain diverge. Need build SHA/image provenance and runtime binding before any auth or infrastructure change.
 3. Edge TLS/CSP: weak minimum TLS and compatibility policy observed. Stage TLS/origin validation and Clerk/bank/payment report-only acceptance; obtain production approval before changing enforcement.
-4. Outbound requests and upload resource budgets: configurable model/bank destinations and unbounded transaction-preview read require isolated egress and parser-budget testing. Do not break intentional self-hosted private model endpoints with an unreviewed blanket block.
+4. Outbound requests and upload resource budgets: configurable model/bank destinations require isolated egress testing; financial import reads are now bounded, while multipart spool/concurrency and parser CPU budgets still require measured enforcement. Do not break intentional self-hosted private model endpoints with an unreviewed blanket block.
 5. Privacy/legal operations: actual operator details, staffed contacts, active processor contracts, consent/deletion/backup receipts and India log residency remain unverified. Prepared registers do not replace owner/counsel confirmation.
 
 ## Release state
 
 Keep the focused PR draft. Review the final patch tests/CI on its exact head. No automatic merge, production deployment, DNS/TLS change, database migration, key rotation, policy publication or deletion is authorized by this checkpoint. Revert the isolated diagnostic commits to roll back; no database rollback exists or is needed. Staging acceptance must cover signup/login, CSV mapping/import, LLM connection success/failure, MCP discovery/tools and sanitized telemetry before owner-approved release.
+
+
+## Follow-up execution before merge — 15 October 2026
+
+After the previous verified candidate (`9017d07`, all seven CI jobs and advisory workflow successful; local backend 5,194 passed/7 native-only skips), the remaining resource/privacy review identified and fixed additional source gaps:
+
+- Transaction attachments, invoice attachments and invoice logos now apply the existing storage byte limit before materializing payloads. Existing 400 status/message, storage billing and service validation remain; oversized uploads never reach billing, decoding or provider upload. This is not a multipart spool/disk/concurrency guarantee.
+- Knowledge ingestion no longer stores raw filesystem/provider exception strings or emits embedding tracebacks. Malformed parsers mark the document failed with a safe category instead of leaving processing state. Existing ready/no-text/retry dispatch behavior remains.
+- Worker document/agent binding is validated from persisted metadata before file reads or status/chunk mutation. This is defense against mismatched internal queue arguments, not evidence of a public remote exploit.
+- A new disposable native PostgreSQL proof exercises a writer waiting behind a role downgrade and a downgrade waiting behind an in-flight writer. It checks actual `pg_blocking_pids` rather than assuming a sleep proves contention. CI runs it only with explicit disposable-database gates and a generated synthetic schema; its first result is pending at this source checkpoint.
+
+Before-fix regression run: seven test failures (storage-budget 3, ingestion privacy/status 4), plus one separate worker-binding failure. These are eight failing test cases, not eight distinct exploit classes. First focused attachment/invoice/knowledge/import rerun: **145 passed**; final small worker/budget rerun: **12 passed**. Full follow-up backend and exact-head native/coverage CI must pass; PR #91 records their final results without counting pending runs as successful.
+
+All 80 controls remain accounted for. The register's `BLOCKED_EXTERNAL_ACCEPTANCE` status means final acceptance is open; it does **not** establish that engineering review is complete or that every blocker is merely missing permission. Explicit remaining engineering scope includes exhaustive object/property/serializer coverage, complete outbound/secret/artifact review and measured parser/ingress resource isolation. Other gates require actual provider/runtime evidence, operator/legal facts or production approval. No complete-codebase safety or 80/80 production claim is made.

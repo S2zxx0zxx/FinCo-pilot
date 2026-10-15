@@ -24,7 +24,8 @@
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/custom_auth.py",
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/clerk_auth.py",
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/oidc_auth.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-002",
@@ -46,7 +47,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/clerk_auth.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-003",
@@ -69,7 +71,8 @@
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/clerk_auth.py",
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/models/external_auth_identity.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-004",
@@ -91,7 +94,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/auth_policy.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-005",
@@ -114,7 +118,8 @@
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/auth.py"
     ],
-    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate."
+    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate.",
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-006",
@@ -138,7 +143,8 @@
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/auth.py",
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/clerk_sessions.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-007",
@@ -160,7 +166,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/auth.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-008",
@@ -182,7 +189,8 @@
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/mfa_challenge.py"
     ],
-    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate."
+    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate.",
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-009",
@@ -205,7 +213,8 @@
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/two_factor.py"
     ],
-    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate."
+    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate.",
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-010",
@@ -226,7 +235,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/passkeys.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-011",
@@ -248,7 +258,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/account_deletion.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-012",
@@ -269,7 +280,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/custom_auth.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-013",
@@ -292,7 +304,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/workspace_context.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-014",
@@ -319,7 +332,8 @@
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/transactions.py",
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/services/account_service.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-015",
@@ -341,7 +355,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/admin.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-016",
@@ -365,7 +380,8 @@
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/schemas/user.py",
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/schemas/transaction.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-017",
@@ -389,7 +405,8 @@
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/search.py",
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/export.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-018",
@@ -397,22 +414,24 @@
     "owner": "Codex: engineering evidence; founder: external acceptance; counsel: legal interpretation",
     "baseline_sha": "7736a24e7d520b9f08dd91d38e895b5d240f8a09",
     "status": "BLOCKED_EXTERNAL_ACCEPTANCE",
-    "local_result": "Membership recheck after workspace wait reviewed",
+    "local_result": "Added disposable native PostgreSQL proof for stale editor denial after committed downgrade and downgrade serialization behind an in-flight writer; actual lock waits observed by pg_blocking_pids in the test; first CI execution pending",
     "source_paths": [
       "backend/app/core/workspace_context.py"
     ],
     "test_paths": [
       "backend/tests/test_write_permission_gate.py",
-      "backend/tests/test_workspace_service.py"
+      "backend/tests/test_workspace_service.py",
+      "backend/scripts/verify_role_downgrade_postgres.py"
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
-    "blocker_and_next_step": "Native PostgreSQL downgrade contention proof",
+    "blocker_and_next_step": "Run native concurrency proof successfully; production topology/isolation acceptance remains separate",
     "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/workspace_context.py"
     ],
-    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate."
+    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate.",
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-019",
@@ -435,7 +454,8 @@
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/workspace_context.py"
     ],
-    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate."
+    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate.",
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-020",
@@ -457,7 +477,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/agents/mcp/auth.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-021",
@@ -479,7 +500,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/services/dashboard_service.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-022",
@@ -503,7 +525,8 @@
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/services/attachment_service.py",
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/providers/s3_storage.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-023",
@@ -525,7 +548,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/schemas/transaction.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-024",
@@ -549,7 +573,8 @@
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/checkout.py"
     ],
-    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate."
+    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate.",
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-025",
@@ -570,7 +595,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/frontend/build/security-policy.ts"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-026",
@@ -591,7 +617,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/frontend/build/security-policy.ts"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-027",
@@ -612,7 +639,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/frontend/src"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-028",
@@ -633,7 +661,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/frontend/package-lock.json"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-029",
@@ -657,7 +686,8 @@
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/auth.py",
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/main.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-030",
@@ -679,7 +709,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/services/oauth_state.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-031",
@@ -700,7 +731,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/frontend/public/sw.js"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-032",
@@ -721,7 +753,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/frontend/security-headers.conf"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-033",
@@ -742,7 +775,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/ops/cloudflare/frontend-edge/worker.mjs"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-034",
@@ -763,7 +797,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/frontend/default.conf.template"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-035",
@@ -784,7 +819,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/rate_limit.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-036",
@@ -805,7 +841,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/frontend/build/security-policy.ts"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-037",
@@ -830,7 +867,8 @@
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/export.py",
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/user_lookup.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-038",
@@ -854,7 +892,8 @@
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/agents/services/connection_service.py",
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/providers/simplefin.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-039",
@@ -877,7 +916,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/services/import_service.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-040",
@@ -885,7 +925,7 @@
     "owner": "Codex: engineering evidence; founder: external acceptance; counsel: legal interpretation",
     "baseline_sha": "7736a24e7d520b9f08dd91d38e895b5d240f8a09",
     "status": "BLOCKED_EXTERNAL_ACCEPTANCE",
-    "local_result": "Added bounded byte reads before transaction/asset/knowledge parsers; configurable import default 10 MiB; 43 focused upload/API tests passed",
+    "local_result": "Bounded financial/knowledge parser uploads and transaction/invoice attachment/logo materialization; storage APIs preserve existing 400 error contract; focused attachment/invoice/knowledge/import suite 145 passed",
     "source_paths": [
       "backend/app/api/import_transactions.py",
       "backend/app/agents/services/knowledge_service.py",
@@ -897,14 +937,15 @@
       "backend/tests/test_upload_limits.py"
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
-    "blocker_and_next_step": "Owner staging acceptance for configurable limit; ingress multipart spool/disk/concurrency and parser CPU/decompression budgets still need isolated measurement",
+    "blocker_and_next_step": "Native CI and owner staging acceptance; multipart spool/disk/concurrency, PDF decompression and parser CPU budgets still need isolated measured enforcement",
     "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/import_transactions.py",
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/agents/services/knowledge_service.py",
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/upload_limits.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-041",
@@ -927,7 +968,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/services/connection_service.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-042",
@@ -950,7 +992,8 @@
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/payment_webhooks.py"
     ],
-    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate."
+    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate.",
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-043",
@@ -972,7 +1015,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/billing.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-044",
@@ -994,7 +1038,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/agents/runtime/executor.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-045",
@@ -1002,7 +1047,7 @@
     "owner": "Codex: engineering evidence; founder: external acceptance; counsel: legal interpretation",
     "baseline_sha": "7736a24e7d520b9f08dd91d38e895b5d240f8a09",
     "status": "BLOCKED_EXTERNAL_ACCEPTANCE",
-    "local_result": "Exact tool/arguments/user/workspace checks and durable approval reviewed",
+    "local_result": "Existing exact-action MCP approval checks preserved; additional knowledge-worker persisted document/agent binding rejects mismatched queue arguments before file/status/chunk access; isolated regression reproduced and fixed",
     "source_paths": [
       "backend/app/services/mcp_approval_service.py"
     ],
@@ -1011,13 +1056,14 @@
       "backend/tests/test_core_copilot_security.py"
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
-    "blocker_and_next_step": "Native execution contention/replay and external transport acceptance",
+    "blocker_and_next_step": "Follow-up exact-head CI plus external MCP transport and configured-provider acceptance",
     "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/services/mcp_approval_service.py"
     ],
-    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate."
+    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate.",
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-046",
@@ -1041,7 +1087,8 @@
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/rate_limit.py",
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/billing/guards.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-047",
@@ -1063,7 +1110,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/redis_runtime.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-048",
@@ -1071,7 +1119,7 @@
     "owner": "Codex: engineering evidence; founder: external acceptance; counsel: legal interpretation",
     "baseline_sha": "7736a24e7d520b9f08dd91d38e895b5d240f8a09",
     "status": "BLOCKED_EXTERNAL_ACCEPTANCE",
-    "local_result": "Import/AI/MCP/executor/bank payload redactions: 22 before-patch failures reproduced, affected fixtures passed. Separate directory privacy cases recorded under SEC-037.",
+    "local_result": "Prior import/AI/MCP/executor/bank diagnostic fixes plus raw knowledge read/embed exception and traceback redaction; malformed parser failures now transition to failed; regression cases reproduced before fixes",
     "source_paths": [
       "backend/app/api/import_transactions.py",
       "backend/app/agents/mcp/client.py",
@@ -1086,14 +1134,15 @@
       "backend/tests/test_connections_api.py"
     ],
     "test_result": "Existing files included in 5146-pass/7-skip local SQLite baseline; patch tests separately recorded. This is not a statement that every scenario in this control has a dedicated passing test.",
-    "blocker_and_next_step": " focused retest required;Release approval and real telemetry redaction sample; remaining API error surfaces review",
+    "blocker_and_next_step": "Follow-up exact-head CI; remaining API/log surfaces and actual sanitized telemetry acceptance",
     "local_deliverable_status": "EVIDENCE_PREPARED_ACCEPTANCE_REQUIRED",
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/import_transactions.py",
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/agents/mcp/client.py",
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/agents/services/connection_service.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-049",
@@ -1114,7 +1163,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/secret_management.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-050",
@@ -1135,7 +1185,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/.github/workflows/ci.yml"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-051",
@@ -1156,7 +1207,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/secret_management.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-052",
@@ -1178,7 +1230,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/credential_keys.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-053",
@@ -1201,7 +1254,8 @@
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/schema_safety.py"
     ],
-    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate."
+    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate.",
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-054",
@@ -1222,7 +1276,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/database_runtime.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-055",
@@ -1245,7 +1300,8 @@
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/services/disaster_recovery.py"
     ],
-    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate."
+    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate.",
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-056",
@@ -1266,7 +1322,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/frontend/package-lock.json"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-057",
@@ -1287,7 +1344,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/.github/workflows/ci.yml"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-058",
@@ -1308,7 +1366,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/.github/workflows/ci.yml"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-059",
@@ -1330,7 +1389,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/config.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-060",
@@ -1351,7 +1411,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/sentry_monitoring.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-061",
@@ -1372,7 +1433,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/config.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-062",
@@ -1393,7 +1455,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/privacy_policy.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-063",
@@ -1415,7 +1478,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/terms.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-064",
@@ -1439,7 +1503,8 @@
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/processor_inventory.py",
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/retention.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-065",
@@ -1460,7 +1525,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/privacy_policy.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-066",
@@ -1481,7 +1547,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/retention.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-067",
@@ -1502,7 +1569,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/privacy_policy.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-068",
@@ -1523,7 +1591,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/privacy_policy.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-069",
@@ -1545,7 +1614,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/api/checkout.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-070",
@@ -1566,7 +1636,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/processor_inventory.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-071",
@@ -1589,7 +1660,8 @@
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/account_deletion.py"
     ],
-    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate."
+    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate.",
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-072",
@@ -1610,7 +1682,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/backend/app/core/retention.py"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-073",
@@ -1631,7 +1704,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/docs/security/README.md"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-074",
@@ -1652,7 +1726,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/docs/security/OPERATIONS.md"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-075",
@@ -1675,7 +1750,8 @@
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/renovate.json",
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/.github/workflows/security-audit.yml"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-076",
@@ -1696,7 +1772,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/SECURITY.md"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-077",
@@ -1719,7 +1796,8 @@
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/docs/trust/FINCO_DISASTER_RECOVERY_RUNBOOK_V1.md"
     ],
-    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate."
+    "native_ci_evidence": "Native PostgreSQL/Redis smoke job passed on b307407 in run 38734391388; see checks.json for precise scope. Production acceptance remains separate.",
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-078",
@@ -1740,7 +1818,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/docs/security/OPERATIONS.md"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-079",
@@ -1761,7 +1840,8 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/docs/security/OPERATIONS.md"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   },
   {
     "id": "SEC-080",
@@ -1782,6 +1862,7 @@
     "refreshed_main_sha": "e727498c9481cdcb94f06b6f429933224f9c5b08",
     "source_links": [
       "https://github.com/S2zxx0zxx/FinCo-pilot/blob/security/enterprise-trust-80-20261015/docs/security/OPERATIONS.md"
-    ]
+    ],
+    "acceptance_status_semantics": "Final acceptance open does not imply all engineering review is complete; use the explicit remaining scope, evidence and prerequisites."
   }
 ]

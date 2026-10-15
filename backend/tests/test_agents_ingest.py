@@ -80,6 +80,26 @@ async def test_do_ingest_missing_doc_returns_reason(session, test_agent):
 
 
 @pytest.mark.asyncio
+async def test_ingest_rejects_mismatched_agent_before_read_or_status_change(
+    session, test_agent, test_user, monkeypatch
+):
+    doc = await knowledge_service.upload_doc(
+        session, agent_id=test_agent.id, user_id=test_user.id,
+        filename="owned.txt", mime="text/plain", payload=b"private knowledge",
+    )
+
+    def forbidden_read(*args):
+        raise AssertionError("Mismatched agent must never read the document")
+
+    monkeypatch.setattr("app.agents.tasks.ingest.Path.read_bytes", forbidden_read)
+    result = await _do_ingest(_session_maker_from(session), doc.id, uuid.uuid4())
+    await session.refresh(doc)
+    assert result == {"ok": False, "reason": "doc missing"}
+    assert doc.status == "pending"
+    assert doc.error is None
+
+
+@pytest.mark.asyncio
 async def test_do_ingest_marks_failed_when_storage_unreadable(
     session, test_agent, test_user, monkeypatch
 ):
@@ -166,4 +186,38 @@ async def test_do_ingest_marks_failed_when_embedding_fails(
     await session.refresh(refreshed)
     assert refreshed.status == "failed"
     assert "embed failed" in (refreshed.error or "")
-    assert "provider 503" in (refreshed.error or "")
+    assert "provider 503" not in (refreshed.error or "")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("stage", ["read", "parse", "embed"])
+async def test_ingest_failures_do_not_disclose_payloads_or_paths(
+    session, test_agent, test_user, monkeypatch, caplog, stage
+):
+    marker = "PRIVATE-body-token-https://user:secret@provider.invalid/private"
+    doc = await knowledge_service.upload_doc(
+        session, agent_id=test_agent.id, user_id=test_user.id,
+        filename="private.txt", mime="text/plain", payload=b"financial text",
+    )
+
+    def fail(*args, **kwargs):
+        raise RuntimeError(marker)
+
+    async def fail_async(*args, **kwargs):
+        fail()
+
+    if stage == "read":
+        monkeypatch.setattr("app.agents.tasks.ingest.Path.read_bytes", fail)
+    elif stage == "parse":
+        monkeypatch.setattr("app.agents.services.chunking.chunks_from_upload", fail)
+    else:
+        monkeypatch.setattr("app.agents.services.embedding.embed_texts", fail_async)
+
+    result = await _do_ingest(_session_maker_from(session), doc.id, test_agent.id)
+    await session.refresh(doc)
+    assert result == {"ok": False, "reason": f"{stage} failed"}
+    assert doc.status == "failed"
+    assert marker not in (doc.error or "")
+    assert marker not in caplog.text
+    assert all(record.exc_info is None for record in caplog.records
+               if record.name == "app.agents.tasks.ingest")

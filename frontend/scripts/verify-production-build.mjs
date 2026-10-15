@@ -24,7 +24,7 @@ assert.match(html, /integrity="sha256-/)
 // Sign-in waterfall regression: build-derived, origin-local module hints must
 // refer to real chunks and the exact final JS bytes. Never pull Clerk modules
 // on public marketing, recovery, or authenticated route navigation.
-const hintSource = html.match(/const h=(\\{[^;]+\\});const p=location.pathname/)
+const hintSource = html.match(/const h=(\{[^;]+\});const p=location.pathname/)
 assert(hintSource, 'Route-specific public login hints missing')
 const hint = JSON.parse(hintSource[1])
 for (const [chunkKey, sriKey] of [
@@ -34,7 +34,7 @@ for (const [chunkKey, sriKey] of [
 ]) {
   const moduleUrl = hint[chunkKey]
   if (chunkKey !== 'login' && moduleUrl === null) continue
-  assert.match(moduleUrl, /^\\/static\\/[\\w.-]+\\.js$/, `Invalid ${chunkKey} module path`)
+  assert.match(moduleUrl, /^\/static\/[\w.-]+\.js$/, `Invalid ${chunkKey} module path`)
   const bytes = await readFile(path.join(dist, moduleUrl.slice(1)))
   assert.equal(hint[sriKey], `sha256-${createHash('sha256').update(bytes).digest('base64')}`,
     `Missing/stale ${chunkKey} hint SRI`)

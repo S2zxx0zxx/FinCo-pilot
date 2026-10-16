@@ -1,5 +1,6 @@
 import logging
 import uuid
+
 from datetime import date, datetime, timezone, timedelta
 from decimal import Decimal
 from typing import Any, Optional, cast
@@ -9,6 +10,8 @@ from sqlalchemy import select, func, desc
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.services._workspace_references import require_workspace_reference
+from app.models.asset_group import AssetGroup
 from app.models.asset import Asset
 from app.models.asset_transaction import AssetTransaction
 from app.models.asset_value import AssetValue
@@ -428,6 +431,7 @@ async def create_asset(
     # Market-priced path: fetch a live quote first so we can derive currency
     # and the initial value from the ticker. Validate up-front rather than
     # half-creating an asset and failing on a 5xx from Yahoo.
+    await require_workspace_reference(session, AssetGroup, data.group_id, workspace_id, "Wallet not found")
     quote = None
     if data.valuation_method == "market_price":
         if not data.ticker:
@@ -635,6 +639,7 @@ async def update_asset(
     if not asset:
         return None
 
+    await require_workspace_reference(session, AssetGroup, data.group_id, workspace_id, "Wallet not found")
     update_data = data.model_dump(exclude_unset=True)
     # Prevent changing valuation_method on existing assets
     update_data.pop("valuation_method", None)

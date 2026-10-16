@@ -1,10 +1,12 @@
 import uuid
+
 from typing import Optional
 
 from sqlalchemy import or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.services._workspace_references import require_workspace_reference
 from app.models.category import Category
 from app.models.category_group import CategoryGroup
 from app.models.rule import Rule
@@ -113,7 +115,7 @@ async def get_hidden_category_ids(
     """
     result = await session.execute(
         select(Category.id)
-        .outerjoin(CategoryGroup, Category.group_id == CategoryGroup.id)
+        .outerjoin(CategoryGroup, (Category.group_id == CategoryGroup.id) & (CategoryGroup.workspace_id == Category.workspace_id))
         .where(
             Category.workspace_id == workspace_id,
             or_(Category.is_hidden.is_(True), CategoryGroup.is_hidden.is_(True)),
@@ -131,11 +133,11 @@ async def get_categories(
     filters = [Category.workspace_id == workspace_id]
     if not include_hidden:
         filters.append(Category.is_hidden.is_(False))
-        filters.append(or_(Category.group_id.is_(None), CategoryGroup.is_hidden.is_(False)))
+        filters.append(or_(Category.group_id.is_(None), CategoryGroup.id.is_(None), CategoryGroup.is_hidden.is_(False)))
 
     result = await session.execute(
         select(Category)
-        .outerjoin(CategoryGroup, Category.group_id == CategoryGroup.id)
+        .outerjoin(CategoryGroup, (Category.group_id == CategoryGroup.id) & (CategoryGroup.workspace_id == Category.workspace_id))
         .where(*filters)
         .order_by(Category.is_hidden.asc(), Category.is_system.desc(), Category.name)
     )
@@ -159,6 +161,7 @@ async def create_category(
     user_id: uuid.UUID,
     data: CategoryCreate,
 ) -> Category:
+    await require_workspace_reference(session, CategoryGroup, data.group_id, workspace_id, "Category group not found")
     category = Category(user_id=user_id, workspace_id=workspace_id, **data.model_dump())
     session.add(category)
     await session.commit()
@@ -222,6 +225,9 @@ async def update_category(
     changes = data.model_dump(exclude_unset=True)
     if changes.get("is_hidden") is True and not category.is_system:
         raise CategoryVisibilityError("Only system categories can be hidden")
+
+    if "group_id" in changes:
+        await require_workspace_reference(session, CategoryGroup, data.group_id, workspace_id, "Category group not found")
 
     for key, value in changes.items():
         setattr(category, key, value)

@@ -23,6 +23,7 @@ import csv
 import io
 import logging
 import uuid
+
 from datetime import date as date_type
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
@@ -31,6 +32,7 @@ from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.services._workspace_references import require_workspace_reference
 from app.models.asset import Asset
 from app.models.asset_group import AssetGroup
 from app.models.asset_transaction import AssetTransaction
@@ -420,7 +422,7 @@ async def _holdings_in_other_wallets(
         return {}
     result = await session.execute(
         select(Asset, AssetGroup.name)
-        .outerjoin(AssetGroup, AssetGroup.id == Asset.group_id)
+        .outerjoin(AssetGroup, (AssetGroup.id == Asset.group_id) & (AssetGroup.workspace_id == Asset.workspace_id))
         .where(
             Asset.workspace_id == workspace_id,
             Asset.valuation_method == 'market_price',
@@ -470,6 +472,7 @@ async def import_orders(
     without writing anything, so the preview can promise what the import will
     do instead of guessing.
     """
+    await require_workspace_reference(session, AssetGroup, group_id, workspace_id, "Wallet not found")
     ordered = sorted(orders, key=lambda o: (o.date, o.row))
     tickers = [o.ticker for o in ordered]
 

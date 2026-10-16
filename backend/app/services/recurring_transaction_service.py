@@ -1,11 +1,14 @@
 import calendar
 import uuid
+
 from datetime import date, timedelta
 from typing import Optional
 
 from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.services._workspace_references import require_workspace_reference
+from app.models.category import Category
 from app.models.account import Account
 from app.models.bank_connection import BankConnection
 from app.models.recurring_transaction import RecurringTransaction
@@ -63,6 +66,7 @@ async def create_recurring_transaction(
     data: RecurringTransactionCreate,
 ) -> RecurringTransaction:
     await _verify_account_in_workspace(session, workspace_id, data.account_id)
+    await require_workspace_reference(session, Category, data.category_id, workspace_id, "Category not found")
     next_occ = data.start_date
     if data.skip_first:
         next_occ = _advance_date(
@@ -120,6 +124,9 @@ async def update_recurring_transaction(
             raise ValueError("account_id is required")
         if new_account_id != recurring.account_id:
             await _verify_account_in_workspace(session, workspace_id, new_account_id)
+
+    if "category_id" in update_data:
+        await require_workspace_reference(session, Category, data.category_id, workspace_id, "Category not found")
 
     for key, value in update_data.items():
         setattr(recurring, key, value)
@@ -230,7 +237,8 @@ def get_occurrences_in_range(
 
 
 async def generate_pending(
-    session: AsyncSession, user_id: uuid.UUID, up_to: Optional[date] = None
+    session: AsyncSession, user_id: uuid.UUID, up_to: Optional[date] = None,
+    *, workspace_id: Optional[uuid.UUID] = None,
 ) -> int:
     """Generate transactions for all pending recurring transactions up to a given date.
     If up_to is None, defaults to today. This allows the dashboard to pre-generate
@@ -238,10 +246,13 @@ async def generate_pending(
     Returns the count of transactions generated."""
     cutoff = up_to or date.today()
 
+    scope = [RecurringTransaction.user_id == user_id]
+    if workspace_id is not None:
+        scope.append(RecurringTransaction.workspace_id == workspace_id)
     result = await session.execute(
         select(RecurringTransaction)
         .where(
-            RecurringTransaction.user_id == user_id,
+            *scope,
             RecurringTransaction.is_active == True,
             RecurringTransaction.auto_generate == True,
             or_(

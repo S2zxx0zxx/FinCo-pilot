@@ -1,4 +1,5 @@
 import uuid
+
 from datetime import date
 from decimal import Decimal
 from typing import Optional
@@ -6,6 +7,7 @@ from typing import Optional
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.services._workspace_references import require_workspace_reference
 from app.models.budget import Budget
 from app.models.category import Category
 from app.models.category_group import CategoryGroup
@@ -163,6 +165,7 @@ async def create_budget(
     user_id: uuid.UUID,
     data: BudgetCreate,
 ) -> Budget:
+    await require_workspace_reference(session, Category, data.category_id, workspace_id, "Category not found")
     budget = Budget(
         user_id=user_id,
         workspace_id=workspace_id,
@@ -247,7 +250,7 @@ async def get_budget_vs_actual(
     # Get all categories for this workspace with their groups
     cats_result = await session.execute(
         select(Category, CategoryGroup)
-        .outerjoin(CategoryGroup, Category.group_id == CategoryGroup.id)
+        .outerjoin(CategoryGroup, (Category.group_id == CategoryGroup.id) & (CategoryGroup.workspace_id == Category.workspace_id))
         .where(Category.workspace_id == workspace_id)
     )
     all_categories = cats_result.all()

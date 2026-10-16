@@ -71,6 +71,7 @@ async def _rollup(
     assets = await session.execute(
         select(Asset).where(
             Asset.group_id == group.id,
+            Asset.workspace_id == group.workspace_id,
             Asset.is_archived == False,
             Asset.sell_date.is_(None),
         )

@@ -34,6 +34,8 @@ async def create_budget(
 ):
     try:
         return await budget_service.create_budget(session, ctx.workspace.id, ctx.user_id, data)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 

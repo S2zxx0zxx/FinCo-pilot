@@ -115,11 +115,11 @@ async def _apply_growth_rules() -> int:
                         await session.commit()
                         total += created
                         logger.info(
-                            "Growth rule applied for asset %s: %d values created, latest=%.2f",
-                            asset.id, created, current_amount,
+                            "Growth rule applied for asset %s: %d values created",
+                            asset.id, created,
                         )
             except Exception:
-                logger.exception("Failed to apply growth rule for asset %s", asset.id)
+                logger.error("Failed to apply growth rule for asset %s", asset.id)
 
     finally:
         await engine.dispose()
@@ -159,7 +159,7 @@ def refresh_market_prices() -> dict:
     try:
         result = asyncio.run(_refresh_market_prices())
     except Exception:
-        logger.exception("Market-price refresh failed")
+        logger.error("Market-price refresh failed")
         return {"error": True, "refreshed": 0, "skipped": 0, "rate_limited": 0}
 
     logger.info(

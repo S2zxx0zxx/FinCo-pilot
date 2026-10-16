@@ -39,6 +39,7 @@ spec:
           imagePullPolicy: {{ .Values.mcpServer.image.pullPolicy }}
           command:
             - uvicorn
+            - --no-access-log
             - mcp_server.main:app
             - --host
             - 0.0.0.0

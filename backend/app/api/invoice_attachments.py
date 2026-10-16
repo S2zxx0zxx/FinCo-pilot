@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.billing.enums import Metric
 from app.billing.usage import enforce_limit
 from app.core.database import get_async_session
+from app.core.upload_limits import read_storage_upload
 from app.core.module_gate import require_module, require_module_write
 from app.services.module_service import ModuleId
 from app.core.workspace_context import WorkspaceContext
@@ -42,7 +43,7 @@ async def upload_attachment(
     ctx: WorkspaceContext = Depends(_write),
     session: AsyncSession = Depends(get_async_session),
 ):
-    data = await file.read()
+    data = await read_storage_upload(file)
     await enforce_limit(session, ctx.workspace, Metric.STORAGE_BYTES, increment=len(data))
     try:
         return await invoice_attachment_service.upload(

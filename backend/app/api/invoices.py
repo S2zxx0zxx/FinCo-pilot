@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, UploadFi
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_async_session
+from app.core.upload_limits import read_storage_upload
 from app.models.invoice import Invoice
 from app.models.workspace import Workspace
 from app.core.module_gate import require_module, require_module_write
@@ -511,7 +512,7 @@ async def upload_logo(
             session,
             settings,
             ctx.workspace.id,
-            await file.read(),
+            await read_storage_upload(file),
             file.content_type or "application/octet-stream",
         )
     except ValueError as exc:

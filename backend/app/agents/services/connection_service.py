@@ -175,12 +175,28 @@ def _routing_hint(url: str) -> str:
     return ""
 
 
+def _diagnostic_origin(url: str) -> str:
+    """Expose the routing origin only, never endpoint credentials or paths."""
+    try:
+        parsed = urlparse(url)
+        host = parsed.hostname
+        if parsed.scheme not in {"http", "https"} or not host:
+            return ""
+        if ":" in host:
+            host = f"[{host}]"
+        port = f":{parsed.port}" if parsed.port else ""
+        return f"{parsed.scheme}://{host}{port}"
+    except ValueError:
+        return ""
+
+
 def _unreachable(url: str, exc: Exception) -> dict[str, Any]:
     """Never return a bare 'unreachable:'. Connect timeouts stringify to an
     empty message, which left the UI showing no reason at all."""
-    reason = str(exc).strip() or type(exc).__name__
-    where = f" at {url}" if url else ""
-    return {"ok": False, "detail": f"unreachable{where}: {reason}{_routing_hint(url)}"}
+    reason = type(exc).__name__
+    origin = _diagnostic_origin(url)
+    where = f" at {origin}" if origin else ""
+    return {"ok": False, "detail": f"unreachable{where}: {reason}{_routing_hint(origin)}"}
 
 
 async def test_connection(conn: LlmConnection) -> dict[str, Any]:
@@ -217,21 +233,21 @@ async def test_connection(conn: LlmConnection) -> dict[str, Any]:
                 if r.status_code == 401 or r.status_code == 403:
                     return {"ok": False, "detail": "auth rejected (check api key)"}
                 if r.status_code >= 400:
-                    return {"ok": False, "detail": f"HTTP {r.status_code}: {r.text[:200]}"}
+                    return {"ok": False, "detail": f"HTTP {r.status_code}: provider request failed"}
                 # Some servers (LM Studio with a bad path) return 200 with
                 # no JSON body — surface that as a useful warning instead
                 # of a misleading "ok".
                 try:
                     payload = r.json()
                 except Exception:
-                    return {"ok": False, "detail": f"reachable but {base}/models did not return JSON — wrong path?"}
+                    return {"ok": False, "detail": f"reachable but {_diagnostic_origin(base)}/models did not return JSON — wrong path?"}
                 models = [m.get("id") for m in (payload.get("data") or [])][:50]
                 if not models and conn.kind == "openai_compatible":
                     return {
                         "ok": False,
-                        "detail": f"reachable but {base}/models returned no models — check the base URL",
+                        "detail": f"reachable but {_diagnostic_origin(base)}/models returned no models — check the base URL",
                     }
-            return {"ok": True, "detail": f"reachable at {base} ({len(models)} models)", "models": models}
+            return {"ok": True, "detail": f"reachable at {_diagnostic_origin(base)} ({len(models)} models)", "models": models}
 
         if conn.kind == "anthropic":
             base = (conn.base_url or "https://api.anthropic.com/v1").rstrip("/")
@@ -242,7 +258,7 @@ async def test_connection(conn: LlmConnection) -> dict[str, Any]:
                 if r.status_code in (401, 403):
                     return {"ok": False, "detail": "auth rejected (check api key)"}
                 if r.status_code >= 400:
-                    return {"ok": False, "detail": f"HTTP {r.status_code}: {r.text[:200]}"}
+                    return {"ok": False, "detail": f"HTTP {r.status_code}: provider request failed"}
                 models = [m.get("id") for m in (r.json().get("data") or [])][:50]
             return {"ok": True, "detail": f"reachable ({len(models)} models)", "models": models}
 
@@ -251,4 +267,4 @@ async def test_connection(conn: LlmConnection) -> dict[str, Any]:
     except httpx.HTTPError as exc:
         return _unreachable(attempted, exc)
     except Exception as exc:  # noqa: BLE001
-        return {"ok": False, "detail": str(exc).strip() or type(exc).__name__}
+        return {"ok": False, "detail": f"Provider response could not be processed ({type(exc).__name__})"}

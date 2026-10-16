@@ -246,7 +246,7 @@ class ZohoDeskClient:
         except (httpx.HTTPError, ValueError) as exc:
             # Never include response bodies: providers can echo user content or
             # operational identifiers. Secrets are never part of this log line.
-            logger.exception("Support provider ticket creation failed: %s", type(exc).__name__)
+            logger.error("Support provider ticket creation failed: %s", type(exc).__name__)
             raise SupportDeliveryError("Support provider did not confirm ticket creation") from exc
 
         ticket_id = payload.get("id")

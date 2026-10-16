@@ -1,0 +1,68 @@
+{
+  "at": "2026-10-15T11:51:59.273779+00:00",
+  "requests": [
+    {
+      "url": "https://fincopilot.app/",
+      "status": 200,
+      "headers": {
+        "Content-Type": "text/html",
+        "Cache-Control": "no-store, no-cache, must-revalidate",
+        "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss:; frame-src https:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
+        "referrer-policy": "no-referrer",
+        "strict-transport-security": "max-age=31536000",
+        "x-content-type-options": "nosniff",
+        "x-frame-options": "DENY",
+        "cf-cache-status": "DYNAMIC"
+      }
+    },
+    {
+      "url": "https://fincopilot.app/api/health/ready",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss:; frame-src https:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
+        "referrer-policy": "no-referrer",
+        "strict-transport-security": "max-age=31536000",
+        "x-content-type-options": "nosniff",
+        "x-frame-options": "DENY",
+        "cf-cache-status": "DYNAMIC"
+      },
+      "health": {
+        "status": "ready",
+        "checks": {
+          "database": {
+            "ok": true
+          },
+          "redis": {
+            "ok": true
+          },
+          "fx_provider": {
+            "ok": true,
+            "required": false,
+            "configured": false
+          }
+        }
+      }
+    },
+    {
+      "url": "https://api.fincopilot.app/api/health/ready",
+      "status": 503,
+      "headers": {
+        "Cache-Control": "no-store",
+        "Content-Type": "application/json",
+        "Strict-Transport-Security": "max-age=63072000",
+        "X-Content-Type-Options": "nosniff"
+      },
+      "health": {
+        "status": "not_ready",
+        "checks": {
+          "configuration": {
+            "ok": false,
+            "error": "InvalidConfiguration"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -111,7 +111,7 @@ async def _warm_tesouro_cache() -> None:
         await get_tesouro_direto_provider().get_available_bonds()
         logger.info("Startup: warmed Tesouro Direto price cache")
     except Exception:
-        logger.exception("Startup: Tesouro Direto cache warm failed")
+        logger.error("Startup: Tesouro Direto cache warm failed")
 
 
 @asynccontextmanager
@@ -279,7 +279,7 @@ if os.getenv("AGENTS_ENABLED", "false").strip().lower() in ("1", "true", "yes", 
         app.include_router(agents_knowledge_router, dependencies=[Depends(agents_guard)])
         logger.info("Agents feature enabled — mounted /api/agents routes")
     except Exception:
-        logger.exception("Agents feature flag is on but import failed; routes not mounted")
+        logger.error("Agents feature flag is on but import failed; routes not mounted")
 
 
 @app.get("/api/health")
@@ -302,7 +302,7 @@ async def readiness_check():
                 await verify_runtime_schema(session)
         checks["database"] = {"ok": True}
     except Exception as exc:
-        logger.exception("Readiness database check failed")
+        logger.error("Readiness database check failed")
         checks["database"] = {"ok": False, "error": type(exc).__name__}
         ready = False
 
@@ -311,7 +311,7 @@ async def readiness_check():
         await redis.ping()
         checks["redis"] = {"ok": True}
     except Exception as exc:
-        logger.exception("Readiness Redis check failed")
+        logger.error("Readiness Redis check failed")
         checks["redis"] = {"ok": False, "error": type(exc).__name__}
         ready = False
 
@@ -341,12 +341,13 @@ async def request_reference(request, call_next):
     request.state.request_id = reference
     try:
         response = await call_next(request)
-    except Exception:
-        logger.exception(
-            "Unhandled request failure reference=%s method=%s path=%s",
+    except Exception as exc:
+        logger.error(
+            "Unhandled request failure reference=%s method=%s route=%s kind=%s",
             reference,
             request.method,
-            request.url.path,
+            getattr(request.scope.get("route"), "path", "[unmatched]"),
+            type(exc).__name__,
         )
         # Development/test must preserve native exception semantics so bugs are
         # visible to callers and the test suite. Public production responses are
@@ -371,10 +372,10 @@ async def request_reference(request, call_next):
         response.headers["Cache-Control"] = "no-store"
     if response.status_code >= 500:
         logger.error(
-            "Request failed reference=%s method=%s path=%s status=%s",
+            "Request failed reference=%s method=%s route=%s status=%s",
             reference,
             request.method,
-            request.url.path,
+            getattr(request.scope.get("route"), "path", "[unmatched]"),
             response.status_code,
         )
     return response

@@ -8,7 +8,9 @@ from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import current_active_user
+from app.core.config import get_settings
 from app.core.database import get_async_session
+from app.core.upload_limits import read_bounded_upload
 from app.core.workspace_context import (
     WorkspaceContext,
     current_workspace,
@@ -77,8 +79,8 @@ async def market_search(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Market data provider is currently rate-limiting. Try again in a minute.",
         )
-    except Exception:
-        logger.exception("Market search failed for %r", q)
+    except Exception as exc:
+        logger.warning("Market search failed (%s)", type(exc).__name__)
         return []
 
 
@@ -249,7 +251,9 @@ async def preview_asset_import(
     Read-gated on purpose, like the transaction preview: a viewer may look at
     a file without being able to commit it.
     """
-    content = await file.read()
+    content = await read_bounded_upload(
+        file, max_bytes=get_settings().import_max_file_size_mb * 1024 * 1024,
+    )
     mapping = None
     if column_mapping:
         try:

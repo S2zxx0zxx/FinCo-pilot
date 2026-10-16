@@ -368,7 +368,7 @@ async def resolve_tickers(
     except Exception:
         # Swallowing this silently would report every ticker as unknown and
         # blame the file for the provider's outage.
-        logger.warning("Bulk price lookup failed; falling back to quotes", exc_info=True)
+        logger.warning("Bulk price lookup failed; falling back to quotes", exc_info=False)
         resolved = {t: False for t in unique}
 
     unconfirmed = [t for t in unique if not resolved.get(t)]
@@ -378,7 +378,7 @@ async def resolve_tickers(
         except MarketPriceRateLimitedError:
             raise
         except Exception:
-            logger.warning("Quote lookup failed for %s", ticker, exc_info=True)
+            logger.warning("Quote lookup failed for %s", ticker, exc_info=False)
             resolved[ticker] = False
     return resolved
 

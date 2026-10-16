@@ -75,7 +75,7 @@ class MCPClient:
             resp.raise_for_status()
             data = resp.json()
         if "error" in data and data["error"]:
-            raise RuntimeError(f"MCP {self.name} error: {data['error']}")
+            raise RuntimeError("MCP provider request failed")
         return data.get("result")
 
     async def list_tools(self, *, token: str) -> list[ToolHandle]:
@@ -169,11 +169,9 @@ class MCPRegistry:
                 # Say so in the log: otherwise the only symptom is an assistant
                 # claiming it can't see anything.
                 logger.warning(
-                    "MCP server %r unreachable at %s (%s). Its tools are "
+                    "Configured MCP server unreachable (%s). Its tools are "
                     "unavailable for this conversation.",
-                    client.name,
-                    client.url,
-                    exc,
+                    type(exc).__name__,
                 )
                 continue
             out.extend(tools)
@@ -233,11 +231,8 @@ class MCPRegistry:
                 handles = await client.list_tools(token=token)
             except Exception as exc:
                 logger.warning(
-                    "MCP server %r unreachable at %s (%s) while resolving tool %r.",
-                    server_name,
-                    client.url,
-                    exc,
-                    wire_name,
+                    "Configured MCP server unreachable (%s) while resolving a tool.",
+                    type(exc).__name__,
                 )
                 continue
             if any(h.name == bare for h in handles):

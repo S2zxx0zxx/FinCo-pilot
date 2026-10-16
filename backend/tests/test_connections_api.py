@@ -373,3 +373,22 @@ async def test_update_settings_success(
     )
     assert resp.status_code == 200
     assert resp.json()["settings"]["payee_source"] == "merchant"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('path,method,service', [
+    ('/api/connections/connect-token', 'post', 'create_connect_token'),
+    ('/api/connections/pluggy/institutions', 'get', 'list_provider_institutions'),
+])
+async def test_bank_unexpected_failure_does_not_relay_provider_exception(
+    client, auth_headers, monkeypatch, path, method, service,
+):
+    from app.services import connection_service
+
+    monkeypatch.setattr(connection_service, service,
+                        AsyncMock(side_effect=RuntimeError('synthetic-secret account=123')))
+    kwargs = {'json': {'provider': 'pluggy'}} if method == 'post' else {}
+    response = await getattr(client, method)(path, headers=auth_headers, **kwargs)
+    assert response.status_code in (500, 502)
+    assert 'synthetic-secret' not in response.text
+    assert 'account=123' not in response.text

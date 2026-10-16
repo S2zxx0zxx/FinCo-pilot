@@ -1077,7 +1077,7 @@ async def refresh_market_price_asset(
         # Let the scheduler see this explicitly so it can back off globally.
         raise
     except Exception as e:
-        logger.warning("Market price refresh failed for %s: %s", asset.ticker, e)
+        logger.warning("Market price refresh failed (%s)", type(e).__name__)
         return False
 
     if quote is None or quote.price is None:
@@ -1136,7 +1136,7 @@ async def refresh_all_market_prices(
         logger.warning("Yahoo rate-limited the batch fetch; skipping this cycle")
         return {"refreshed": 0, "skipped": len(assets), "rate_limited": 1}
     except Exception as e:
-        logger.warning("Batch price fetch failed, falling back to per-asset: %s", e)
+        logger.warning("Batch price fetch failed; using per-asset fallback (%s)", type(e).__name__)
         prices = {}
 
     refreshed = 0

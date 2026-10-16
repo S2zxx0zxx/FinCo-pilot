@@ -131,5 +131,5 @@ async def file_issued_document(
         # rendering exactly as it did before.
         logger.warning(
             "Could not file the issued document for invoice %s", invoice.id,
-            exc_info=True,
+            exc_info=False,
         )

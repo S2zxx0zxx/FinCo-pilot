@@ -1,0 +1,115 @@
+{
+  "scope": "All ten artifacts of bd7f8c3 successful core/public-entry/landing/pricing runs; six-family offline pattern inspection; no extraction/provider verification/OCR",
+  "reports": [
+    {
+      "id": 12030426231,
+      "name": "coverage-report",
+      "digest": "sha256:e9c86ab29d44c08d90fef1275e43fc5d35acc6867c01389f7794e6822c2cc7dd",
+      "digest_verified": true,
+      "text_files": 1,
+      "binary_files_excluded": 0,
+      "bytes": 1039088,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "id": 12030180211,
+      "name": "public-entry-webkit",
+      "digest": "sha256:4f01ea555c9ce3d1a46b71cb42a6b57a9ee0a0e4601476661fc97e994cbff997",
+      "digest_verified": true,
+      "text_files": 2,
+      "binary_files_excluded": 4,
+      "bytes": 1639958,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "id": 12029786207,
+      "name": "public-entry-chromium",
+      "digest": "sha256:318e9b1173abd5947a3cb8a8885d6679c556a63807d65c46149afd4e46227b9d",
+      "digest_verified": true,
+      "text_files": 2,
+      "binary_files_excluded": 4,
+      "bytes": 1497280,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "id": 12029139766,
+      "name": "public-entry-firefox",
+      "digest": "sha256:fc2d89e93124ff02d1cc41fb251a6451dfacc31d8b9d9b3ca9e96aa071c75e4d",
+      "digest_verified": true,
+      "text_files": 2,
+      "binary_files_excluded": 4,
+      "bytes": 1937007,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "id": 12030075630,
+      "name": "pricing-chromium",
+      "digest": "sha256:0df3a7eeff40cbec40551eae4b905780045272d8e2a394925b25f83c816bea9c",
+      "digest_verified": true,
+      "text_files": 1,
+      "binary_files_excluded": 8,
+      "bytes": 2167698,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "id": 12030055626,
+      "name": "pricing-webkit",
+      "digest": "sha256:35c1e5e5cc250c9f5ae6002cf3023352d7ce8bf0c66df06a3c593549d5477ff5",
+      "digest_verified": true,
+      "text_files": 1,
+      "binary_files_excluded": 8,
+      "bytes": 2979149,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "id": 12029611719,
+      "name": "pricing-firefox",
+      "digest": "sha256:3ae4427baa647906b6238090f40755c52a6ebd5fd87e7eba410856f0dca7303a",
+      "digest_verified": true,
+      "text_files": 1,
+      "binary_files_excluded": 8,
+      "bytes": 3472961,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "id": 12030305077,
+      "name": "finco-landing-chromium-captures",
+      "digest": "sha256:9e260768182616805be673dd2b660ef072a4a63190705b77b75b9f4f285d6be5",
+      "digest_verified": true,
+      "text_files": 5,
+      "binary_files_excluded": 8,
+      "bytes": 4218804,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "id": 12029611585,
+      "name": "finco-landing-firefox-captures",
+      "digest": "sha256:4a3e258a21393cbf276960367767d23ef06fa5ee3304f4c976e9fe6db862fba9",
+      "digest_verified": true,
+      "text_files": 2,
+      "binary_files_excluded": 8,
+      "bytes": 4401570,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "id": 12029124898,
+      "name": "finco-landing-webkit-captures",
+      "digest": "sha256:a5eb62164a91896467d82f601336fca5aa0bc51a40e45985b821248fede004f5",
+      "digest_verified": true,
+      "text_files": 2,
+      "binary_files_excluded": 8,
+      "bytes": 3878434,
+      "findings": [],
+      "errors": []
+    }
+  ]
+}

@@ -49,6 +49,38 @@ async def test_verified_email_does_not_implicitly_link_existing_user(client, tes
     assert await session.scalar(select(func.count()).select_from(ExternalAuthIdentity)) == 0
 
 
+async def test_exact_legacy_subject_preserves_financial_identity_without_email_linking(
+    client, test_user, test_workspace, session, verified_clerk,
+):
+    test_user.oidc_issuer = verified_clerk.issuer
+    test_user.oidc_subject = verified_clerk.user_id
+    await session.commit()
+    response = await exchange(client, "different-client-hint@example.com")
+    assert response.status_code == 200
+    assert response.json()["user"]["id"] == str(test_user.id)
+    identity = await session.scalar(select(ExternalAuthIdentity))
+    assert identity.user_id == test_user.id
+    from app.models.workspace import Workspace
+    assert await session.scalar(select(func.count()).select_from(Workspace)) == 1
+    assert await session.get(Workspace, test_workspace.id) is not None
+    # Subsequent exchange uses the stable mapping, not a second account.
+    assert (await exchange(client)).json()["user"]["id"] == str(test_user.id)
+    assert await session.scalar(select(func.count()).select_from(ExternalAuthIdentity)) == 1
+
+
+@pytest.mark.parametrize("mismatch", ["issuer", "subject", "inactive"])
+async def test_legacy_bridge_never_accepts_partial_or_inactive_identity(
+    client, test_user, session, verified_clerk, monkeypatch, mismatch,
+):
+    test_user.oidc_issuer = verified_clerk.issuer if mismatch != "issuer" else "https://another.clerk.accounts.dev"
+    test_user.oidc_subject = verified_clerk.user_id if mismatch != "subject" else "user_someone_else"
+    test_user.is_active = mismatch != "inactive"
+    await session.commit()
+    monkeypatch.setattr(clerk_auth, "_fetch_verified_email_from_clerk", AsyncMock(return_value=test_user.email))
+    assert (await exchange(client, test_user.email)).status_code == 403
+    assert await session.scalar(select(func.count()).select_from(ExternalAuthIdentity)) == 0
+
+
 async def test_disabled_clerk_with_issuer_cannot_exchange(client, clean_db, verified_clerk, monkeypatch):
     monkeypatch.setattr(get_settings(), "clerk_enabled", False)
     assert (await exchange(client)).status_code == 503

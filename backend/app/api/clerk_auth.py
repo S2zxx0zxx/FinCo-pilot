@@ -143,6 +143,31 @@ async def exchange_clerk_session(
     res = await session.execute(stmt)
     ident = res.scalar_one_or_none()
 
+    # A pre-existing issuer/subject pair is independent identity evidence;
+    # matching an email, even verified by the provider, is not. Bridge only
+    # this exact legacy binding so existing financial UUIDs remain stable.
+    if ident is None:
+        legacy = await session.scalar(select(User).where(
+            User.oidc_issuer == verified.issuer,
+            User.oidc_subject == verified.user_id,
+        ))
+        if legacy is not None:
+            if not legacy.is_active:
+                raise HTTPException(403, "User account is deactivated")
+            legacy_user_id = legacy.id
+            ident = ExternalAuthIdentity(
+                provider="clerk", issuer=verified.issuer,
+                provider_subject=verified.user_id, user_id=legacy_user_id,
+            )
+            session.add(ident)
+            try:
+                await session.commit()
+            except IntegrityError:
+                await session.rollback()
+                ident = await session.scalar(stmt)
+                if ident is None or ident.user_id != legacy_user_id:
+                    raise HTTPException(409, "Identity mapping conflicted; please sign in again") from None
+
     user: Optional[User] = None
     if ident is not None:
         user = await session.get(User, ident.user_id)
@@ -168,22 +193,7 @@ async def exchange_clerk_session(
         existing_user = existing_res.scalar_one_or_none()
 
         if existing_user is not None:
-            if not existing_user.is_active:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="User account is deactivated",
-                )
-            ident = ExternalAuthIdentity(
-                id=uuid.uuid4(),
-                provider="clerk",
-                issuer=verified.issuer,
-                provider_subject=verified.user_id,
-                user_id=existing_user.id,
-            )
-            session.add(ident)
-            await session.commit()
-            await session.refresh(existing_user)
-            user = existing_user
+            raise HTTPException(403, "Existing account requires an approved identity mapping")
         else:
             # Brand new user -> verify registration policy, then provision
             if not await admin_service.is_registration_enabled(session):

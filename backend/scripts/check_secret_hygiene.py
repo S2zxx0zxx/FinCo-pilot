@@ -28,18 +28,6 @@ TOKEN_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("JWT", re.compile(r"\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b")),
     ("Zoho OAuth token", re.compile(r"\b1000\.[A-Za-z0-9]{20,}\.[A-Za-z0-9]{20,}\b")),
 )
-SAFE_MARKERS = (
-    "synthetic",
-    "not-for-production",
-    "example",
-    "replace-with",
-    "your-",
-    "<secret>",
-    "<token>",
-    "<key>",
-)
-
-
 def tracked_files() -> list[Path]:
     output = subprocess.check_output(
         ["git", "-C", str(ROOT), "ls-files", "-z"],
@@ -61,9 +49,6 @@ def is_forbidden_env_file(path: Path) -> bool:
 def scan_token_patterns(path: Path, text: str) -> list[str]:
     problems: list[str] = []
     for number, line in enumerate(text.splitlines(), start=1):
-        lowered = line.lower()
-        if any(marker in lowered for marker in SAFE_MARKERS):
-            continue
         for label, pattern in TOKEN_PATTERNS:
             if pattern.search(line):
                 problems.append(f"{path.relative_to(ROOT)}:{number}: possible {label}")

@@ -1,0 +1,11 @@
+{
+  "scope": "locally reachable refs; six families; no marker suppression; no provider verification",
+  "counts": {
+    "objects_reachable": 8890,
+    "text_blobs": 3519,
+    "text_commits_tags": 1019,
+    "binary_excluded": 101,
+    "over_2MiB_excluded": 0
+  },
+  "findings": []
+}

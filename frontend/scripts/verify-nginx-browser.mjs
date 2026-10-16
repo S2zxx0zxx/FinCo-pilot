@@ -67,6 +67,14 @@ assert.equal(checked.status, 0, checked.stderr || checked.error?.message)
 const nginx = spawn(executable, ['-p', `${work}/`, '-c', configPath], { stdio: ['ignore', 'pipe', 'pipe'] })
 let browser
 const results = []
+// Persist each operation before awaiting it: CI cancellation must leave the
+// exact blocked phase, even when Playwright never returns an exception.
+const startedAt = Date.now()
+async function phase(name, detail = {}) {
+  const progress = { phase: name, ...detail, elapsedMs: Date.now() - startedAt }
+  console.log('Browser acceptance phase', JSON.stringify(progress))
+  await writeFile(path.join(output, 'progress.json'), JSON.stringify(progress, null, 2))
+}
 try {
   let ready = false
   for (let attempt = 0; attempt < 30; attempt++) {
@@ -113,6 +121,7 @@ try {
       await page.addInitScript(() => { window.__fincoCspViolations=[];document.addEventListener('securitypolicyviolation', event => window.__fincoCspViolations.push(event.effectiveDirective)) })
       page.on('request', request => { if(new URL(request.url()).pathname.startsWith('/api/'))api.push(request.url()) })
       await context.route('**/*', route => new URL(route.request().url()).origin === origin ? route.continue() : route.abort())
+      await phase('marketing-navigation', { width })
       await page.goto(origin, { waitUntil:'networkidle' })
       assert.equal(new URL(page.url()).pathname, '/welcome/')
       await page.getByRole('heading',{level:1}).waitFor()
@@ -141,12 +150,15 @@ try {
       assert.equal(await faq.getAttribute('aria-expanded'),'false')
       assert.deepEqual(errors,[])
       if(process.env.FINCO_STRICT_CSP_MODE==='enforce')assert.deepEqual(await page.evaluate(()=>window.__fincoCspViolations),[],'Marketing blocked by strict CSP')
+      await phase('marketing-accessibility', { width })
       const axe=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze()
       assert.deepEqual(axe.violations.map(item=>({id:item.id,targets:item.nodes.map(n=>n.target)})),[])
       for(const target of ['/login','/register','/pricing','/privacy','/terms','/support']) assert(await page.locator(`a[href="${target}"]`).count(),`Missing same-origin CTA ${target}`)
       await page.evaluate(()=>window.scrollTo(0,0))
+      await phase('marketing-screenshot', { width })
       if(width===390||width===1440)await page.screenshot({path:path.join(output,`landing-connected-${width}.png`),fullPage:true})
       results.push({mode:'public-entry',width,path:'/welcome/',apiRequests:0,axeViolations:0})
+      await phase('marketing-pricing-navigation', { width })
       await page.locator('a[href="/pricing"]').last().click()
       await page.getByRole('heading',{name:'A plan for where you are. And what’s next.'}).waitFor()
       assert.equal(new URL(page.url()).pathname,'/pricing')
@@ -155,6 +167,7 @@ try {
         await page.locator('input[type=email]').waitFor()
         assert.equal(new URL(page.url()).pathname,'/login','Anonymous dashboard must stay protected')
       }
+      await phase('context-close', { width })
       await context.close()
     }
     if(process.env.FINCO_CONFIGURED_CLERK_CHECK!=='true') {
@@ -177,7 +190,9 @@ try {
     assert.equal(missingMarketing.status,404)
     assert.match(missingMarketing.headers.get('cache-control') || '',/no-store/)
     // Cold-login acceptance is a separate phase from marketing context churn.
+    await phase('marketing-browser-close')
     await browser.close()
+    await phase('login-browser-launch')
     browser = await ({chromium,firefox,webkit}[browserName]).launch({ headless:true, args:browserName==='chromium'?['--no-sandbox']:[], proxy })
     for (const width of [390, 768, 1024, 1440]) {
       for (const reducedMotion of ['no-preference', 'reduce']) {
@@ -205,6 +220,7 @@ try {
         // Use the same deterministic network boundary as the public phase.
         // Live provider verification has its own explicitly configured origin.
         if (browserOrigin === origin) await context.route('**/*', route => new URL(route.request().url()).origin === origin ? route.continue() : route.abort())
+        await phase('login-navigation', { width, reducedMotion })
         let navigationError = null
         try {
           // Navigation commit proves the server response; visible form controls
@@ -221,19 +237,23 @@ try {
           throw error
         }
         if (process.env.FINCO_CONFIGURED_CLERK_CHECK === 'true') assert.equal(await page.getByRole('button', { name: /Google/ }).count(), 1, 'Configured Google login missing')
+        await phase('login-fonts', { width, reducedMotion })
         await page.evaluate(() => document.fonts.ready)
         await page.waitForTimeout(800)
         assert.equal(await page.locator('main').count(), 1)
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false)
         assert.deepEqual(errors, [])
         if (process.env.FINCO_STRICT_CSP_MODE === 'enforce') assert.deepEqual(await page.evaluate(() => window.__fincoCspViolations), [], 'Strict CSP blocked an app resource')
+        await phase('login-accessibility', { width, reducedMotion })
         const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()
         assert.deepEqual(axe.violations.map(item => ({ id: item.id, impact: item.impact, targets: item.nodes.map(node => node.target) })), [])
         const resources = await page.evaluate(() => performance.getEntriesByType('resource').map(resource => ({ name: new URL(resource.name).pathname, transfer: resource.transferSize, decoded: resource.decodedBodySize })))
         assert(!resources.some(resource => /app-layout|CartesianChart|chat-panel|pt-BR/.test(resource.name)), 'Signed-out page loaded a private/heavy module')
         if (width < 1024) assert(!resources.some(resource => /auth-brand-panel/.test(resource.name)), 'Hidden desktop decoration loaded on mobile')
+        await phase('login-screenshot', { width, reducedMotion })
         if (reducedMotion === 'no-preference' && [390, 1440].includes(width)) await page.screenshot({ path: path.join(output, `${width}.png`), fullPage: true })
-          await page.locator('input[type=email]').focus()
+        await phase('login-keyboard', { width, reducedMotion })
+        await page.locator('input[type=email]').focus()
         // Preserve the actual visible order: email, verification link, recovery
         // link, password. Do not change product navigation to satisfy a test.
         for (const selector of ['a[href="/request-verification"]', 'a[href="/forgot-password"]', 'input[type=password]']) {
@@ -241,6 +261,7 @@ try {
           assert.equal(await page.locator(selector).evaluate(element => document.activeElement === element), true, `Tab target: ${selector}`)
         }
         results.push({ width, reducedMotion, axeViolations: axe.violations.length, decodedBytes: resources.reduce((total, resource) => total + resource.decoded, 0), jsRequests: resources.filter(resource => resource.name.endsWith('.js')).length, resources })
+        await phase('login-context-close', { width, reducedMotion })
         await context.close()
       }
     }
@@ -265,6 +286,7 @@ try {
       console.log(JSON.stringify(summary))
     } finally { await chrome.kill() }
   }
+  await phase('complete', { cases: results.length })
   await writeFile(path.join(output, 'browser.json'), JSON.stringify(results, null, 2))
   console.log(JSON.stringify({ mode: 'synthetic public config', nginxHeaders: labOnly ? 'not run (lab-only mode)' : 'passed', browserCases: results.length, cases: results.map(({ resources: _resources, ...result }) => result) }))
 } finally {

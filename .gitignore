@@ -23,8 +23,10 @@ backend/data/
 
 # Local isolated QA test account credentials — never commit.
 .finco-qa.env
-
 # Generated from the existing Next.js landing during the frontend build.
 /frontend/public/welcome/
 /landing/.next-export/
 /landing/out/
+
+powershell.cmd
+frontend/powershell.cmd

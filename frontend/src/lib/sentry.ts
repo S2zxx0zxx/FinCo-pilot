@@ -73,7 +73,7 @@ export function initSentry(): boolean {
         replaysSessionSampleRate: 0,
         replaysOnErrorSampleRate: 0,
         beforeBreadcrumb: () => null,
-        beforeSend: (event) => sanitizeSentryEvent(event),
+        beforeSend: (event: any) => sanitizeSentryEvent(event),
       })
       sentryModule = Sentry
       initialized = true

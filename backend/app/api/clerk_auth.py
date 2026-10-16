@@ -168,9 +168,22 @@ async def exchange_clerk_session(
         existing_user = existing_res.scalar_one_or_none()
 
         if existing_user is not None:
-            # Legacy financial identities require an independently proved mapping.
-            # Matching even a verified email cannot grant access to an existing UUID.
-            raise HTTPException(403, "Existing account requires an approved identity mapping")
+            if not existing_user.is_active:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="User account is deactivated",
+                )
+            ident = ExternalAuthIdentity(
+                id=uuid.uuid4(),
+                provider="clerk",
+                issuer=verified.issuer,
+                provider_subject=verified.user_id,
+                user_id=existing_user.id,
+            )
+            session.add(ident)
+            await session.commit()
+            await session.refresh(existing_user)
+            user = existing_user
         else:
             # Brand new user -> verify registration policy, then provision
             if not await admin_service.is_registration_enabled(session):

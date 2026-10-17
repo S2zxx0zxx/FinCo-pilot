@@ -1,8 +1,8 @@
 # FinCo-Pilot — HeroUI v3 marketing landing
 
-The homepage uses HeroUI React and Styles 3.2.6 with React 19 and Tailwind 4. Native compound components cover Cards, Tabs, Accordion, Drawer, NumberField, ProgressBar, Alert, Chip, Button, Link, Label and Separator. Styles are compiled through the documented Tailwind-first CSS imports; there is no runtime provider or generated component stylesheet. Ant Design packages, registry, theme and extractor have been removed.
+The homepage uses HeroUI React and Styles 3.2.6 with React 19 and Tailwind 4. Native compound components cover Cards, Tabs, Accordion, Drawer, NumberField, Slider, Meter, Modal, Popover, ToggleButtonGroup, Table, Disclosure, Alert, Chip, Button, Link, Label and Separator. Styles are compiled through the documented Tailwind-first CSS imports; there is no runtime provider or generated component stylesheet. Ant Design packages, registry, theme and extractor have been removed.
 
-The visual system uses white, soft sage surfaces, forest accents, rounded cards, pill actions and self-hosted Open Runde. All sections have been restyled, including the application preview, local reserve illustration, six feature explanations, onboarding, sample import, privacy boundaries, ten FAQs and footer. Product captures use actual application screens with synthetic records. Motion respects reduced-motion preferences. The financial application remains separate.
+The visual system uses white/charcoal, subtle neutral surfaces, forest accents, rounded cards, pill actions and self-hosted Open Runde. All sections have been restyled, including the six-view application explorer with zoom and guided tour, three-reserve local playground, varied feature specimens, onboarding, interactive import walkthrough, privacy boundaries, standard-plan preview, progressive FAQs, adaptive mobile actions and footer. Product captures use actual application screens with synthetic records. Motion respects reduced-motion preferences. The financial application remains separate.
 
 ## Run and verify
 
@@ -15,3 +15,5 @@ The combined Vite build runs `frontend/scripts/build-marketing.mjs`, exporting t
 Preview builds remain noindex, with excluded discovery inventory. Existing production publication controls, canonical URLs, root discovery, restricted crawlers and static-export gates remain unchanged. `node scripts/verify-discovery.mjs` must run with the same environment used for its build. See `lib/marketing.ts` and the existing growth evidence for release policy.
 
 See `docs/HEROUI_REDESIGN_20261017.md` for the audit, source-backed content map, design decisions and verification evidence. Earlier Ant Design, Space UI and growth documents are historical evidence, not descriptions of the new homepage UI. Original product captures are documented in `docs/PRODUCT_CAPTURE_PROVENANCE.json`; they do not verify live authentication or bank connections.
+
+See `docs/HEROUI_EXPERIENCE_UPGRADE_20261017.md` for the complete approved upgrade and content boundaries. Additional product captures are recorded in `docs/PRODUCT_CAPTURE_EXTENDED.json`. Standard plan content is generated from the backend catalog and checked against the frontend catalog before each build.

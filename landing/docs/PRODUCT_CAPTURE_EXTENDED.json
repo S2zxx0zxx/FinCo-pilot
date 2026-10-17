@@ -1,0 +1,88 @@
+{
+  "sourceCommit": "887eaee578c8766b5757c057473ed20c7ab6c52e",
+  "frontendAppTree": "b446a85d982b8b8d113d53225d4319c9e8467317",
+  "buildLabel": "42af20b (existing app build; frontend source tree unchanged)",
+  "data": "Synthetic browser fixtures; not live account data",
+  "captures": [
+    {
+      "name": "budgets",
+      "width": 1440,
+      "path": "/budgets",
+      "file": "budgets-desktop.webp",
+      "sourceCommit": "887eaee578c8766b5757c057473ed20c7ab6c52e",
+      "sha256": "e00d1f88b24ca7f8796ad4c4167e70f404590d888a81734bd966546ed2a44ebf",
+      "pageErrors": []
+    },
+    {
+      "name": "budgets",
+      "width": 390,
+      "path": "/budgets",
+      "file": "budgets-mobile.webp",
+      "sourceCommit": "887eaee578c8766b5757c057473ed20c7ab6c52e",
+      "sha256": "6930fa92a90dbd5b060ab8f13e80b11643c8457c4aa4ecfb38a945d1f40622ce",
+      "pageErrors": []
+    },
+    {
+      "name": "goals",
+      "width": 1440,
+      "path": "/goals",
+      "file": "goals-desktop.webp",
+      "sourceCommit": "887eaee578c8766b5757c057473ed20c7ab6c52e",
+      "sha256": "0cd4ffb2c885609351cfda97749907c2a9cb210a9da29c3354a8d4dc6c316ae0",
+      "pageErrors": []
+    },
+    {
+      "name": "goals",
+      "width": 390,
+      "path": "/goals",
+      "file": "goals-mobile.webp",
+      "sourceCommit": "887eaee578c8766b5757c057473ed20c7ab6c52e",
+      "sha256": "c61f775a731df1b92b5e82cf74999ee5809d4f571c28155e2c660c03c230d535",
+      "pageErrors": []
+    },
+    {
+      "name": "recurring",
+      "width": 1440,
+      "path": "/recurring",
+      "file": "recurring-desktop.webp",
+      "sourceCommit": "887eaee578c8766b5757c057473ed20c7ab6c52e",
+      "sha256": "ec48250f240f323defd39f48062cf2602ca1a68ba52f4d7460c39bfcbf0f2f84",
+      "pageErrors": []
+    },
+    {
+      "name": "recurring",
+      "width": 390,
+      "path": "/recurring",
+      "file": "recurring-mobile.webp",
+      "sourceCommit": "887eaee578c8766b5757c057473ed20c7ab6c52e",
+      "sha256": "24eb2d2a3b80f4a8eca31a6daaab34f446211279871791df598c74267620f764",
+      "pageErrors": []
+    },
+    {
+      "name": "reports",
+      "width": 1440,
+      "path": "/reports",
+      "file": "reports-desktop.webp",
+      "sourceCommit": "887eaee578c8766b5757c057473ed20c7ab6c52e",
+      "sha256": "1b624f51891655dac741fdd8386c88f6112c4621fff758a853193ded358f4ec7",
+      "pageErrors": []
+    },
+    {
+      "name": "reports",
+      "width": 390,
+      "path": "/reports",
+      "file": "reports-mobile.webp",
+      "sourceCommit": "887eaee578c8766b5757c057473ed20c7ab6c52e",
+      "sha256": "07ac708ca48b685fd92753d13e040cc736940df44295909723ace326f949d6c8",
+      "pageErrors": []
+    }
+  ],
+  "unmapped": [
+    "/api/admin/number-format",
+    "/api/info",
+    "/api/auth/oidc/config",
+    "/api/admin/default-colors",
+    "/api/admin/date-format"
+  ],
+  "buildFrontendTree": "b446a85d982b8b8d113d53225d4319c9e8467317"
+}

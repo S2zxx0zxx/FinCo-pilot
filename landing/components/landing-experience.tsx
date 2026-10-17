@@ -1,17 +1,14 @@
 'use client'
 
-import { useState } from 'react'
 import {
   Accordion,
-  Alert,
+  Disclosure,
+  Meter,
   Button,
   Card,
   Chip,
   Drawer,
-  Label,
   Link,
-  NumberField,
-  ProgressBar,
   Separator,
   useOverlayState,
 } from '@heroui/react'
@@ -32,6 +29,10 @@ import {
   Wallet,
 } from 'lucide-react'
 import { InstalledAppHandoff } from '@/components/installed-app-handoff'
+import { SpendingPlayground } from '@/components/spending-playground'
+import { PlanPreview } from '@/components/plan-preview'
+import { MobileActions } from '@/components/mobile-actions'
+import { ImportWalkthrough } from '@/components/import-walkthrough'
 import { ProductScreens } from '@/components/product-screens'
 import { APP_LINKS } from '@/lib/links'
 import { landingAsset } from '@/lib/asset'
@@ -122,13 +123,6 @@ const faqs = [
     'No. It is a planning aid based on your inputs and records, not a guarantee that a purchase is affordable. Check missing accounts, bills, debts and reserves before making a decision.',
   ],
 ]
-const money = (value: number) =>
-  new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(value)
-
 function Mark() {
   return (
     <span className="wordmark">
@@ -234,10 +228,10 @@ function ProductPreview() {
     <div className="preview-stack">
       <div className="preview-topline">
         <span>
-          <span className="status-dot" /> A little more clarity
+          <span className="status-dot" /> YOUR MONTH, IN PERSPECTIVE
         </span>
         <Chip size="sm" variant="soft">
-          Sample month
+          Synthetic example
         </Chip>
       </div>
       <Card
@@ -246,66 +240,48 @@ function ProductPreview() {
       >
         <Card.Header>
           <span className="small-label">
-            <Wallet size={16} aria-hidden="true" /> YOUR MONEY, IN CONTEXT
+            <Wallet size={16} aria-hidden="true" /> THE BALANCE IS THE STARTING
+            POINT
           </span>
-          <Card.Description>
-            Start with the balance. Make room for real life.
-          </Card.Description>
         </Card.Header>
         <Card.Content>
-          <div className="balance-start">
-            <span>Bank balance</span>
-            <strong>
-              ₹62,000<span>.00</span>
-            </strong>
+          <div className="hero-cash">
+            <span>Money in the bank</span>
+            <strong>₹62,000</strong>
           </div>
-          <Separator />
-          <dl className="balance-breakdown">
-            {[
-              {
-                icon: <CalendarDays aria-hidden="true" />,
-                title: 'Bills & EMI set aside',
-                value: '−₹22,000',
-                type: 'bills',
-              },
-              {
-                icon: <ShieldCheck aria-hidden="true" />,
-                title: 'Emergency buffer',
-                value: '−₹10,000',
-                type: 'buffer',
-              },
-              {
-                icon: <Landmark aria-hidden="true" />,
-                title: 'Savings goal reserve',
-                value: '−₹5,000',
-                type: 'goal',
-              },
-            ].map((row) => (
-              <div key={row.type}>
-                <dt>
-                  <span className={'row-icon ' + row.type}>{row.icon}</span>
-                  {row.title}
-                </dt>
-                <dd>{row.value}</dd>
+          <div className="money-sequence" aria-label="Example reserves">
+            <div className="sequence-step step-one">
+              <span className="sequence-number">01</span>
+              <div>
+                <strong>Keep your commitments</strong>
+                <span>Bills & EMI</span>
               </div>
-            ))}
-          </dl>
-          <div className="balance-result">
+              <b>₹22,000</b>
+            </div>
+            <div className="sequence-step step-two">
+              <span className="sequence-number">02</span>
+              <div>
+                <strong>Make room for tomorrow</strong>
+                <span>Buffer + goal reserve</span>
+              </div>
+              <b>₹15,000</b>
+            </div>
+          </div>
+          <div className="balance-result step-three">
             <div>
-              <span>What remains in this example</span>
+              <span>Room to choose in this example</span>
               <strong>₹25,000</strong>
             </div>
-            <span className="result-arrow" aria-hidden="true">
-              <ArrowUp />
-            </span>
-            <ProgressBar
-              value={40}
-              aria-label="Illustrative remainder, approximately 40 percent of sample balance"
+            <ArrowDown aria-hidden="true" />
+            <Meter
+              value={25000}
+              maxValue={62000}
+              aria-label="Sample remainder as a share of sample cash"
             >
-              <ProgressBar.Track>
-                <ProgressBar.Fill />
-              </ProgressBar.Track>
-            </ProgressBar>
+              <Meter.Track>
+                <Meter.Fill />
+              </Meter.Track>
+            </Meter>
           </div>
         </Card.Content>
         <Card.Footer>
@@ -316,12 +292,10 @@ function ProductPreview() {
           </p>
         </Card.Footer>
       </Card>
-      <div className="preview-footnote">
-        <span className="tiny-icon">
-          <Check size={14} aria-hidden="true" />
-        </span>
-        Every reserve has a reason. Every number has context.
-      </div>
+      <Link className="preview-footnote" href="#perspective">
+        Change the assumptions. See the difference.
+        <ArrowRight size={15} aria-hidden="true" />
+      </Link>
     </div>
   )
 }
@@ -339,18 +313,18 @@ function Hero() {
             <span>Meet real life.</span>
           </h1>
           <p className="hero-description">
-            More than a number to check. A place to understand your accounts,
-            make room for your bills, and move towards your goals.
+            See what your money already needs to do. Bring accounts, bills and
+            goals together before your next spending decision.
           </p>
           <div className="hero-actions">
             <ArrowLink href={APP_LINKS.register}>
               Start your workspace
             </ArrowLink>
             <Link
-              href="#experience"
+              href="#perspective"
               className="button button--lg button--secondary"
             >
-              See the product
+              Try the example
               <ArrowDown size={18} aria-hidden="true" />
             </Link>
           </div>
@@ -359,7 +333,7 @@ function Hero() {
             <span aria-hidden="true">·</span> Bank connection optional
           </p>
           <div className="hero-principle">
-            <span aria-hidden="true">01 — 04</span>
+            <span aria-hidden="true">YOUR MONEY, WITH CONTEXT</span>
             <p>
               Keep today organised.
               <br />
@@ -388,6 +362,96 @@ function Hero() {
         </div>
       </div>
     </section>
+  )
+}
+function FeatureSpecimen({ index }: { index: number }) {
+  if (index === 0)
+    return (
+      <div
+        className="feature-specimen account-specimen"
+        aria-label="Synthetic account illustration"
+      >
+        <div>
+          <Landmark size={16} aria-hidden="true" />
+          <span>Everyday</span>
+          <strong>₹42,000</strong>
+        </div>
+        <div>
+          <Landmark size={16} aria-hidden="true" />
+          <span>Savings</span>
+          <strong>₹20,000</strong>
+        </div>
+      </div>
+    )
+  if (index === 1)
+    return (
+      <div
+        className="feature-specimen transaction-specimen"
+        aria-label="Synthetic transaction illustration"
+      >
+        <div>
+          <span className="mini-category">G</span>
+          <span>
+            Groceries<small>Everyday account</small>
+          </span>
+          <strong>−₹250</strong>
+        </div>
+        <div>
+          <span className="mini-category income">I</span>
+          <span>
+            Income<small>Everyday account</small>
+          </span>
+          <strong>+₹1,000</strong>
+        </div>
+      </div>
+    )
+  if (index === 2)
+    return (
+      <div className="feature-specimen goal-specimen">
+        <Meter value={60} aria-label="Synthetic goal, 60 percent saved">
+          <div className="mini-meter-label">
+            <span>Emergency reserve</span>
+            <Meter.Output />
+          </div>
+          <Meter.Track>
+            <Meter.Fill />
+          </Meter.Track>
+        </Meter>
+        <span>₹60,000 of ₹1,00,000 · Synthetic</span>
+      </div>
+    )
+  if (index === 3)
+    return (
+      <div className="feature-specimen recurring-specimen">
+        <span className="mini-date">
+          25<small>OCT</small>
+        </span>
+        <span>
+          Household supplies<small>Monthly · Synthetic</small>
+        </span>
+        <strong>₹4,000</strong>
+      </div>
+    )
+  if (index === 4)
+    return (
+      <div className="feature-specimen import-specimen">
+        <Chip size="sm" variant="soft">
+          CSV
+        </Chip>
+        <ArrowRight size={16} aria-hidden="true" />
+        <span>Preview & map</span>
+        <ArrowRight size={16} aria-hidden="true" />
+        <Check size={17} aria-hidden="true" />
+      </div>
+    )
+  return (
+    <div className="feature-specimen module-specimen">
+      {['Reports', 'Assets', 'Invoices'].map((text) => (
+        <Chip key={text} variant="soft">
+          {text}
+        </Chip>
+      ))}
+    </div>
   )
 }
 function WhyFinCo() {
@@ -421,6 +485,7 @@ function WhyFinCo() {
             </Card.Header>
             <Card.Content>
               <p>{feature.body}</p>
+              <FeatureSpecimen index={index} />
             </Card.Content>
             <Card.Footer>
               <span className="feature-detail">
@@ -439,127 +504,53 @@ function WhyFinCo() {
   )
 }
 function Experience() {
-  const [buffer, setBuffer] = useState(10000)
-  const remainder = Number.isFinite(buffer)
-    ? 62000 - 22000 - buffer - 5000
-    : null
   return (
-    <section className="section planning-section" id="perspective">
+    <section
+      className="section planning-section"
+      id="perspective"
+      aria-labelledby="planning-title"
+    >
       <div className="shell planning-grid">
-        <div>
-          <p className="section-kicker">BALANCE IS JUST THE BEGINNING</p>
-          <h2>
+        <div className="planning-copy">
+          <p className="section-kicker">TRY A DIFFERENT PERSPECTIVE</p>
+          <h2 id="planning-title">
             Some money
             <br />
-            already has <br />
+            already has
+            <br />
             <span>somewhere to be.</span>
           </h2>
           <p className="section-intro">
-            Rent. Repayments. The thing you’re saving for. Bring your
-            commitments into the picture before deciding what is left.
+            A bigger buffer. A busier month. A goal worth protecting. Change the
+            assumptions and see what happens to a sample balance.
           </p>
           <ul className="plain-checks">
             <li>
               <Check aria-hidden="true" />
-              Confirm current cash and card debt
+              Pick a sample month or make your own
             </li>
             <li>
               <Check aria-hidden="true" />
-              Review upcoming bills and loan installments
+              Adjust bills, buffer and goal reserves
             </li>
             <li>
               <Check aria-hidden="true" />
-              Protect the reserves you choose
+              See a remainder, zero or a shortfall
             </li>
           </ul>
+          <div className="demo-boundary">
+            <ShieldCheck aria-hidden="true" />
+            <p>
+              Your financial records stay yours.
+              <span>This example runs locally and reads no account data.</span>
+            </p>
+          </div>
           <p className="capture-note">
-            The app can withhold an estimate when required inputs are missing.
-            Review the inputs before relying on a result.
+            The actual spending plan also checks confirmed balances, card debt
+            and reviewed obligations. Missing inputs can block an estimate.
           </p>
         </div>
-        <Card className="planning-demo">
-          <Card.Header>
-            <Chip size="sm" variant="soft">
-              TRY IT HERE
-            </Chip>
-            <Card.Title>A little buffer. A different picture.</Card.Title>
-            <Card.Description>
-              Change the reserve and see what remains.
-            </Card.Description>
-          </Card.Header>
-          <Card.Content>
-            <dl className="example-fixed">
-              <div>
-                <dt>Sample cash balance</dt>
-                <dd>₹62,000</dd>
-              </div>
-              <div>
-                <dt>Sample bills & EMI</dt>
-                <dd>−₹22,000</dd>
-              </div>
-              <div>
-                <dt>Sample goal reserve</dt>
-                <dd>−₹5,000</dd>
-              </div>
-            </dl>
-            <NumberField
-              value={buffer}
-              onChange={(value) => setBuffer(value ?? NaN)}
-              minValue={0}
-              maxValue={62000}
-              step={1000}
-              formatOptions={{
-                style: 'currency',
-                currency: 'INR',
-                maximumFractionDigits: 0,
-              }}
-              className="buffer-input"
-            >
-              <Label>Emergency buffer to protect</Label>
-              <NumberField.Group>
-                <NumberField.DecrementButton aria-label="Decrease emergency buffer" />
-                <NumberField.Input />
-                <NumberField.IncrementButton aria-label="Increase emergency buffer" />
-              </NumberField.Group>
-            </NumberField>
-            <div
-              className="example-result"
-              aria-live="polite"
-              aria-atomic="true"
-            >
-              {remainder === null ? (
-                <p>Enter a buffer to see the example.</p>
-              ) : (
-                <>
-                  <span>
-                    {remainder < 0
-                      ? 'Illustrative shortfall'
-                      : 'Illustrative remainder'}
-                  </span>
-                  <strong>{money(Math.abs(remainder))}</strong>
-                  <p>
-                    {remainder < 0
-                      ? 'These sample commitments exceed the sample balance.'
-                      : 'After the sample bills, goal reserve and your chosen buffer.'}
-                  </p>
-                </>
-              )}
-            </div>
-          </Card.Content>
-          <Card.Footer>
-            <Alert status="default">
-              <Alert.Indicator />
-              <Alert.Content>
-                <Alert.Title>Example only</Alert.Title>
-                <Alert.Description>
-                  This runs locally with made-up numbers. The actual spending
-                  plan also checks account balances, debt and upcoming
-                  obligations. No account is connected.
-                </Alert.Description>
-              </Alert.Content>
-            </Alert>
-          </Card.Footer>
-        </Card>
+        <SpendingPlayground />
       </div>
     </section>
   )
@@ -620,66 +611,7 @@ function HowItWorks() {
         Read the first-session checklist
         <Link.Icon />
       </Link>
-      <Card className="import-callout">
-        <Card.Content>
-          <div className="import-copy">
-            <Chip size="sm" variant="soft">
-              YOUR RECORDS. A FRESH START.
-            </Chip>
-            <h3>
-              Bring a little history.
-              <br />
-              Build a clearer picture.
-            </h3>
-            <p>
-              Work from a CSV or supported statement file. Preview the mapping,
-              confirm the account and inspect excluded rows before applying it.
-            </p>
-            <Link
-              href={landingAsset('/guides/import-transactions/')}
-              className="button button--secondary"
-            >
-              Read the import guide
-              <ArrowRight size={18} aria-hidden="true" />
-            </Link>
-          </div>
-          <div className="import-example">
-            <div className="file-label">
-              <span className="file-icon">
-                <FileText aria-hidden="true" />
-              </span>
-              <div>
-                <strong>transactions-example.csv</strong>
-                <p>2 synthetic records · INR</p>
-              </div>
-            </div>
-            <dl>
-              <div>
-                <dt>Sample income</dt>
-                <dd>+₹1,000</dd>
-              </div>
-              <div>
-                <dt>Sample grocery</dt>
-                <dd>−₹250</dd>
-              </div>
-              <div>
-                <dt>Net sample flow</dt>
-                <dd>₹750</dd>
-              </div>
-            </dl>
-            <p className="capture-note">
-              Synthetic records. Net flow is not an account balance.
-            </p>
-            <Link
-              href={landingAsset('/samples/transactions-example.csv')}
-              download
-            >
-              <Download size={16} aria-hidden="true" />
-              Download the sample CSV
-            </Link>
-          </div>
-        </Card.Content>
-      </Card>
+      <ImportWalkthrough />
     </section>
   )
 }
@@ -734,6 +666,41 @@ function Privacy() {
             </Card>
           ))}
         </div>
+        <Card className="product-principles">
+          <Card.Header>
+            <Chip size="sm" variant="soft">
+              WHY FINCO-PILOT
+            </Chip>
+            <Card.Title>Built around everyday decisions.</Card.Title>
+          </Card.Header>
+          <Card.Content>
+            <p>
+              A useful financial workspace gives your balances, records and
+              plans a shared context. Start with the information you can verify,
+              then build a picture you understand.
+            </p>
+            <ul>
+              <li>
+                <Check size={16} aria-hidden="true" />
+                Manual records are a valid starting point
+              </li>
+              <li>
+                <Check size={16} aria-hidden="true" />
+                Estimates need reviewed inputs
+              </li>
+              <li>
+                <Check size={16} aria-hidden="true" />
+                Optional connections have explicit boundaries
+              </li>
+            </ul>
+          </Card.Content>
+          <Card.Footer>
+            <Link href={landingAsset('/how-it-works/')}>
+              See the first-session checklist
+              <Link.Icon />
+            </Link>
+          </Card.Footer>
+        </Card>
         <div className="policy-actions">
           <Link href={APP_LINKS.privacy} className="button button--secondary">
             Read the privacy policy
@@ -745,6 +712,38 @@ function Privacy() {
         </div>
       </div>
     </section>
+  )
+}
+function FAQList({
+  indexes,
+  initial = false,
+}: {
+  indexes: number[]
+  initial?: boolean
+}) {
+  return (
+    <Accordion
+      className="faq-list"
+      variant="surface"
+      defaultExpandedKeys={initial ? ['faq-1'] : []}
+      allowsMultipleExpanded
+    >
+      {indexes.map((index) => (
+        <Accordion.Item id={'faq-' + (index + 1)} key={faqs[index][0]}>
+          <Accordion.Heading>
+            <Accordion.Trigger>
+              {faqs[index][0]}
+              <Accordion.Indicator />
+            </Accordion.Trigger>
+          </Accordion.Heading>
+          <Accordion.Panel>
+            <Accordion.Body>
+              <p>{faqs[index][1]}</p>
+            </Accordion.Body>
+          </Accordion.Panel>
+        </Accordion.Item>
+      ))}
+    </Accordion>
   )
 }
 function Questions() {
@@ -763,28 +762,20 @@ function Questions() {
           <Link.Icon />
         </Link>
       </div>
-      <Accordion
-        className="faq-list"
-        variant="surface"
-        defaultExpandedKeys={['faq-1']}
-        allowsMultipleExpanded
-      >
-        {faqs.map(([question, answer], index) => (
-          <Accordion.Item id={'faq-' + (index + 1)} key={question}>
-            <Accordion.Heading>
-              <Accordion.Trigger>
-                {question}
-                <Accordion.Indicator />
-              </Accordion.Trigger>
-            </Accordion.Heading>
-            <Accordion.Panel>
-              <Accordion.Body>
-                <p>{answer}</p>
-              </Accordion.Body>
-            </Accordion.Panel>
-          </Accordion.Item>
-        ))}
-      </Accordion>
+      <div className="faq-groups">
+        <FAQList indexes={[0, 1, 2, 3, 5]} initial />
+        <Disclosure className="more-questions">
+          <Disclosure.Heading>
+            <Disclosure.Trigger>
+              Five more questions
+              <Disclosure.Indicator />
+            </Disclosure.Trigger>
+          </Disclosure.Heading>
+          <Disclosure.Content>
+            <FAQList indexes={[4, 6, 7, 8, 9]} />
+          </Disclosure.Content>
+        </Disclosure>
+      </div>
     </section>
   )
 }
@@ -866,15 +857,17 @@ export function LandingExperience() {
         <Navigation />
         <main id="main-content">
           <Hero />
-          <WhyFinCo />
           <ProductScreens />
           <Experience />
+          <WhyFinCo />
           <HowItWorks />
           <Privacy />
+          <PlanPreview />
           <Questions />
           <FinalCTA />
         </main>
         <Footer />
+        <MobileActions />
       </div>
     </>
   )

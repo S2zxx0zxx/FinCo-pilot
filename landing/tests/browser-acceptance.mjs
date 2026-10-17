@@ -20,6 +20,22 @@ const report = {
   checks: [],
 }
 async function accessibility(page, state) {
+  await page.waitForFunction(
+    () =>
+      [...document.querySelectorAll('.modal__backdrop,.popover')].every(
+        (overlay) =>
+          overlay.getAttribute('data-entering') !== 'true' &&
+          !overlay.querySelector('[data-entering="true"]') &&
+          overlay
+            .getAnimations({ subtree: true })
+            .every(
+              (animation) =>
+                animation.playState !== 'running' && !animation.pending,
+            ),
+      ),
+    null,
+    { timeout: 5000 },
+  )
   await page.addScriptTag({ content: axe.source })
   const violations = await page.evaluate(async () =>
     (
@@ -37,10 +53,11 @@ async function accessibility(page, state) {
         html: n.html,
         summary: n.failureSummary,
       })),
-    }))
+    })),
   )
   assert.deepEqual(violations, [], state + ': accessibility failures')
   report.accessibility.push({ state, violations })
+  console.log('PASS: accessibility ' + state)
 }
 try {
   for (const width of [320, 375, 390, 620, 768, 920, 921, 1024, 1440]) {
@@ -52,7 +69,8 @@ try {
     })
     const page = await context.newPage()
     // Match the declared touch context with real touchscreen input.
-    const activate = locator => width < 500 ? locator.tap() : locator.click()
+    const activate = (locator) =>
+      width < 500 ? locator.tap() : locator.click()
     const errors = []
     const external = []
     page.on('pageerror', (e) => errors.push(e.message))
@@ -65,7 +83,7 @@ try {
     assert.equal(await page.locator('h1').count(), 1)
     assert.match(
       await page.locator('h1').innerText(),
-      /Bank balance.*Meet real life/s
+      /Bank balance.*Meet real life/s,
     )
     await page.evaluate(() => document.fonts.ready)
     const dimensions = await page.evaluate(() => ({
@@ -74,7 +92,7 @@ try {
     }))
     assert.ok(
       dimensions.document <= dimensions.viewport + 2,
-      width + ': horizontal overflow'
+      width + ': horizontal overflow',
     )
     const appOrigin = process.env.LANDING_APP_ORIGIN ?? 'https://fincopilot.app'
     for (const path of [
@@ -87,11 +105,11 @@ try {
     ]) {
       assert.ok(
         await page.locator('a[href="' + appOrigin + path + '"]').count(),
-        'missing product destination ' + path
+        'missing product destination ' + path,
       )
     }
     assert.ok(
-      await page.getByText('Illustrative interface', { exact: false }).count()
+      await page.getByText('Illustrative interface', { exact: false }).count(),
     )
     assert.equal(await page.locator('.feature-card').count(), 6)
     const buffer = page.getByRole('textbox', {
@@ -106,10 +124,10 @@ try {
       await buffer.fill(value)
       await buffer.blur()
       assert.ok(
-        (await page.locator('.example-result').innerText()).includes(title)
+        (await page.locator('.example-result').innerText()).includes(title),
       )
       assert.ok(
-        (await page.locator('.example-result').innerText()).includes(result)
+        (await page.locator('.example-result').innerText()).includes(result),
       )
     }
     await buffer.fill('')
@@ -117,19 +135,32 @@ try {
     assert.ok(
       await page
         .getByText('Enter a buffer to see the example.', { exact: true })
-        .isVisible()
+        .isVisible(),
     )
     await buffer.fill('10000')
     await buffer.blur()
     // Native HeroUI NumberField must keep both steppers in the same row.
-    const fieldLayout = await page.locator('.number-field__group').evaluate(group => {
-      const box = group.getBoundingClientRect()
-      return [...group.querySelectorAll('input,button')].map(child => {
-        const rect = child.getBoundingClientRect()
-        return { inside: rect.left >= box.left && rect.right <= box.right + 1 && rect.top >= box.top && rect.bottom <= box.bottom + 1 }
-      })
-    })
-    assert.ok(fieldLayout.every(item => item.inside), width + ': numeric controls must fit their group')
+    const fieldLayout = await page
+      .locator('.number-field__group')
+      .evaluateAll((groups) =>
+        groups.flatMap((group) => {
+          const box = group.getBoundingClientRect()
+          return [...group.querySelectorAll('input,button')].map((child) => {
+            const rect = child.getBoundingClientRect()
+            return {
+              inside:
+                rect.left >= box.left &&
+                rect.right <= box.right + 1 &&
+                rect.top >= box.top &&
+                rect.bottom <= box.bottom + 1,
+            }
+          })
+        }),
+      )
+    assert.ok(
+      fieldLayout.every((item) => item.inside),
+      width + ': numeric controls must fit their group',
+    )
     await buffer.focus()
     await page.keyboard.press('ArrowUp')
     await buffer.blur()
@@ -142,53 +173,312 @@ try {
       await accessibility(page, width + ':demo')
     const screens = page.locator('.product-tabs').getByRole('tablist')
     await activate(screens.getByRole('tab', { name: /Accounts$/ }))
-    const accountsPanel = page.getByRole('tabpanel', { name: 'Accounts', exact: true })
+    const accountsPanel = page.getByRole('tabpanel', {
+      name: 'Accounts',
+      exact: true,
+    })
     await accountsPanel.waitFor({ state: 'visible' })
     const img = accountsPanel.locator('.product-capture img')
     await img.scrollIntoViewIfNeeded()
     await page.waitForFunction(() =>
       [...document.querySelectorAll('.product-capture img')]
         .filter((e) => e.offsetWidth)
-        .every((e) => e.complete && e.naturalWidth > 0)
+        .every((e) => e.complete && e.naturalWidth > 0),
     )
     assert.match(await img.getAttribute('alt'), /Original FinCo-Pilot Accounts/)
     assert.ok(
       (await img.evaluate((e) => e.currentSrc)).includes(
-        width <= 620 ? 'accounts-mobile.webp' : 'accounts-desktop.webp'
-      )
+        width <= 620 ? 'accounts-mobile.webp' : 'accounts-desktop.webp',
+      ),
     )
     await screens.getByRole('tab', { name: /Dashboard$/ }).focus()
     await page.keyboard.press('ArrowRight')
     await page.keyboard.press('Enter')
-    await screens.getByRole('tab', { name: /Accounts$/, selected: true }).waitFor()
+    await screens
+      .getByRole('tab', { name: /Accounts$/, selected: true })
+      .waitFor()
     assert.equal(
       await screens
         .getByRole('tab', { name: /Accounts$/ })
         .getAttribute('aria-selected'),
-      'true'
+      'true',
     )
     await activate(screens.getByRole('tab', { name: /Dashboard$/ }))
+    if (width === 390 || width === 1440) {
+      // Every new surface is exercised with real touch or mouse input.
+      await activate(
+        page.getByRole('radio', { name: 'Bills-heavy month', exact: true }),
+      )
+      assert.match(await page.locator('.example-result').innerText(), /₹9,000/)
+      await activate(
+        page.getByRole('radio', { name: 'Bigger savings goal', exact: true }),
+      )
+      assert.match(await page.locator('.example-result').innerText(), /₹10,000/)
+      await activate(
+        page.getByRole('button', {
+          name: 'Reset spending example',
+          exact: true,
+        }),
+      )
+      assert.match(await page.locator('.example-result').innerText(), /₹25,000/)
+      await page
+        .getByRole('slider', {
+          name: 'Savings goal reserve slider',
+          exact: true,
+        })
+        .focus()
+      await page.keyboard.press('ArrowRight')
+      assert.match(await page.locator('.example-result').innerText(), /₹24,000/)
+      await activate(
+        page.getByRole('button', {
+          name: 'Reset spending example',
+          exact: true,
+        }),
+      )
+      await activate(
+        page.getByRole('button', {
+          name: 'What is included in this example?',
+          exact: true,
+        }),
+      )
+      await page
+        .getByRole('dialog', {
+          name: 'Three reserves. One sample balance.',
+          exact: true,
+        })
+        .waitFor()
+      await accessibility(page, width + ':calculation-explained')
+      await page.keyboard.press('Escape')
+      await page
+        .getByRole('dialog', {
+          name: 'Three reserves. One sample balance.',
+          exact: true,
+        })
+        .waitFor({ state: 'hidden' })
+      for (const title of ['Budgets', 'Goals', 'Recurring', 'Reports']) {
+        await activate(
+          screens.getByRole('tab', { name: new RegExp(title + '$') }),
+        )
+        const panel = page.getByRole('tabpanel', { name: title, exact: true })
+        await panel.waitFor({ state: 'visible' })
+        await panel.locator('.product-capture img').evaluate(async (img) => {
+          if (!img.complete)
+            await new Promise((resolve) =>
+              img.addEventListener('load', resolve, { once: true }),
+            )
+          if (!img.naturalWidth) throw new Error('Missing product image')
+        })
+      }
+      await activate(
+        page.getByRole('button', {
+          name: 'Expand Reports screen',
+          exact: true,
+        }),
+      )
+      await page
+        .getByRole('dialog', {
+          name: 'Reports — actual application',
+          exact: true,
+        })
+        .waitFor()
+      await page.waitForFunction(() =>
+        document.activeElement?.closest('.screen-lightbox'),
+      )
+      await accessibility(page, width + ':expanded-product')
+      await page.keyboard.press('Escape')
+      await page
+        .getByRole('dialog', {
+          name: 'Reports — actual application',
+          exact: true,
+        })
+        .waitFor({ state: 'hidden' })
+      await page.waitForFunction(() =>
+        document.activeElement?.textContent?.includes('Expand Reports screen'),
+      )
+      await activate(
+        page.getByRole('button', {
+          name: 'Expand Reports screen',
+          exact: true,
+        }),
+      )
+      await page
+        .getByRole('dialog', {
+          name: 'Reports — actual application',
+          exact: true,
+        })
+        .waitFor()
+      await activate(
+        page.getByRole('button', {
+          name: 'Close expanded screen',
+          exact: true,
+        }),
+      )
+      await page
+        .getByRole('dialog', {
+          name: 'Reports — actual application',
+          exact: true,
+        })
+        .waitFor({ state: 'hidden' })
+      await activate(
+        page.getByRole('button', { name: 'Take the 3-step tour', exact: true }),
+      )
+      const tour = page.getByRole('dialog', {
+        name: '01 / Start with one account',
+        exact: true,
+      })
+      await tour.waitFor()
+      await activate(
+        page.getByRole('button', { name: 'Next tour step', exact: true }),
+      )
+      await page
+        .getByRole('dialog', {
+          name: '02 / Review the records behind it',
+          exact: true,
+        })
+        .waitFor()
+      await activate(
+        page.getByRole('button', { name: 'Next tour step', exact: true }),
+      )
+      await page
+        .getByRole('dialog', {
+          name: '03 / Give the next step a purpose',
+          exact: true,
+        })
+        .waitFor()
+      await accessibility(page, width + ':tour')
+      await activate(
+        page.getByRole('button', { name: 'Previous tour step', exact: true }),
+      )
+      await page
+        .getByRole('dialog', {
+          name: '02 / Review the records behind it',
+          exact: true,
+        })
+        .waitFor()
+      await page.keyboard.press('Escape')
+      await page.getByRole('dialog').waitFor({ state: 'hidden' })
+      await activate(
+        page.getByRole('button', { name: 'Inspect the mapping', exact: true }),
+      )
+      await page
+        .getByRole('tabpanel', { name: '2. Check the mapping', exact: true })
+        .waitFor()
+      await activate(
+        page.getByRole('button', { name: 'Review sample rows', exact: true }),
+      )
+      await page
+        .getByRole('tabpanel', { name: '3. Review the proposal', exact: true })
+        .waitFor()
+      assert.match(await page.locator('.import-net').innerText(), /₹750/)
+      await accessibility(page, width + ':import-preview')
+      await activate(
+        page.getByRole('button', {
+          name: 'Back to the sample file',
+          exact: true,
+        }),
+      )
+      await page
+        .getByRole('tabpanel', { name: '1. Choose a file', exact: true })
+        .waitFor()
+      const billing = page.getByRole('radiogroup', {
+        name: 'Plan billing interval',
+        exact: true,
+      })
+      await activate(
+        billing.getByRole('radio', { name: 'Annual', exact: true }),
+      )
+      assert.match(
+        await page.locator('.plan-pro .plan-price').innerText(),
+        /₹999/,
+      )
+      assert.match(
+        await page.locator('.plan-max .plan-price').innerText(),
+        /No standard annual option/,
+      )
+      await activate(
+        billing.getByRole('radio', { name: 'Monthly', exact: true }),
+      )
+      assert.match(
+        await page.locator('.plan-pro .plan-price').innerText(),
+        /₹99/,
+      )
+      await activate(
+        page.getByRole('button', { name: 'Five more questions', exact: true }),
+      )
+      const aiQuestion = page.getByRole('button', {
+        name: 'Are AI features required?',
+        exact: true,
+      })
+      await activate(aiQuestion)
+      await page
+        .getByText(
+          'Accounts, transactions and the core financial workspace are independent of optional AI capabilities.',
+          { exact: false },
+        )
+        .waitFor()
+      await accessibility(page, width + ':more-FAQ')
+      await activate(
+        page.getByRole('button', { name: 'Five more questions', exact: true }),
+      )
+      await aiQuestion.waitFor({ state: 'hidden' })
+      if (width === 390) {
+        await page.locator('#perspective').scrollIntoViewIfNeeded()
+        await page
+          .getByRole('navigation', { name: 'Quick actions', exact: true })
+          .waitFor()
+        await buffer.focus()
+        await page
+          .getByRole('navigation', { name: 'Quick actions', exact: true })
+          .waitFor({ state: 'hidden' })
+        await buffer.blur()
+        await page
+          .getByRole('navigation', { name: 'Quick actions', exact: true })
+          .waitFor()
+        await page.locator('.final-section').scrollIntoViewIfNeeded()
+        await page
+          .getByRole('navigation', { name: 'Quick actions', exact: true })
+          .waitFor({ state: 'hidden' })
+      }
+      await activate(screens.getByRole('tab', { name: /Dashboard$/ }))
+    }
     const faq = page.getByRole('button', {
       name: 'Do I have to connect a bank account?',
       exact: true,
     })
     await activate(faq)
-    await page.getByRole('button', { name: 'Do I have to connect a bank account?', exact: true, expanded: true }).waitFor()
+    await page
+      .getByRole('button', {
+        name: 'Do I have to connect a bank account?',
+        exact: true,
+        expanded: true,
+      })
+      .waitFor()
     assert.equal(await faq.getAttribute('aria-expanded'), 'true')
     assert.ok(
       await page
         .getByText(
           'FinCo-Pilot supports managing financial accounts and transactions manually.',
-          { exact: false }
+          { exact: false },
         )
-        .isVisible()
+        .isVisible(),
     )
     if (width === 390 || width === 1440)
       await accessibility(page, width + ':FAQ-open')
     await activate(faq)
-    await page.getByRole('button', { name: 'Do I have to connect a bank account?', exact: true, expanded: false }).waitFor()
+    await page
+      .getByRole('button', {
+        name: 'Do I have to connect a bank account?',
+        exact: true,
+        expanded: false,
+      })
+      .waitFor()
     assert.equal(await faq.getAttribute('aria-expanded'), 'false')
-    await page.getByText('FinCo-Pilot supports managing financial accounts and transactions manually.', { exact: false }).waitFor({ state: 'hidden' })
+    await page
+      .getByText(
+        'FinCo-Pilot supports managing financial accounts and transactions manually.',
+        { exact: false },
+      )
+      .waitFor({ state: 'hidden' })
     if (width <= 920) {
       const menu = page.getByRole('button', {
         name: 'Open navigation',
@@ -200,13 +490,24 @@ try {
         .waitFor()
       assert.equal(await menu.getAttribute('aria-expanded'), 'true')
       // Inspect the settled drawer, after HeroUI's native entering state and fades.
-      await page.waitForFunction(() => {
-        const backdrop = document.querySelector('.drawer__backdrop')
-        return backdrop &&
-          !backdrop.querySelector('[data-entering="true"]') &&
-          backdrop.getAttribute('data-entering') !== 'true' &&
-          backdrop.getAnimations({ subtree: true }).every(animation => animation.playState !== 'running' && !animation.pending)
-      }, null, { timeout: 5000 })
+      await page.waitForFunction(
+        () => {
+          const backdrop = document.querySelector('.drawer__backdrop')
+          return (
+            backdrop &&
+            !backdrop.querySelector('[data-entering="true"]') &&
+            backdrop.getAttribute('data-entering') !== 'true' &&
+            backdrop
+              .getAnimations({ subtree: true })
+              .every(
+                (animation) =>
+                  animation.playState !== 'running' && !animation.pending,
+              )
+          )
+        },
+        null,
+        { timeout: 5000 },
+      )
       if (width === 390) await accessibility(page, '390:drawer-open')
       await page.keyboard.press('Escape')
       await page
@@ -215,13 +516,15 @@ try {
       await page.waitForFunction(
         () =>
           document.activeElement?.getAttribute('aria-label') ===
-          'Open navigation'
+          'Open navigation',
       )
       assert.equal(await menu.getAttribute('aria-expanded'), 'false')
       await activate(menu)
-      await activate(page
-        .getByRole('navigation', { name: 'Mobile navigation' })
-        .getByRole('link', { name: /Why FinCo/ }))
+      await activate(
+        page
+          .getByRole('navigation', { name: 'Mobile navigation' })
+          .getByRole('link', { name: /Why FinCo/ }),
+      )
       await page
         .getByRole('navigation', { name: 'Mobile navigation' })
         .waitFor({ state: 'hidden' })
@@ -230,15 +533,15 @@ try {
     if (reducedMotion === 'reduce') {
       assert.equal(
         await page.evaluate(
-          () => getComputedStyle(document.documentElement).scrollBehavior
+          () => getComputedStyle(document.documentElement).scrollBehavior,
         ),
-        'auto'
+        'auto',
       )
       assert.equal(
         await page
           .locator('.hero-copy')
           .evaluate((e) => getComputedStyle(e).animationName),
-        'none'
+        'none',
       )
     }
     const sample = page.getByRole('link', {
@@ -246,7 +549,7 @@ try {
       exact: true,
     })
     const csv = await context.request.get(
-      new URL(await sample.getAttribute('href'), origin).href
+      new URL(await sample.getAttribute('href'), origin).href,
     )
     assert.equal(csv.status(), 200)
     assert.match(await csv.text(), /Synthetic grocery,-250\.00,INR/)
@@ -274,7 +577,7 @@ try {
   await page.keyboard.press('Tab')
   assert.equal(
     await page.evaluate(() => document.activeElement.textContent.trim()),
-    'Skip to content'
+    'Skip to content',
   )
   await page.keyboard.press('Enter')
   assert.equal(new URL(page.url()).hash, '#main-content')
@@ -285,18 +588,24 @@ try {
   assert.ok(await n.locator('h1').isVisible())
   assert.equal(
     await n.locator('.hero-copy').evaluate((e) => getComputedStyle(e).opacity),
-    '1'
+    '1',
   )
   assert.equal(
     await n
       .locator('.balance-card')
       .evaluate((e) => getComputedStyle(e).borderTopStyle),
     'solid',
-    'HeroUI card styles must work before hydration'
+    'HeroUI card styles must work before hydration',
   )
   await nojs.close()
   report.checks = [
     'sample input positive/zero/shortfall/empty states',
+    'presets, reset, sliders and explanation popover',
+    'six app views, screenshot zoom and three-step guided tour',
+    'sample import mapping and review with accessible Table',
+    'standard monthly/annual plan preview',
+    'additional FAQ disclosure',
+    'mobile CTA visibility while editing and at final CTA',
     'keyboard product tabs',
     'Escape drawer focus and anchor close',
     'real responsive product pictures',
@@ -313,7 +622,7 @@ try {
 } finally {
   await writeFile(
     new URL(browserType.name() + '-acceptance.json', directory),
-    JSON.stringify(report, null, 2) + '\n'
+    JSON.stringify(report, null, 2) + '\n',
   )
   await browser.close()
 }

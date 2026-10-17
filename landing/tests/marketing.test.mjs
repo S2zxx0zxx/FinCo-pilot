@@ -47,7 +47,9 @@ test('all CTA links stay on established product routes', () => {
     assert.ok(p.includes('APP_LINKS.' + name))
 })
 test('HeroUI v3 owns the full landing interface with no Ant runtime', () => {
-  const home = read('components/landing-experience.tsx')
+  const home =
+    read('components/landing-experience.tsx') +
+    read('components/spending-playground.tsx')
   const product = read('components/product-screens.tsx')
   const deps = JSON.parse(read('package.json'))
   assert.match(home, /from '@heroui\/react'/)
@@ -57,7 +59,7 @@ test('HeroUI v3 owns the full landing interface with no Ant runtime', () => {
     'Accordion.Trigger',
     'NumberField.Input',
     'Card.Header',
-    'ProgressBar.Track',
+    'Meter.Track',
     'Alert.Content',
     'Chip',
     'Separator',
@@ -114,7 +116,9 @@ test('homepage footer links remain in the actual exported marketing namespace', 
       delete process.env.NEXT_PUBLIC_FINCO_LANDING_BASE_PATH
     else process.env.NEXT_PUBLIC_FINCO_LANDING_BASE_PATH = original
   }
-  const home = read('components/landing-experience.tsx')
+  const home =
+    read('components/landing-experience.tsx') +
+    read('components/import-walkthrough.tsx')
   for (const destination of [
     'features/',
     'how-it-works/',
@@ -145,7 +149,10 @@ test('HeroUI styles are compiled with Tailwind in the documented order', () => {
   )
   assert.match(css, /@import '@heroui\/styles'/)
   assert.match(read('app/layout.tsx'), /import '.\/globals.css'/)
-  assert.equal(JSON.parse(read('package.json')).scripts.build, 'next build')
+  assert.equal(
+    JSON.parse(read('package.json')).scripts.build,
+    'node scripts/marketing-content.mjs && next build',
+  )
   for (const path of [
     'lib/ant-theme.ts',
     'scripts/ant-styles.mjs',

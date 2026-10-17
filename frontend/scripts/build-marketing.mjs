@@ -6,6 +6,7 @@ import { cp, rm, access } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { marketingPublicationEnv } from './marketing-publication-policy.mjs'
+import { writeRootDiscovery } from './marketing-root-discovery.mjs'
 const frontend = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const landing = path.resolve(frontend, '../landing')
 await access(path.join(landing, 'package-lock.json'))
@@ -23,4 +24,5 @@ const target = path.join(frontend, 'public/welcome')
 await access(path.join(landing, '.next-export/index.html'))
 await rm(target, { recursive: true, force: true })
 await cp(path.join(landing, '.next-export'), target, { recursive: true })
+console.log('Root discovery:', await writeRootDiscovery(frontend))
 console.log('Next.js landing exported to /welcome/ with same-origin app links.')

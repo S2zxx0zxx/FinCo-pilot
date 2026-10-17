@@ -36,7 +36,7 @@ try {
     const dimensions=await page.evaluate(()=>({viewport:innerWidth,document:document.documentElement.scrollWidth}))
     assert.ok(dimensions.document<=dimensions.viewport+2,width+': horizontal overflow')
     for(const path of ['/login','/register','/pricing','/privacy','/terms','/support']) {
-      const appOrigin=process.env.LANDING_APP_ORIGIN || 'https://fincopilot.app'
+      const appOrigin=process.env.LANDING_APP_ORIGIN ?? 'https://fincopilot.app'
       assert.ok(await page.locator('a[href="'+appOrigin+path+'"]').count(), 'missing product destination '+path)
     }
     await page.waitForFunction(()=>[...document.querySelectorAll('h1 span')].every(e=>['none','blur(0px)'].includes(getComputedStyle(e).filter)&&getComputedStyle(e).opacity==='1'), null, {timeout:5000})

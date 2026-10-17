@@ -48,7 +48,7 @@ test('restricted training and user agents retain the observed policy independent
 
 
 test('same-origin static export uses actual welcome paths for canonical, sitemap, schema and social image', () => {
-  const exported = { ...production, NEXT_PUBLIC_MARKETING_URL: 'https://fincopilot.app', FINCO_EXPORT_MARKETING: 'true' }
+  const exported = { ...production, NEXT_PUBLIC_MARKETING_URL: 'https://fincopilot.app', FINCO_EXPORT_MARKETING: 'true', FINCO_MARKETING_PUBLICATION_APPROVED: 'true' }
   assert.equal(marketingUrl('/', exported), 'https://fincopilot.app/welcome/')
   assert.equal(marketingUrl('/features', exported), 'https://fincopilot.app/welcome/features/')
   assert.equal(marketingUrl('/guides/import-transactions', exported), 'https://fincopilot.app/welcome/guides/import-transactions/')

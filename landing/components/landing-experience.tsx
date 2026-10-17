@@ -1,240 +1,787 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { MotionConfig } from 'motion/react'
 import {
-  IconArrowRight, IconArrowUpRight, IconArrowDownRight, IconArrowsExchange,
-  IconChartBar, IconChartDots3, IconCircleCheck, IconLock, IconMenu2,
-  IconShieldLock, IconSparkles, IconTarget, IconWallet, IconX,
-  IconBuildingBank, IconCalendarStats, IconReceipt, IconChevronRight
-} from '@tabler/icons-react'
-import { FinCoLogo } from '@/components/brand-mark'
-import { Button } from '@/components/spaceui/button'
-import { Badge } from '@/components/spaceui/badge'
-import { Card } from '@/components/spaceui/card'
-import { Link as SpaceLink } from '@/components/spaceui/link'
-import { BlurRevealText } from '@/components/spaceui/blur-reveal-text'
-import { HeroBackdrop } from '@/components/hero-backdrop'
-import { IdentityAvatar } from '@/components/spaceui/identity-avatar'
-import { Accordion, AccordionItem, AccordionTrigger, AccordionPanel } from '@/components/spaceui/accordion'
-import { Tabs, TabsList, TabsTab, TabsPanel } from '@/components/spaceui/tabs'
-import { Meter, MeterLabel, MeterTrack, MeterIndicator } from '@/components/spaceui/meter'
-import { Timeline, TimelineItem, TimelineHeader, TimelineTitle, TimelineContent, TimelineIndicator, TimelineSeparator } from '@/components/spaceui/timeline'
-import { Separator } from '@/components/spaceui/separator'
-import { Avatar, AvatarFallback } from '@/components/spaceui/avatar'
-import { ProductScreens } from '@/components/product-screens'
-import { LandingSoundProvider, SoundToggle, useLandingSound } from '@/components/landing-sound'
+  Alert,
+  Button,
+  Card,
+  Collapse,
+  Divider,
+  Drawer,
+  Flex,
+  InputNumber,
+  Progress,
+  Statistic,
+  Steps,
+  Tag,
+} from 'antd'
+import {
+  ArrowDownOutlined,
+  ArrowRightOutlined,
+  ArrowUpOutlined,
+  BankOutlined,
+  CalendarOutlined,
+  CheckOutlined,
+  FileTextOutlined,
+  ImportOutlined,
+  LockOutlined,
+  MenuOutlined,
+  PieChartOutlined,
+  SafetyCertificateOutlined,
+  SettingOutlined,
+  WalletOutlined,
+} from '@ant-design/icons'
 import { InstalledAppHandoff } from '@/components/installed-app-handoff'
+import { LandingTheme } from '@/components/landing-theme'
+import { ProductScreens } from '@/components/product-screens'
 import { APP_LINKS } from '@/lib/links'
 import { landingAsset } from '@/lib/asset'
 
-type View = 'overview' | 'budgets' | 'activity'
-type IconType = typeof IconWallet
-
 const nav = [
   { title: 'Why FinCo', href: '#why-finco' },
-  { title: 'The experience', href: '#experience' },
+  { title: 'The product', href: '#experience' },
   { title: 'How it works', href: '#how-it-works' },
   { title: 'Questions', href: '#questions' },
 ]
-
-const featureCards: Array<{ number: string; icon: IconType; title: string; body: string; label: string }> = [
-  { number: '01', icon: IconWallet, title: 'Your complete picture.', body: 'Bring accounts, transactions and balances into one organised view. Stop piecing together the story across tabs.', label: 'SEE IT ALL' },
-  { number: '02', icon: IconTarget, title: 'Plans you can actually follow.', body: 'Make room for essentials, set meaningful goals and check how your spending fits the bigger picture.', label: 'PLAN WITH INTENT' },
-  { number: '03', icon: IconChartDots3, title: 'Understand the patterns.', body: 'Go from individual transactions to useful reporting, categories and recurring expenses without the spreadsheet detour.', label: 'FIND THE SIGNAL' },
-  { number: '04', icon: IconSparkles, title: 'A little intelligence, when you want it.', body: 'Explore financial questions with optional AI tools, while keeping accounts, budgets and reports at the centre of your workflow.', label: 'STAY IN CONTROL' },
+const features = [
+  {
+    icon: <BankOutlined aria-hidden="true" />,
+    title: 'Accounts, together.',
+    body: 'Organise cash, bank and card accounts by type and currency. Start manually; a bank connection is optional.',
+    detail: 'A home for each balance',
+  },
+  {
+    icon: <FileTextOutlined aria-hidden="true" />,
+    title: 'Every transaction, in context.',
+    body: 'Review income and expenses with categories, payees and account context. Find the details behind a monthly total.',
+    detail: 'From records to a useful picture',
+  },
+  {
+    icon: <PieChartOutlined aria-hidden="true" />,
+    title: 'A plan for the month.',
+    body: 'Use budgets to organise spending and goals to track what you are saving towards. Review progress as your records change.',
+    detail: 'Budgets + goals',
+  },
+  {
+    icon: <CalendarOutlined aria-hidden="true" />,
+    title: 'Remember what repeats.',
+    body: 'Manage recurring transactions and loan or EMI plans. Include upcoming outflows when reviewing a spending estimate.',
+    detail: 'Today, with tomorrow in view',
+  },
+  {
+    icon: <ImportOutlined aria-hidden="true" />,
+    title: 'Bring your records with you.',
+    body: 'Preview transaction files, choose the destination and check mappings before confirming. CSV, QIF, OFX/QFX and CAMT are supported formats.',
+    detail: 'Review before you import',
+  },
+  {
+    icon: <SettingOutlined aria-hidden="true" />,
+    title: 'Go deeper when you need to.',
+    body: 'Explore reports, assets and invoices alongside your everyday finances. Optional AI and bank providers depend on your setup and plan.',
+    detail: 'Your workflow, at your pace',
+  },
 ]
-
-const steps = [
-  { id: '01', title: 'Get your bearings', description: 'Start with a workspace built around your accounts and your preferences.', icon: IconBuildingBank },
-  { id: '02', title: 'Bring the details together', description: 'Organise transactions and budgets; optional imports and connections depend on availability.', icon: IconArrowsExchange },
-  { id: '03', title: 'Move with intention', description: 'Review reports, watch what repeats and make a clearer plan for what comes next.', icon: IconCalendarStats },
-]
-
 const faqs = [
-  { id: 'faq-1', question: 'What is FinCo-Pilot?', answer: 'FinCo-Pilot is a personal finance workspace for tracking accounts and transactions, planning budgets and goals, and exploring reports. Optional features such as bank connections and AI agents depend on configuration and availability.' },
-  { id: 'faq-2', question: 'Do I have to connect a bank account?', answer: 'No. FinCo-Pilot supports managing financial accounts and transactions manually. Import and provider-connection options are separate capabilities and may not be available on every deployment.' },
-  { id: 'faq-3', question: 'Can I use FinCo-Pilot on my phone?', answer: 'The web application includes responsive screens and progressive web app support. You can use the web app in a supported mobile browser; available features may vary.' },
-  { id: 'faq-4', question: 'Is the financial preview on this page real?', answer: 'The preview uses illustrative sample data to explain the interface. It is not a live account, personal financial data or a performance claim.' },
-  { id: 'faq-5', question: 'Are AI features required?', answer: 'No. The core financial workspace is independent of optional agent capabilities. AI tools are optional and may not be available in every setup.' },
+  [
+    'What is FinCo-Pilot?',
+    'FinCo-Pilot is a personal finance workspace for accounts, transactions, budgets, goals and reports. It also includes recurring transactions, loan plans and spending estimates. Available modules depend on your settings and plan.',
+  ],
+  [
+    'Do I have to connect a bank account?',
+    'No. FinCo-Pilot supports managing financial accounts and transactions manually. File imports and provider connections are separate capabilities. Bank availability depends on the active provider and deployment.',
+  ],
+  [
+    'How does safe-to-spend work?',
+    'The spending plan uses confirmed balances, card debt, upcoming outflows, loan installments and the reserves you enter. You review your obligations before calculating. Missing inputs can block an estimate; incomplete records can make a result unreliable.',
+  ],
+  [
+    'Can I bring in my existing transactions?',
+    'The importer supports CSV, QIF, OFX/QFX and CAMT. Check the destination account, dates, amount signs, currency and duplicate handling in the preview. Format support does not guarantee every bank export maps correctly. The import guide explains current limitations.',
+  ],
+  [
+    'Will QIF preserve every UPI reference?',
+    'Do not assume so. The reviewed QIF parser uses date, amount and payee or memo; extra reference tags are not mapped to an external transaction ID. Read the import guide and check the preview against your source file.',
+  ],
+  [
+    'Can I use FinCo-Pilot on my phone?',
+    'Yes, the web application includes responsive screens and progressive web app support for supported browsers. You can use it from your phone or desktop; available features may vary.',
+  ],
+  [
+    'Are AI features required?',
+    'No. Accounts, transactions and the core financial workspace are independent of optional AI capabilities. Provider configuration, permissions and plan availability determine which optional tools are offered.',
+  ],
+  [
+    'Is the financial preview on this page real?',
+    'All numbers in the interactive example are synthetic. The product screenshots were captured from the application with synthetic sample records. Nothing on this page reads a live account or personal financial data.',
+  ],
+  [
+    'Where can I check pricing?',
+    'Use the Pricing link to review the plans currently shown in the application. Feature availability, plan limits and sign-up access should be checked there before choosing a plan.',
+  ],
+  [
+    'Is a spending estimate financial advice?',
+    'No. It is a planning aid based on your inputs and records, not a guarantee that a purchase is affordable. Check missing accounts, bills, debts and reserves before making a decision.',
+  ],
 ]
+const money = (value: number) =>
+  new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 0,
+  }).format(value)
 
-const demoData: Record<View, { eyebrow: string; title: string; amount: string; delta: string; detail: string; bars: number[]; transactions: Array<{ name: string; context: string; amount: string; positive?: boolean }> }> = {
-  overview: {
-    eyebrow: 'All accounts · sample view', title: 'Your financial picture', amount: '₹1,84,250', delta: '+₹12,480', detail: 'This month', bars: [28, 42, 34, 54, 43, 64, 58, 79, 68, 87, 80, 96],
-    transactions: [{ name: 'Monthly income', context: 'Income · Example', amount: '+₹42,000', positive: true }, { name: 'Groceries', context: 'Essentials · Example', amount: '−₹2,480' }, { name: 'Monthly savings', context: 'Goal · Example', amount: '−₹5,000' }]
-  },
-  budgets: {
-    eyebrow: 'Spending plan · sample view', title: 'Available to plan', amount: '₹24,800', delta: '62% on track', detail: 'Current period', bars: [48, 46, 50, 55, 58, 54, 63, 67, 70, 72, 78, 82],
-    transactions: [{ name: 'Essentials', context: 'Monthly budget · Example', amount: '₹12,200' }, { name: 'Everyday', context: 'Monthly budget · Example', amount: '₹6,400' }, { name: 'Savings goal', context: 'Monthly goal · Example', amount: '₹6,200', positive: true }]
-  },
-  activity: {
-    eyebrow: 'Transactions · sample view', title: 'Activity in focus', amount: '18 items', delta: '3 categories', detail: 'This month', bars: [18, 46, 36, 58, 22, 55, 36, 70, 48, 62, 38, 75],
-    transactions: [{ name: 'Grocery market', context: 'Food & drink · Example', amount: '−₹1,640' }, { name: 'Rent', context: 'Housing · Example', amount: '−₹12,000' }, { name: 'Salary', context: 'Income · Example', amount: '+₹42,000', positive: true }]
-  }
+function Mark() {
+  return (
+    <span className="wordmark">
+      FinCo-Pilot<span aria-hidden="true">↗</span>
+    </span>
+  )
 }
-
-function Mark({ compact = false }: { compact?: boolean }) {
-  return <span className="brand-lockup"><span className="brand-symbol"><FinCoLogo size={compact ? 21 : 23} mode="on-light" /></span><span className="brand-name">FinCo<span className="brand-hyphen">-</span>Pilot<span className="brand-period">.</span></span></span>
+function ArrowLink({
+  href,
+  children,
+  light = false,
+}: {
+  href: string
+  children: React.ReactNode
+  light?: boolean
+}) {
+  return (
+    <Button
+      type="primary"
+      size="large"
+      href={href}
+      icon={<ArrowRightOutlined aria-hidden="true" />}
+      iconPlacement="end"
+      className={light ? 'cta-light' : undefined}
+    >
+      {children}
+    </Button>
+  )
 }
-
-function ArrowLink({ href, children, light = false, small = false }: { href: string; children: React.ReactNode; light?: boolean; small?: boolean }) {
-  return <Button render={<a href={href} />} variant="default" size={small ? 'lg' : 'xl'} className={light ? 'cta-button cta-button-light' : 'cta-button'}>{children}<IconArrowUpRight size={18} stroke={1.8} aria-hidden="true" /></Button>
-}
-
 function Navigation() {
   const [menuOpen, setMenuOpen] = useState(false)
-  const toggleRef = useRef<HTMLButtonElement>(null)
-  return <header className="site-header" id="top" onKeyDown={event => { if (event.key === 'Escape' && menuOpen) { setMenuOpen(false); toggleRef.current?.focus() } }}>
-    <div className="nav-inner shell">
-      <SpaceLink href="#top" className="brand-link" aria-label="FinCo-Pilot, back to top"><Mark /></SpaceLink>
-      <nav className="nav-desktop" aria-label="Primary navigation">
-        {nav.map(item => <SpaceLink key={item.href} href={item.href} variant="secondary" className="nav-text">{item.title}</SpaceLink>)}
-      </nav>
-      <div className="nav-actions">
-        <SpaceLink href={APP_LINKS.login} variant="secondary" className="nav-login">Log in</SpaceLink>
-        <ArrowLink href={APP_LINKS.register} small>Get started</ArrowLink>
+  const toggle = useRef<HTMLButtonElement>(null)
+  return (
+    <header className="site-header" id="top">
+      <div className="shell nav-inner">
+        <a href="#top" aria-label="FinCo-Pilot, back to top">
+          <Mark />
+        </a>
+        <nav className="nav-desktop" aria-label="Primary navigation">
+          {nav.map((item) => (
+            <a key={item.href} href={item.href}>
+              {item.title}
+            </a>
+          ))}
+        </nav>
+        <Flex align="center" gap={12} className="nav-actions">
+          <Button type="text" href={APP_LINKS.login}>
+            Log in
+          </Button>
+          <ArrowLink href={APP_LINKS.register}>Get started</ArrowLink>
+        </Flex>
+        <Button
+          ref={toggle}
+          className="nav-toggle"
+          type="text"
+          icon={<MenuOutlined aria-hidden="true" />}
+          aria-label="Open navigation"
+          aria-expanded={menuOpen}
+          aria-controls="mobile-menu"
+          onClick={() => setMenuOpen(true)}
+        />
+        <Drawer
+          title="FinCo-Pilot"
+          open={menuOpen}
+          onClose={() => setMenuOpen(false)}
+          afterOpenChange={(open) => {
+            if (!open) toggle.current?.focus()
+          }}
+          placement="right"
+          size={340}
+        >
+          <nav
+            id="mobile-menu"
+            className="mobile-nav"
+            aria-label="Mobile navigation"
+          >
+            {nav.map((item) => (
+              <Button
+                type="text"
+                key={item.href}
+                href={item.href}
+                onClick={() => setMenuOpen(false)}
+                icon={<ArrowRightOutlined aria-hidden="true" />}
+                iconPlacement="end"
+              >
+                {item.title}
+              </Button>
+            ))}
+            <Divider />
+            <Button href={APP_LINKS.login}>Log in</Button>
+            <ArrowLink href={APP_LINKS.register}>Get started</ArrowLink>
+          </nav>
+        </Drawer>
       </div>
-      <Button ref={toggleRef} aria-label={menuOpen ? 'Close navigation' : 'Open navigation'} aria-expanded={menuOpen} aria-controls="mobile-menu" size="icon-lg" variant="ghost" className="nav-toggle" onClick={() => setMenuOpen(current => !current)}>
-        {menuOpen ? <IconX size={22} /> : <IconMenu2 size={22} />}
-      </Button>
-    </div>
-    <nav id="mobile-menu" className={menuOpen ? 'mobile-nav open' : 'mobile-nav'} aria-label="Mobile navigation" hidden={!menuOpen}>
-      {nav.map(item => <SpaceLink key={item.href} href={item.href} onClick={() => setMenuOpen(false)} className="mobile-nav-link">{item.title}<IconChevronRight size={17}/></SpaceLink>)}
-      <SpaceLink href={APP_LINKS.login} className="mobile-nav-link">Log in<IconChevronRight size={17}/></SpaceLink>
-      <ArrowLink href={APP_LINKS.register}>Get started</ArrowLink>
-    </nav>
-  </header>
+    </header>
+  )
 }
-
 function ProductPreview() {
-  const [activeView, setActiveView] = useState<View>('overview')
-  const { cue } = useLandingSound()
-  return <div className="preview-frame">
-    <div className="preview-browser" id="interactive-preview">
-      <div className="preview-topline"><span className="traffic-lights" aria-hidden="true"><i/><i/><i/></span><span>FINCO / WORKSPACE</span><span className="preview-top-right"><IconLock size={13} stroke={1.6} aria-hidden="true"/> PRIVATE VIEW</span></div>
-      <div className="preview-window">
-        <aside className="preview-sidebar" aria-label="Illustrative app menu">
-          <div className="preview-mini-logo"><FinCoLogo size={19} /></div>
-          {[IconChartBar, IconWallet, IconReceipt, IconTarget, IconCalendarStats].map((Icon, index) => <div key={index} className={index === 0 ? 'preview-side-icon active' : 'preview-side-icon'} aria-hidden="true"><Icon size={18} stroke={1.7}/></div>)}
-        </aside>
-        <div className="preview-main">
-          <div className="preview-titlebar"><span>My workspace</span><Avatar className="demo-profile" aria-label="Sample profile"><AvatarFallback>FC</AvatarFallback></Avatar></div>
-          <Tabs value={activeView} onValueChange={value => { setActiveView(value as View); cue() }}>
-            <TabsList activateOnFocus aria-label="Explore sample views" className="preview-tabs">
-              {(['overview','budgets','activity'] as View[]).map(view => <TabsTab key={view} value={view} className="preview-tab">{view === 'overview' ? 'Overview' : view === 'budgets' ? 'Budgets' : 'Activity'}</TabsTab>)}
-            </TabsList>
-            {(['overview','budgets','activity'] as View[]).map(view => <TabsPanel key={view} value={view} className="preview-body"><SampleView view={view} /></TabsPanel>)}
-          </Tabs>
+  return (
+    <Card
+      className="balance-card"
+      aria-label="Illustrative monthly money example"
+    >
+      <Flex justify="space-between" align="center" gap={8}>
+        <span className="small-label">
+          <WalletOutlined aria-hidden="true" /> YOUR MONTH, EXPLAINED
+        </span>
+        <Tag bordered={false}>Sample data</Tag>
+      </Flex>
+      <div className="balance-start">
+        <span>Bank balance</span>
+        <strong>₹62,000</strong>
+      </div>
+      <Divider />
+      <dl className="balance-breakdown">
+        <div>
+          <dt>
+            <span className="row-icon">
+              <CalendarOutlined aria-hidden="true" />
+            </span>
+            Bills & EMI set aside
+          </dt>
+          <dd>−₹22,000</dd>
+        </div>
+        <div>
+          <dt>
+            <span className="row-icon">
+              <SafetyCertificateOutlined aria-hidden="true" />
+            </span>
+            Emergency buffer
+          </dt>
+          <dd>−₹10,000</dd>
+        </div>
+        <div>
+          <dt>
+            <span className="row-icon">
+              <BankOutlined aria-hidden="true" />
+            </span>
+            Savings goal reserve
+          </dt>
+          <dd>−₹5,000</dd>
+        </div>
+      </dl>
+      <div className="balance-result">
+        <span>What remains in this example</span>
+        <strong>
+          ₹25,000
+          <ArrowDownOutlined aria-hidden="true" />
+        </strong>
+        <Progress
+          percent={40}
+          showInfo={false}
+          strokeColor="#165dff"
+          trailColor="#dfe8fc"
+          aria-label="Illustrative remainder, approximately 40 percent of sample balance"
+        />
+      </div>
+      <p className="capture-note">
+        Illustrative interface · No real account data.
+        <br />
+        Simplified arithmetic, not a spending recommendation.
+      </p>
+    </Card>
+  )
+}
+function Hero() {
+  return (
+    <section className="hero-section">
+      <div className="shell hero-grid">
+        <div className="hero-copy">
+          <Tag color="blue" bordered={false}>
+            YOUR PERSONAL FINANCE WORKSPACE
+          </Tag>
+          <h1>
+            Bank balance.
+            <br />
+            <span>Meet real life.</span>
+          </h1>
+          <p className="hero-description">
+            Your balance is only the beginning. Bring accounts, bills, budgets
+            and goals into focus—before your next money decision.
+          </p>
+          <div className="hero-actions">
+            <ArrowLink href={APP_LINKS.register}>
+              Start your workspace
+            </ArrowLink>
+            <Button
+              size="large"
+              href="#experience"
+              icon={<ArrowDownOutlined aria-hidden="true" />}
+              iconPlacement="end"
+            >
+              See the product
+            </Button>
+          </div>
+          <p className="hero-note">
+            <CheckOutlined aria-hidden="true" /> Start with manual accounts{' '}
+            <span aria-hidden="true">·</span> Bank connection optional
+          </p>
+        </div>
+        <div className="hero-visual">
+          <div className="visual-label">
+            <span>THE NUMBER ISN’T THE WHOLE STORY.</span>
+            <ArrowDownOutlined aria-hidden="true" />
+          </div>
+          <ProductPreview />
+          <p className="visual-caption">
+            Make room for the things your balance doesn’t explain.
+          </p>
         </div>
       </div>
-    </div>
-    <div className="float-note"><span className="float-icon"><IconCircleCheck size={19}/></span><div><strong>A clearer perspective</strong><span>Everything in its place.</span></div></div>
-    <p className="preview-disclaimer"><IconLock size={13}/> Illustrative interface · No real account data</p>
-  </div>
-}
-
-function SampleView({ view }: { view: View }) {
-  const sample = demoData[view]
-  const allocations = [{ label:'Essentials', amount:'₹12,200', percent:49 }, { label:'Everyday', amount:'₹6,400', percent:26 }, { label:'Savings goal', amount:'₹6,200', percent:25 }]
-  return <>
-    <div className="mini-eyebrow">{sample.eyebrow}</div>
-    <div className="finance-summary"><div><p>{sample.title}</p><div className="finance-amount">{sample.amount}</div></div><div className="finance-trend"><IconArrowUpRight size={14} aria-hidden="true"/>{sample.delta}</div></div>
-    <div className="chart-wrap"><div className="chart-intro"><span>Financial trend</span><span>{sample.detail}</span></div>
-      {view === 'budgets' ? <div className="budget-meters">{allocations.map(item => <Meter key={item.label} value={item.percent} min={0} max={100} className="budget-meter" aria-label={item.label + ' share of illustrative plan'}><div className="meter-heading"><MeterLabel>{item.label}</MeterLabel><span>{item.amount}</span></div><MeterTrack className="budget-meter-track"><MeterIndicator className="budget-meter-indicator" /></MeterTrack></Meter>)}</div> : <div className="chart-bars" role="img" aria-label={'Illustrative trend for ' + view}>{sample.bars.map((v,i) => <span key={i} style={{height:v+'%'}} className={i===sample.bars.length-1?'bright':''}/>)}</div>}
-      <div className="chart-axis"><span>{view === 'budgets' ? 'Illustrative allocation' : 'Start'}</span><span>{view === 'budgets' ? 'Sample plan' : 'Today'}</span></div>
-    </div>
-    <div className="tx-heading">Recent items <span>Sample data</span></div>
-    <div className="tx-list">{sample.transactions.map((item,i)=><div className="tx-row" key={item.name}><div className="tx-symbol" aria-hidden="true">{i===0?<IconArrowDownRight size={16}/>:i===1?<IconReceipt size={16}/>:<IconTarget size={16}/>}</div><div className="tx-description"><strong>{item.name}</strong><span>{item.context}</span></div><span className={item.positive?'tx-value positive':'tx-value'}>{item.amount}</span></div>)}</div>
-  </>
-}
-
-function Hero() {
-  return <section className="hero-section">
-    <HeroBackdrop/>
-    <div className="hero-halo" aria-hidden="true"/>
-    <div className="shell hero-grid">
-      <div className="hero-copy">
-        <Badge size="lg" variant="outline" className="eyebrow-badge"><span className="status-dot"/> A better way to understand your money <IconArrowUpRight size={13}/></Badge>
-        <BlurRevealText inView={false} as="h1" className="hero-title" text="Money makes more sense together." stagger={0.045} delay={0.06} duration={0.38} blurAmount="7px" />
-        <p className="hero-description">Every account. Every decision. One thoughtful place to understand where your money stands — and where it can go next.</p>
-        <div className="hero-actions"><ArrowLink href={APP_LINKS.register}>Make money make sense</ArrowLink><SpaceLink href="#experience" variant="secondary" className="secondary-cta">Explore the experience <IconArrowRight size={18}/></SpaceLink></div>
-        <div className="hero-footnote"><span className="verified-icon"><IconCircleCheck size={16}/></span> Built for the decisions you make every day.</div>
+      <div className="shell capability-strip">
+        <span>ONE WORKSPACE FOR</span>
+        <Flex gap={28} wrap>
+          <span>
+            <BankOutlined aria-hidden="true" /> Accounts
+          </span>
+          <span>
+            <FileTextOutlined aria-hidden="true" /> Transactions
+          </span>
+          <span>
+            <PieChartOutlined aria-hidden="true" /> Budgets & goals
+          </span>
+          <span>
+            <CalendarOutlined aria-hidden="true" /> What’s coming
+          </span>
+        </Flex>
       </div>
-      <div className="hero-visual"><ProductPreview /></div>
-    </div>
-    <div className="hero-bottom shell"><span>LESS GUESSWORK. MORE CLARITY.</span><SpaceLink href="#why-finco" className="scroll-prompt">Discover more <IconArrowDownRight size={16} aria-hidden="true"/></SpaceLink></div>
-  </section>
+    </section>
+  )
 }
-
-function ProofLine() {
-  return <div className="proof-line shell"><Separator aria-hidden="true" className="proof-divider" /><p>One place for more than your balance.</p><div className="proof-items"><span><IconWallet size={18}/> Accounts</span><span><IconReceipt size={18}/> Transactions</span><span><IconTarget size={18}/> Budgets & goals</span><span><IconChartDots3 size={18}/> Reports</span></div></div>
-}
-
 function WhyFinCo() {
-  return <section className="section why-section shell" id="why-finco">
-    <div className="section-head"><div><p className="section-kicker"><span>01 /</span> MADE FOR REAL LIFE</p><h2>Less juggling.<br/><span>More knowing.</span></h2></div><p>Money touches every part of life. Your tools should bring the pieces together, not send you looking for them.</p></div>
-    <div className="feature-grid">{featureCards.map((item,index)=><Card key={item.number} className={'feature-card feature-'+index}><div className="feature-card-top"><span className="feature-number">{item.number} / 04</span><span className="feature-icon"><item.icon size={23} stroke={1.5}/></span></div><div className="feature-card-bottom"><p className="feature-label">{item.label}</p><h3>{item.title}</h3><p>{item.body}</p><div className="feature-line"/></div></Card>)}</div>
-  </section>
+  return (
+    <section className="section shell" id="why-finco">
+      <div className="section-head">
+        <div>
+          <p className="section-kicker">01 / SEE THE WHOLE PICTURE</p>
+          <h2>
+            Less scattered.
+            <br />
+            More understood.
+          </h2>
+        </div>
+        <p>
+          A transaction tells you what happened. A useful workspace helps you
+          connect it to everything else.
+        </p>
+      </div>
+      <div className="feature-grid">
+        {features.map((feature, index) => (
+          <Card key={feature.title} className="feature-card" hoverable>
+            <div className="feature-top">
+              <span className="feature-icon">{feature.icon}</span>
+              <span className="small-label">0{index + 1}</span>
+            </div>
+            <h3>{feature.title}</h3>
+            <p>{feature.body}</p>
+            <span className="feature-detail">{feature.detail}</span>
+          </Card>
+        ))}
+      </div>
+      <Button
+        type="link"
+        href={landingAsset('/features/')}
+        icon={<ArrowRightOutlined aria-hidden="true" />}
+        iconPlacement="end"
+      >
+        Explore features and availability
+      </Button>
+    </section>
+  )
 }
-
 function Experience() {
-  const [selected, setSelected] = useState<'clarity'|'control'>('clarity')
-  const { cue } = useLandingSound()
-  return <section className="section experience-section" id="perspective">
-    <div className="shell experience-grid">
-      <div className="experience-copy"><p className="section-kicker"><span>02 /</span> BUILT AROUND YOU</p><h2>For the bigger picture. <em>And the little details.</em></h2><p className="section-intro">It’s not about staring at another chart. It’s about making your next financial decision feel more grounded.</p>
-        <Tabs className="benefit-tabs" value={selected} orientation="vertical" onValueChange={value => { setSelected(value as 'clarity'|'control'); cue() }}>
-          <TabsList activateOnFocus className="experience-choices" aria-label="Choose benefit">
-            <TabsTab value="clarity" className="choice"><IconChartBar size={20} aria-hidden="true"/> Understand what changed <IconArrowRight size={18} aria-hidden="true"/></TabsTab>
-            <TabsTab value="control" className="choice"><IconShieldLock size={20} aria-hidden="true"/> Stay in the driver’s seat <IconArrowRight size={18} aria-hidden="true"/></TabsTab>
-          </TabsList>
-          <TabsPanel value="clarity" className="choice-description">See your spending, savings and activity in a context you can actually use.</TabsPanel>
-          <TabsPanel value="control" className="choice-description">Keep your own financial workflow, workspace and permissions at the centre of the experience.</TabsPanel>
-        </Tabs>
+  const [buffer, setBuffer] = useState<number | null>(10000)
+  const remainder = buffer === null ? null : 62000 - 22000 - buffer - 5000
+  return (
+    <section className="section planning-section" id="perspective">
+      <div className="shell planning-grid">
+        <div>
+          <p className="section-kicker">03 / A NUMBER WITH CONTEXT</p>
+          <h2>
+            ₹62,000 in the bank.
+            <br />
+            How much is yours
+            <br />
+            to spend?
+          </h2>
+          <p className="section-intro">
+            Rent, repayments and savings still need a place. The spending-plan
+            tool brings confirmed balances and reviewed obligations into the
+            same calculation.
+          </p>
+          <ul className="plain-checks">
+            <li>
+              <CheckOutlined aria-hidden="true" /> Confirm current cash and card
+              debt
+            </li>
+            <li>
+              <CheckOutlined aria-hidden="true" /> Review upcoming bills and
+              loan installments
+            </li>
+            <li>
+              <CheckOutlined aria-hidden="true" /> Protect the reserves you
+              choose
+            </li>
+          </ul>
+          <p className="capture-note">
+            The app can withhold an estimate when required inputs are missing.
+            Review the inputs before relying on a result.
+          </p>
+        </div>
+        <Card className="planning-demo">
+          <Flex justify="space-between" align="center" wrap gap={8}>
+            <h3>Try a simple example.</h3>
+            <Tag color="blue">Interactive illustration</Tag>
+          </Flex>
+          <p>Change the buffer. See why the balance alone isn’t enough.</p>
+          <dl className="example-fixed">
+            <div>
+              <dt>Sample cash balance</dt>
+              <dd>₹62,000</dd>
+            </div>
+            <div>
+              <dt>Sample bills & EMI</dt>
+              <dd>−₹22,000</dd>
+            </div>
+            <div>
+              <dt>Sample goal reserve</dt>
+              <dd>−₹5,000</dd>
+            </div>
+          </dl>
+          <label htmlFor="example-buffer">Emergency buffer to protect</label>
+          <InputNumber
+            id="example-buffer"
+            aria-label="Emergency buffer to protect"
+            prefix="₹"
+            min={0}
+            max={62000}
+            step={1000}
+            precision={0}
+            value={buffer}
+            onChange={(value) => setBuffer(value)}
+            size="large"
+            className="buffer-input"
+          />
+          <div className="example-result" aria-live="polite" aria-atomic="true">
+            {remainder === null ? (
+              <p>Enter a buffer to see the example.</p>
+            ) : (
+              <>
+                <Statistic
+                  title={
+                    remainder < 0
+                      ? 'Illustrative shortfall'
+                      : 'Illustrative remainder'
+                  }
+                  value={Math.abs(remainder)}
+                  formatter={() => money(Math.abs(remainder))}
+                />
+                <p>
+                  {remainder < 0
+                    ? 'These sample commitments exceed the sample balance.'
+                    : 'After the sample bills, goal reserve and your chosen buffer.'}
+                </p>
+              </>
+            )}
+          </div>
+          <Alert
+            type="info"
+            showIcon
+            title="Example only"
+            description="This runs locally with made-up numbers. The actual spending plan also checks account balances, debt and upcoming obligations. No account is connected."
+          />
+        </Card>
       </div>
-      <div className="experience-art">
-        <div className="orbit orbit-one"/><div className="orbit orbit-two"/>
-        <div className="orbit-center"><IconChartDots3 size={34} stroke={1.25}/></div>
-        <div className="orbit-tag orbit-tag-a"><IconWallet size={16}/> What you have</div>
-        <div className="orbit-tag orbit-tag-b"><IconTarget size={16}/> What matters</div>
-        <div className="orbit-tag orbit-tag-c"><IconChartBar size={16}/> What changed</div>
-        <div className="orbit-caption">One financial perspective. Many moving parts.</div>
-      </div>
-    </div>
-  </section>
+    </section>
+  )
 }
-
 function HowItWorks() {
-  return <section className="section steps-section shell" id="how-it-works">
-    <div className="section-head"><div><p className="section-kicker"><span>03 /</span> YOUR NEXT STEP</p><h2>A little less noise.<br/><span>A lot more direction.</span></h2></div><p>Start simply. Find your rhythm. Use the features that fit your financial life.</p></div>
-    <Timeline render={<ol />} value={0} orientation="horizontal" className="steps-grid" aria-label="How FinCo-Pilot works">{steps.map((item,index)=><TimelineItem render={<li />} step={index + 1} key={item.id} className="step-item"><TimelineSeparator /><TimelineHeader><span className="step-index">{item.id}</span><TimelineIndicator className="step-icon"><item.icon size={24} stroke={1.45}/></TimelineIndicator><TimelineTitle>{item.title}</TimelineTitle></TimelineHeader><TimelineContent>{item.description}</TimelineContent></TimelineItem>)}</Timeline>
-  </section>
+  return (
+    <section className="section shell" id="how-it-works">
+      <div className="section-head">
+        <div>
+          <p className="section-kicker">04 / START SMALL</p>
+          <h2>
+            One useful task.
+            <br />
+            Then the next.
+          </h2>
+        </div>
+        <p>
+          No need to organise your entire financial life in one sitting. Start
+          with the records you can verify.
+        </p>
+      </div>
+      <Steps
+        current={-1}
+        className="getting-started"
+        items={[
+          {
+            title: 'Set up your workspace',
+            content:
+              'Choose an account type and currency. Start manually, with a reliable current balance.',
+            icon: <BankOutlined aria-hidden="true" />,
+          },
+          {
+            title: 'Bring in the details',
+            content:
+              'Add transactions or preview a small file. Check dates, signs and duplicates before confirming.',
+            icon: <ImportOutlined aria-hidden="true" />,
+          },
+          {
+            title: 'Review your next move',
+            content:
+              'Explore one budget, goal or report. Check upcoming commitments before making a spending plan.',
+            icon: <PieChartOutlined aria-hidden="true" />,
+          },
+        ]}
+      />
+      <Button
+        type="link"
+        href={landingAsset('/how-it-works/')}
+        icon={<ArrowRightOutlined aria-hidden="true" />}
+        iconPlacement="end"
+      >
+        Read the first-session checklist
+      </Button>
+      <Card className="import-callout">
+        <div className="import-copy">
+          <Tag bordered={false}>A PRACTICAL FIRST STEP</Tag>
+          <h3>
+            Your records already exist.
+            <br />
+            Give them a useful home.
+          </h3>
+          <p>
+            Work from a CSV or supported statement file. Preview the mapping,
+            confirm the account and inspect excluded rows before applying it.
+          </p>
+          <Button
+            href={landingAsset('/guides/import-transactions/')}
+            icon={<ArrowRightOutlined aria-hidden="true" />}
+            iconPlacement="end"
+          >
+            Read the import guide
+          </Button>
+        </div>
+        <div className="import-example">
+          <div className="file-label">
+            <FileTextOutlined aria-hidden="true" /> transactions-example.csv{' '}
+            <Tag>2 rows</Tag>
+          </div>
+          <dl>
+            <div>
+              <dt>Sample income</dt>
+              <dd>+₹1,000</dd>
+            </div>
+            <div>
+              <dt>Sample grocery</dt>
+              <dd>−₹250</dd>
+            </div>
+            <div>
+              <dt>Net sample flow</dt>
+              <dd>₹750</dd>
+            </div>
+          </dl>
+          <p className="capture-note">
+            Synthetic records. Net flow is not an account balance.
+          </p>
+          <Button
+            type="link"
+            href={landingAsset('/samples/transactions-example.csv')}
+            download
+            icon={<ArrowDownOutlined aria-hidden="true" />}
+          >
+            Download the sample CSV
+          </Button>
+        </div>
+      </Card>
+    </section>
+  )
 }
-
 function Privacy() {
-  return <section className="section privacy-section"><div className="shell privacy-panel">
-    <div className="privacy-copy"><div className="privacy-kicker"><IconShieldLock size={18}/> THE TRUST PART</div><h2>Financial clarity should feel <em>personal.</em></h2><p>Your financial information deserves thoughtful access controls. FinCo-Pilot includes workspace permissions, authentication safeguards and configurable provider connections.</p><SpaceLink href={APP_LINKS.privacy} variant="secondary" className="privacy-link">Read the privacy policy <IconArrowUpRight size={18}/></SpaceLink></div>
-    <div className="privacy-visual"><div className="privacy-avatar"><IdentityAvatar seed="fincopilot-friendly-guide" size={100}/></div><div className="privacy-pill"><IconLock size={16}/> Your workspace. Your context.</div><span className="privacy-note">No real user data on this page</span></div>
-  </div></section>
+  return (
+    <section className="section trust-section">
+      <div className="shell">
+        <div className="section-head">
+          <div>
+            <p className="section-kicker">05 / YOUR CONTEXT. YOUR CONTROL.</p>
+            <h2>
+              Personal finance.
+              <br />
+              With clear boundaries.
+            </h2>
+          </div>
+          <p>
+            Know what you are using, what you are connecting and what the
+            numbers can tell you.
+          </p>
+        </div>
+        <div className="trust-grid">
+          {[
+            {
+              icon: <LockOutlined aria-hidden="true" />,
+              title: 'Workspace permissions',
+              body: 'Access depends on authentication and workspace roles. Review who can see or change records in a shared workspace.',
+            },
+            {
+              icon: <BankOutlined aria-hidden="true" />,
+              title: 'Connections are a choice',
+              body: 'Start with manual records. Optional bank and AI providers depend on configuration, permissions and availability.',
+            },
+            {
+              icon: <SafetyCertificateOutlined aria-hidden="true" />,
+              title: 'Inputs before estimates',
+              body: 'A dashboard reflects the records included. Check missing balances, bills and debts before relying on an estimate.',
+            },
+          ].map((item) => (
+            <div className="trust-item" key={item.title}>
+              <span className="feature-icon">{item.icon}</span>
+              <h3>{item.title}</h3>
+              <p>{item.body}</p>
+            </div>
+          ))}
+        </div>
+        <Flex wrap gap={12}>
+          <Button href={APP_LINKS.privacy}>Read the privacy policy</Button>
+          <Button type="text" href={APP_LINKS.terms}>
+            Read the terms <ArrowRightOutlined aria-hidden="true" />
+          </Button>
+        </Flex>
+      </div>
+    </section>
+  )
 }
-
 function Questions() {
-  return <section className="section faq-section shell" id="questions"><div className="faq-copy"><p className="section-kicker"><span>04 /</span> GOOD TO KNOW</p><h2>Questions?<br/><span>Fair enough.</span></h2><p>Clear answers matter as much as a clear dashboard.</p><SpaceLink href={APP_LINKS.support} variant="secondary" className="faq-contact">Support options <IconArrowUpRight size={17}/></SpaceLink></div>
-    <Accordion className="faq-list" defaultValue={['faq-1']} multiple={true}>
-      {faqs.map(item=><AccordionItem value={item.id} key={item.id} className="faq-item"><AccordionTrigger className="faq-trigger">{item.question}</AccordionTrigger><AccordionPanel className="faq-panel">{item.answer}</AccordionPanel></AccordionItem>)}
-    </Accordion>
-  </section>
+  return (
+    <section className="section shell faq-section" id="questions">
+      <div>
+        <p className="section-kicker">06 / BEFORE YOU START</p>
+        <h2>
+          Good questions.
+          <br />
+          Straight answers.
+        </h2>
+        <p className="section-intro">A little context goes a long way.</p>
+        <Button
+          type="link"
+          href={APP_LINKS.support}
+          icon={<ArrowRightOutlined aria-hidden="true" />}
+          iconPlacement="end"
+        >
+          Support options
+        </Button>
+      </div>
+      <Collapse
+        className="faq-list"
+        defaultActiveKey={['faq-1']}
+        expandIconPlacement="end"
+        items={faqs.map(([question, answer], index) => ({
+          key: `faq-${index + 1}`,
+          label: question,
+          children: <p>{answer}</p>,
+        }))}
+      />
+    </section>
+  )
 }
-
 function FinalCTA() {
-  return <section className="section final-section"><div className="shell final-inner"><p className="final-kicker">A MORE THOUGHTFUL WAY FORWARD</p><h2>Put your money<br/>into <span>perspective.</span></h2><p>Clarity is a good place to start.</p><ArrowLink href={APP_LINKS.register} light>Go to FinCo-Pilot <IconArrowRight size={18}/></ArrowLink><span className="final-small">Sign-up availability depends on the live application.</span></div></section>
+  return (
+    <section className="final-section">
+      <div className="shell final-inner">
+        <div>
+          <p className="section-kicker">A CLEARER PLACE TO START</p>
+          <h2>
+            Make your next decision
+            <br />
+            with the whole picture.
+          </h2>
+          <p>Start with one account. Build from there.</p>
+        </div>
+        <div className="final-actions">
+          <ArrowLink href={APP_LINKS.register} light>
+            Open your workspace
+          </ArrowLink>
+          <Button type="link" href={APP_LINKS.pricing}>
+            View current plans <ArrowRightOutlined aria-hidden="true" />
+          </Button>
+          <span>Check live sign-up and plan availability.</span>
+        </div>
+      </div>
+    </section>
+  )
 }
-
 function Footer() {
-  return <footer className="footer"><div className="shell"><div className="footer-top"><div><SpaceLink href="#top" className="brand-link"><Mark compact/></SpaceLink><p>More clarity. Less guesswork.</p></div><div className="footer-links"><SpaceLink href={landingAsset('/features/')} variant="secondary">Features</SpaceLink><SpaceLink href={landingAsset('/how-it-works/')} variant="secondary">How it works</SpaceLink><SpaceLink href={landingAsset('/guides/import-transactions/')} variant="secondary">Import guide</SpaceLink><SpaceLink href={APP_LINKS.pricing} variant="secondary">Pricing</SpaceLink><SpaceLink href={APP_LINKS.support} variant="secondary">Support</SpaceLink><SpaceLink href={APP_LINKS.login} variant="secondary">Log in</SpaceLink></div></div><div className="footer-bottom"><span>© 2026 FinCo-Pilot</span><div><SpaceLink href={APP_LINKS.privacy} variant="secondary">Privacy</SpaceLink><SpaceLink href={APP_LINKS.terms} variant="secondary">Terms</SpaceLink></div><SoundToggle /></div></div></footer>
+  return (
+    <footer className="footer">
+      <div className="shell">
+        <div className="footer-top">
+          <div>
+            <a href="#top" aria-label="FinCo-Pilot, back to top">
+              <Mark />
+            </a>
+            <p>Your money, with context.</p>
+          </div>
+          <nav className="footer-links" aria-label="Footer navigation">
+            <a href={landingAsset('/features/')}>Features</a>
+            <a href={landingAsset('/how-it-works/')}>How it works</a>
+            <a href={landingAsset('/guides/import-transactions/')}>
+              Import guide
+            </a>
+            <a href={APP_LINKS.pricing}>Pricing</a>
+            <a href={APP_LINKS.support}>Support</a>
+            <a href={APP_LINKS.login}>Log in</a>
+          </nav>
+        </div>
+        <Divider />
+        <div className="footer-bottom">
+          <span>© 2026 FinCo-Pilot</span>
+          <nav aria-label="Policies">
+            <a href={APP_LINKS.privacy}>Privacy</a>
+            <a href={APP_LINKS.terms}>Terms</a>
+            <a href="#top">
+              Back to top <ArrowUpOutlined aria-hidden="true" />
+            </a>
+          </nav>
+        </div>
+      </div>
+    </footer>
+  )
 }
-
 export function LandingExperience() {
-  return <LandingSoundProvider><InstalledAppHandoff /><MotionConfig reducedMotion="user"><div className="marketing-page"><a className="skip-link" href="#main-content">Skip to content</a><Navigation/><main id="main-content"><Hero/><ProofLine/><WhyFinCo/><ProductScreens/><Experience/><HowItWorks/><Privacy/><Questions/><FinalCTA/></main><Footer/></div></MotionConfig></LandingSoundProvider>
+  return (
+    <LandingTheme>
+      <InstalledAppHandoff />
+      <div className="marketing-page">
+        <a className="skip-link" href="#main-content">
+          Skip to content
+        </a>
+        <Navigation />
+        <main id="main-content">
+          <Hero />
+          <WhyFinCo />
+          <ProductScreens />
+          <Experience />
+          <HowItWorks />
+          <Privacy />
+          <Questions />
+          <FinalCTA />
+        </main>
+        <Footer />
+      </div>
+    </LandingTheme>
+  )
 }

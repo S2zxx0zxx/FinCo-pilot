@@ -18,11 +18,14 @@
     "generate:social": "node scripts/social-card.mjs"
   },
   "dependencies": {
+    "@ant-design/icons": "6.3.4",
+    "@ant-design/nextjs-registry": "1.3.0",
     "@base-ui/react": "1.9.0",
     "@tabler/icons-react": "3.49.0",
     "@usespaceui/emoji": "0.1.0",
     "@usespaceui/sounds": "0.1.4",
     "@usespaceui/squishmoji": "0.1.0",
+    "antd": "6.6.6",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "emoji-regex": "10.5.0",

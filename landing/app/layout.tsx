@@ -1,7 +1,5 @@
 import type { Metadata, Viewport } from 'next'
 import localFont from 'next/font/local'
-import { AntdRegistry } from '@ant-design/nextjs-registry'
-import '../styles/antd.generated.css'
 import './globals.css'
 import {
   getMarketingConfig,
@@ -65,15 +63,13 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={fincoFont.variable}>
+    <html lang="en" className={fincoFont.variable + ' light'}>
       <body>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(websiteSchema()) }}
         />
-        <AntdRegistry>
-          <div className="relative isolate min-h-svh">{children}</div>
-        </AntdRegistry>
+        <div className="relative isolate min-h-svh">{children}</div>
       </body>
     </html>
   )

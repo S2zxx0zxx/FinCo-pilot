@@ -37,7 +37,7 @@ test('real sections, metadata, and no fabricated social proof', () => {
   assert.match(p, /Illustrative interface/)
   assert.doesNotMatch(
     p,
-    /10,000 users trust|as seen on|SOC 2 certified|RBI approved/
+    /10,000 users trust|as seen on|SOC 2 certified|RBI approved/,
   )
   assert.match(read('app/layout.tsx'), /export const metadata/)
 })
@@ -46,31 +46,42 @@ test('all CTA links stay on established product routes', () => {
   for (const name of ['register', 'login', 'privacy', 'terms'])
     assert.ok(p.includes('APP_LINKS.' + name))
 })
-test('Ant Design controls replace the homepage Space UI layer with SSR styles', () => {
+test('HeroUI v3 owns the full landing interface with no Ant runtime', () => {
   const home = read('components/landing-experience.tsx')
   const product = read('components/product-screens.tsx')
-  assert.doesNotMatch(
-    home + product,
-    /components\/spaceui|motion\/react|landing-sound|hero-backdrop/
-  )
-  assert.match(home, /from 'antd\/es\//)
+  const deps = JSON.parse(read('package.json'))
+  assert.match(home, /from '@heroui\/react'/)
+  assert.match(product, /from '@heroui\/react'/)
   for (const component of [
-    'Drawer',
-    'Collapse',
-    'Steps',
-    'InputNumber',
-    'Statistic',
+    'Drawer.Dialog',
+    'Accordion.Trigger',
+    'NumberField.Input',
+    'Card.Header',
+    'ProgressBar.Track',
+    'Alert.Content',
+    'Chip',
+    'Separator',
   ])
     assert.ok(home.includes(component))
-  assert.match(product, /from 'antd\/es\//)
-  assert.match(read('app/layout.tsx'), /<AntdRegistry>/)
-  assert.match(read('components/landing-theme.tsx'), /<ConfigProvider/)
+  assert.match(product, /Tabs.List/)
+  assert.match(product, /Tabs.Panel/)
+  assert.equal(deps.dependencies['@heroui/react'], '3.2.6')
+  assert.equal(deps.dependencies['@heroui/styles'], '3.2.6')
+  for (const name of Object.keys({
+    ...deps.dependencies,
+    ...deps.devDependencies,
+  }))
+    assert.doesNotMatch(name, /antd|@ant-design/)
+  assert.doesNotMatch(
+    home + product + read('app/layout.tsx'),
+    /antd|AntdRegistry|components\/spaceui|motion\/react|landing-sound|hero-backdrop/,
+  )
   assert.match(read('app/globals.css'), /prefers-reduced-motion/)
   assert.match(home, /aria-expanded/)
   assert.match(home, /Skip to content/)
   assert.ok(
     existsSync(new URL('../SPACEUI-LICENSE.txt', import.meta.url)),
-    'Retain licenses for historical unused components'
+    'Retain historical component licenses',
   )
 })
 
@@ -80,7 +91,7 @@ test('robots and sitemap support Next.js 16 static marketing export', () => {
   for (const page of ['robots', 'sitemap']) {
     assert.match(
       read(`app/${page}.ts`),
-      /export const dynamic = 'force-static'/
+      /export const dynamic = 'force-static'/,
     )
   }
   assert.match(read('lib/marketing.ts'), /NEXT_PUBLIC_MARKETING_INDEXABLE/)
@@ -94,7 +105,7 @@ test('homepage footer links remain in the actual exported marketing namespace', 
     assert.equal(landingAsset('/how-it-works/'), '/welcome/how-it-works/')
     assert.equal(
       landingAsset('/guides/import-transactions/'),
-      '/welcome/guides/import-transactions/'
+      '/welcome/guides/import-transactions/',
     )
     delete process.env.NEXT_PUBLIC_FINCO_LANDING_BASE_PATH
     assert.equal(landingAsset('/features/'), '/features/')
@@ -111,7 +122,7 @@ test('homepage footer links remain in the actual exported marketing namespace', 
   ]) {
     assert.ok(
       home.includes(`landingAsset('/${destination}')`),
-      `Missing crawlable homepage link to ${destination}`
+      `Missing crawlable homepage link to ${destination}`,
     )
   }
 })
@@ -122,18 +133,26 @@ test('the SSR hero heading has text nodes before hydration, not hidden-only toke
   assert.doesNotMatch(reveal, /staticReveal\s*\? <span[^>]+aria-hidden/)
   assert.match(
     read('components/landing-experience.tsx'),
-    /<h1>\s*Bank balance\.\s*<br \/>\s*<span>Meet real life\.<\/span>\s*<\/h1>/
+    /<h1>\s*Bank balance\.\s*<br \/>\s*<span>Meet real life\.<\/span>\s*<\/h1>/,
   )
 })
 
-
-test('Ant runtime and static stylesheet share the same fixed theme', () => {
-  const theme = read('lib/ant-theme.ts')
-  assert.match(theme, /zeroRuntime: true/)
-  assert.match(theme, /hashed: false/)
-  assert.match(theme, /key: 'finco-marketing'/)
-  assert.match(read('scripts/ant-styles.mjs'), /includes:/)
-  assert.match(read('scripts/ant-styles.mjs'), /marketingTheme, zeroRuntime: false/)
-  assert.match(read('app/layout.tsx'), /antd.generated.css/)
-  assert.match(read('package.json'), /\"build\": \"node scripts\/ant-styles.mjs && next build\"/)
+test('HeroUI styles are compiled with Tailwind in the documented order', () => {
+  const css = read('app/globals.css')
+  assert.ok(
+    css.indexOf("@import 'tailwindcss'") <
+      css.indexOf("@import '@heroui/styles'"),
+  )
+  assert.match(css, /@import '@heroui\/styles'/)
+  assert.match(read('app/layout.tsx'), /import '.\/globals.css'/)
+  assert.equal(JSON.parse(read('package.json')).scripts.build, 'next build')
+  for (const path of [
+    'lib/ant-theme.ts',
+    'scripts/ant-styles.mjs',
+    'components/landing-theme.tsx',
+  ])
+    assert.ok(
+      !existsSync(new URL('../' + path, import.meta.url)),
+      'Remove superseded integration: ' + path,
+    )
 })

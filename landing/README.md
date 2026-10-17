@@ -1,8 +1,8 @@
-# FinCo-Pilot — Ant Design marketing landing
+# FinCo-Pilot — HeroUI v3 marketing landing
 
-The current homepage uses Ant Design 6: ConfigProvider tokens, Buttons, Cards, Tabs, Collapse, Steps, Drawer, InputNumber, Statistic, Progress, Alert, Tag, Flex and Divider. The build compiles a whitelist of Ant component CSS from the shared theme. Ant zero-runtime mode avoids regenerating component CSS during hydration; AntdRegistry includes first-screen token variables in server HTML. The authenticated Vite application remains separate.
+The homepage uses HeroUI React and Styles 3.2.6 with React 19 and Tailwind 4. Native compound components cover Cards, Tabs, Accordion, Drawer, NumberField, ProgressBar, Alert, Chip, Button, Link, Label and Separator. Styles are compiled through the documented Tailwind-first CSS imports; there is no runtime provider or generated component stylesheet. Ant Design packages, registry, theme and extractor have been removed.
 
-The design is white, ink and Ant blue, with self-hosted fonts, real synthetic-data product captures, a local arithmetic illustration, six feature explanations, import guidance, privacy boundaries and ten FAQs. Motion is subtle and respects reduced-motion preferences. No homepage Space UI, sound, avatar or motion dependency is loaded. Historical component files and licenses remain for provenance.
+The visual system uses white, soft sage surfaces, forest accents, rounded cards, pill actions and self-hosted Open Runde. All sections have been restyled, including the application preview, local reserve illustration, six feature explanations, onboarding, sample import, privacy boundaries, ten FAQs and footer. Product captures use actual application screens with synthetic records. Motion respects reduced-motion preferences. The financial application remains separate.
 
 ## Run and verify
 
@@ -14,4 +14,4 @@ The combined Vite build runs `frontend/scripts/build-marketing.mjs`, exporting t
 
 Preview builds remain noindex, with excluded discovery inventory. Existing production publication controls, canonical URLs, root discovery, restricted crawlers and static-export gates remain unchanged. `node scripts/verify-discovery.mjs` must run with the same environment used for its build. See `lib/marketing.ts` and the existing growth evidence for release policy.
 
-See `docs/ANT_DESIGN_REDESIGN_20261017.md` for the audit, source-backed content map, design decisions and verification evidence. Earlier Space UI and growth documents are historical evidence, not descriptions of the new homepage UI. Original product captures are documented in `docs/PRODUCT_CAPTURE_PROVENANCE.json`; they do not verify live authentication or bank connections.
+See `docs/HEROUI_REDESIGN_20261017.md` for the audit, source-backed content map, design decisions and verification evidence. Earlier Ant Design, Space UI and growth documents are historical evidence, not descriptions of the new homepage UI. Original product captures are documented in `docs/PRODUCT_CAPTURE_PROVENANCE.json`; they do not verify live authentication or bank connections.

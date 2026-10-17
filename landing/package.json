@@ -6,8 +6,8 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "node scripts/ant-styles.mjs && next dev",
-    "build": "node scripts/ant-styles.mjs && next build",
+    "dev": "next dev",
+    "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/*.test.mjs",
@@ -18,14 +18,13 @@
     "generate:social": "node scripts/social-card.mjs"
   },
   "dependencies": {
-    "@ant-design/icons": "6.3.4",
-    "@ant-design/nextjs-registry": "1.3.0",
     "@base-ui/react": "1.9.0",
+    "@heroui/react": "3.2.6",
+    "@heroui/styles": "3.2.6",
     "@tabler/icons-react": "3.49.0",
     "@usespaceui/emoji": "0.1.0",
     "@usespaceui/sounds": "0.1.4",
     "@usespaceui/squishmoji": "0.1.0",
-    "antd": "6.6.6",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "emoji-regex": "10.5.0",
@@ -37,7 +36,6 @@
     "tailwind-merge": "3.5.0"
   },
   "devDependencies": {
-    "@ant-design/static-style-extract": "2.1.0",
     "@tailwindcss/postcss": "4.3.3",
     "@types/node": "26.6.5",
     "@types/react": "19.3.0",

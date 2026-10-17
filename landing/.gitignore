@@ -7,6 +7,3 @@ node_modules/
 
 test-artifacts/
 .vercel/
-
-# Reproducible subset of Ant CSS generated before dev/build.
-styles/antd.generated.css

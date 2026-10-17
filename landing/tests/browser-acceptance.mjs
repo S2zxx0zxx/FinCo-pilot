@@ -92,7 +92,7 @@ try {
       await page.getByText('Illustrative interface', { exact: false }).count()
     )
     assert.equal(await page.locator('.feature-card').count(), 6)
-    const buffer = page.getByRole('spinbutton', {
+    const buffer = page.getByRole('textbox', {
       name: 'Emergency buffer to protect',
       exact: true,
     })
@@ -119,6 +119,23 @@ try {
     )
     await buffer.fill('10000')
     await buffer.blur()
+    // Native HeroUI NumberField must keep both steppers in the same row.
+    const fieldLayout = await page.locator('.number-field__group').evaluate(group => {
+      const box = group.getBoundingClientRect()
+      return [...group.querySelectorAll('input,button')].map(child => {
+        const rect = child.getBoundingClientRect()
+        return { inside: rect.left >= box.left && rect.right <= box.right + 1 && rect.top >= box.top && rect.bottom <= box.bottom + 1 }
+      })
+    })
+    assert.ok(fieldLayout.every(item => item.inside), width + ': numeric controls must fit their group')
+    await buffer.focus()
+    await page.keyboard.press('ArrowUp')
+    await buffer.blur()
+    assert.match(await page.locator('.example-result').innerText(), /₹24,000/)
+    await buffer.focus()
+    await page.keyboard.press('ArrowDown')
+    await buffer.blur()
+    assert.match(await page.locator('.example-result').innerText(), /₹25,000/)
     if (width === 390 || width === 1440)
       await accessibility(page, width + ':demo')
     const screens = page.locator('.product-tabs').getByRole('tablist')
@@ -174,7 +191,7 @@ try {
         .getByRole('navigation', { name: 'Mobile navigation' })
         .waitFor()
       assert.equal(await menu.getAttribute('aria-expanded'), 'true')
-      // Ant's lifecycle callback confirms the opening transition has completed.
+      // React Aria exposes the mounted navigation within HeroUI's modal drawer.
       await page.waitForFunction(
         () =>
           document.querySelector('#mobile-menu')?.getAttribute('aria-busy') ===
@@ -196,7 +213,7 @@ try {
       await menu.click()
       await page
         .getByRole('navigation', { name: 'Mobile navigation' })
-        .getByRole('link', { name: 'Why FinCo' })
+        .getByRole('link', { name: /Why FinCo/ })
         .click()
       await page
         .getByRole('navigation', { name: 'Mobile navigation' })
@@ -268,7 +285,7 @@ try {
       .locator('.balance-card')
       .evaluate((e) => getComputedStyle(e).borderTopStyle),
     'solid',
-    'Ant styles must exist in server HTML'
+    'HeroUI card styles must work before hydration'
   )
   await nojs.close()
   report.checks = [
@@ -277,7 +294,7 @@ try {
     'Escape drawer focus and anchor close',
     'real responsive product pictures',
     'no external requests',
-    'no-JS visible H1 and styled Ant card',
+    'no-JS visible H1 and styled HeroUI card',
     'reduced motion',
     'WCAG22 scans in demo, FAQ and drawer states',
     'FAQ open/close',

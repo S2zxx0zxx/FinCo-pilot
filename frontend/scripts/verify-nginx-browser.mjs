@@ -134,7 +134,7 @@ try {
         await page.getByRole('button',{name:'Open navigation',exact:true}).click()
         await page.getByRole('navigation',{name:'Mobile navigation'}).waitFor()
         await page.keyboard.press('Escape')
-        // Ant Drawer restores focus after its closing transition completes.
+        // The modal drawer restores focus after its closing transition completes.
         await page.getByRole('navigation',{name:'Mobile navigation'}).waitFor({state:'hidden'})
         await page.waitForFunction(()=>document.activeElement?.getAttribute('aria-label')==='Open navigation')
         assert.equal(await page.getByRole('button',{name:'Open navigation',exact:true}).evaluate(el=>el===document.activeElement),true)

@@ -1,14 +1,14 @@
 'use client'
 
-import Tabs from 'antd/es/tabs'
-import { DashboardOutlined, BankOutlined } from '@ant-design/icons'
+import { Tabs, Chip } from '@heroui/react'
+import { LayoutDashboard, Landmark } from 'lucide-react'
 import { landingAsset } from '@/lib/asset'
 
 const screens = [
   {
     id: 'dashboard',
     title: 'Dashboard',
-    icon: <DashboardOutlined aria-hidden="true" />,
+    icon: <LayoutDashboard aria-hidden="true" />,
     description:
       'Balances, income, expenses and category activity. Review the month with your accounts in context.',
     alt: 'Original FinCo-Pilot dashboard with two synthetic accounts and sample monthly activity.',
@@ -16,7 +16,7 @@ const screens = [
   {
     id: 'accounts',
     title: 'Accounts',
-    icon: <BankOutlined aria-hidden="true" />,
+    icon: <Landmark aria-hidden="true" />,
     description:
       'Keep everyday and savings accounts organised in one workspace. These examples are manually managed accounts.',
     alt: 'Original FinCo-Pilot Accounts screen showing synthetic everyday and savings accounts.',
@@ -32,7 +32,7 @@ export function ProductScreens() {
     >
       <div className="section-head">
         <div>
-          <p className="section-kicker">02 / INSIDE THE PRODUCT</p>
+          <p className="section-kicker">TAKE A LOOK AROUND</p>
           <h2 id="product-title">
             Your money.
             <br />
@@ -44,28 +44,37 @@ export function ProductScreens() {
           you create an account.
         </p>
       </div>
-      <Tabs
-        defaultActiveKey="dashboard"
-        aria-label="Explore FinCo-Pilot screens"
-        className="product-tabs"
-        animated={{ inkBar: true, tabPane: false }}
-        items={screens.map((screen) => ({
-          key: screen.id,
-          label: screen.title,
-          icon: screen.icon,
-          children: (
+      <Tabs defaultSelectedKey="dashboard" className="product-tabs">
+        <div className="product-toolbar">
+          <Tabs.ListContainer>
+            <Tabs.List aria-label="Explore FinCo-Pilot screens">
+              {screens.map((screen) => (
+                <Tabs.Tab id={screen.id} key={screen.id}>
+                  {screen.icon}
+                  {screen.title}
+                  <Tabs.Indicator />
+                </Tabs.Tab>
+              ))}
+            </Tabs.List>
+          </Tabs.ListContainer>
+          <Chip size="sm" variant="soft">
+            Actual application · Sample data
+          </Chip>
+        </div>
+        {screens.map((screen) => (
+          <Tabs.Panel id={screen.id} key={screen.id}>
             <>
               <div className="product-capture">
                 <picture>
                   <source
                     media="(max-width:620px)"
                     srcSet={landingAsset(
-                      '/product/' + screen.id + '-mobile.webp'
+                      '/product/' + screen.id + '-mobile.webp',
                     )}
                   />
                   <img
                     src={landingAsset(
-                      '/product/' + screen.id + '-desktop.webp'
+                      '/product/' + screen.id + '-desktop.webp',
                     )}
                     width={1440}
                     height={920}
@@ -83,9 +92,9 @@ export function ProductScreens() {
                 </p>
               </div>
             </>
-          ),
-        }))}
-      />
+          </Tabs.Panel>
+        ))}
+      </Tabs>
     </section>
   )
 }

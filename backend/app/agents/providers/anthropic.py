@@ -64,13 +64,13 @@ def _serialize_tools(tools: Optional[list[ToolDefinition]]) -> Optional[list[dic
 
 def _raise_for_status(status: int, body: str) -> None:
     if status in (401, 403):
-        raise LLMAuthError(f"Anthropic auth failed: {body}", status=status)
+        raise LLMAuthError(f"Anthropic auth failed (HTTP {status})", status=status)
     if status == 429:
-        raise LLMRateLimitError(f"Anthropic rate limit: {body}", status=status)
+        raise LLMRateLimitError(f"Anthropic rate limit (HTTP {status})", status=status)
     if status >= 500:
-        raise LLMUnavailableError(f"Anthropic {status}: {body}", status=status)
+        raise LLMUnavailableError(f"Anthropic provider request failed (HTTP {status})", status=status)
     if status >= 400:
-        raise LLMUnavailableError(f"Anthropic {status}: {body}", status=status)
+        raise LLMUnavailableError(f"Anthropic provider request failed (HTTP {status})", status=status)
 
 
 class AnthropicProvider(LLMProvider):
@@ -114,8 +114,8 @@ class AnthropicProvider(LLMProvider):
             async with httpx.AsyncClient(timeout=httpx.Timeout(120.0, connect=10.0)) as client:
                 async with client.stream("POST", url, json=payload, headers=self._headers()) as resp:
                     if resp.status_code >= 400:
-                        body = (await resp.aread()).decode("utf-8", errors="replace")
-                        _raise_for_status(resp.status_code, body)
+                        # Do not buffer or relay untrusted error bodies.
+                        _raise_for_status(resp.status_code, "")
                     open_block: dict = {}
                     usage = Usage()
                     async for line in resp.aiter_lines():
@@ -169,7 +169,7 @@ class AnthropicProvider(LLMProvider):
                                 output_tokens=int(u.get("output_tokens") or 0),
                             )
         except httpx.HTTPError as exc:
-            raise LLMUnavailableError(f"Anthropic unreachable: {exc}") from exc
+            raise LLMUnavailableError(f"Anthropic unreachable ({type(exc).__name__})") from None
 
     async def embed(self, texts: list[str], *, model: str) -> list[list[float]]:
         raise LLMNotSupportedError("Anthropic does not provide an embeddings endpoint")

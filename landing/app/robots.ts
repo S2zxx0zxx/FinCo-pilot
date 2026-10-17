@@ -1,9 +1,8 @@
 import type { MetadataRoute } from 'next'
-
-// The Vite deployment statically exports /welcome; Next.js must prerender this
-// metadata route rather than treating it as a dynamic route handler.
-export const dynamic = 'force-static'
 import { getMarketingConfig, RESTRICTED_CRAWLERS } from '@/lib/marketing'
+
+// Prerender metadata for the same-origin static export; indexing stays opt-in.
+export const dynamic = 'force-static'
 
 export default function robots(): MetadataRoute.Robots {
   const { origin, indexable, basePath } = getMarketingConfig()

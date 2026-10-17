@@ -1,0 +1,821 @@
+[
+  {
+    "name": "typing_extensions",
+    "version": "4.16.0",
+    "license_expression": "PSF-2.0",
+    "license_classifiers": []
+  },
+  {
+    "name": "iniconfig",
+    "version": "2.3.0",
+    "license_expression": "MIT",
+    "license_classifiers": []
+  },
+  {
+    "name": "h11",
+    "version": "0.16.0",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: MIT License"
+    ]
+  },
+  {
+    "name": "makefun",
+    "version": "1.16.0",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: BSD License"
+    ]
+  },
+  {
+    "name": "starlette",
+    "version": "1.4.1",
+    "license_expression": "BSD-3-Clause",
+    "license_classifiers": []
+  },
+  {
+    "name": "uvloop",
+    "version": "0.22.1",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: Apache Software License",
+      "License :: OSI Approved :: MIT License"
+    ]
+  },
+  {
+    "name": "ofxparse",
+    "version": "0.21",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: MIT License"
+    ]
+  },
+  {
+    "name": "packaging",
+    "version": "26.3",
+    "license_expression": "Apache-2.0 OR BSD-2-Clause",
+    "license_classifiers": []
+  },
+  {
+    "name": "amqp",
+    "version": "5.3.1",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: BSD License"
+    ]
+  },
+  {
+    "name": "huggingface_hub",
+    "version": "1.26.0",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: Apache Software License"
+    ]
+  },
+  {
+    "name": "httpx",
+    "version": "0.28.1",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: BSD License"
+    ]
+  },
+  {
+    "name": "passlib",
+    "version": "1.7.4",
+    "license_expression": null,
+    "license_classifiers": []
+  },
+  {
+    "name": "pytest-xdist",
+    "version": "3.8.0",
+    "license_expression": "MIT",
+    "license_classifiers": []
+  },
+  {
+    "name": "asyncpg",
+    "version": "0.31.0",
+    "license_expression": "Apache-2.0",
+    "license_classifiers": []
+  },
+  {
+    "name": "platformdirs",
+    "version": "4.11.0",
+    "license_expression": "MIT",
+    "license_classifiers": [
+      "License :: OSI Approved :: MIT License"
+    ]
+  },
+  {
+    "name": "websockets",
+    "version": "17.0.1",
+    "license_expression": "BSD-3-Clause",
+    "license_classifiers": []
+  },
+  {
+    "name": "pydantic",
+    "version": "2.13.5",
+    "license_expression": "MIT",
+    "license_classifiers": []
+  },
+  {
+    "name": "celery",
+    "version": "5.6.3",
+    "license_expression": null,
+    "license_classifiers": []
+  },
+  {
+    "name": "webauthn",
+    "version": "2.8.0",
+    "license_expression": "BSD-3-Clause",
+    "license_classifiers": []
+  },
+  {
+    "name": "six",
+    "version": "1.17.0",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: MIT License"
+    ]
+  },
+  {
+    "name": "onnxruntime",
+    "version": "1.28.0",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: MIT License"
+    ]
+  },
+  {
+    "name": "pandas",
+    "version": "3.0.5",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: BSD License"
+    ]
+  },
+  {
+    "name": "fastapi-users",
+    "version": "15.0.5",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: MIT License"
+    ]
+  },
+  {
+    "name": "bcrypt",
+    "version": "5.0.0",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: Apache Software License"
+    ]
+  },
+  {
+    "name": "pyasn1_modules",
+    "version": "0.4.2",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: BSD License"
+    ]
+  },
+  {
+    "name": "greenlet",
+    "version": "3.5.4",
+    "license_expression": "MIT AND PSF-2.0",
+    "license_classifiers": []
+  },
+  {
+    "name": "lxml",
+    "version": "6.1.1",
+    "license_expression": null,
+    "license_classifiers": []
+  },
+  {
+    "name": "pyOpenSSL",
+    "version": "26.4.0",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: Apache Software License"
+    ]
+  },
+  {
+    "name": "tzdata",
+    "version": "2026.3",
+    "license_expression": null,
+    "license_classifiers": []
+  },
+  {
+    "name": "wcwidth",
+    "version": "0.8.2",
+    "license_expression": "MIT",
+    "license_classifiers": []
+  },
+  {
+    "name": "multitasking",
+    "version": "0.0.13",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: Apache Software License"
+    ]
+  },
+  {
+    "name": "certifi",
+    "version": "2026.7.22",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)"
+    ]
+  },
+  {
+    "name": "numpy",
+    "version": "2.5.1",
+    "license_expression": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+    "license_classifiers": []
+  },
+  {
+    "name": "loguru",
+    "version": "0.7.3",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: MIT License"
+    ]
+  },
+  {
+    "name": "pypdf",
+    "version": "6.20.0",
+    "license_expression": "BSD-3-Clause",
+    "license_classifiers": []
+  },
+  {
+    "name": "email-validator",
+    "version": "2.3.0",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: The Unlicense (Unlicense)"
+    ]
+  },
+  {
+    "name": "pluggy",
+    "version": "1.6.0",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: MIT License"
+    ]
+  },
+  {
+    "name": "reportlab",
+    "version": "5.0.1",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: BSD License"
+    ]
+  },
+  {
+    "name": "kombu",
+    "version": "5.6.2",
+    "license_expression": null,
+    "license_classifiers": []
+  },
+  {
+    "name": "pwdlib",
+    "version": "0.3.0",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: MIT License"
+    ]
+  },
+  {
+    "name": "idna",
+    "version": "3.18",
+    "license_expression": "BSD-3-Clause",
+    "license_classifiers": []
+  },
+  {
+    "name": "soupsieve",
+    "version": "2.9.1",
+    "license_expression": "MIT",
+    "license_classifiers": [
+      "License :: OSI Approved :: MIT License"
+    ]
+  },
+  {
+    "name": "cffi",
+    "version": "2.1.1",
+    "license_expression": "MIT-0",
+    "license_classifiers": []
+  },
+  {
+    "name": "PyJWT",
+    "version": "2.15.1",
+    "license_expression": "MIT",
+    "license_classifiers": []
+  },
+  {
+    "name": "click",
+    "version": "8.4.2",
+    "license_expression": "BSD-3-Clause",
+    "license_classifiers": []
+  },
+  {
+    "name": "pgvector",
+    "version": "0.5.0",
+    "license_expression": "MIT",
+    "license_classifiers": []
+  },
+  {
+    "name": "vine",
+    "version": "5.1.0",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: BSD License"
+    ]
+  },
+  {
+    "name": "SQLAlchemy",
+    "version": "2.0.52",
+    "license_expression": null,
+    "license_classifiers": []
+  },
+  {
+    "name": "requests",
+    "version": "2.34.2",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: Apache Software License"
+    ]
+  },
+  {
+    "name": "defusedxml",
+    "version": "0.7.1",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: Python Software Foundation License"
+    ]
+  },
+  {
+    "name": "hf-xet",
+    "version": "1.6.0",
+    "license_expression": "Apache-2.0",
+    "license_classifiers": [
+      "License :: OSI Approved :: Apache Software License"
+    ]
+  },
+  {
+    "name": "peewee",
+    "version": "4.3.0",
+    "license_expression": null,
+    "license_classifiers": []
+  },
+  {
+    "name": "watchfiles",
+    "version": "1.2.0",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: MIT License"
+    ]
+  },
+  {
+    "name": "httptools",
+    "version": "0.8.0",
+    "license_expression": "MIT",
+    "license_classifiers": []
+  },
+  {
+    "name": "fsspec",
+    "version": "2026.7.0",
+    "license_expression": "BSD-3-Clause",
+    "license_classifiers": []
+  },
+  {
+    "name": "yfinance",
+    "version": "1.7.0",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: Apache Software License"
+    ]
+  },
+  {
+    "name": "billiard",
+    "version": "4.2.4",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: BSD License"
+    ]
+  },
+  {
+    "name": "PyOTP",
+    "version": "2.10.0",
+    "license_expression": "MIT",
+    "license_classifiers": []
+  },
+  {
+    "name": "pytest",
+    "version": "9.1.1",
+    "license_expression": "MIT",
+    "license_classifiers": []
+  },
+  {
+    "name": "razorpay",
+    "version": "2.0.1",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: MIT License"
+    ]
+  },
+  {
+    "name": "execnet",
+    "version": "2.1.2",
+    "license_expression": "MIT",
+    "license_classifiers": [
+      "License :: OSI Approved :: MIT License"
+    ]
+  },
+  {
+    "name": "uvicorn",
+    "version": "0.52.4",
+    "license_expression": "BSD-3-Clause",
+    "license_classifiers": []
+  },
+  {
+    "name": "argon2-cffi",
+    "version": "25.1.0",
+    "license_expression": "MIT",
+    "license_classifiers": []
+  },
+  {
+    "name": "argon2-cffi-bindings",
+    "version": "25.1.0",
+    "license_expression": "MIT",
+    "license_classifiers": []
+  },
+  {
+    "name": "tokenizers",
+    "version": "0.23.1",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: Apache Software License"
+    ]
+  },
+  {
+    "name": "Pygments",
+    "version": "2.20.0",
+    "license_expression": "BSD-2-Clause",
+    "license_classifiers": []
+  },
+  {
+    "name": "ruff",
+    "version": "0.16.6",
+    "license_expression": "MIT",
+    "license_classifiers": []
+  },
+  {
+    "name": "mmh3",
+    "version": "5.2.1",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: MIT License"
+    ]
+  },
+  {
+    "name": "click-didyoumean",
+    "version": "0.3.1",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: MIT License"
+    ]
+  },
+  {
+    "name": "httpcore",
+    "version": "1.0.9",
+    "license_expression": "BSD-3-Clause",
+    "license_classifiers": [
+      "License :: OSI Approved :: BSD License"
+    ]
+  },
+  {
+    "name": "pyzipper",
+    "version": "0.4.0",
+    "license_expression": "MIT",
+    "license_classifiers": []
+  },
+  {
+    "name": "annotated-doc",
+    "version": "0.0.5",
+    "license_expression": "MIT",
+    "license_classifiers": []
+  },
+  {
+    "name": "prompt_toolkit",
+    "version": "3.0.53",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: BSD License"
+    ]
+  },
+  {
+    "name": "cbor2",
+    "version": "5.9.0",
+    "license_expression": "MIT",
+    "license_classifiers": []
+  },
+  {
+    "name": "filelock",
+    "version": "3.32.2",
+    "license_expression": "MIT",
+    "license_classifiers": [
+      "License :: OSI Approved :: MIT License"
+    ]
+  },
+  {
+    "name": "ty",
+    "version": "0.0.79",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: MIT License"
+    ]
+  },
+  {
+    "name": "aiofiles",
+    "version": "25.1.0",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: Apache Software License"
+    ]
+  },
+  {
+    "name": "annotated-types",
+    "version": "0.8.0",
+    "license_expression": "MIT",
+    "license_classifiers": [
+      "License :: OSI Approved :: MIT License"
+    ]
+  },
+  {
+    "name": "python-dateutil",
+    "version": "2.9.0.post0",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: BSD License",
+      "License :: OSI Approved :: Apache Software License"
+    ]
+  },
+  {
+    "name": "urllib3",
+    "version": "2.8.0",
+    "license_expression": "MIT",
+    "license_classifiers": []
+  },
+  {
+    "name": "curl_cffi",
+    "version": "0.16.0",
+    "license_expression": "MIT",
+    "license_classifiers": []
+  },
+  {
+    "name": "beautifulsoup4",
+    "version": "4.15.0",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: MIT License"
+    ]
+  },
+  {
+    "name": "pytest-cov",
+    "version": "7.1.0",
+    "license_expression": "MIT",
+    "license_classifiers": [
+      "License :: OSI Approved :: MIT License"
+    ]
+  },
+  {
+    "name": "flatbuffers",
+    "version": "25.12.19",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: Apache Software License"
+    ]
+  },
+  {
+    "name": "py_rust_stemmers",
+    "version": "0.1.8",
+    "license_expression": null,
+    "license_classifiers": []
+  },
+  {
+    "name": "coverage",
+    "version": "7.15.3",
+    "license_expression": null,
+    "license_classifiers": []
+  },
+  {
+    "name": "charset-normalizer",
+    "version": "3.4.9",
+    "license_expression": null,
+    "license_classifiers": []
+  },
+  {
+    "name": "sentry-sdk",
+    "version": "2.71.0",
+    "license_expression": "MIT",
+    "license_classifiers": []
+  },
+  {
+    "name": "pytz",
+    "version": "2026.3.post1",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: MIT License"
+    ]
+  },
+  {
+    "name": "tqdm",
+    "version": "4.70.0",
+    "license_expression": null,
+    "license_classifiers": []
+  },
+  {
+    "name": "typing-inspection",
+    "version": "0.4.2",
+    "license_expression": "MIT",
+    "license_classifiers": []
+  },
+  {
+    "name": "click-repl",
+    "version": "0.3.0",
+    "license_expression": null,
+    "license_classifiers": []
+  },
+  {
+    "name": "Mako",
+    "version": "1.4.1",
+    "license_expression": "MIT",
+    "license_classifiers": []
+  },
+  {
+    "name": "pillow",
+    "version": "12.3.0",
+    "license_expression": "MIT-CMU",
+    "license_classifiers": []
+  },
+  {
+    "name": "pydantic-settings",
+    "version": "2.15.0",
+    "license_expression": "MIT",
+    "license_classifiers": [
+      "License :: OSI Approved :: MIT License"
+    ]
+  },
+  {
+    "name": "hiredis",
+    "version": "3.4.0",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: MIT License"
+    ]
+  },
+  {
+    "name": "fastembed",
+    "version": "0.8.0",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: Other/Proprietary License"
+    ]
+  },
+  {
+    "name": "protobuf",
+    "version": "7.35.1",
+    "license_expression": null,
+    "license_classifiers": []
+  },
+  {
+    "name": "MarkupSafe",
+    "version": "3.0.3",
+    "license_expression": "BSD-3-Clause",
+    "license_classifiers": []
+  },
+  {
+    "name": "aiosqlite",
+    "version": "0.22.1",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: MIT License"
+    ]
+  },
+  {
+    "name": "redis",
+    "version": "6.4.0",
+    "license_expression": "MIT",
+    "license_classifiers": [
+      "License :: OSI Approved :: MIT License"
+    ]
+  },
+  {
+    "name": "pycryptodomex",
+    "version": "3.23.0",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: BSD License",
+      "License :: Public Domain"
+    ]
+  },
+  {
+    "name": "fastapi",
+    "version": "0.141.1",
+    "license_expression": "MIT",
+    "license_classifiers": []
+  },
+  {
+    "name": "click-plugins",
+    "version": "1.1.1.2",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: BSD License"
+    ]
+  },
+  {
+    "name": "alembic",
+    "version": "1.19.2",
+    "license_expression": "MIT",
+    "license_classifiers": []
+  },
+  {
+    "name": "cryptography",
+    "version": "50.0.2",
+    "license_expression": "Apache-2.0 OR BSD-3-Clause",
+    "license_classifiers": []
+  },
+  {
+    "name": "pytest-asyncio",
+    "version": "1.4.0",
+    "license_expression": "Apache-2.0",
+    "license_classifiers": []
+  },
+  {
+    "name": "pyasn1",
+    "version": "0.6.4",
+    "license_expression": null,
+    "license_classifiers": []
+  },
+  {
+    "name": "python-multipart",
+    "version": "0.0.32",
+    "license_expression": "Apache-2.0",
+    "license_classifiers": [
+      "License :: OSI Approved :: Apache Software License"
+    ]
+  },
+  {
+    "name": "python-dotenv",
+    "version": "1.2.2",
+    "license_expression": null,
+    "license_classifiers": []
+  },
+  {
+    "name": "pydantic_core",
+    "version": "2.46.5",
+    "license_expression": "MIT",
+    "license_classifiers": []
+  },
+  {
+    "name": "fastapi-users-db-sqlalchemy",
+    "version": "7.0.0",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: MIT License"
+    ]
+  },
+  {
+    "name": "anyio",
+    "version": "4.14.2",
+    "license_expression": "MIT",
+    "license_classifiers": []
+  },
+  {
+    "name": "PyYAML",
+    "version": "6.0.3",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: MIT License"
+    ]
+  },
+  {
+    "name": "pycparser",
+    "version": "3.0",
+    "license_expression": "BSD-3-Clause",
+    "license_classifiers": []
+  },
+  {
+    "name": "dnspython",
+    "version": "2.8.0",
+    "license_expression": null,
+    "license_classifiers": [
+      "License :: OSI Approved :: ISC License (ISCL)"
+    ]
+  },
+  {
+    "name": "tzlocal",
+    "version": "5.4.4",
+    "license_expression": "MIT",
+    "license_classifiers": []
+  }
+]

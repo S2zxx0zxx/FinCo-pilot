@@ -52,10 +52,10 @@ async def create_connect_token(
         return ConnectTokenResponse(**token_data)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create connect token: {str(e)}",
+            detail="Unable to create a bank connection token. Please retry.",
         )
 
 
@@ -91,10 +91,10 @@ async def list_provider_institutions(
         return await connection_service.list_provider_institutions(provider, country)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Failed to load institutions: {str(e)}",
+            detail="Unable to load bank institutions. Please retry.",
         )
 
 
@@ -129,10 +129,10 @@ async def oauth_callback(
         raise HTTPException(status_code=status.HTTP_410_GONE, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Failed to connect: {str(e)}",
+            detail="Unable to complete the bank connection. Please retry.",
         )
 
 
@@ -153,10 +153,10 @@ async def get_reauth_url(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except NotImplementedError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to build reauth URL: {str(e)}",
+            detail="Unable to start bank reauthentication. Please retry.",
         )
 
 
@@ -254,10 +254,10 @@ async def get_reconnect_token(
             connection.provider, ctx.user_id, item_id=item_id
         )
         return ReconnectTokenResponse(**token_data)
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create reconnect token: {str(e)}",
+            detail="Unable to create a bank reconnection token. Please retry.",
         )
 
 

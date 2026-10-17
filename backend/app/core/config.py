@@ -2,6 +2,7 @@ from functools import lru_cache
 import json
 from os import getenv
 from pathlib import Path
+from typing import Literal
 import time
 from urllib.parse import urlsplit
 
@@ -201,6 +202,12 @@ class Settings(BaseSettings):
     fx_sync_mode: str = "on_demand"
     fx_allow_unsafe_1to1_fallback: bool = True
     require_fx_provider: bool = False
+
+    # Instance-wide directories are an explicit trusted self-hosted opt-in.
+    user_directory_scope: Literal["shared_workspaces", "instance"] = "shared_workspaces"
+
+    # Import parser input budget, independent of attachment storage limits.
+    import_max_file_size_mb: int = Field(default=10, ge=1, le=100)
 
     # Storage
     storage_provider: str = "local"  # local|s3

@@ -171,11 +171,11 @@ def _surface_errors(errlist: list[dict], context: str) -> None:
             help_url="https://bridge.simplefin.org/",
         )
     for entry in errlist:
+        # Keep the documented transient category useful without trusting an
+        # upstream string (or its message/account fields) as safe log content.
+        code = "act.failed" if entry.get("code") == "act.failed" else "other"
         logger.warning(
-            "SimpleFIN %s warning code=%s msg=%s",
-            context,
-            entry.get("code"),
-            entry.get("msg") or entry.get("message"),
+            "SimpleFIN %s returned a non-authentication warning (%s)", context, code,
         )
 
 

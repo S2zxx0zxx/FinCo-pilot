@@ -80,8 +80,7 @@ class OllamaProvider(LLMProvider):
             async with httpx.AsyncClient(timeout=httpx.Timeout(120.0, connect=10.0)) as client:
                 async with client.stream("POST", url, json=payload) as resp:
                     if resp.status_code >= 400:
-                        body = (await resp.aread()).decode("utf-8", errors="replace")
-                        raise LLMUnavailableError(f"Ollama {resp.status_code}: {body}", status=resp.status_code)
+                        raise LLMUnavailableError(f"Ollama provider request failed (HTTP {resp.status_code})", status=resp.status_code)
                     tool_idx = 0
                     async for line in resp.aiter_lines():
                         if not line.strip():
@@ -109,7 +108,7 @@ class OllamaProvider(LLMProvider):
                             yield ChatChunk(type="usage", usage=usage)
                             yield ChatChunk(type="finish", finish_reason=data.get("done_reason") or "stop")
         except httpx.HTTPError as exc:
-            raise LLMUnavailableError(f"Ollama unreachable: {exc}") from exc
+            raise LLMUnavailableError(f"Ollama unreachable ({type(exc).__name__})") from None
 
     async def embed(self, texts: list[str], *, model: str) -> list[list[float]]:
         url = f"{self.base_url.rstrip('/')}/api/embed"
@@ -119,11 +118,11 @@ class OllamaProvider(LLMProvider):
                 # /api/embed accepts a list under `input` since Ollama 0.2+.
                 resp = await client.post(url, json={"model": model, "input": texts})
                 if resp.status_code >= 400:
-                    raise LLMUnavailableError(f"Ollama embed {resp.status_code}: {resp.text}", status=resp.status_code)
+                    raise LLMUnavailableError(f"Ollama embedding request failed (HTTP {resp.status_code})", status=resp.status_code)
                 data = resp.json()
                 embeddings = data.get("embeddings") or []
                 for vec in embeddings:
                     out.append(list(vec))
         except httpx.HTTPError as exc:
-            raise LLMUnavailableError(f"Ollama unreachable: {exc}") from exc
+            raise LLMUnavailableError(f"Ollama unreachable ({type(exc).__name__})") from None
         return out

@@ -167,7 +167,7 @@ async def test_post_raises_runtime_error_when_rpc_error_present():
         "error": {"code": -32601, "message": "method not found"},
     }))
     client = MCPClient(name="fincopilot", url="http://mcp.test/mcp")
-    with pytest.raises(RuntimeError, match="method not found"):
+    with pytest.raises(RuntimeError, match="MCP provider request failed"):
         await client.list_tools(token="fake")
 
 
@@ -287,8 +287,7 @@ async def test_registry_discover_swallows_per_server_errors(monkeypatch):
 @pytest.mark.asyncio
 async def test_registry_discover_warns_when_a_server_is_unreachable(monkeypatch, caplog):
     """An unreachable server leaves the agent with no tools while the chat
-    still answers, so the log has to name the server and its URL. Otherwise
-    the only symptom is an assistant saying it can't see any data."""
+    still answers. Record failure type without endpoint credentials or payloads."""
     from app.agents.config import get_agent_settings
 
     monkeypatch.setattr(get_agent_settings(), "extra_mcp_servers", "")
@@ -300,8 +299,8 @@ async def test_registry_discover_warns_when_a_server_is_unreachable(monkeypatch,
         handles = await reg.discover(user_id=uuid.uuid4())
 
     assert handles == []
-    assert "http://mcp-server:8765/mcp" in caplog.text
-    assert "fincopilot" in caplog.text
+    assert "Configured MCP server unreachable (RuntimeError)" in caplog.text
+    assert "http://mcp-server:8765/mcp" not in caplog.text
 
 
 @pytest.mark.asyncio
@@ -348,3 +347,33 @@ def test_registry_exposes_server_names(monkeypatch):
     monkeypatch.setattr(get_agent_settings(), "extra_mcp_servers", "http://b:9001/mcp|beta")
     reg = MCPRegistry()
     assert set(reg.server_names()) == {"fincopilot", "beta"}
+
+
+@pytest.mark.asyncio
+async def test_rpc_error_does_not_relay_provider_payload():
+    _FakeAsyncClient.queue.append(_FakeResponse(json_body={
+        'error': {'message': 'synthetic-secret account=123'},
+    }))
+    client = MCPClient(name='synthetic-secret', url='http://mcp.test/mcp')
+    with pytest.raises(RuntimeError) as error:
+        await client.list_tools(token='fake')
+    assert 'synthetic-secret' not in str(error.value)
+    assert 'account=123' not in str(error.value)
+
+
+@pytest.mark.asyncio
+async def test_discovery_log_does_not_relay_url_alias_or_exception(monkeypatch, caplog):
+    from app.agents.config import get_agent_settings
+
+    monkeypatch.setattr(get_agent_settings(), 'extra_mcp_servers', '')
+    monkeypatch.setattr(get_agent_settings(), 'builtin_mcp_url',
+                        'https://name:synthetic-secret@mcp.test/private?key=synthetic-secret')
+
+    async def fail(*args, **kwargs):
+        raise RuntimeError('synthetic-secret in exception')
+
+    monkeypatch.setattr(MCPClient, 'list_tools', fail)
+    with caplog.at_level('WARNING', logger='app.agents.mcp.client'):
+        assert await MCPRegistry().discover(user_id=uuid.uuid4()) == []
+    assert 'synthetic-secret' not in caplog.text
+    assert 'private?' not in caplog.text

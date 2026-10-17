@@ -101,11 +101,11 @@ async def chat(
             ):
                 yield _format_event(ev)
         except Exception as exc:  # noqa: BLE001
-            logger.exception("agent chat stream failed")
+            logger.error("Agent chat stream failed (%s)", type(exc).__name__)
             message = (
                 "FinCo Copilot could not complete this request. Please try again."
                 if is_core
-                else str(exc)
+                else "The agent could not complete this request. Please try again."
             )
             yield f"event: error\ndata: {json.dumps({'error_code': 'unknown', 'error_message': message})}\n\n".encode()
 

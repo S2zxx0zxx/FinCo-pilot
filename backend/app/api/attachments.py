@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.billing.enums import Metric
 from app.billing.usage import enforce_limit
 from app.core.database import get_async_session
+from app.core.upload_limits import read_storage_upload
 from app.core.workspace_context import (
     WorkspaceContext,
     current_workspace,
@@ -28,7 +29,7 @@ async def upload_attachment(
     ctx: WorkspaceContext = Depends(current_writable_workspace),
     session: AsyncSession = Depends(get_async_session),
 ):
-    data = await file.read()
+    data = await read_storage_upload(file)
     # Server measures actual bytes after upload parsing; Content-Length and
     # browser-reported sizes are never trusted for billing enforcement.
     await enforce_limit(session, ctx.workspace, Metric.STORAGE_BYTES, increment=len(data))

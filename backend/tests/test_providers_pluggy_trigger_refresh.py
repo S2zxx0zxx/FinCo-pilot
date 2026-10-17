@@ -65,6 +65,19 @@ async def test_refresh_missing_item_id_skipped():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("status_code", [400, 503])
+async def test_refresh_failure_logs_exclude_body_and_unknown_code(status_code, caplog):
+    import logging
+
+    marker = "PRIVATE-provider-body-and-token"
+    caplog.set_level(logging.INFO)
+    client = _client_with(_http_response(status_code, {"codeDescription": marker}, text=marker), [])
+    assert await _run(client) == "failed"
+    assert marker not in caplog.text
+    assert not any(record.exc_info for record in caplog.records)
+
+
+@pytest.mark.asyncio
 async def test_refresh_400_mfa_code_signals_user_action_needed():
     """Pluggy 400 with an MFA-related codeDescription → user must reconnect
     via the widget so the new MFA token can be entered."""

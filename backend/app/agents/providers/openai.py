@@ -83,13 +83,13 @@ def _serialize_tools(tools: Optional[list[ToolDefinition]]) -> Optional[list[dic
 
 def _raise_for_status(status: int, body: str) -> None:
     if status == 401 or status == 403:
-        raise LLMAuthError(f"OpenAI auth failed: {body}", status=status)
+        raise LLMAuthError(f"OpenAI auth failed (HTTP {status})", status=status)
     if status == 429:
-        raise LLMRateLimitError(f"OpenAI rate limit: {body}", status=status)
+        raise LLMRateLimitError(f"OpenAI rate limit (HTTP {status})", status=status)
     if status >= 500:
-        raise LLMUnavailableError(f"OpenAI {status}: {body}", status=status)
+        raise LLMUnavailableError(f"OpenAI provider request failed (HTTP {status})", status=status)
     if status >= 400:
-        raise LLMUnavailableError(f"OpenAI {status}: {body}", status=status)
+        raise LLMUnavailableError(f"OpenAI provider request failed (HTTP {status})", status=status)
 
 
 class OpenAIProvider(LLMProvider):
@@ -135,8 +135,8 @@ class OpenAIProvider(LLMProvider):
             async with httpx.AsyncClient(timeout=httpx.Timeout(120.0, connect=10.0)) as client:
                 async with client.stream("POST", url, json=payload, headers=self._headers()) as resp:
                     if resp.status_code >= 400:
-                        body = (await resp.aread()).decode("utf-8", errors="replace")
-                        _raise_for_status(resp.status_code, body)
+                        # Do not buffer or relay untrusted error bodies.
+                        _raise_for_status(resp.status_code, "")
                     # OpenAI's streaming protocol uses `index` (an integer)
                     # as the stable key for tool calls across chunks. The
                     # first chunk for an index carries `id` and `name`;
@@ -217,7 +217,7 @@ class OpenAIProvider(LLMProvider):
                         yield ChatChunk(type="usage", usage=usage)
                     yield ChatChunk(type="finish", finish_reason=finish_reason or "stop")
         except httpx.HTTPError as exc:
-            raise LLMUnavailableError(f"OpenAI unreachable: {exc}") from exc
+            raise LLMUnavailableError(f"OpenAI unreachable ({type(exc).__name__})") from None
 
     async def embed(self, texts: list[str], *, model: str) -> list[list[float]]:
         url = f"{self.base_url.rstrip('/')}/embeddings"
@@ -229,4 +229,4 @@ class OpenAIProvider(LLMProvider):
                 data = resp.json()
                 return [item["embedding"] for item in data.get("data", [])]
         except httpx.HTTPError as exc:
-            raise LLMUnavailableError(f"OpenAI unreachable: {exc}") from exc
+            raise LLMUnavailableError(f"OpenAI unreachable ({type(exc).__name__})") from None

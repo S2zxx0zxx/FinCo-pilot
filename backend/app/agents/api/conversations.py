@@ -158,7 +158,7 @@ async def generate_title(
                 session, conversation_id, ctx.workspace.id, ctx.user_id, candidate[:80]
             )
     except Exception:  # noqa: BLE001
-        logger.exception("title generation failed for conversation %s", conversation_id)
+        logger.error("title generation failed for conversation %s", conversation_id)
     return conv
 
 

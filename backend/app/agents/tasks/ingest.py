@@ -51,18 +51,26 @@ async def _do_ingest(session_maker, doc_id: uuid.UUID, agent_id: uuid.UUID) -> d
     from sqlalchemy import select
 
     async with session_maker() as session:
-        await knowledge_service.mark_status(session, doc_id, status="processing")
         doc = (await session.execute(select(KnowledgeDoc).where(KnowledgeDoc.id == doc_id))).scalar_one_or_none()
-        if doc is None or not doc.storage_path:
+        # Queue arguments are not an authority to move another agent's private
+        # document/chunks. Validate the persisted binding before reads or writes.
+        if doc is None or doc.agent_id != agent_id or not doc.storage_path:
             return {"ok": False, "reason": "doc missing"}
+        await knowledge_service.mark_status(session, doc_id, status="processing")
 
         try:
             payload = Path(doc.storage_path).read_bytes()
         except Exception as exc:  # noqa: BLE001
-            await knowledge_service.mark_status(session, doc_id, status="failed", error=f"read failed: {exc}")
+            logger.warning("Knowledge read failed (%s)", type(exc).__name__)
+            await knowledge_service.mark_status(session, doc_id, status="failed", error="read failed")
             return {"ok": False, "reason": "read failed"}
 
-        chunks = list(chunks_from_upload(payload, doc.mime, doc.title))
+        try:
+            chunks = list(chunks_from_upload(payload, doc.mime, doc.title))
+        except Exception as exc:  # noqa: BLE001 — untrusted documents may be malformed
+            logger.warning("Knowledge parse failed (%s)", type(exc).__name__)
+            await knowledge_service.mark_status(session, doc_id, status="failed", error="parse failed")
+            return {"ok": False, "reason": "parse failed"}
         if not chunks:
             await knowledge_service.mark_status(session, doc_id, status="failed", error="no extractable text", chunk_count=0)
             return {"ok": False, "reason": "no text"}
@@ -70,8 +78,8 @@ async def _do_ingest(session_maker, doc_id: uuid.UUID, agent_id: uuid.UUID) -> d
         try:
             embeddings, model_label = await embed_texts(chunks)
         except Exception as exc:  # noqa: BLE001
-            logger.exception("embedding failed for doc %s", doc_id)
-            await knowledge_service.mark_status(session, doc_id, status="failed", error=f"embed failed: {exc}")
+            logger.warning("Knowledge embedding failed (%s)", type(exc).__name__)
+            await knowledge_service.mark_status(session, doc_id, status="failed", error="embed failed")
             return {"ok": False, "reason": "embed failed"}
 
         n = await knowledge_service.replace_chunks(

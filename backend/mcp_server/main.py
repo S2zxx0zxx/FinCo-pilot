@@ -10,7 +10,7 @@ import json
 import logging
 from typing import Any
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, Response
 
 from app.core.database import async_session_maker
@@ -73,7 +73,7 @@ async def mcp(request: Request) -> Response:
         ctx = verify_request(request)
     except Exception as exc:  # HTTPException from verify_request
         status_code = getattr(exc, "status_code", 401)
-        detail = getattr(exc, "detail", str(exc))
+        detail = exc.detail if isinstance(exc, HTTPException) else "MCP authentication unavailable"
         return JSONResponse(
             status_code=status_code,
             content={"jsonrpc": "2.0", "id": None, "error": {"code": -32001, "message": str(detail)}},
@@ -116,7 +116,6 @@ async def mcp(request: Request) -> Response:
 
     if ctx.external and method != "tools/call":
         from mcp_server.registry import authorize_tool
-        from fastapi import HTTPException
         try:
             async with async_session_maker() as session:
                 await authorize_tool(session, ctx, None, {})
@@ -154,7 +153,7 @@ async def mcp(request: Request) -> Response:
                 async with async_session_maker() as session:
                     tools = await list_authorized_tools(session, ctx)
             except Exception:
-                logger.exception("MCP discovery unavailable")
+                logger.error("MCP discovery unavailable")
                 return JSONResponse(status_code=503, content=_err(req_id, -32603, "Tool discovery temporarily unavailable"))
         else:
             tools = list_tools()
@@ -180,7 +179,7 @@ async def mcp(request: Request) -> Response:
         except KeyError:
             return JSONResponse(content=_err(req_id, -32602 if modern else -32601, "Unknown tool"))
         except Exception:  # noqa: BLE001
-            logger.exception("MCP tool failure: %s", name)
+            logger.error("MCP tool execution unavailable")
             return success({
                 "content": [{"type": "text", "text": "Tool unavailable or access denied"}],
                 "isError": True,

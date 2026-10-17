@@ -336,11 +336,14 @@ def _classify_error(
 ) -> tuple[str, str]:
     """Map provider failures to stable, user-facing error messages.
 
-    Custom-agent owners may need the provider's detail to debug their own
-    connection. The system-managed Copilot is operator-routed, so its backend
-    exception text is not part of the user contract and must stay in logs.
+    Custom-agent owners receive error class/status for debugging, never raw
+    provider content, endpoint credentials or exception text. Core Copilot
+    keeps its existing generic user-facing messages.
     """
-    detail = str(exc).strip() or exc.__class__.__name__
+    detail = exc.__class__.__name__
+    status = getattr(exc, "status", None)
+    if type(status) is int and 100 <= status <= 599:
+        detail += f" (HTTP {status})"
     if isinstance(exc, LLMAuthError):
         return (
             "auth",
@@ -440,7 +443,7 @@ class AgentExecutor:
                     if primer:
                         messages.append(ChatMessage(role="system", content=primer))
             except Exception:  # noqa: BLE001
-                logger.exception("context primer failed; continuing without it")
+                logger.warning("context primer failed; continuing without it")
         # Page-context primer — orientation about where the user is when
         # they sent THIS message. Goes after the agent's prompt so the
         # base persona always wins, but before history so prior turns
@@ -474,7 +477,7 @@ class AgentExecutor:
                 agent_id=agent.id,
             )
         except Exception:
-            logger.exception("MCP discovery failed; running without tools")
+            logger.warning("MCP discovery failed; running without tools")
             handles = []
         allowed = await agent_service.allowed_tool_pairs(session, agent.id)
         if allowed is not None:
@@ -500,10 +503,7 @@ class AgentExecutor:
                 capability = Capability(handle.required_capability)
             except ValueError:
                 logger.error(
-                    "MCP tool %s.%s declares unknown capability %r; hiding it",
-                    handle.server,
-                    handle.name,
-                    handle.required_capability,
+                    "MCP tool declares unknown capability; hiding it",
                 )
                 continue
             if plan_spec.has(capability):
@@ -551,7 +551,7 @@ class AgentExecutor:
         try:
             provider, model = await _provider_and_model_for(session, agent)
         except Exception:  # noqa: BLE001
-            logger.exception("provider resolution failed; falling back to legacy path")
+            logger.warning("provider resolution failed; falling back to legacy path")
             provider = _provider_for(agent)
             model = _model_for(agent)
         if not model:
@@ -592,10 +592,9 @@ class AgentExecutor:
                         usage_input = chunk.usage.input_tokens
                         usage_output = chunk.usage.output_tokens
             except LLMError as exc:
-                # Log the full chain — the user-facing string is short by
-                # design, but we want the traceback (and any wrapped
-                # httpx error) in the backend logs for debugging.
-                logger.exception("LLM provider call failed (kind=%s)", type(exc).__name__)
+                # Provider errors and their causes may contain financial inputs or
+                # endpoint credentials. Only record a stable error class.
+                logger.warning("LLM provider call failed (kind=%s)", type(exc).__name__)
                 code, msg = _classify_error(
                     exc,
                     expose_detail=not agent_service.is_core_copilot(agent),
@@ -604,7 +603,7 @@ class AgentExecutor:
                 yield ExecutorEvent(type="done", finish_reason="error")
                 return
             except Exception as exc:  # noqa: BLE001
-                logger.exception("provider stream failed")
+                logger.warning("provider stream failed")
                 _, message = _classify_error(
                     exc,
                     expose_detail=not agent_service.is_core_copilot(agent),
@@ -656,7 +655,7 @@ class AgentExecutor:
                     latency_ms=int((time.time() - iter_start) * 1000),
                 )
             except Exception:  # noqa: BLE001
-                logger.exception("failed to record llm usage")
+                logger.warning("failed to record llm usage")
 
             if not assembled_calls:
                 # If the model returned nothing at all (no text, no tool
@@ -783,8 +782,8 @@ async def _safe_call_tool(
             agent_id=agent_id,
         )
     except Exception as exc:  # noqa: BLE001
-        logger.exception("tool call %s failed", call.name)
-        return {"ok": False, "data": None, "text": f"Tool error: {exc}", "elapsed_ms": int((time.time() - started) * 1000)}
+        logger.warning("Tool call failed (kind=%s)", type(exc).__name__)
+        return {"ok": False, "data": None, "text": f"Tool request failed ({type(exc).__name__})", "elapsed_ms": int((time.time() - started) * 1000)}
 
 
 def _summarize_result(res: dict[str, Any]) -> dict[str, Any]:

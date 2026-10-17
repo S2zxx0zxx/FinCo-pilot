@@ -1,0 +1,42 @@
+{
+  "source": "Local source at engineeringcd65210 plus audited reporter additions",
+  "landing_contracts": {
+    "passed": 18
+  },
+  "growth_contracts": {
+    "passed": 29
+  },
+  "frontend_unit": {
+    "passed": 939,
+    "files": 122,
+    "maxWorkers": 2
+  },
+  "frontend_lint": "PASS after contextual Sentry type fix",
+  "frontend_typecheck": "PASS",
+  "combined_builds": [
+    "excluded preview PASS",
+    "approved production fixture PASS"
+  ],
+  "app_entry_gzip_bytes": 214922,
+  "app_entry_gzip_budget": 307200,
+  "synthetic_backend_product": {
+    "passed": 175,
+    "warnings_as_errors": true,
+    "production_io": false
+  },
+  "browser": {
+    "local_chromium_home_widths": 9,
+    "home_axe_scans": 8,
+    "documentation_viewport_page_checks": 12,
+    "documentation_no_js_pages": 3,
+    "nginx_entry_cases": 12,
+    "local_firefox": "Outer150s cap expired during newPage; not passed",
+    "remote_firefox_cd65210": "Six-minute cap expired during1024px reduce cold-login navigation; earlier cases passed, root cause unresolved"
+  },
+  "secret_hygiene": "PASS bounded known-token/config gate",
+  "full_backend_suite": "Not rerun for marketing-only changes; backend job green scope-skip not full-suite evidence",
+  "live_lighthouse": "ERR_CERT_AUTHORITY_INVALID via environment proxy; validation not bypassed",
+  "pagespeed": "429 RESOURCE_EXHAUSTED",
+  "field_cwv": "UNKNOWN",
+  "production_finance_auth_payment_e2e": "UNVERIFIED"
+}

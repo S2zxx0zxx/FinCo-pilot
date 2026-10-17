@@ -1,0 +1,7 @@
+{
+  "observedAtUtc": "2026-10-17T05:45:09.341Z",
+  "scope": "Live public production lab",
+  "caveat": "Simulated lab; no field p75 INP, actual phone or conversion claim. Two runs per page/device, no before/after causal claim.",
+  "results": [],
+  "blocked": "Browser/network/lab run failed; completed rows retained, missing runs are unverified"
+}

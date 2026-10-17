@@ -12,6 +12,7 @@ from html.parser import HTMLParser
 import json
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, build_opener, HTTPRedirectHandler
+from urllib.robotparser import RobotFileParser
 from xml.etree import ElementTree as ET
 
 ORIGIN = 'https://fincopilot.app'
@@ -90,6 +91,13 @@ def failures(rows):
     if 'xml' not in sm.get('headers', {}).get('Content-Type', ''): errors.append('root sitemap MIME')
     robots = by_url.get(ORIGIN+'/robots.txt', {})
     if robots.get('status') != 200 or 'text/plain' not in robots.get('headers', {}).get('Content-Type', '') or 'Sitemap: '+ORIGIN+'/sitemap.xml' not in robots.get('robots_text', ''): errors.append('authoritative robots contract')
+    # These are fixed ordinary groups, not certification of provider-managed policy.
+    policy = RobotFileParser(); policy.parse(robots.get('robots_text', '').splitlines())
+    for agent in ['Googlebot', 'Bingbot', 'OAI-SearchBot']:
+        if any(not policy.can_fetch(agent, ORIGIN+p) for p in PAGES): errors.append(agent+': public crawling blocked')
+    for path in ['/login','/register','/pricing','/privacy','/terms','/support']:
+        row = by_url.get(ORIGIN+path, {})
+        if row.get('status') != 200 or 'noindex' not in row.get('html', {}).get('robots', '').lower(): errors.append(path+': private/app noindex contract not proved')
     if by_url.get(ORIGIN+'/api/health/ready', {}).get('readiness') != 'ready': errors.append('API readiness not proved')
     if by_url.get(ORIGIN+'/welcome/__seo_missing_page__/', {}).get('status') != 404: errors.append('public missing route is not 404')
     return errors

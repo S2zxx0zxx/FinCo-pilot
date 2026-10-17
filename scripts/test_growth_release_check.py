@@ -14,6 +14,7 @@ class ReleaseContracts(unittest.TestCase):
                   'robots_text':'User-agent: *\nAllow: /welcome/\nSitemap: '+ORIGIN+'/sitemap.xml'},
                  {'url':ORIGIN+'/api/health/ready','readiness':'ready'},
                  {'url':ORIGIN+'/welcome/__seo_missing_page__/','status':404}]
+        rows += [{'url':ORIGIN+p,'status':200,'html':{'robots':'noindex'}} for p in ['/login','/register','/pricing','/privacy','/terms','/support']]
         return rows
     def test_good_fixture_passes_and_each_release_regression_fails(self):
         good=self.fixture(); self.assertEqual(failures(good), [])
@@ -24,7 +25,9 @@ class ReleaseContracts(unittest.TestCase):
             rows=copy.deepcopy(good); rows[0]['html'][field]=value; self.assertTrue(failures(rows))
         rows=copy.deepcopy(good); rows[0]['headers']['X-Robots-Tag']='NOINDEX'; self.assertTrue(failures(rows))
         rows=copy.deepcopy(good); rows[4]['sitemap_urls'].append(ORIGIN+'/accounts'); self.assertTrue(failures(rows))
-        rows=copy.deepcopy(good); rows[-2]['readiness']='not_ready'; self.assertTrue(failures(rows))
+        rows=copy.deepcopy(good); rows[6]['readiness']='not_ready'; self.assertTrue(failures(rows))
+        rows=copy.deepcopy(good); rows[5]['robots_text']='User-agent: *\nDisallow: /\nSitemap: '+ORIGIN+'/sitemap.xml'; self.assertTrue(failures(rows))
+        rows=copy.deepcopy(good); rows[-1]['html']['robots']='index'; self.assertTrue(failures(rows))
     def test_parser_reads_split_heading_and_omits_token_links(self):
         p=Metadata(); p.feed('<title>Useful title</title><h1><span>Hello</span> world</h1><a href="/login?token=secret">a</a><a href="/welcome/features/">b</a>')
         self.assertEqual(p.headings,['Hello world']); self.assertEqual(p.links,['/welcome/features/'])

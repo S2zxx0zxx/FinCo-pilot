@@ -1024,6 +1024,11 @@ h2 span {
 .faq-list .accordion__indicator {
   color: #547254;
 }
+/* Keep collapsed panels hidden even when an earlier size animation resolves late. */
+.faq-list .accordion__panel[aria-hidden='true'] {
+  height: 0;
+  visibility: hidden;
+}
 .faq-list .accordion__body {
   padding: 0 0 22px;
 }

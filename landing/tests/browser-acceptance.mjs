@@ -140,7 +140,9 @@ try {
       await accessibility(page, width + ':demo')
     const screens = page.locator('.product-tabs').getByRole('tablist')
     await screens.getByRole('tab', { name: /Accounts$/ }).click()
-    const img = page.locator('.product-capture img:visible')
+    const accountsPanel = page.getByRole('tabpanel', { name: 'Accounts', exact: true })
+    await accountsPanel.waitFor({ state: 'visible' })
+    const img = accountsPanel.locator('.product-capture img')
     await img.scrollIntoViewIfNeeded()
     await page.waitForFunction(() =>
       [...document.querySelectorAll('.product-capture img')]
@@ -181,6 +183,7 @@ try {
       await accessibility(page, width + ':FAQ-open')
     await faq.click()
     assert.equal(await faq.getAttribute('aria-expanded'), 'false')
+    await page.getByText('FinCo-Pilot supports managing financial accounts and transactions manually.', { exact: false }).waitFor({ state: 'hidden' })
     if (width <= 920) {
       const menu = page.getByRole('button', {
         name: 'Open navigation',

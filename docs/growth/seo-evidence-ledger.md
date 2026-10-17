@@ -47,3 +47,11 @@ Next: persist bounded HTTP matrix/provider receipts, inspect route export and ex
 ## Residual gates
 
 Exact-head CI/preview, owner merge/publication, real provider acceptance, qualified live sitemap plus authorized GSC/Bing submission, truthful operator/editorial facts and external outcome measurements. See SEO_RELEASE_RECORD_20261017.md. DONE artifact entries do not imply that production has shipped or that Google/Bing indexed anything.
+
+## Final review receipts
+
+- Exact candidate5d881c2d6a2f3100b6442a2a624073008cedee66 preview READY: dpl_7jRgZGDv6ak2LMJhtHQKhUS9pwNp, https://fincopilot-kfjmmh6wr-s2zxx0zxxs-projects.vercel.app. Extra probes verified slashless document variants200 with trailing-slash apex canonicals, root XML200/empty, root robots200, legacy features308 and register200/noindex.
+- Real production signed-out browser smoke shows email/password and Continue with Google on login; registration shows email/password/confirmation/currency and Sign up with Google. No submit, credential, OAuth round-trip or account creation performed.
+- Final candidate Firefox public-entry CI passed; the earlier timeout remains an unresolved intermittent concern. Independent local Firefox blank newPage also stalled before any app navigation, so it cannot be used as a product pass/fail.
+- Zone Analytics REST read is sunset (Cloudflare1015); no current Vercel usage/analytics read tool exposed. Actual cost and apex traffic remain UNKNOWN; DNS-only apex traffic would not be represented by proxied-zone totals.
+- Final task statuses distinguish completed bounded schema/product/accessibility/regression/reporting work from blocked production publication and provider/future outcomes. Current PR description/checks are the exact-head CI/deployment receipt.

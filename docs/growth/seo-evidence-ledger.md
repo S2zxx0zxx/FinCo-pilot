@@ -55,3 +55,7 @@ Exact-head CI/preview, owner merge/publication, real provider acceptance, qualif
 - Final candidate Firefox public-entry CI passed; the earlier timeout remains an unresolved intermittent concern. Independent local Firefox blank newPage also stalled before any app navigation, so it cannot be used as a product pass/fail.
 - Zone Analytics REST read is sunset (Cloudflare1015); no current Vercel usage/analytics read tool exposed. Actual cost and apex traffic remain UNKNOWN; DNS-only apex traffic would not be represented by proxied-zone totals.
 - Final task statuses distinguish completed bounded schema/product/accessibility/regression/reporting work from blocked production publication and provider/future outcomes. Current PR description/checks are the exact-head CI/deployment receipt.
+
+## Post-merge refresh — 17 October 2026
+
+PR95 merged to52a4713 and production is READY. Publication remains excluded. Live slash-www redirect regression corrected in follow-up source; hosted acceptance pending. Full main Backend Tests failed identity-safety regression (expected403, got200;5,212 passed/7 skipped). See [post-merge release record](SEO_POSTMERGE_20261017.md) and postmerge-http.json. No publication/env/provider writes by this refresh; do not claim complete production readiness.

@@ -18,7 +18,7 @@ from xml.etree import ElementTree as ET
 ORIGIN = 'https://fincopilot.app'
 PAGES = ['/welcome/', '/welcome/features/', '/welcome/how-it-works/', '/welcome/guides/import-transactions/']
 PATHS = ['/', *PAGES, '/robots.txt', '/sitemap.xml', '/welcome/sitemap.xml', '/login', '/register', '/pricing', '/privacy', '/terms', '/support', '/api/health/ready', '/welcome/__seo_missing_page__/']
-URLS = [ORIGIN + p for p in PATHS] + ['https://www.fincopilot.app/welcome/', 'https://api.fincopilot.app/api/health/ready']
+URLS = [ORIGIN + p for p in PATHS] + ['https://www.fincopilot.app' + p for p in PAGES] + ['https://api.fincopilot.app/api/health/ready']
 
 class NoRedirect(HTTPRedirectHandler):
     def redirect_request(self, *args, **kwargs):
@@ -100,6 +100,10 @@ def failures(rows):
         if row.get('status') != 200 or 'noindex' not in row.get('html', {}).get('robots', '').lower(): errors.append(path+': private/app noindex contract not proved')
     if by_url.get(ORIGIN+'/api/health/ready', {}).get('readiness') != 'ready': errors.append('API readiness not proved')
     if by_url.get(ORIGIN+'/welcome/__seo_missing_page__/', {}).get('status') != 404: errors.append('public missing route is not 404')
+    for path in PAGES:
+        row = by_url.get('https://www.fincopilot.app'+path, {})
+        if row.get('status') != 308 or row.get('redirect') != ORIGIN+path:
+            errors.append(path+': www must permanently redirect to exact apex canonical')
     return errors
 
 def main():

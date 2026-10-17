@@ -40,8 +40,18 @@ for template in "$PWD/default.conf.template" /tmp/finco-helm-nginx.template; do
     grep -q 'FinCo-Pilot' /tmp/finco-edge-body
     grep -q 'name="robots" content="noindex"' /tmp/finco-edge-body
   done
-  code=$(curl -sS -o /dev/null -w '%{http_code}' 'http://127.0.0.1:18080/sitemap.xml')
-  [ "$code" = '404' ]
+  # Discovery is now deliberately generated at the host root. This default
+  # unapproved CI build must expose valid XML with ZERO eligible public URLs,
+  # rather than SPA HTML or private financial/authentication locations.
+  code=$(curl -sS -D /tmp/finco-sitemap-headers -o /tmp/finco-sitemap-body -w '%{http_code}' 'http://127.0.0.1:18080/sitemap.xml')
+  [ "$code" = '200' ]
+  grep -qi '^Content-Type: .*xml' /tmp/finco-sitemap-headers
+  python3 - <<'PY'
+from xml.etree import ElementTree as ET
+root = ET.parse('/tmp/finco-sitemap-body').getroot()
+assert root.tag == '{http://www.sitemaps.org/schemas/sitemap/0.9}urlset'
+assert len(root) == 0, 'Unapproved CI build must not advertise any indexable URLs'
+PY
   mv dist/index.html dist/index.html.recovery-ci
   code=$(curl -sS -D /tmp/finco-edge-headers -o /dev/null -w '%{http_code}' \
     'http://127.0.0.1:18080/reset-password?token=synthetic-recovery-query-marker')

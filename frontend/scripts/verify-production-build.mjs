@@ -4,6 +4,7 @@ import { readFile, readdir } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
 import { gzipSync } from 'node:zlib'
 import path from 'node:path'
+import { marketingPublicationEnv } from './marketing-publication-policy.mjs'
 
 const dist = path.resolve('dist')
 const html = await readFile(path.join(dist, 'index.html'), 'utf8')
@@ -55,6 +56,32 @@ console.log(JSON.stringify({ entryChunks: seen.size, entryGzipBytes, budgetBytes
 
 // The same production artifact must contain the real Next.js marketing entry.
 const marketing = await readFile(path.join(dist, 'welcome/index.html'), 'utf8')
+const publicIndexable = marketingPublicationEnv().NEXT_PUBLIC_MARKETING_INDEXABLE === 'true'
+const expectedPublic = ['', 'features/', 'how-it-works/', 'guides/import-transactions/']
+const titles = new Set()
+const descriptions = new Set()
+for (const route of expectedPublic) {
+  const page = await readFile(path.join(dist, 'welcome', route, 'index.html'), 'utf8')
+  const canonical = `https://fincopilot.app/welcome/${route}`
+  assert(page.includes(`<link rel="canonical" href="${canonical}"`), `Incorrect canonical: ${route}`)
+  assert.equal((page.match(/<h1\b/g) || []).length, 1)
+  const heading = page.match(/<h1\b[^>]*>(.*?)<\/h1>/s)?.[1] || ''
+  assert(heading.replace(/<[^>]*>/g, '').trim().length > 5, 'Empty source H1')
+  assert(!heading.includes('aria-hidden="true"'), 'Source H1 must be accessible')
+  const robots = page.match(/<meta name="robots" content="([^"]+)"/)?.[1]
+  assert(robots && robots.includes('noindex') === !publicIndexable, `Indexability mismatch: ${route}`)
+  const title = page.match(/<title>(.*?)<\/title>/s)?.[1]
+  const description = page.match(/<meta name="description" content="([^"]+)"/)?.[1]
+  assert(title && !titles.has(title) && description && !descriptions.has(description), 'Unique metadata required')
+  titles.add(title); descriptions.add(description)
+}
+const rootSitemap = await readFile(path.join(dist, 'sitemap.xml'), 'utf8')
+assert.equal(rootSitemap, await readFile(path.join(dist, 'welcome/sitemap.xml'), 'utf8'))
+assert.deepEqual([...rootSitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map(m => m[1]),
+  publicIndexable ? expectedPublic.map(route => `https://fincopilot.app/welcome/${route}`) : [])
+const rootRobots = await readFile(path.join(dist, 'robots.txt'), 'utf8')
+assert.equal(rootRobots.includes('Sitemap: https://fincopilot.app/sitemap.xml'), publicIndexable)
+for (const route of expectedPublic.slice(1)) assert(marketing.includes(`href="/welcome/${route}"`), `Broken footer href: ${route}`)
 assert(marketing.includes('FinCo-Pilot') && marketing.includes('main-content'), 'Landing is missing')
 assert(!marketing.includes('finco-app-shell'), 'Finance shell must not replace marketing')
 for (const destination of ['/login','/register','/pricing','/privacy','/terms','/support']) assert(marketing.includes(`href="${destination}"`), `Landing CTA missing: ${destination}`)

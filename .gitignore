@@ -25,6 +25,7 @@ backend/data/
 .finco-qa.env
 # Generated from the existing Next.js landing during the frontend build.
 /frontend/public/welcome/
+/frontend/public/sitemap.xml
 /landing/.next-export/
 /landing/out/
 

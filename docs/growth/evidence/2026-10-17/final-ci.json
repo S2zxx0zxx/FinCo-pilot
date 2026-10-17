@@ -1,0 +1,163 @@
+{
+  "source_sha": "5d881c2d6a2f3100b6442a2a624073008cedee66",
+  "source_tree": "6de4dce47f8723faccc66c45411881489f6f7af1",
+  "passed": 22,
+  "total": 22,
+  "checks": [
+    {
+      "name": "Vercel Preview Comments",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/S2zxx0zxx/FinCo-pilot/runs/117324487009",
+      "completed_at": "2026-10-17T05:56:16Z"
+    },
+    {
+      "name": "Landing Browser QA (chromium)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/S2zxx0zxx/FinCo-pilot/actions/runs/39007968381/job/117324373829",
+      "completed_at": "2026-10-17T05:57:43Z"
+    },
+    {
+      "name": "Landing Browser QA (firefox)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/S2zxx0zxx/FinCo-pilot/actions/runs/39007968381/job/117324373752",
+      "completed_at": "2026-10-17T05:56:52Z"
+    },
+    {
+      "name": "Landing Browser QA (webkit)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/S2zxx0zxx/FinCo-pilot/actions/runs/39007968381/job/117324373748",
+      "completed_at": "2026-10-17T05:57:45Z"
+    },
+    {
+      "name": "Public entry (chromium)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/S2zxx0zxx/FinCo-pilot/actions/runs/39007968378/job/117324217386",
+      "completed_at": "2026-10-17T05:56:29Z"
+    },
+    {
+      "name": "Public entry (firefox)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/S2zxx0zxx/FinCo-pilot/actions/runs/39007968378/job/117324217345",
+      "completed_at": "2026-10-17T05:56:31Z"
+    },
+    {
+      "name": "Pricing browser (firefox)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/S2zxx0zxx/FinCo-pilot/actions/runs/39007968388/job/117324217303",
+      "completed_at": "2026-10-17T05:57:01Z"
+    },
+    {
+      "name": "Pricing browser (chromium)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/S2zxx0zxx/FinCo-pilot/actions/runs/39007968388/job/117324217298",
+      "completed_at": "2026-10-17T05:57:34Z"
+    },
+    {
+      "name": "Helm Checks",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/S2zxx0zxx/FinCo-pilot/actions/runs/39007968386/job/117324217267",
+      "completed_at": "2026-10-17T05:54:44Z"
+    },
+    {
+      "name": "Migration Chain",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/S2zxx0zxx/FinCo-pilot/actions/runs/39007968386/job/117324217231",
+      "completed_at": "2026-10-17T05:54:43Z"
+    },
+    {
+      "name": "Secret Hygiene",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/S2zxx0zxx/FinCo-pilot/actions/runs/39007968386/job/117324217221",
+      "completed_at": "2026-10-17T05:54:47Z"
+    },
+    {
+      "name": "Backend Tests",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/S2zxx0zxx/FinCo-pilot/actions/runs/39007968386/job/117324217200",
+      "completed_at": "2026-10-17T05:54:45Z"
+    },
+    {
+      "name": "PostgreSQL Migration Smoke",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/S2zxx0zxx/FinCo-pilot/actions/runs/39007968386/job/117324217195",
+      "completed_at": "2026-10-17T05:57:38Z"
+    },
+    {
+      "name": "Frontend Checks",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/S2zxx0zxx/FinCo-pilot/actions/runs/39007968386/job/117324217170",
+      "completed_at": "2026-10-17T05:58:11Z"
+    },
+    {
+      "name": "Public entry (webkit)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/S2zxx0zxx/FinCo-pilot/actions/runs/39007968378/job/117324217154",
+      "completed_at": "2026-10-17T05:56:49Z"
+    },
+    {
+      "name": "Pricing browser (webkit)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/S2zxx0zxx/FinCo-pilot/actions/runs/39007968388/job/117324217140",
+      "completed_at": "2026-10-17T05:58:07Z"
+    },
+    {
+      "name": "Landing Typecheck / Tests / Build",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/S2zxx0zxx/FinCo-pilot/actions/runs/39007968381/job/117324217110",
+      "completed_at": "2026-10-17T05:55:34Z"
+    },
+    {
+      "name": "Synthetic manual-account and import proof",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/S2zxx0zxx/FinCo-pilot/actions/runs/39007968377/job/117324217076",
+      "completed_at": "2026-10-17T05:56:15Z"
+    },
+    {
+      "name": "Redis + Worker Smoke",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/S2zxx0zxx/FinCo-pilot/actions/runs/39007968386/job/117324217033",
+      "completed_at": "2026-10-17T05:55:49Z"
+    },
+    {
+      "name": "frontend-edge-privacy",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/S2zxx0zxx/FinCo-pilot/actions/runs/39007968382/job/117324216955",
+      "completed_at": "2026-10-17T05:54:47Z"
+    },
+    {
+      "name": "growth-contracts",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/S2zxx0zxx/FinCo-pilot/actions/runs/39007968377/job/117324216901",
+      "completed_at": "2026-10-17T05:54:48Z"
+    },
+    {
+      "name": "label",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/S2zxx0zxx/FinCo-pilot/actions/runs/39007966820/job/117324212856",
+      "completed_at": "2026-10-17T05:54:44Z"
+    }
+  ],
+  "scope": "Exact candidate checks. Backend job may scope-skip unchanged backend; 175 synthetic product proof is independent. Later documentation-only head must retain runtime source and pass required checks before merge."
+}

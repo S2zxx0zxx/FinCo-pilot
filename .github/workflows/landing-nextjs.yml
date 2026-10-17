@@ -49,7 +49,33 @@ jobs:
           NEXT_PUBLIC_MARKETING_URL: https://fincopilot.app
           NEXT_PUBLIC_MARKETING_INDEXABLE: 'false'
         run: npm run build && node scripts/verify-discovery.mjs
-      - name: Verify dependency vulnerability floor
+      - name: Verify approved same-origin production discovery fixture (no deployment)
+        env:
+          FINCO_EXPORT_MARKETING: 'true'
+          FINCO_MARKETING_PUBLICATION_APPROVED: 'true'
+          VERCEL_ENV: production
+          NEXT_PUBLIC_MARKETING_URL: https://fincopilot.app
+          NEXT_PUBLIC_MARKETING_INDEXABLE: 'true'
+        run: npm run build && node scripts/verify-discovery.mjs
+      - name: Verify root discovery assets from approved export
+        env:
+          FINCO_MARKETING_PUBLICATION_APPROVED: 'true'
+          VERCEL_ENV: production
+          NEXT_PUBLIC_MARKETING_URL: https://fincopilot.app
+        run: |
+          node --input-type=module - <<'JS'
+          import { mkdtemp, mkdir, copyFile, rm } from 'node:fs/promises'
+          import { tmpdir } from 'node:os'
+          import { writeRootDiscovery } from '../frontend/scripts/marketing-root-discovery.mjs'
+          const dir = await mkdtemp(`${tmpdir()}/finco-root-ci-`)
+          try {
+            await mkdir(`${dir}/public/welcome`, { recursive: true })
+            await copyFile('.next-export/sitemap.xml', `${dir}/public/welcome/sitemap.xml`)
+            const result = await writeRootDiscovery(dir)
+            if (result.sitemapUrls !== 4 || !result.indexable) throw new Error('Root sitemap release contract')
+          } finally { await rm(dir, { recursive: true, force: true }) }
+          JS
+      - name: Verify dependency vulnerability floor after fixtures
         run: npm audit --omit=dev --audit-level=high
   browser:
     name: Landing Browser QA (${{ matrix.browser }})

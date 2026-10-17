@@ -1,0 +1,283 @@
+{
+  "observedAtUtc": "2026-10-17T05:46:39.828Z",
+  "scope": "Isolated production export lab",
+  "caveat": "Simulated lab; no field p75 INP, actual phone or conversion claim. Two runs per page/device, no before/after causal claim.",
+  "results": [
+    {
+      "path": "/welcome/",
+      "formFactor": "mobile",
+      "run": 1,
+      "fetchTime": "2026-10-17T05:46:42.205Z",
+      "lighthouseVersion": "13.5.0",
+      "finalUrl": "http://127.0.0.1:3132/welcome/",
+      "runtimeError": null,
+      "scores": {
+        "performance": 76,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100
+      },
+      "metrics": {
+        "first-contentful-paint": 1505.004,
+        "largest-contentful-paint": 7244.505999999999,
+        "total-blocking-time": 40.5,
+        "cumulative-layout-shift": 0,
+        "speed-index": 2006.2212686750304,
+        "total-byte-weight": 1142381
+      }
+    },
+    {
+      "path": "/welcome/",
+      "formFactor": "mobile",
+      "run": 2,
+      "fetchTime": "2026-10-17T05:46:49.062Z",
+      "lighthouseVersion": "13.5.0",
+      "finalUrl": "http://127.0.0.1:3132/welcome/",
+      "runtimeError": null,
+      "scores": {
+        "performance": 76,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100
+      },
+      "metrics": {
+        "first-contentful-paint": 1507.538,
+        "largest-contentful-paint": 7251.306999999999,
+        "total-blocking-time": 45.5,
+        "cumulative-layout-shift": 0,
+        "speed-index": 1953.4633111221654,
+        "total-byte-weight": 1142381
+      }
+    },
+    {
+      "path": "/welcome/",
+      "formFactor": "desktop",
+      "run": 1,
+      "fetchTime": "2026-10-17T05:46:55.688Z",
+      "lighthouseVersion": "13.5.0",
+      "finalUrl": "http://127.0.0.1:3132/welcome/",
+      "runtimeError": null,
+      "scores": {
+        "performance": 97,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100
+      },
+      "metrics": {
+        "first-contentful-paint": 323.74,
+        "largest-contentful-paint": 1320.6100000000001,
+        "total-blocking-time": 0,
+        "cumulative-layout-shift": 0,
+        "speed-index": 518.5870328905469,
+        "total-byte-weight": 1167437
+      }
+    },
+    {
+      "path": "/welcome/",
+      "formFactor": "desktop",
+      "run": 2,
+      "fetchTime": "2026-10-17T05:47:04.455Z",
+      "lighthouseVersion": "13.5.0",
+      "finalUrl": "http://127.0.0.1:3132/welcome/",
+      "runtimeError": null,
+      "scores": {
+        "performance": 97,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100
+      },
+      "metrics": {
+        "first-contentful-paint": 324.596,
+        "largest-contentful-paint": 1325.394,
+        "total-blocking-time": 0,
+        "cumulative-layout-shift": 0,
+        "speed-index": 489.63310466665394,
+        "total-byte-weight": 1167437
+      }
+    },
+    {
+      "path": "/welcome/features/",
+      "formFactor": "mobile",
+      "run": 1,
+      "fetchTime": "2026-10-17T05:47:11.587Z",
+      "lighthouseVersion": "13.5.0",
+      "finalUrl": "http://127.0.0.1:3132/welcome/features/",
+      "runtimeError": null,
+      "scores": {
+        "performance": 81,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100
+      },
+      "metrics": {
+        "first-contentful-paint": 1203.324,
+        "largest-contentful-paint": 5076.986,
+        "total-blocking-time": 36,
+        "cumulative-layout-shift": 0,
+        "speed-index": 1203.324,
+        "total-byte-weight": 1088627
+      }
+    },
+    {
+      "path": "/welcome/features/",
+      "formFactor": "mobile",
+      "run": 2,
+      "fetchTime": "2026-10-17T05:47:17.304Z",
+      "lighthouseVersion": "13.5.0",
+      "finalUrl": "http://127.0.0.1:3132/welcome/features/",
+      "runtimeError": null,
+      "scores": {
+        "performance": 81,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100
+      },
+      "metrics": {
+        "first-contentful-paint": 1202.424,
+        "largest-contentful-paint": 5082.636,
+        "total-blocking-time": 39.5,
+        "cumulative-layout-shift": 0,
+        "speed-index": 1202.424,
+        "total-byte-weight": 1088627
+      }
+    },
+    {
+      "path": "/welcome/features/",
+      "formFactor": "desktop",
+      "run": 1,
+      "fetchTime": "2026-10-17T05:47:23.001Z",
+      "lighthouseVersion": "13.5.0",
+      "finalUrl": "http://127.0.0.1:3132/welcome/features/",
+      "runtimeError": null,
+      "scores": {
+        "performance": 99,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100
+      },
+      "metrics": {
+        "first-contentful-paint": 282.814,
+        "largest-contentful-paint": 995.221,
+        "total-blocking-time": 0,
+        "cumulative-layout-shift": 0,
+        "speed-index": 282.814,
+        "total-byte-weight": 1088627
+      }
+    },
+    {
+      "path": "/welcome/features/",
+      "formFactor": "desktop",
+      "run": 2,
+      "fetchTime": "2026-10-17T05:47:28.807Z",
+      "lighthouseVersion": "13.5.0",
+      "finalUrl": "http://127.0.0.1:3132/welcome/features/",
+      "runtimeError": null,
+      "scores": {
+        "performance": 99,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100
+      },
+      "metrics": {
+        "first-contentful-paint": 282.168,
+        "largest-contentful-paint": 995.252,
+        "total-blocking-time": 0,
+        "cumulative-layout-shift": 0,
+        "speed-index": 282.168,
+        "total-byte-weight": 1088627
+      }
+    },
+    {
+      "path": "/welcome/guides/import-transactions/",
+      "formFactor": "mobile",
+      "run": 1,
+      "fetchTime": "2026-10-17T05:47:34.636Z",
+      "lighthouseVersion": "13.5.0",
+      "finalUrl": "http://127.0.0.1:3132/welcome/guides/import-transactions/",
+      "runtimeError": null,
+      "scores": {
+        "performance": 89,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100
+      },
+      "metrics": {
+        "first-contentful-paint": 1203.114,
+        "largest-contentful-paint": 3754.6710000000003,
+        "total-blocking-time": 37.5,
+        "cumulative-layout-shift": 0,
+        "speed-index": 1203.114,
+        "total-byte-weight": 1096003
+      }
+    },
+    {
+      "path": "/welcome/guides/import-transactions/",
+      "formFactor": "mobile",
+      "run": 2,
+      "fetchTime": "2026-10-17T05:47:40.573Z",
+      "lighthouseVersion": "13.5.0",
+      "finalUrl": "http://127.0.0.1:3132/welcome/guides/import-transactions/",
+      "runtimeError": null,
+      "scores": {
+        "performance": 87,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100
+      },
+      "metrics": {
+        "first-contentful-paint": 1203.084,
+        "largest-contentful-paint": 4054.6259999999997,
+        "total-blocking-time": 33,
+        "cumulative-layout-shift": 0,
+        "speed-index": 1203.084,
+        "total-byte-weight": 1096003
+      }
+    },
+    {
+      "path": "/welcome/guides/import-transactions/",
+      "formFactor": "desktop",
+      "run": 1,
+      "fetchTime": "2026-10-17T05:47:46.410Z",
+      "lighthouseVersion": "13.5.0",
+      "finalUrl": "http://127.0.0.1:3132/welcome/guides/import-transactions/",
+      "runtimeError": null,
+      "scores": {
+        "performance": 99,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100
+      },
+      "metrics": {
+        "first-contentful-paint": 282.404,
+        "largest-contentful-paint": 994.606,
+        "total-blocking-time": 0,
+        "cumulative-layout-shift": 0,
+        "speed-index": 282.404,
+        "total-byte-weight": 1096003
+      }
+    },
+    {
+      "path": "/welcome/guides/import-transactions/",
+      "formFactor": "desktop",
+      "run": 2,
+      "fetchTime": "2026-10-17T05:47:52.404Z",
+      "lighthouseVersion": "13.5.0",
+      "finalUrl": "http://127.0.0.1:3132/welcome/guides/import-transactions/",
+      "runtimeError": null,
+      "scores": {
+        "performance": 99,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100
+      },
+      "metrics": {
+        "first-contentful-paint": 282.54,
+        "largest-contentful-paint": 995.81,
+        "total-blocking-time": 0,
+        "cumulative-layout-shift": 0,
+        "speed-index": 282.54,
+        "total-byte-weight": 1096003
+      }
+    }
+  ]
+}

@@ -104,7 +104,7 @@ const faqs = [
   ],
   [
     'Can I use FinCo-Pilot on my phone?',
-    'Yes, the web application includes responsive screens and progressive web app support for supported browsers. You can use it from your phone or desktop; available features may vary.',
+    'The web application includes responsive screens and progressive web app support for supported browsers. You can use it from your phone or desktop; available features may vary.',
   ],
   [
     'Are AI features required?',

@@ -39,9 +39,9 @@ export const metadata: Metadata = {
   robots: { index: marketing.indexable, follow: marketing.indexable },
   openGraph: {
     type: 'website',
-    title: 'FinCo-Pilot | Clarity for your everyday finances',
+    title: 'FinCo-Pilot | Your money, with context',
     description:
-      'Less switching. Less second-guessing. One place to see, plan and understand your money.',
+      'Bring accounts, bills, budgets and goals into focus before your next money decision.',
     siteName: 'FinCo-Pilot',
     url: marketingUrl('/'),
     images: [

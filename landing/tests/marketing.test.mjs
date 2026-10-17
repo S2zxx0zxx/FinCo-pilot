@@ -56,7 +56,8 @@ test('HeroUI v3 owns the full landing interface with no Ant runtime', () => {
   assert.match(product, /from '@heroui\/react'/)
   for (const component of [
     'Drawer.Dialog',
-    'Accordion.Trigger',
+    'Disclosure.Trigger',
+    'DisclosureGroup',
     'NumberField.Input',
     'Card.Header',
     'Meter.Track',

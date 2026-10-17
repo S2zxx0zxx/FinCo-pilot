@@ -361,6 +361,20 @@ function Hero() {
           ))}
         </div>
       </div>
+      <nav className="shell detail-index" aria-label="Explore the details">
+        <div className="detail-index-copy">
+          <span>EXPLORE THE DETAILS</span>
+          <p>See how the numbers work, what to review, and what to expect.</p>
+        </div>
+        <div className="detail-index-links">
+          <Link href="#perspective">Calculation breakdown <ArrowRight size={15} aria-hidden="true" /></Link>
+          <Link href="#how-it-works">Getting started <ArrowRight size={15} aria-hidden="true" /></Link>
+          <Link href="#import-walkthrough">Import checklist <ArrowRight size={15} aria-hidden="true" /></Link>
+          <Link href="#trust">Privacy &amp; permissions <ArrowRight size={15} aria-hidden="true" /></Link>
+          <Link href="#plans">Billing details <ArrowRight size={15} aria-hidden="true" /></Link>
+          <Link href="#questions">Common questions <ArrowRight size={15} aria-hidden="true" /></Link>
+        </div>
+      </nav>
     </section>
   )
 }
@@ -640,7 +654,7 @@ function HowItWorks() {
 }
 function Privacy() {
   return (
-    <section className="section trust-section">
+    <section className="section trust-section" id="trust">
       <div className="shell">
         <div className="section-head">
           <div>

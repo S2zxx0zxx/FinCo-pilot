@@ -53,7 +53,7 @@ test('Ant Design controls replace the homepage Space UI layer with SSR styles', 
     home + product,
     /components\/spaceui|motion\/react|landing-sound|hero-backdrop/
   )
-  assert.match(home, /from 'antd'/)
+  assert.match(home, /from 'antd\/es\//)
   for (const component of [
     'Drawer',
     'Collapse',
@@ -62,7 +62,7 @@ test('Ant Design controls replace the homepage Space UI layer with SSR styles', 
     'Statistic',
   ])
     assert.ok(home.includes(component))
-  assert.match(product, /from 'antd'/)
+  assert.match(product, /from 'antd\/es\//)
   assert.match(read('app/layout.tsx'), /<AntdRegistry>/)
   assert.match(read('components/landing-theme.tsx'), /<ConfigProvider/)
   assert.match(read('app/globals.css'), /prefers-reduced-motion/)

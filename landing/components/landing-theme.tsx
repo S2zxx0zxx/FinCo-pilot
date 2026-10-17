@@ -1,6 +1,6 @@
 'use client'
 
-import { ConfigProvider } from 'antd'
+import ConfigProvider from 'antd/es/config-provider'
 import type { ReactNode } from 'react'
 
 /** One Ant Design token system, scoped to public marketing only. */
@@ -8,13 +8,14 @@ export function LandingTheme({ children }: { children: ReactNode }) {
   return (
     <ConfigProvider
       theme={{
+        cssVar: { key: 'finco-marketing' },
         token: {
           colorPrimary: '#165dff',
           colorInfo: '#165dff',
           colorText: '#17212e',
           colorTextSecondary: '#536171',
-        colorTextDescription: '#536171',
-        colorTextTertiary: '#536171',
+          colorTextDescription: '#536171',
+          colorTextTertiary: '#536171',
           colorBorder: '#cdd5df',
           colorBorderSecondary: '#e1e6ed',
           colorBgLayout: '#f5f7fa',

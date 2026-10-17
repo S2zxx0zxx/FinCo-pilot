@@ -1,6 +1,6 @@
 'use client'
 
-import { Tabs } from 'antd'
+import Tabs from 'antd/es/tabs'
 import { DashboardOutlined, BankOutlined } from '@ant-design/icons'
 import { landingAsset } from '@/lib/asset'
 

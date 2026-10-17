@@ -174,6 +174,10 @@ try {
         .getByRole('navigation', { name: 'Mobile navigation' })
         .waitFor()
       assert.equal(await menu.getAttribute('aria-expanded'), 'true')
+      // Wait for Ant's opening transition before measuring rendered contrast.
+      await page.getByRole('dialog').evaluate(async (dialog) => {
+        await Promise.all(dialog.closest('.ant-drawer').getAnimations({ subtree: true }).map(animation => animation.finished))
+      })
       if (width === 390) await accessibility(page, '390:drawer-open')
       await page.keyboard.press('Escape')
       await page
@@ -234,6 +238,7 @@ try {
     assert.deepEqual(external, [], width + ': third-party requests')
     report.widths.push({ width, ...dimensions, status: 'passed' })
     await context.close()
+    console.log(`PASS: ${browserType.name()} landing at ${width}px`)
   }
   const keyboard = await browser.newContext()
   const page = await keyboard.newPage()

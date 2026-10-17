@@ -1,20 +1,18 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import {
-  Alert,
-  Button,
-  Card,
-  Collapse,
-  Divider,
-  Drawer,
-  Flex,
-  InputNumber,
-  Progress,
-  Statistic,
-  Steps,
-  Tag,
-} from 'antd'
+import Alert from 'antd/es/alert'
+import Button from 'antd/es/button'
+import Card from 'antd/es/card'
+import Collapse from 'antd/es/collapse'
+import Divider from 'antd/es/divider'
+import Drawer from 'antd/es/drawer'
+import Flex from 'antd/es/flex'
+import InputNumber from 'antd/es/input-number'
+import Progress from 'antd/es/progress'
+import Statistic from 'antd/es/statistic'
+import Steps from 'antd/es/steps'
+import Tag from 'antd/es/tag'
 import {
   ArrowDownOutlined,
   ArrowRightOutlined,

@@ -1,240 +1,874 @@
 'use client'
 
-import { useRef, useState } from 'react'
-import { MotionConfig } from 'motion/react'
 import {
-  IconArrowRight, IconArrowUpRight, IconArrowDownRight, IconArrowsExchange,
-  IconChartBar, IconChartDots3, IconCircleCheck, IconLock, IconMenu2,
-  IconShieldLock, IconSparkles, IconTarget, IconWallet, IconX,
-  IconBuildingBank, IconCalendarStats, IconReceipt, IconChevronRight
-} from '@tabler/icons-react'
-import { FinCoLogo } from '@/components/brand-mark'
-import { Button } from '@/components/spaceui/button'
-import { Badge } from '@/components/spaceui/badge'
-import { Card } from '@/components/spaceui/card'
-import { Link as SpaceLink } from '@/components/spaceui/link'
-import { BlurRevealText } from '@/components/spaceui/blur-reveal-text'
-import { HeroBackdrop } from '@/components/hero-backdrop'
-import { IdentityAvatar } from '@/components/spaceui/identity-avatar'
-import { Accordion, AccordionItem, AccordionTrigger, AccordionPanel } from '@/components/spaceui/accordion'
-import { Tabs, TabsList, TabsTab, TabsPanel } from '@/components/spaceui/tabs'
-import { Meter, MeterLabel, MeterTrack, MeterIndicator } from '@/components/spaceui/meter'
-import { Timeline, TimelineItem, TimelineHeader, TimelineTitle, TimelineContent, TimelineIndicator, TimelineSeparator } from '@/components/spaceui/timeline'
-import { Separator } from '@/components/spaceui/separator'
-import { Avatar, AvatarFallback } from '@/components/spaceui/avatar'
-import { ProductScreens } from '@/components/product-screens'
-import { LandingSoundProvider, SoundToggle, useLandingSound } from '@/components/landing-sound'
+  Accordion,
+  Disclosure,
+  Meter,
+  Button,
+  Card,
+  Chip,
+  Drawer,
+  Link,
+  Separator,
+  useOverlayState,
+} from '@heroui/react'
+import {
+  ArrowDown,
+  ArrowRight,
+  ArrowUp,
+  CalendarDays,
+  ChartPie,
+  Check,
+  Download,
+  FileText,
+  Landmark,
+  LockKeyhole,
+  Menu,
+  ShieldCheck,
+  SlidersHorizontal,
+  Wallet,
+} from 'lucide-react'
 import { InstalledAppHandoff } from '@/components/installed-app-handoff'
+import { SpendingPlayground } from '@/components/spending-playground'
+import { PlanPreview } from '@/components/plan-preview'
+import { MobileActions } from '@/components/mobile-actions'
+import { ImportWalkthrough } from '@/components/import-walkthrough'
+import { ProductScreens } from '@/components/product-screens'
 import { APP_LINKS } from '@/lib/links'
 import { landingAsset } from '@/lib/asset'
 
-type View = 'overview' | 'budgets' | 'activity'
-type IconType = typeof IconWallet
-
 const nav = [
   { title: 'Why FinCo', href: '#why-finco' },
-  { title: 'The experience', href: '#experience' },
+  { title: 'The product', href: '#experience' },
   { title: 'How it works', href: '#how-it-works' },
   { title: 'Questions', href: '#questions' },
 ]
-
-const featureCards: Array<{ number: string; icon: IconType; title: string; body: string; label: string }> = [
-  { number: '01', icon: IconWallet, title: 'Your complete picture.', body: 'Bring accounts, transactions and balances into one organised view. Stop piecing together the story across tabs.', label: 'SEE IT ALL' },
-  { number: '02', icon: IconTarget, title: 'Plans you can actually follow.', body: 'Make room for essentials, set meaningful goals and check how your spending fits the bigger picture.', label: 'PLAN WITH INTENT' },
-  { number: '03', icon: IconChartDots3, title: 'Understand the patterns.', body: 'Go from individual transactions to useful reporting, categories and recurring expenses without the spreadsheet detour.', label: 'FIND THE SIGNAL' },
-  { number: '04', icon: IconSparkles, title: 'A little intelligence, when you want it.', body: 'Explore financial questions with optional AI tools, while keeping accounts, budgets and reports at the centre of your workflow.', label: 'STAY IN CONTROL' },
+const features = [
+  {
+    icon: <Landmark aria-hidden="true" />,
+    title: 'Accounts, together.',
+    body: 'Organise cash, bank and card accounts by type and currency. Start manually; a bank connection is optional.',
+    detail: 'A home for each balance',
+  },
+  {
+    icon: <FileText aria-hidden="true" />,
+    title: 'Every transaction, in context.',
+    body: 'Review income and expenses with categories, payees and account context. Find the details behind a monthly total.',
+    detail: 'From records to a useful picture',
+  },
+  {
+    icon: <ChartPie aria-hidden="true" />,
+    title: 'A plan for the month.',
+    body: 'Use budgets to organise spending and goals to track what you are saving towards. Review progress as your records change.',
+    detail: 'Budgets + goals',
+  },
+  {
+    icon: <CalendarDays aria-hidden="true" />,
+    title: 'Remember what repeats.',
+    body: 'Manage recurring transactions and loan or EMI plans. Include upcoming outflows when reviewing a spending estimate.',
+    detail: 'Today, with tomorrow in view',
+  },
+  {
+    icon: <Download aria-hidden="true" />,
+    title: 'Bring your records with you.',
+    body: 'Preview transaction files, choose the destination and check mappings before confirming. CSV, QIF, OFX/QFX and CAMT are supported formats.',
+    detail: 'Review before you import',
+  },
+  {
+    icon: <SlidersHorizontal aria-hidden="true" />,
+    title: 'Go deeper when you need to.',
+    body: 'Explore reports, assets and invoices alongside your everyday finances. Optional AI and bank providers depend on your setup and plan.',
+    detail: 'Your workflow, at your pace',
+  },
 ]
-
-const steps = [
-  { id: '01', title: 'Get your bearings', description: 'Start with a workspace built around your accounts and your preferences.', icon: IconBuildingBank },
-  { id: '02', title: 'Bring the details together', description: 'Organise transactions and budgets; optional imports and connections depend on availability.', icon: IconArrowsExchange },
-  { id: '03', title: 'Move with intention', description: 'Review reports, watch what repeats and make a clearer plan for what comes next.', icon: IconCalendarStats },
-]
-
 const faqs = [
-  { id: 'faq-1', question: 'What is FinCo-Pilot?', answer: 'FinCo-Pilot is a personal finance workspace for tracking accounts and transactions, planning budgets and goals, and exploring reports. Optional features such as bank connections and AI agents depend on configuration and availability.' },
-  { id: 'faq-2', question: 'Do I have to connect a bank account?', answer: 'No. FinCo-Pilot supports managing financial accounts and transactions manually. Import and provider-connection options are separate capabilities and may not be available on every deployment.' },
-  { id: 'faq-3', question: 'Can I use FinCo-Pilot on my phone?', answer: 'The web application includes responsive screens and progressive web app support. You can use the web app in a supported mobile browser; available features may vary.' },
-  { id: 'faq-4', question: 'Is the financial preview on this page real?', answer: 'The preview uses illustrative sample data to explain the interface. It is not a live account, personal financial data or a performance claim.' },
-  { id: 'faq-5', question: 'Are AI features required?', answer: 'No. The core financial workspace is independent of optional agent capabilities. AI tools are optional and may not be available in every setup.' },
+  [
+    'What is FinCo-Pilot?',
+    'FinCo-Pilot is a personal finance workspace for accounts, transactions, budgets, goals and reports. It also includes recurring transactions, loan plans and spending estimates. Available modules depend on your settings and plan.',
+  ],
+  [
+    'Do I have to connect a bank account?',
+    'No. FinCo-Pilot supports managing financial accounts and transactions manually. File imports and provider connections are separate capabilities. Bank availability depends on the active provider and deployment.',
+  ],
+  [
+    'How does safe-to-spend work?',
+    'The spending plan uses confirmed balances, card debt, upcoming outflows, loan installments and the reserves you enter. You review your obligations before calculating. Missing inputs can block an estimate; incomplete records can make a result unreliable.',
+  ],
+  [
+    'Can I bring in my existing transactions?',
+    'The importer supports CSV, QIF, OFX/QFX and CAMT. Check the destination account, dates, amount signs, currency and duplicate handling in the preview. Format support does not guarantee every bank export maps correctly. The import guide explains current limitations.',
+  ],
+  [
+    'Will QIF preserve every UPI reference?',
+    'Do not assume so. The reviewed QIF parser uses date, amount and payee or memo; extra reference tags are not mapped to an external transaction ID. Read the import guide and check the preview against your source file.',
+  ],
+  [
+    'Can I use FinCo-Pilot on my phone?',
+    'The web application includes responsive screens and progressive web app support for supported browsers. You can use it from your phone or desktop; available features may vary.',
+  ],
+  [
+    'Are AI features required?',
+    'No. Accounts, transactions and the core financial workspace are independent of optional AI capabilities. Provider configuration, permissions and plan availability determine which optional tools are offered.',
+  ],
+  [
+    'Is the financial preview on this page real?',
+    'All numbers in the interactive example are synthetic. The product screenshots were captured from the application with synthetic sample records. Nothing on this page reads a live account or personal financial data.',
+  ],
+  [
+    'Where can I check pricing?',
+    'Use the Pricing link to review the plans currently shown in the application. Feature availability, plan limits and sign-up access should be checked there before choosing a plan.',
+  ],
+  [
+    'Is a spending estimate financial advice?',
+    'No. It is a planning aid based on your inputs and records, not a guarantee that a purchase is affordable. Check missing accounts, bills, debts and reserves before making a decision.',
+  ],
 ]
-
-const demoData: Record<View, { eyebrow: string; title: string; amount: string; delta: string; detail: string; bars: number[]; transactions: Array<{ name: string; context: string; amount: string; positive?: boolean }> }> = {
-  overview: {
-    eyebrow: 'All accounts · sample view', title: 'Your financial picture', amount: '₹1,84,250', delta: '+₹12,480', detail: 'This month', bars: [28, 42, 34, 54, 43, 64, 58, 79, 68, 87, 80, 96],
-    transactions: [{ name: 'Monthly income', context: 'Income · Example', amount: '+₹42,000', positive: true }, { name: 'Groceries', context: 'Essentials · Example', amount: '−₹2,480' }, { name: 'Monthly savings', context: 'Goal · Example', amount: '−₹5,000' }]
-  },
-  budgets: {
-    eyebrow: 'Spending plan · sample view', title: 'Available to plan', amount: '₹24,800', delta: '62% on track', detail: 'Current period', bars: [48, 46, 50, 55, 58, 54, 63, 67, 70, 72, 78, 82],
-    transactions: [{ name: 'Essentials', context: 'Monthly budget · Example', amount: '₹12,200' }, { name: 'Everyday', context: 'Monthly budget · Example', amount: '₹6,400' }, { name: 'Savings goal', context: 'Monthly goal · Example', amount: '₹6,200', positive: true }]
-  },
-  activity: {
-    eyebrow: 'Transactions · sample view', title: 'Activity in focus', amount: '18 items', delta: '3 categories', detail: 'This month', bars: [18, 46, 36, 58, 22, 55, 36, 70, 48, 62, 38, 75],
-    transactions: [{ name: 'Grocery market', context: 'Food & drink · Example', amount: '−₹1,640' }, { name: 'Rent', context: 'Housing · Example', amount: '−₹12,000' }, { name: 'Salary', context: 'Income · Example', amount: '+₹42,000', positive: true }]
-  }
+function Mark() {
+  return (
+    <span className="wordmark">
+      FinCo-Pilot
+      <span className="brand-dot" aria-hidden="true">
+        .
+      </span>
+    </span>
+  )
 }
-
-function Mark({ compact = false }: { compact?: boolean }) {
-  return <span className="brand-lockup"><span className="brand-symbol"><FinCoLogo size={compact ? 21 : 23} mode="on-light" /></span><span className="brand-name">FinCo<span className="brand-hyphen">-</span>Pilot<span className="brand-period">.</span></span></span>
+function ArrowLink({
+  href,
+  children,
+  light = false,
+}: {
+  href: string
+  children: React.ReactNode
+  light?: boolean
+}) {
+  return (
+    <Link
+      href={href}
+      className={
+        'button button--lg button--primary action-link' +
+        (light ? ' cta-light' : '')
+      }
+    >
+      {children}
+      <ArrowRight size={18} aria-hidden="true" />
+    </Link>
+  )
 }
-
-function ArrowLink({ href, children, light = false, small = false }: { href: string; children: React.ReactNode; light?: boolean; small?: boolean }) {
-  return <Button render={<a href={href} />} variant="default" size={small ? 'lg' : 'xl'} className={light ? 'cta-button cta-button-light' : 'cta-button'}>{children}<IconArrowUpRight size={18} stroke={1.8} aria-hidden="true" /></Button>
-}
-
 function Navigation() {
-  const [menuOpen, setMenuOpen] = useState(false)
-  const toggleRef = useRef<HTMLButtonElement>(null)
-  return <header className="site-header" id="top" onKeyDown={event => { if (event.key === 'Escape' && menuOpen) { setMenuOpen(false); toggleRef.current?.focus() } }}>
-    <div className="nav-inner shell">
-      <SpaceLink href="#top" className="brand-link" aria-label="FinCo-Pilot, back to top"><Mark /></SpaceLink>
-      <nav className="nav-desktop" aria-label="Primary navigation">
-        {nav.map(item => <SpaceLink key={item.href} href={item.href} variant="secondary" className="nav-text">{item.title}</SpaceLink>)}
-      </nav>
-      <div className="nav-actions">
-        <SpaceLink href={APP_LINKS.login} variant="secondary" className="nav-login">Log in</SpaceLink>
-        <ArrowLink href={APP_LINKS.register} small>Get started</ArrowLink>
+  const menu = useOverlayState()
+  return (
+    <header className="site-header" id="top">
+      <div className="shell nav-inner">
+        <Link href="#top" aria-label="FinCo-Pilot, back to top">
+          <Mark />
+        </Link>
+        <nav className="nav-desktop" aria-label="Primary navigation">
+          {nav.map((item) => (
+            <Link key={item.href} href={item.href}>
+              {item.title}
+            </Link>
+          ))}
+        </nav>
+        <div className="nav-actions">
+          <Link href={APP_LINKS.login}>Log in</Link>
+          <ArrowLink href={APP_LINKS.register}>Get started</ArrowLink>
+        </div>
+        <Drawer state={menu}>
+          <Button
+            className="nav-toggle"
+            variant="tertiary"
+            isIconOnly
+            aria-label="Open navigation"
+            aria-expanded={menu.isOpen}
+            aria-controls="mobile-menu"
+          >
+            <Menu aria-hidden="true" />
+          </Button>
+          <Drawer.Backdrop>
+            <Drawer.Content placement="right">
+              <Drawer.Dialog className="navigation-drawer">
+                <Drawer.CloseTrigger aria-label="Close navigation" />
+                <Drawer.Header>
+                  <Drawer.Heading>FinCo-Pilot</Drawer.Heading>
+                  <p>A little clarity starts here.</p>
+                </Drawer.Header>
+                <Drawer.Body>
+                  <nav
+                    id="mobile-menu"
+                    className="mobile-nav"
+                    aria-label="Mobile navigation"
+                  >
+                    {nav.map((item, index) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onPress={() => menu.close()}
+                      >
+                        <span className="menu-number">0{index + 1}</span>
+                        {item.title}
+                        <ArrowRight size={18} aria-hidden="true" />
+                      </Link>
+                    ))}
+                    <Separator />
+                    <Link href={APP_LINKS.login}>Log in</Link>
+                    <ArrowLink href={APP_LINKS.register}>Get started</ArrowLink>
+                  </nav>
+                </Drawer.Body>
+              </Drawer.Dialog>
+            </Drawer.Content>
+          </Drawer.Backdrop>
+        </Drawer>
       </div>
-      <Button ref={toggleRef} aria-label={menuOpen ? 'Close navigation' : 'Open navigation'} aria-expanded={menuOpen} aria-controls="mobile-menu" size="icon-lg" variant="ghost" className="nav-toggle" onClick={() => setMenuOpen(current => !current)}>
-        {menuOpen ? <IconX size={22} /> : <IconMenu2 size={22} />}
-      </Button>
-    </div>
-    <nav id="mobile-menu" className={menuOpen ? 'mobile-nav open' : 'mobile-nav'} aria-label="Mobile navigation" hidden={!menuOpen}>
-      {nav.map(item => <SpaceLink key={item.href} href={item.href} onClick={() => setMenuOpen(false)} className="mobile-nav-link">{item.title}<IconChevronRight size={17}/></SpaceLink>)}
-      <SpaceLink href={APP_LINKS.login} className="mobile-nav-link">Log in<IconChevronRight size={17}/></SpaceLink>
-      <ArrowLink href={APP_LINKS.register}>Get started</ArrowLink>
-    </nav>
-  </header>
+    </header>
+  )
 }
-
 function ProductPreview() {
-  const [activeView, setActiveView] = useState<View>('overview')
-  const { cue } = useLandingSound()
-  return <div className="preview-frame">
-    <div className="preview-browser" id="interactive-preview">
-      <div className="preview-topline"><span className="traffic-lights" aria-hidden="true"><i/><i/><i/></span><span>FINCO / WORKSPACE</span><span className="preview-top-right"><IconLock size={13} stroke={1.6} aria-hidden="true"/> PRIVATE VIEW</span></div>
-      <div className="preview-window">
-        <aside className="preview-sidebar" aria-label="Illustrative app menu">
-          <div className="preview-mini-logo"><FinCoLogo size={19} /></div>
-          {[IconChartBar, IconWallet, IconReceipt, IconTarget, IconCalendarStats].map((Icon, index) => <div key={index} className={index === 0 ? 'preview-side-icon active' : 'preview-side-icon'} aria-hidden="true"><Icon size={18} stroke={1.7}/></div>)}
-        </aside>
-        <div className="preview-main">
-          <div className="preview-titlebar"><span>My workspace</span><Avatar className="demo-profile" aria-label="Sample profile"><AvatarFallback>FC</AvatarFallback></Avatar></div>
-          <Tabs value={activeView} onValueChange={value => { setActiveView(value as View); cue() }}>
-            <TabsList activateOnFocus aria-label="Explore sample views" className="preview-tabs">
-              {(['overview','budgets','activity'] as View[]).map(view => <TabsTab key={view} value={view} className="preview-tab">{view === 'overview' ? 'Overview' : view === 'budgets' ? 'Budgets' : 'Activity'}</TabsTab>)}
-            </TabsList>
-            {(['overview','budgets','activity'] as View[]).map(view => <TabsPanel key={view} value={view} className="preview-body"><SampleView view={view} /></TabsPanel>)}
-          </Tabs>
+  return (
+    <div className="preview-stack">
+      <div className="preview-topline">
+        <span>
+          <span className="status-dot" /> YOUR MONTH, IN PERSPECTIVE
+        </span>
+        <Chip size="sm" variant="soft">
+          Synthetic example
+        </Chip>
+      </div>
+      <Card
+        className="balance-card"
+        aria-label="Illustrative monthly money example"
+      >
+        <Card.Header>
+          <span className="small-label">
+            <Wallet size={16} aria-hidden="true" /> THE BALANCE IS THE STARTING
+            POINT
+          </span>
+        </Card.Header>
+        <Card.Content>
+          <div className="hero-cash">
+            <span>Money in the bank</span>
+            <strong>₹62,000</strong>
+          </div>
+          <div className="money-sequence" aria-label="Example reserves">
+            <div className="sequence-step step-one">
+              <span className="sequence-number">01</span>
+              <div>
+                <strong>Keep your commitments</strong>
+                <span>Bills & EMI</span>
+              </div>
+              <b>₹22,000</b>
+            </div>
+            <div className="sequence-step step-two">
+              <span className="sequence-number">02</span>
+              <div>
+                <strong>Make room for tomorrow</strong>
+                <span>Buffer + goal reserve</span>
+              </div>
+              <b>₹15,000</b>
+            </div>
+          </div>
+          <div className="balance-result step-three">
+            <div>
+              <span>Room to choose in this example</span>
+              <strong>₹25,000</strong>
+            </div>
+            <ArrowDown aria-hidden="true" />
+            <Meter
+              value={25000}
+              maxValue={62000}
+              aria-label="Sample remainder as a share of sample cash"
+            >
+              <Meter.Track>
+                <Meter.Fill />
+              </Meter.Track>
+            </Meter>
+          </div>
+        </Card.Content>
+        <Card.Footer>
+          <p className="capture-note">
+            Illustrative interface · No real account data.
+            <br />
+            Simplified arithmetic, not a spending recommendation.
+          </p>
+        </Card.Footer>
+      </Card>
+      <Link className="preview-footnote" href="#perspective">
+        Change the assumptions. See the difference.
+        <ArrowRight size={15} aria-hidden="true" />
+      </Link>
+    </div>
+  )
+}
+function Hero() {
+  return (
+    <section className="hero-section">
+      <div className="shell hero-grid">
+        <div className="hero-copy">
+          <Chip variant="soft" className="hero-chip">
+            <span className="status-dot" /> A calmer way to manage money
+          </Chip>
+          <h1>
+            Bank balance.
+            <br />
+            <span>Meet real life.</span>
+          </h1>
+          <p className="hero-description">
+            See what your money already needs to do. Bring accounts, bills and
+            goals together before your next spending decision.
+          </p>
+          <div className="hero-actions">
+            <ArrowLink href={APP_LINKS.register}>
+              Start your workspace
+            </ArrowLink>
+            <Link
+              href="#perspective"
+              className="button button--lg button--secondary"
+            >
+              Try the example
+              <ArrowDown size={18} aria-hidden="true" />
+            </Link>
+          </div>
+          <p className="hero-note">
+            <Check size={16} aria-hidden="true" /> Start with manual accounts{' '}
+            <span aria-hidden="true">·</span> Bank connection optional
+          </p>
+          <div className="hero-principle">
+            <span aria-hidden="true">YOUR MONEY, WITH CONTEXT</span>
+            <p>
+              Keep today organised.
+              <br />
+              <strong>Give tomorrow some room.</strong>
+            </p>
+          </div>
+        </div>
+        <div className="hero-visual">
+          <ProductPreview />
         </div>
       </div>
-    </div>
-    <div className="float-note"><span className="float-icon"><IconCircleCheck size={19}/></span><div><strong>A clearer perspective</strong><span>Everything in its place.</span></div></div>
-    <p className="preview-disclaimer"><IconLock size={13}/> Illustrative interface · No real account data</p>
-  </div>
-}
-
-function SampleView({ view }: { view: View }) {
-  const sample = demoData[view]
-  const allocations = [{ label:'Essentials', amount:'₹12,200', percent:49 }, { label:'Everyday', amount:'₹6,400', percent:26 }, { label:'Savings goal', amount:'₹6,200', percent:25 }]
-  return <>
-    <div className="mini-eyebrow">{sample.eyebrow}</div>
-    <div className="finance-summary"><div><p>{sample.title}</p><div className="finance-amount">{sample.amount}</div></div><div className="finance-trend"><IconArrowUpRight size={14} aria-hidden="true"/>{sample.delta}</div></div>
-    <div className="chart-wrap"><div className="chart-intro"><span>Financial trend</span><span>{sample.detail}</span></div>
-      {view === 'budgets' ? <div className="budget-meters">{allocations.map(item => <Meter key={item.label} value={item.percent} min={0} max={100} className="budget-meter" aria-label={item.label + ' share of illustrative plan'}><div className="meter-heading"><MeterLabel>{item.label}</MeterLabel><span>{item.amount}</span></div><MeterTrack className="budget-meter-track"><MeterIndicator className="budget-meter-indicator" /></MeterTrack></Meter>)}</div> : <div className="chart-bars" role="img" aria-label={'Illustrative trend for ' + view}>{sample.bars.map((v,i) => <span key={i} style={{height:v+'%'}} className={i===sample.bars.length-1?'bright':''}/>)}</div>}
-      <div className="chart-axis"><span>{view === 'budgets' ? 'Illustrative allocation' : 'Start'}</span><span>{view === 'budgets' ? 'Sample plan' : 'Today'}</span></div>
-    </div>
-    <div className="tx-heading">Recent items <span>Sample data</span></div>
-    <div className="tx-list">{sample.transactions.map((item,i)=><div className="tx-row" key={item.name}><div className="tx-symbol" aria-hidden="true">{i===0?<IconArrowDownRight size={16}/>:i===1?<IconReceipt size={16}/>:<IconTarget size={16}/>}</div><div className="tx-description"><strong>{item.name}</strong><span>{item.context}</span></div><span className={item.positive?'tx-value positive':'tx-value'}>{item.amount}</span></div>)}</div>
-  </>
-}
-
-function Hero() {
-  return <section className="hero-section">
-    <HeroBackdrop/>
-    <div className="hero-halo" aria-hidden="true"/>
-    <div className="shell hero-grid">
-      <div className="hero-copy">
-        <Badge size="lg" variant="outline" className="eyebrow-badge"><span className="status-dot"/> A better way to understand your money <IconArrowUpRight size={13}/></Badge>
-        <BlurRevealText inView={false} as="h1" className="hero-title" text="Money makes more sense together." stagger={0.045} delay={0.06} duration={0.38} blurAmount="7px" />
-        <p className="hero-description">Every account. Every decision. One thoughtful place to understand where your money stands — and where it can go next.</p>
-        <div className="hero-actions"><ArrowLink href={APP_LINKS.register}>Make money make sense</ArrowLink><SpaceLink href="#experience" variant="secondary" className="secondary-cta">Explore the experience <IconArrowRight size={18}/></SpaceLink></div>
-        <div className="hero-footnote"><span className="verified-icon"><IconCircleCheck size={16}/></span> Built for the decisions you make every day.</div>
+      <div className="shell capability-strip">
+        <span>ONE PLACE. A CLEARER PICTURE.</span>
+        <div>
+          {[
+            { icon: Landmark, text: 'Accounts' },
+            { icon: FileText, text: 'Transactions' },
+            { icon: ChartPie, text: 'Budgets & goals' },
+            { icon: CalendarDays, text: 'What’s coming' },
+          ].map(({ icon: Icon, text }) => (
+            <span key={text}>
+              <Icon size={18} aria-hidden="true" />
+              {text}
+            </span>
+          ))}
+        </div>
       </div>
-      <div className="hero-visual"><ProductPreview /></div>
+    </section>
+  )
+}
+function FeatureSpecimen({ index }: { index: number }) {
+  if (index === 0)
+    return (
+      <div
+        className="feature-specimen account-specimen"
+        aria-label="Synthetic account illustration"
+      >
+        <div>
+          <Landmark size={16} aria-hidden="true" />
+          <span>Everyday</span>
+          <strong>₹42,000</strong>
+        </div>
+        <div>
+          <Landmark size={16} aria-hidden="true" />
+          <span>Savings</span>
+          <strong>₹20,000</strong>
+        </div>
+      </div>
+    )
+  if (index === 1)
+    return (
+      <div
+        className="feature-specimen transaction-specimen"
+        aria-label="Synthetic transaction illustration"
+      >
+        <div>
+          <span className="mini-category">G</span>
+          <span>
+            Groceries<small>Everyday account</small>
+          </span>
+          <strong>−₹250</strong>
+        </div>
+        <div>
+          <span className="mini-category income">I</span>
+          <span>
+            Income<small>Everyday account</small>
+          </span>
+          <strong>+₹1,000</strong>
+        </div>
+      </div>
+    )
+  if (index === 2)
+    return (
+      <div className="feature-specimen goal-specimen">
+        <Meter value={60} aria-label="Synthetic goal, 60 percent saved">
+          <div className="mini-meter-label">
+            <span>Emergency reserve</span>
+            <Meter.Output />
+          </div>
+          <Meter.Track>
+            <Meter.Fill />
+          </Meter.Track>
+        </Meter>
+        <span>₹60,000 of ₹1,00,000 · Synthetic</span>
+      </div>
+    )
+  if (index === 3)
+    return (
+      <div className="feature-specimen recurring-specimen">
+        <span className="mini-date">
+          25<small>OCT</small>
+        </span>
+        <span>
+          Household supplies<small>Monthly · Synthetic</small>
+        </span>
+        <strong>₹4,000</strong>
+      </div>
+    )
+  if (index === 4)
+    return (
+      <div className="feature-specimen import-specimen">
+        <Chip size="sm" variant="soft">
+          CSV
+        </Chip>
+        <ArrowRight size={16} aria-hidden="true" />
+        <span>Preview & map</span>
+        <ArrowRight size={16} aria-hidden="true" />
+        <Check size={17} aria-hidden="true" />
+      </div>
+    )
+  return (
+    <div className="feature-specimen module-specimen">
+      {['Reports', 'Assets', 'Invoices'].map((text) => (
+        <Chip key={text} variant="soft">
+          {text}
+        </Chip>
+      ))}
     </div>
-    <div className="hero-bottom shell"><span>LESS GUESSWORK. MORE CLARITY.</span><SpaceLink href="#why-finco" className="scroll-prompt">Discover more <IconArrowDownRight size={16} aria-hidden="true"/></SpaceLink></div>
-  </section>
+  )
 }
-
-function ProofLine() {
-  return <div className="proof-line shell"><Separator aria-hidden="true" className="proof-divider" /><p>One place for more than your balance.</p><div className="proof-items"><span><IconWallet size={18}/> Accounts</span><span><IconReceipt size={18}/> Transactions</span><span><IconTarget size={18}/> Budgets & goals</span><span><IconChartDots3 size={18}/> Reports</span></div></div>
-}
-
 function WhyFinCo() {
-  return <section className="section why-section shell" id="why-finco">
-    <div className="section-head"><div><p className="section-kicker"><span>01 /</span> MADE FOR REAL LIFE</p><h2>Less juggling.<br/><span>More knowing.</span></h2></div><p>Money touches every part of life. Your tools should bring the pieces together, not send you looking for them.</p></div>
-    <div className="feature-grid">{featureCards.map((item,index)=><Card key={item.number} className={'feature-card feature-'+index}><div className="feature-card-top"><span className="feature-number">{item.number} / 04</span><span className="feature-icon"><item.icon size={23} stroke={1.5}/></span></div><div className="feature-card-bottom"><p className="feature-label">{item.label}</p><h3>{item.title}</h3><p>{item.body}</p><div className="feature-line"/></div></Card>)}</div>
-  </section>
+  return (
+    <section className="section shell" id="why-finco">
+      <div className="section-head">
+        <div>
+          <p className="section-kicker">A HOME FOR YOUR FINANCIAL LIFE</p>
+          <h2>
+            Less scattered.
+            <br />
+            <span>More understood.</span>
+          </h2>
+        </div>
+        <p>
+          From the everyday details to the bigger picture. Keep the pieces
+          together, so your next decision has somewhere to start.
+        </p>
+      </div>
+      <div className="feature-grid">
+        {features.map((feature, index) => (
+          <Card key={feature.title} className="feature-card" variant="default">
+            <Card.Header>
+              <div className="feature-top">
+                <span className="feature-icon">{feature.icon}</span>
+                <Chip size="sm" variant="soft">
+                  0{index + 1}
+                </Chip>
+              </div>
+              <Card.Title>{feature.title}</Card.Title>
+            </Card.Header>
+            <Card.Content>
+              <p>{feature.body}</p>
+              <FeatureSpecimen index={index} />
+            </Card.Content>
+            <Card.Footer>
+              <span className="feature-detail">
+                {feature.detail}
+                <ArrowRight size={15} aria-hidden="true" />
+              </span>
+            </Card.Footer>
+          </Card>
+        ))}
+      </div>
+      <Link className="section-link" href={landingAsset('/features/')}>
+        Explore features and availability
+        <Link.Icon />
+      </Link>
+    </section>
+  )
 }
-
 function Experience() {
-  const [selected, setSelected] = useState<'clarity'|'control'>('clarity')
-  const { cue } = useLandingSound()
-  return <section className="section experience-section" id="perspective">
-    <div className="shell experience-grid">
-      <div className="experience-copy"><p className="section-kicker"><span>02 /</span> BUILT AROUND YOU</p><h2>For the bigger picture. <em>And the little details.</em></h2><p className="section-intro">It’s not about staring at another chart. It’s about making your next financial decision feel more grounded.</p>
-        <Tabs className="benefit-tabs" value={selected} orientation="vertical" onValueChange={value => { setSelected(value as 'clarity'|'control'); cue() }}>
-          <TabsList activateOnFocus className="experience-choices" aria-label="Choose benefit">
-            <TabsTab value="clarity" className="choice"><IconChartBar size={20} aria-hidden="true"/> Understand what changed <IconArrowRight size={18} aria-hidden="true"/></TabsTab>
-            <TabsTab value="control" className="choice"><IconShieldLock size={20} aria-hidden="true"/> Stay in the driver’s seat <IconArrowRight size={18} aria-hidden="true"/></TabsTab>
-          </TabsList>
-          <TabsPanel value="clarity" className="choice-description">See your spending, savings and activity in a context you can actually use.</TabsPanel>
-          <TabsPanel value="control" className="choice-description">Keep your own financial workflow, workspace and permissions at the centre of the experience.</TabsPanel>
-        </Tabs>
+  return (
+    <section
+      className="section planning-section"
+      id="perspective"
+      aria-labelledby="planning-title"
+    >
+      <div className="shell planning-grid">
+        <div className="planning-copy">
+          <p className="section-kicker">TRY A DIFFERENT PERSPECTIVE</p>
+          <h2 id="planning-title">
+            Some money
+            <br />
+            already has
+            <br />
+            <span>somewhere to be.</span>
+          </h2>
+          <p className="section-intro">
+            A bigger buffer. A busier month. A goal worth protecting. Change the
+            assumptions and see what happens to a sample balance.
+          </p>
+          <ul className="plain-checks">
+            <li>
+              <Check aria-hidden="true" />
+              Pick a sample month or make your own
+            </li>
+            <li>
+              <Check aria-hidden="true" />
+              Adjust bills, buffer and goal reserves
+            </li>
+            <li>
+              <Check aria-hidden="true" />
+              See a remainder, zero or a shortfall
+            </li>
+          </ul>
+          <div className="demo-boundary">
+            <ShieldCheck aria-hidden="true" />
+            <p>
+              Your financial records stay yours.
+              <span>This example runs locally and reads no account data.</span>
+            </p>
+          </div>
+          <p className="capture-note">
+            The actual spending plan also checks confirmed balances, card debt
+            and reviewed obligations. Missing inputs can block an estimate.
+          </p>
+        </div>
+        <SpendingPlayground />
       </div>
-      <div className="experience-art">
-        <div className="orbit orbit-one"/><div className="orbit orbit-two"/>
-        <div className="orbit-center"><IconChartDots3 size={34} stroke={1.25}/></div>
-        <div className="orbit-tag orbit-tag-a"><IconWallet size={16}/> What you have</div>
-        <div className="orbit-tag orbit-tag-b"><IconTarget size={16}/> What matters</div>
-        <div className="orbit-tag orbit-tag-c"><IconChartBar size={16}/> What changed</div>
-        <div className="orbit-caption">One financial perspective. Many moving parts.</div>
-      </div>
-    </div>
-  </section>
+    </section>
+  )
 }
-
+const setupSteps = [
+  [
+    'Set up your workspace',
+    'Choose an account type and currency. Start manually, with a reliable current balance.',
+    Landmark,
+  ],
+  [
+    'Bring in the details',
+    'Add transactions or preview a small file. Check dates, signs and duplicates before confirming.',
+    Download,
+  ],
+  [
+    'Review your next move',
+    'Explore one budget, goal or report. Check upcoming commitments before making a spending plan.',
+    ChartPie,
+  ],
+] as const
 function HowItWorks() {
-  return <section className="section steps-section shell" id="how-it-works">
-    <div className="section-head"><div><p className="section-kicker"><span>03 /</span> YOUR NEXT STEP</p><h2>A little less noise.<br/><span>A lot more direction.</span></h2></div><p>Start simply. Find your rhythm. Use the features that fit your financial life.</p></div>
-    <Timeline render={<ol />} value={0} orientation="horizontal" className="steps-grid" aria-label="How FinCo-Pilot works">{steps.map((item,index)=><TimelineItem render={<li />} step={index + 1} key={item.id} className="step-item"><TimelineSeparator /><TimelineHeader><span className="step-index">{item.id}</span><TimelineIndicator className="step-icon"><item.icon size={24} stroke={1.45}/></TimelineIndicator><TimelineTitle>{item.title}</TimelineTitle></TimelineHeader><TimelineContent>{item.description}</TimelineContent></TimelineItem>)}</Timeline>
-  </section>
+  return (
+    <section className="section shell" id="how-it-works">
+      <div className="section-head">
+        <div>
+          <p className="section-kicker">MAKE A START. KEEP IT SIMPLE.</p>
+          <h2>
+            One useful task.
+            <br />
+            <span>Then the next.</span>
+          </h2>
+        </div>
+        <p>
+          No need to organise your entire financial life in one sitting. Start
+          with the records you can verify.
+        </p>
+      </div>
+      <ol className="getting-started">
+        {setupSteps.map(([title, text, Icon], i) => (
+          <li key={title}>
+            <Card variant="transparent">
+              <Card.Header>
+                <div className="step-top">
+                  <Chip variant="soft">STEP 0{i + 1}</Chip>
+                  <Icon aria-hidden="true" />
+                </div>
+                <Card.Title>{title}</Card.Title>
+              </Card.Header>
+              <Card.Content>
+                <p>{text}</p>
+              </Card.Content>
+            </Card>
+          </li>
+        ))}
+      </ol>
+      <Link className="section-link" href={landingAsset('/how-it-works/')}>
+        Read the first-session checklist
+        <Link.Icon />
+      </Link>
+      <ImportWalkthrough />
+    </section>
+  )
 }
-
 function Privacy() {
-  return <section className="section privacy-section"><div className="shell privacy-panel">
-    <div className="privacy-copy"><div className="privacy-kicker"><IconShieldLock size={18}/> THE TRUST PART</div><h2>Financial clarity should feel <em>personal.</em></h2><p>Your financial information deserves thoughtful access controls. FinCo-Pilot includes workspace permissions, authentication safeguards and configurable provider connections.</p><SpaceLink href={APP_LINKS.privacy} variant="secondary" className="privacy-link">Read the privacy policy <IconArrowUpRight size={18}/></SpaceLink></div>
-    <div className="privacy-visual"><div className="privacy-avatar"><IdentityAvatar seed="fincopilot-friendly-guide" size={100}/></div><div className="privacy-pill"><IconLock size={16}/> Your workspace. Your context.</div><span className="privacy-note">No real user data on this page</span></div>
-  </div></section>
+  return (
+    <section className="section trust-section">
+      <div className="shell">
+        <div className="section-head">
+          <div>
+            <p className="section-kicker">
+              PERSONAL FINANCE. PERSONAL CHOICES.
+            </p>
+            <h2>
+              Your context.
+              <br />
+              <span>Your control.</span>
+            </h2>
+          </div>
+          <p>
+            Know what you are using, what you are connecting and what the
+            numbers can tell you.
+          </p>
+        </div>
+        <div className="trust-grid">
+          {[
+            {
+              icon: LockKeyhole,
+              title: 'Workspace permissions',
+              body: 'Access depends on authentication and workspace roles. Review who can see or change records in a shared workspace.',
+            },
+            {
+              icon: Landmark,
+              title: 'Connections are a choice',
+              body: 'Start with manual records. Optional bank and AI providers depend on configuration, permissions and availability.',
+            },
+            {
+              icon: ShieldCheck,
+              title: 'Inputs before estimates',
+              body: 'A dashboard reflects the records included. Check missing balances, bills and debts before relying on an estimate.',
+            },
+          ].map(({ icon: Icon, title, body }) => (
+            <Card key={title} variant="transparent" className="trust-item">
+              <Card.Header>
+                <span className="feature-icon">
+                  <Icon aria-hidden="true" />
+                </span>
+                <Card.Title>{title}</Card.Title>
+              </Card.Header>
+              <Card.Content>
+                <p>{body}</p>
+              </Card.Content>
+            </Card>
+          ))}
+        </div>
+        <Card className="product-principles">
+          <Card.Header>
+            <Chip size="sm" variant="soft">
+              WHY FINCO-PILOT
+            </Chip>
+            <Card.Title>Built around everyday decisions.</Card.Title>
+          </Card.Header>
+          <Card.Content>
+            <p>
+              A useful financial workspace gives your balances, records and
+              plans a shared context. Start with the information you can verify,
+              then build a picture you understand.
+            </p>
+            <ul>
+              <li>
+                <Check size={16} aria-hidden="true" />
+                Manual records are a valid starting point
+              </li>
+              <li>
+                <Check size={16} aria-hidden="true" />
+                Estimates need reviewed inputs
+              </li>
+              <li>
+                <Check size={16} aria-hidden="true" />
+                Optional connections have explicit boundaries
+              </li>
+            </ul>
+          </Card.Content>
+          <Card.Footer>
+            <Link href={landingAsset('/how-it-works/')}>
+              See the first-session checklist
+              <Link.Icon />
+            </Link>
+          </Card.Footer>
+        </Card>
+        <div className="policy-actions">
+          <Link href={APP_LINKS.privacy} className="button button--secondary">
+            Read the privacy policy
+          </Link>
+          <Link href={APP_LINKS.terms}>
+            Read the terms
+            <Link.Icon />
+          </Link>
+        </div>
+      </div>
+    </section>
+  )
 }
-
-function Questions() {
-  return <section className="section faq-section shell" id="questions"><div className="faq-copy"><p className="section-kicker"><span>04 /</span> GOOD TO KNOW</p><h2>Questions?<br/><span>Fair enough.</span></h2><p>Clear answers matter as much as a clear dashboard.</p><SpaceLink href={APP_LINKS.support} variant="secondary" className="faq-contact">Support options <IconArrowUpRight size={17}/></SpaceLink></div>
-    <Accordion className="faq-list" defaultValue={['faq-1']} multiple={true}>
-      {faqs.map(item=><AccordionItem value={item.id} key={item.id} className="faq-item"><AccordionTrigger className="faq-trigger">{item.question}</AccordionTrigger><AccordionPanel className="faq-panel">{item.answer}</AccordionPanel></AccordionItem>)}
+function FAQList({
+  indexes,
+  initial = false,
+}: {
+  indexes: number[]
+  initial?: boolean
+}) {
+  return (
+    <Accordion
+      className="faq-list"
+      variant="surface"
+      defaultExpandedKeys={initial ? ['faq-1'] : []}
+      allowsMultipleExpanded
+    >
+      {indexes.map((index) => (
+        <Accordion.Item id={'faq-' + (index + 1)} key={faqs[index][0]}>
+          <Accordion.Heading>
+            <Accordion.Trigger>
+              {faqs[index][0]}
+              <Accordion.Indicator />
+            </Accordion.Trigger>
+          </Accordion.Heading>
+          <Accordion.Panel>
+            <Accordion.Body>
+              <p>{faqs[index][1]}</p>
+            </Accordion.Body>
+          </Accordion.Panel>
+        </Accordion.Item>
+      ))}
     </Accordion>
-  </section>
+  )
 }
-
+function Questions() {
+  return (
+    <section className="section shell faq-section" id="questions">
+      <div>
+        <p className="section-kicker">A LITTLE CONTEXT GOES A LONG WAY</p>
+        <h2>
+          Good questions.
+          <br />
+          <span>Straight answers.</span>
+        </h2>
+        <p className="section-intro">Get to know your next workspace.</p>
+        <Link href={APP_LINKS.support}>
+          Support options
+          <Link.Icon />
+        </Link>
+      </div>
+      <div className="faq-groups">
+        <FAQList indexes={[0, 1, 2, 3, 5]} initial />
+        <Disclosure className="more-questions">
+          <Disclosure.Heading>
+            <Disclosure.Trigger>
+              Five more questions
+              <Disclosure.Indicator />
+            </Disclosure.Trigger>
+          </Disclosure.Heading>
+          <Disclosure.Content>
+            <FAQList indexes={[4, 6, 7, 8, 9]} />
+          </Disclosure.Content>
+        </Disclosure>
+      </div>
+    </section>
+  )
+}
 function FinalCTA() {
-  return <section className="section final-section"><div className="shell final-inner"><p className="final-kicker">A MORE THOUGHTFUL WAY FORWARD</p><h2>Put your money<br/>into <span>perspective.</span></h2><p>Clarity is a good place to start.</p><ArrowLink href={APP_LINKS.register} light>Go to FinCo-Pilot <IconArrowRight size={18}/></ArrowLink><span className="final-small">Sign-up availability depends on the live application.</span></div></section>
+  return (
+    <section className="final-section shell">
+      <Card className="final-card">
+        <Card.Content>
+          <div>
+            <Chip variant="soft">A CLEARER PLACE TO START</Chip>
+            <h2>
+              Make room for
+              <br />
+              your next chapter.
+            </h2>
+            <p>Start with one account. Build from there.</p>
+          </div>
+          <div className="final-actions">
+            <ArrowLink href={APP_LINKS.register} light>
+              Open your workspace
+            </ArrowLink>
+            <Link href={APP_LINKS.pricing}>
+              View current plans
+              <Link.Icon />
+            </Link>
+            <span>Check live sign-up and plan availability.</span>
+          </div>
+        </Card.Content>
+      </Card>
+    </section>
+  )
 }
-
 function Footer() {
-  return <footer className="footer"><div className="shell"><div className="footer-top"><div><SpaceLink href="#top" className="brand-link"><Mark compact/></SpaceLink><p>More clarity. Less guesswork.</p></div><div className="footer-links"><SpaceLink href={landingAsset('/features/')} variant="secondary">Features</SpaceLink><SpaceLink href={landingAsset('/how-it-works/')} variant="secondary">How it works</SpaceLink><SpaceLink href={landingAsset('/guides/import-transactions/')} variant="secondary">Import guide</SpaceLink><SpaceLink href={APP_LINKS.pricing} variant="secondary">Pricing</SpaceLink><SpaceLink href={APP_LINKS.support} variant="secondary">Support</SpaceLink><SpaceLink href={APP_LINKS.login} variant="secondary">Log in</SpaceLink></div></div><div className="footer-bottom"><span>© 2026 FinCo-Pilot</span><div><SpaceLink href={APP_LINKS.privacy} variant="secondary">Privacy</SpaceLink><SpaceLink href={APP_LINKS.terms} variant="secondary">Terms</SpaceLink></div><SoundToggle /></div></div></footer>
+  return (
+    <footer className="footer">
+      <div className="shell">
+        <div className="footer-top">
+          <div>
+            <Link href="#top" aria-label="FinCo-Pilot, back to top">
+              <Mark />
+            </Link>
+            <p>Your money, with context.</p>
+          </div>
+          <nav className="footer-links" aria-label="Footer navigation">
+            <Link href={landingAsset('/features/')}>Features</Link>
+            <Link href={landingAsset('/how-it-works/')}>How it works</Link>
+            <Link href={landingAsset('/guides/import-transactions/')}>
+              Import guide
+            </Link>
+            <Link href={APP_LINKS.pricing}>Pricing</Link>
+            <Link href={APP_LINKS.support}>Support</Link>
+            <Link href={APP_LINKS.login}>Log in</Link>
+          </nav>
+        </div>
+        <Separator />
+        <div className="footer-bottom">
+          <span>© 2026 FinCo-Pilot</span>
+          <nav aria-label="Policies">
+            <Link href={APP_LINKS.privacy}>Privacy</Link>
+            <Link href={APP_LINKS.terms}>Terms</Link>
+            <Link href="#top">
+              Back to top
+              <ArrowUp size={16} aria-hidden="true" />
+            </Link>
+          </nav>
+        </div>
+      </div>
+    </footer>
+  )
 }
-
 export function LandingExperience() {
-  return <LandingSoundProvider><InstalledAppHandoff /><MotionConfig reducedMotion="user"><div className="marketing-page"><a className="skip-link" href="#main-content">Skip to content</a><Navigation/><main id="main-content"><Hero/><ProofLine/><WhyFinCo/><ProductScreens/><Experience/><HowItWorks/><Privacy/><Questions/><FinalCTA/></main><Footer/></div></MotionConfig></LandingSoundProvider>
+  return (
+    <>
+      <InstalledAppHandoff />
+      <div className="marketing-page">
+        <Link className="skip-link" href="#main-content">
+          Skip to content
+        </Link>
+        <Navigation />
+        <main id="main-content">
+          <Hero />
+          <ProductScreens />
+          <Experience />
+          <WhyFinCo />
+          <HowItWorks />
+          <Privacy />
+          <PlanPreview />
+          <Questions />
+          <FinalCTA />
+        </main>
+        <Footer />
+        <MobileActions />
+      </div>
+    </>
+  )
 }

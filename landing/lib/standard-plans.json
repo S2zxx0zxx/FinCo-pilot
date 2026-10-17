@@ -1,0 +1,29 @@
+{
+  "source": "backend/app/billing/pricing.py",
+  "prices": [
+    {
+      "plan": "free",
+      "interval": "none",
+      "amount_minor": 0,
+      "currency": "INR"
+    },
+    {
+      "plan": "pro",
+      "interval": "monthly",
+      "amount_minor": 9900,
+      "currency": "INR"
+    },
+    {
+      "plan": "pro",
+      "interval": "annual",
+      "amount_minor": 99900,
+      "currency": "INR"
+    },
+    {
+      "plan": "max",
+      "interval": "monthly",
+      "amount_minor": 34900,
+      "currency": "INR"
+    }
+  ]
+}

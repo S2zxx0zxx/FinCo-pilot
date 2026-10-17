@@ -69,8 +69,24 @@ export default defineConfig(async ({ mode }) => {
           if (!login || login.type !== 'chunk') return
           // Only public sign-in code is hinted. Modulepreload fetches/parses;
           // it does not admit a session, render private UI or fetch finance APIs.
-          const hints = JSON.stringify({ login: `/${login.fileName}`, font: headingFont ? `/${headingFont.fileName}` : null, bodyFont: bodyFont ? `/${bodyFont.fileName}` : null })
-          return [{ tag: 'script', injectTo: 'head', children: `(()=>{const h=${hints};const p=location.pathname;if(!['/','/login','/sign-in'].includes(p))return;try{if(p==='/'&&localStorage.getItem('token'))return}catch{}const add=(rel,href,as,integrity)=>{const l=document.createElement('link');l.rel=rel;l.href=href;if(integrity)l.integrity=integrity;if(as){l.as=as;l.type='font/woff2';l.crossOrigin='anonymous'}document.head.append(l)};add('modulepreload',h.login,undefined,h.loginIntegrity);let lang='en';try{lang=new URLSearchParams(location.search).get('lng')||localStorage.getItem('i18nextLng')||'en'}catch{}if(/^(en|pt|es|fr|de|it|pl|nl|sk)(-|$)/i.test(lang)){if(h.bodyFont)add('preload',h.bodyFont,'font');if(h.font)add('preload',h.font,'font')}})()` }]
+          // Lighthouse 2026-10-15: the login entry's deferred Clerk modules were
+          // discovered ~5.6 seconds after its own request on a throttled mobile
+          // profile. Hint these *public auth modules* on auth routes only.
+          // Auth/session state and the Clerk provider are not bypassed.
+          const clerkConfigured = Boolean((env.VITE_CLERK_PUBLISHABLE_KEY || env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || '').trim())
+          const clerkLogin = clerkConfigured ? Object.values(context.bundle).find(output => output.type === 'chunk' && output.facadeModuleId?.endsWith('/src/pages/login-clerk.tsx')) : undefined
+          const clerkAdapter = clerkConfigured ? Object.values(context.bundle).find(output => output.type === 'chunk' && output.facadeModuleId?.endsWith('/src/lib/clerk-auth-adapter.ts')) : undefined
+          if (clerkConfigured && (!clerkLogin || !clerkAdapter || clerkLogin.type !== 'chunk' || clerkAdapter.type !== 'chunk')) {
+            throw new Error('Configured Clerk login entry or adapter chunk missing')
+          }
+          const hints = JSON.stringify({
+            login: `/${login.fileName}`,
+            clerkLogin: clerkLogin?.type === 'chunk' ? `/${clerkLogin.fileName}` : null,
+            clerkAdapter: clerkAdapter?.type === 'chunk' ? `/${clerkAdapter.fileName}` : null,
+            font: headingFont ? `/${headingFont.fileName}` : null,
+            bodyFont: bodyFont ? `/${bodyFont.fileName}` : null,
+          })
+          return [{ tag: 'script', injectTo: 'head', children: `(()=>{const h=${hints};const p=location.pathname;if(!['/','/login','/sign-in'].includes(p))return;try{if(p==='/'&&localStorage.getItem('token'))return}catch{}const add=(rel,href,as,integrity)=>{const l=document.createElement('link');l.rel=rel;l.href=href;if(integrity)l.integrity=integrity;if(as){l.as=as;l.type='font/woff2';l.crossOrigin='anonymous'}document.head.append(l)};add('modulepreload',h.login,undefined,h.loginIntegrity);if((p==='/login'||p==='/sign-in')&&h.clerkLogin&&h.clerkAdapter){add('modulepreload',h.clerkLogin,undefined,h.clerkLoginIntegrity);add('modulepreload',h.clerkAdapter,undefined,h.clerkAdapterIntegrity)}let lang='en';try{lang=new URLSearchParams(location.search).get('lng')||localStorage.getItem('i18nextLng')||'en'}catch{}if(/^(en|pt|es|fr|de|it|pl|nl|sk)(-|$)/i.test(lang)){if(h.bodyFont)add('preload',h.bodyFont,'font');if(h.font)add('preload',h.font,'font')}})()` }]
         },
       },
     }, {

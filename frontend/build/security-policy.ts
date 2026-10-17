@@ -22,8 +22,16 @@ export function compileStrictCsp(html: string) {
     } else if (code.trim()) hashes.add(scriptIntegrity(code))
   }
   for (const match of html.matchAll(/<link\b(?=[^>]*(?:rel="modulepreload"|as="script"))[^>]*integrity="(sha256-[^"]+)"[^>]*>/g)) hashes.add(match[1])
-  const hinted = html.match(/"loginIntegrity":"(sha256-[^"]+)"/)?.[1]
-  if (hinted) hashes.add(hinted)
+  // Dynamic auth-route modulepreloads must be SRI-bound too: strict-dynamic
+  // otherwise blocks executable modules even if the browser fetched them.
+  const hint = html.match(/const h=(\{[^;]+\});const p=location.pathname/)
+  if (hint) {
+    const data = JSON.parse(hint[1]) as Record<string, unknown>
+    for (const key of ['loginIntegrity', 'clerkLoginIntegrity', 'clerkAdapterIntegrity']) {
+      const value = data[key]
+      if (typeof value === 'string' && /^sha256-[a-zA-Z0-9+/]+=*$/.test(value)) hashes.add(value)
+    }
+  }
   if (!hashes.size) throw new Error('No trusted entry scripts')
   return `default-src 'self'; script-src ${[...hashes].map(hash => `'${hash}'`).join(' ')} 'strict-dynamic'; script-src-attr 'none'; ${otherDirectives}`
 }
@@ -45,9 +53,30 @@ export async function finalizeSecurityPolicy(root: string) {
   }
   const hint = html.match(/const h=(\{[^;]+\});const p=location.pathname/)
   if (hint) {
-    const data = JSON.parse(hint[1]) as { login: string; loginIntegrity?: string }
-    if (!/^\/static\/[\w.-]+\.js$/.test(data.login)) throw new Error('Unknown hinted module')
-    data.loginIntegrity = scriptIntegrity(await readFile(path.join(root, 'dist', data.login.slice(1))))
+    const data = JSON.parse(hint[1]) as {
+      login: string
+      clerkLogin?: string | null
+      clerkAdapter?: string | null
+      loginIntegrity?: string
+      clerkLoginIntegrity?: string
+      clerkAdapterIntegrity?: string
+    }
+    const modules = [
+      ['login', 'loginIntegrity'],
+      ['clerkLogin', 'clerkLoginIntegrity'],
+      ['clerkAdapter', 'clerkAdapterIntegrity'],
+    ] as const
+    if (Boolean(data.clerkLogin) !== Boolean(data.clerkAdapter)) {
+      throw new Error('Clerk auth route hints must be paired')
+    }
+    for (const [moduleKey, integrityKey] of modules) {
+      const url = data[moduleKey]
+      if (url == null && moduleKey !== 'login') continue
+      if (typeof url !== 'string' || !/^\/static\/[\w.-]+\.js$/.test(url)) {
+        throw new Error(`Unknown hinted module: ${moduleKey}`)
+      }
+      data[integrityKey] = scriptIntegrity(await readFile(path.join(root, 'dist', url.slice(1))))
+    }
     html = html.replace(hint[1], JSON.stringify(data))
   }
   await writeFile(htmlPath, html)

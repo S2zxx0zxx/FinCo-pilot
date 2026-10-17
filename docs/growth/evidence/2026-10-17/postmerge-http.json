@@ -1,0 +1,387 @@
+{
+  "scope": "Public fixed GET observations; no auth/provider/conversion acceptance",
+  "max_requests": 18,
+  "observations": [
+    {
+      "url": "https://fincopilot.app/",
+      "observed_at_utc": "2026-10-17T07:16:03.334618+00:00",
+      "status": 308,
+      "truncated": false,
+      "headers": {
+        "Content-Type": "text/plain",
+        "Cache-Control": "public, max-age=0, must-revalidate",
+        "Server": "Vercel"
+      },
+      "redirect": "/welcome/"
+    },
+    {
+      "url": "https://fincopilot.app/welcome/",
+      "observed_at_utc": "2026-10-17T07:16:03.336086+00:00",
+      "status": 200,
+      "truncated": false,
+      "headers": {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store",
+        "Server": "Vercel"
+      },
+      "html": {
+        "title": "FinCo-Pilot | Make sense of all your money",
+        "h1": [
+          "Money\u00a0makes\u00a0more\u00a0sense\u00a0together."
+        ],
+        "canonical": [
+          "https://fincopilot.app/welcome/"
+        ],
+        "robots": "noindex, nofollow",
+        "description": "Understand accounts, track spending, plan budgets and keep your financial picture together in one thoughtful workspace.",
+        "og_image": "https://fincopilot.app/welcome/social-card.png",
+        "internal_links": [
+          "/login",
+          "/pricing",
+          "/privacy",
+          "/register",
+          "/support",
+          "/terms",
+          "/welcome/features/",
+          "/welcome/guides/import-transactions/",
+          "/welcome/how-it-works/"
+        ]
+      }
+    },
+    {
+      "url": "https://fincopilot.app/welcome/features/",
+      "observed_at_utc": "2026-10-17T07:16:03.337094+00:00",
+      "status": 200,
+      "truncated": false,
+      "headers": {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store",
+        "Server": "Vercel"
+      },
+      "html": {
+        "title": "Accounts, transactions and budgets | FinCo-Pilot",
+        "h1": [
+          "A workspace for your financial picture"
+        ],
+        "canonical": [
+          "https://fincopilot.app/welcome/features/"
+        ],
+        "robots": "noindex, nofollow",
+        "description": "Explore FinCo-Pilot workflows for organizing accounts, importing transactions, reviewing budgets and understanding reports, with availability and data limitations explained.",
+        "og_image": "https://fincopilot.app/welcome/social-card.png",
+        "internal_links": [
+          "/login",
+          "/privacy",
+          "/register",
+          "/support",
+          "/terms",
+          "/welcome/",
+          "/welcome/features/",
+          "/welcome/guides/import-transactions/",
+          "/welcome/how-it-works/"
+        ]
+      }
+    },
+    {
+      "url": "https://fincopilot.app/welcome/how-it-works/",
+      "observed_at_utc": "2026-10-17T07:16:03.337710+00:00",
+      "status": 200,
+      "truncated": false,
+      "headers": {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store",
+        "Server": "Vercel"
+      },
+      "html": {
+        "title": "Getting started with your financial workspace | FinCo-Pilot",
+        "h1": [
+          "Start with one useful financial task"
+        ],
+        "canonical": [
+          "https://fincopilot.app/welcome/how-it-works/"
+        ],
+        "robots": "noindex, nofollow",
+        "description": "A practical checklist for accessing FinCo-Pilot, starting with manual records, reviewing imports and checking balances and permissions.",
+        "og_image": "https://fincopilot.app/welcome/social-card.png",
+        "internal_links": [
+          "/login",
+          "/privacy",
+          "/register",
+          "/support",
+          "/terms",
+          "/welcome/",
+          "/welcome/features/",
+          "/welcome/guides/import-transactions/",
+          "/welcome/how-it-works/"
+        ]
+      }
+    },
+    {
+      "url": "https://fincopilot.app/welcome/guides/import-transactions/",
+      "observed_at_utc": "2026-10-17T07:16:10.421339+00:00",
+      "status": 200,
+      "truncated": false,
+      "headers": {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store",
+        "Server": "Vercel"
+      },
+      "html": {
+        "title": "Preview and review a CSV transaction import | FinCo-Pilot",
+        "h1": [
+          "Review a transaction import before applying it"
+        ],
+        "canonical": [
+          "https://fincopilot.app/welcome/guides/import-transactions/"
+        ],
+        "robots": "noindex, nofollow",
+        "description": "Learn how to prepare a small synthetic CSV, review date and amount mappings, check duplicates and avoid treating incomplete transaction history as an account balance.",
+        "og_image": "https://fincopilot.app/welcome/social-card.png",
+        "internal_links": [
+          "/login",
+          "/privacy",
+          "/register",
+          "/support",
+          "/terms",
+          "/welcome/",
+          "/welcome/features/",
+          "/welcome/guides/import-transactions/",
+          "/welcome/how-it-works/",
+          "/welcome/samples/transactions-example.csv"
+        ]
+      }
+    },
+    {
+      "url": "https://fincopilot.app/robots.txt",
+      "observed_at_utc": "2026-10-17T07:16:10.480300+00:00",
+      "status": 200,
+      "truncated": false,
+      "headers": {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-store",
+        "Server": "Vercel"
+      },
+      "robots_text": "User-agent: *\nDisallow: /\nDisallow: /api/\nDisallow: /mcp\nDisallow: /reset-password\nDisallow: /verify-email\nDisallow: /sso-callback\nDisallow: /auth/\nDisallow: /oauth/\nDisallow: /i/\n\nUser-agent: Amazonbot\nUser-agent: Applebot-Extended\nUser-agent: Bytespider\nUser-agent: CCBot\nUser-agent: ClaudeBot\nUser-agent: Diffbot\nUser-agent: Google-Extended\nUser-agent: GPTBot\nUser-agent: omgili\nUser-agent: anthropic-ai\nUser-agent: Claude-Web\nUser-agent: cohere-ai\nUser-agent: MistralAI-Training\nUser-agent: meta-externalagent\nUser-agent: GoogleOther\nUser-agent: Baiduspider\nUser-agent: PetalBot\nUser-agent: AwarioSmartBot\nUser-agent: AwarioRssBot\nUser-agent: Google-CloudVertexBot\nUser-agent: QualifiedBot\nUser-agent: Cotoyogi\nUser-agent: ICC-Crawler\nUser-agent: atlassian-bot\nUser-agent: FishBot\nUser-agent: BorderxBot\nUser-agent: NavuBot\nUser-agent: SemrushBot-SWA\nUser-agent: WARDBot\nUser-agent: magpie-crawler\nUser-agent: KimiBot\nUser-agent: CitibotSiteCrawler\nUser-agent: Perplexity-User\nUser-agent: FireCrawl\nUser-agent: FirecrawlAgent\nUser-agent: Claude-User\nUser-agent: ChatGPT-User\nUser-agent: Google-Agent\nUser-agent: Google-GeminiNotebook\nUser-agent: Google-NotebookLM\nUser-agent: MistralAI-User\nUser-agent: Kimi-User\nUser-agent: Amzn-User\nUser-agent: meta-externalfetcher\nUser-agent: Retool\nUser-agent: Instapaper\nUser-agent: ChathiveCrawler\nDisallow: /\n"
+    },
+    {
+      "url": "https://fincopilot.app/sitemap.xml",
+      "observed_at_utc": "2026-10-17T07:16:10.548606+00:00",
+      "status": 200,
+      "truncated": false,
+      "headers": {
+        "Content-Type": "application/xml",
+        "Cache-Control": "no-store",
+        "Server": "Vercel"
+      },
+      "sitemap_urls": [],
+      "sitemap_namespace_valid": true
+    },
+    {
+      "url": "https://fincopilot.app/welcome/sitemap.xml",
+      "observed_at_utc": "2026-10-17T07:16:10.633879+00:00",
+      "status": 200,
+      "truncated": false,
+      "headers": {
+        "Content-Type": "application/xml",
+        "Cache-Control": "no-store",
+        "Server": "Vercel"
+      },
+      "sitemap_urls": [],
+      "sitemap_namespace_valid": true
+    },
+    {
+      "url": "https://fincopilot.app/login",
+      "observed_at_utc": "2026-10-17T07:16:16.694293+00:00",
+      "status": 200,
+      "truncated": false,
+      "headers": {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store",
+        "Server": "Vercel"
+      },
+      "html": {
+        "title": "FinCo-Pilot",
+        "h1": [],
+        "canonical": [],
+        "robots": "noindex",
+        "description": "FinCo-Pilot helps you manage accounts, transactions, budgets and financial reports in one secure workspace.",
+        "og_image": null,
+        "internal_links": []
+      }
+    },
+    {
+      "url": "https://fincopilot.app/register",
+      "observed_at_utc": "2026-10-17T07:16:16.727488+00:00",
+      "status": 200,
+      "truncated": false,
+      "headers": {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store",
+        "Server": "Vercel"
+      },
+      "html": {
+        "title": "FinCo-Pilot",
+        "h1": [],
+        "canonical": [],
+        "robots": "noindex",
+        "description": "FinCo-Pilot helps you manage accounts, transactions, budgets and financial reports in one secure workspace.",
+        "og_image": null,
+        "internal_links": []
+      }
+    },
+    {
+      "url": "https://fincopilot.app/pricing",
+      "observed_at_utc": "2026-10-17T07:16:16.741570+00:00",
+      "status": 200,
+      "truncated": false,
+      "headers": {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store",
+        "Server": "Vercel"
+      },
+      "html": {
+        "title": "FinCo-Pilot",
+        "h1": [],
+        "canonical": [],
+        "robots": "noindex",
+        "description": "FinCo-Pilot helps you manage accounts, transactions, budgets and financial reports in one secure workspace.",
+        "og_image": null,
+        "internal_links": []
+      }
+    },
+    {
+      "url": "https://fincopilot.app/privacy",
+      "observed_at_utc": "2026-10-17T07:16:16.776524+00:00",
+      "status": 200,
+      "truncated": false,
+      "headers": {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store",
+        "Server": "Vercel"
+      },
+      "html": {
+        "title": "FinCo-Pilot",
+        "h1": [],
+        "canonical": [],
+        "robots": "noindex",
+        "description": "FinCo-Pilot helps you manage accounts, transactions, budgets and financial reports in one secure workspace.",
+        "og_image": null,
+        "internal_links": []
+      }
+    },
+    {
+      "url": "https://fincopilot.app/terms",
+      "observed_at_utc": "2026-10-17T07:16:22.928882+00:00",
+      "status": 200,
+      "truncated": false,
+      "headers": {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store",
+        "Server": "Vercel"
+      },
+      "html": {
+        "title": "FinCo-Pilot",
+        "h1": [],
+        "canonical": [],
+        "robots": "noindex",
+        "description": "FinCo-Pilot helps you manage accounts, transactions, budgets and financial reports in one secure workspace.",
+        "og_image": null,
+        "internal_links": []
+      }
+    },
+    {
+      "url": "https://fincopilot.app/support",
+      "observed_at_utc": "2026-10-17T07:16:22.932088+00:00",
+      "status": 200,
+      "truncated": false,
+      "headers": {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store",
+        "Server": "Vercel"
+      },
+      "html": {
+        "title": "FinCo-Pilot",
+        "h1": [],
+        "canonical": [],
+        "robots": "noindex",
+        "description": "FinCo-Pilot helps you manage accounts, transactions, budgets and financial reports in one secure workspace.",
+        "og_image": null,
+        "internal_links": []
+      }
+    },
+    {
+      "url": "https://fincopilot.app/api/health/ready",
+      "observed_at_utc": "2026-10-17T07:16:22.939916+00:00",
+      "error": "network_failure"
+    },
+    {
+      "url": "https://fincopilot.app/welcome/__seo_missing_page__/",
+      "observed_at_utc": "2026-10-17T07:16:22.945279+00:00",
+      "status": 404,
+      "truncated": false,
+      "headers": {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-store",
+        "Server": "Vercel"
+      }
+    },
+    {
+      "url": "https://www.fincopilot.app/welcome/",
+      "observed_at_utc": "2026-10-17T07:16:29.103915+00:00",
+      "status": 200,
+      "truncated": false,
+      "headers": {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store",
+        "Server": "Vercel"
+      },
+      "html": {
+        "title": "FinCo-Pilot | Make sense of all your money",
+        "h1": [
+          "Money\u00a0makes\u00a0more\u00a0sense\u00a0together."
+        ],
+        "canonical": [
+          "https://fincopilot.app/welcome/"
+        ],
+        "robots": "noindex, nofollow",
+        "description": "Understand accounts, track spending, plan budgets and keep your financial picture together in one thoughtful workspace.",
+        "og_image": "https://fincopilot.app/welcome/social-card.png",
+        "internal_links": [
+          "/login",
+          "/pricing",
+          "/privacy",
+          "/register",
+          "/support",
+          "/terms",
+          "/welcome/features/",
+          "/welcome/guides/import-transactions/",
+          "/welcome/how-it-works/"
+        ]
+      }
+    },
+    {
+      "url": "https://api.fincopilot.app/api/health/ready",
+      "observed_at_utc": "2026-10-17T07:16:29.111613+00:00",
+      "status": 200,
+      "truncated": false,
+      "headers": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        "Server": "cloudflare"
+      },
+      "readiness": "ready"
+    }
+  ],
+  "release_failures": [
+    "/welcome/: indexing blocked/unproved",
+    "/welcome/features/: indexing blocked/unproved",
+    "/welcome/how-it-works/: indexing blocked/unproved",
+    "/welcome/guides/import-transactions/: indexing blocked/unproved",
+    "root sitemap not exact eligible inventory",
+    "authoritative robots contract",
+    "Googlebot: public crawling blocked",
+    "Bingbot: public crawling blocked",
+    "OAI-SearchBot: public crawling blocked",
+    "API readiness not proved"
+  ]
+}

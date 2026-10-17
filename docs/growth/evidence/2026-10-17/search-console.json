@@ -1,0 +1,108 @@
+{
+  "gscHome": {
+    "content": [],
+    "structuredContent": {
+      "inspection_result": {
+        "inspectionResultLink": "https://search.google.com/search-console/inspect?resource_id=sc-domain:fincopilot.app&id=oCh9Vi96SU27uv1ix-DsBw&utm_medium=link&utm_source=api",
+        "indexStatusResult": {
+          "verdict": "NEUTRAL",
+          "coverageState": "Excluded by ‘noindex’ tag",
+          "robotsTxtState": "ALLOWED",
+          "indexingState": "BLOCKED_BY_META_TAG",
+          "lastCrawlTime": "2026-10-16T10:21:52Z",
+          "pageFetchState": "SUCCESSFUL",
+          "googleCanonical": "https://fincopilot.app/welcome/",
+          "userCanonical": "https://fincopilot.app/welcome/",
+          "crawledAs": "MOBILE"
+        },
+        "mobileUsabilityResult": {
+          "verdict": "VERDICT_UNSPECIFIED"
+        }
+      }
+    },
+    "isError": false
+  },
+  "gscFeatures": {
+    "content": [],
+    "structuredContent": {
+      "inspection_result": {
+        "inspectionResultLink": "https://search.google.com/search-console/inspect?resource_id=sc-domain:fincopilot.app&id=BdPXHIBo5OLuCxCuo-pqRw&utm_medium=link&utm_source=api",
+        "indexStatusResult": {
+          "verdict": "NEUTRAL",
+          "coverageState": "URL is unknown to Google",
+          "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED",
+          "indexingState": "INDEXING_STATE_UNSPECIFIED",
+          "pageFetchState": "PAGE_FETCH_STATE_UNSPECIFIED"
+        },
+        "mobileUsabilityResult": {
+          "verdict": "VERDICT_UNSPECIFIED"
+        }
+      }
+    },
+    "isError": false
+  },
+  "gscHow": {
+    "content": [],
+    "structuredContent": {
+      "inspection_result": {
+        "inspectionResultLink": "https://search.google.com/search-console/inspect?resource_id=sc-domain:fincopilot.app&id=stER_EyHlgJkyx4KGqBTYw&utm_medium=link&utm_source=api",
+        "indexStatusResult": {
+          "verdict": "NEUTRAL",
+          "coverageState": "URL is unknown to Google",
+          "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED",
+          "indexingState": "INDEXING_STATE_UNSPECIFIED",
+          "pageFetchState": "PAGE_FETCH_STATE_UNSPECIFIED"
+        },
+        "mobileUsabilityResult": {
+          "verdict": "VERDICT_UNSPECIFIED"
+        }
+      }
+    },
+    "isError": false
+  },
+  "gscGuide": {
+    "content": [],
+    "structuredContent": {
+      "inspection_result": {
+        "inspectionResultLink": "https://search.google.com/search-console/inspect?resource_id=sc-domain:fincopilot.app&id=BKFn-WAPj4RksiRDWLmLhA&utm_medium=link&utm_source=api",
+        "indexStatusResult": {
+          "verdict": "NEUTRAL",
+          "coverageState": "URL is unknown to Google",
+          "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED",
+          "indexingState": "INDEXING_STATE_UNSPECIFIED",
+          "pageFetchState": "PAGE_FETCH_STATE_UNSPECIFIED"
+        },
+        "mobileUsabilityResult": {
+          "verdict": "VERDICT_UNSPECIFIED"
+        }
+      }
+    },
+    "isError": false
+  },
+  "sitemaps": {
+    "content": [],
+    "structuredContent": {
+      "sitemaps": []
+    },
+    "isError": false
+  },
+  "aggregate": {
+    "content": [],
+    "structuredContent": {
+      "rows": [],
+      "row_count": 0,
+      "truncated": false,
+      "query": {
+        "start_date": "2026-09-17",
+        "end_date": "2026-10-14",
+        "search_type": "web",
+        "data_state": "final",
+        "dimensions": [],
+        "row_limit": 250,
+        "start_row": 0,
+        "estimated_data_finalized_through": "2026-10-14"
+      }
+    },
+    "isError": false
+  }
+}

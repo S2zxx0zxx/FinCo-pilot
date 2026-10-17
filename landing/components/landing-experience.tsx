@@ -26,6 +26,7 @@ import { ProductScreens } from '@/components/product-screens'
 import { LandingSoundProvider, SoundToggle, useLandingSound } from '@/components/landing-sound'
 import { InstalledAppHandoff } from '@/components/installed-app-handoff'
 import { APP_LINKS } from '@/lib/links'
+import { landingAsset } from '@/lib/asset'
 
 type View = 'overview' | 'budgets' | 'activity'
 type IconType = typeof IconWallet
@@ -231,7 +232,7 @@ function FinalCTA() {
 }
 
 function Footer() {
-  return <footer className="footer"><div className="shell"><div className="footer-top"><div><SpaceLink href="#top" className="brand-link"><Mark compact/></SpaceLink><p>More clarity. Less guesswork.</p></div><div className="footer-links"><SpaceLink href="/features" variant="secondary">Features</SpaceLink><SpaceLink href="/how-it-works" variant="secondary">How it works</SpaceLink><SpaceLink href="/guides/import-transactions" variant="secondary">Import guide</SpaceLink><SpaceLink href={APP_LINKS.pricing} variant="secondary">Pricing</SpaceLink><SpaceLink href={APP_LINKS.support} variant="secondary">Support</SpaceLink><SpaceLink href={APP_LINKS.login} variant="secondary">Log in</SpaceLink></div></div><div className="footer-bottom"><span>© 2026 FinCo-Pilot</span><div><SpaceLink href={APP_LINKS.privacy} variant="secondary">Privacy</SpaceLink><SpaceLink href={APP_LINKS.terms} variant="secondary">Terms</SpaceLink></div><SoundToggle /></div></div></footer>
+  return <footer className="footer"><div className="shell"><div className="footer-top"><div><SpaceLink href="#top" className="brand-link"><Mark compact/></SpaceLink><p>More clarity. Less guesswork.</p></div><div className="footer-links"><SpaceLink href={landingAsset('/features/')} variant="secondary">Features</SpaceLink><SpaceLink href={landingAsset('/how-it-works/')} variant="secondary">How it works</SpaceLink><SpaceLink href={landingAsset('/guides/import-transactions/')} variant="secondary">Import guide</SpaceLink><SpaceLink href={APP_LINKS.pricing} variant="secondary">Pricing</SpaceLink><SpaceLink href={APP_LINKS.support} variant="secondary">Support</SpaceLink><SpaceLink href={APP_LINKS.login} variant="secondary">Log in</SpaceLink></div></div><div className="footer-bottom"><span>© 2026 FinCo-Pilot</span><div><SpaceLink href={APP_LINKS.privacy} variant="secondary">Privacy</SpaceLink><SpaceLink href={APP_LINKS.terms} variant="secondary">Terms</SpaceLink></div><SoundToggle /></div></div></footer>
 }
 
 export function LandingExperience() {

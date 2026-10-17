@@ -122,7 +122,7 @@ export const BlurRevealText: React.FC<BlurRevealTextProps> = ({
         const content = renderSegment ? renderSegment(displayText) : displayText
         const classes = cn('inline-block whitespace-pre', segmentClassName)
         return staticReveal
-          ? <span key={`${segment}-${index}`} aria-hidden="true" className={classes}>{content}</span>
+          ? <span key={`${segment}-${index}`} className={classes}>{content}</span>
           : <motion.span key={`${replayKey ?? ''}-${segment}-${index}`} aria-hidden="true" className={classes}
               initial="hidden" animate={shouldAnimate ? 'visible' : 'hidden'} variants={segmentVariants}
               transition={{ duration, delay: delay + Math.min(index * stagger, 0.3), ease: [0.22, 1, 0.36, 1] }}

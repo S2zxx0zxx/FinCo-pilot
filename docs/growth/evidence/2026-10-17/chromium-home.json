@@ -1,0 +1,107 @@
+{
+  "browser": "chromium",
+  "widths": [
+    {
+      "width": 320,
+      "viewport": 320,
+      "document": 320,
+      "status": "passed"
+    },
+    {
+      "width": 375,
+      "viewport": 375,
+      "document": 375,
+      "status": "passed"
+    },
+    {
+      "width": 390,
+      "viewport": 390,
+      "document": 390,
+      "status": "passed"
+    },
+    {
+      "width": 620,
+      "viewport": 620,
+      "document": 620,
+      "status": "passed"
+    },
+    {
+      "width": 768,
+      "viewport": 768,
+      "document": 768,
+      "status": "passed"
+    },
+    {
+      "width": 920,
+      "viewport": 920,
+      "document": 920,
+      "status": "passed"
+    },
+    {
+      "width": 921,
+      "viewport": 921,
+      "document": 921,
+      "status": "passed"
+    },
+    {
+      "width": 1024,
+      "viewport": 1024,
+      "document": 1024,
+      "status": "passed"
+    },
+    {
+      "width": 1440,
+      "viewport": 1440,
+      "document": 1440,
+      "status": "passed"
+    }
+  ],
+  "accessibility": [
+    {
+      "state": "390:Budgets",
+      "violations": []
+    },
+    {
+      "state": "390:Activity",
+      "violations": []
+    },
+    {
+      "state": "390:Overview",
+      "violations": []
+    },
+    {
+      "state": "390:full-page-final",
+      "violations": []
+    },
+    {
+      "state": "1440:Budgets",
+      "violations": []
+    },
+    {
+      "state": "1440:Activity",
+      "violations": []
+    },
+    {
+      "state": "1440:Overview",
+      "violations": []
+    },
+    {
+      "state": "1440:full-page-final",
+      "violations": []
+    }
+  ],
+  "checks": [
+    "ArrowRight/Home/End tabs",
+    "ArrowDown benefit tabs",
+    "Escape menu focus",
+    "real product responsive pictures",
+    "no external assets",
+    "no-JS visible H1",
+    "reduced-motion static H1",
+    "44px preview targets",
+    "WCAG scans for every sample state",
+    "FAQ",
+    "CTA hrefs",
+    "skip link"
+  ]
+}

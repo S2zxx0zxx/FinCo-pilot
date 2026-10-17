@@ -1,0 +1,58 @@
+{
+  "observedAt": "2026-10-17",
+  "main": "264a6ad75ef588f70402a7b1a44ca9b167840262",
+  "projects": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"result\": {\n    \"projects\": [\n      {\n        \"id\": \"prj_TI6Yg1OFOQDyMr22reNnNwAMPw5f\",\n        \"name\": \"fincopilot-web\",\n        \"accountId\": \"team_uMfXHmjfGpTtJIufjKEtaXV7\",\n        \"createdAt\": 1791646708586,\n        \"updatedAt\": 1792168709533\n      },\n      {\n        \"id\": \"prj_KkczyXZyMtF4yOLuggdgKkrXZEpG\",\n        \"name\": \"fincopilot-api\",\n        \"accountId\": \"team_uMfXHmjfGpTtJIufjKEtaXV7\",\n        \"createdAt\": 1791650238447,\n        \"updatedAt\": 1792166271198\n      },\n      {\n        \"id\": \"prj_xtKKR0pTWI2iflkcKOGxod281MrG\",\n        \"name\": \"fincopilot-landing\",\n        \"accountId\": \"team_uMfXHmjfGpTtJIufjKEtaXV7\",\n        \"createdAt\": 1791815043573,\n        \"updatedAt\": 1792166623106\n      },\n      {\n        \"id\": \"prj_2AAlNOhqfnzLMBFenoIrDcUC09el\",\n        \"name\": \"fincopilot-private-qa-web\",\n        \"accountId\": \"team_uMfXHmjfGpTtJIufjKEtaXV7\",\n        \"createdAt\": 1791761209752,\n        \"updatedAt\": 1792166346214\n      },\n      {\n        \"id\": \"prj_N8yYHXV6BbvDR85tibPAOUE1bdlv\",\n        \"name\": \"fincopilot-private-qa-api\",\n        \"accountId\": \"team_uMfXHmjfGpTtJIufjKEtaXV7\",\n        \"createdAt\": 1791761216819,\n        \"updatedAt\": 1792166409068\n      }\n    ],\n    \"pagination\": {\n      \"count\": 5,\n      \"prev\": 1792168709533\n    }\n  }\n}"
+      }
+    ],
+    "structuredContent": null,
+    "isError": false
+  },
+  "production": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"result\": {\n    \"deployments\": {\n      \"pagination\": {\n        \"count\": 3,\n        \"next\": 1792137742510,\n        \"prev\": 1792168641408\n      },\n      \"deployments\": [\n        {\n          \"id\": \"dpl_xEssQgKSs3a99ZasGGrpGVdoHW5W\",\n          \"name\": \"fincopilot-web\",\n          \"url\": \"fincopilot-m57nmre68-s2zxx0zxxs-projects.vercel.app\",\n          \"created\": 1792168641408,\n          \"state\": \"READY\",\n          \"target\": \"production\",\n          \"creator\": {\n            \"uid\": \"emoKh2yQORCSHHtNfLBUUHnS\",\n            \"username\": \"s2zxx0zxx\"\n          },\n          \"meta\": {\n            \"githubCommitRef\": \"main\",\n            \"githubCommitSha\": \"264a6ad75ef588f70402a7b1a44ca9b167840262\",\n            \"githubCommitMessage\": \"Merge pull request #97 from S2zxx0zxx/fix/neon-wordmark-header-sidebar-20261016\\n\\nstyle: replace shell F marks with neon wordmark badges\",\n            \"githubRepo\": \"FinCo-pilot\",\n            \"githubOrg\": \"S2zxx0zxx\"\n          },\n          \"inspectorUrl\": \"https://vercel.com/s2zxx0zxxs-projects/fincopilot-web/xEssQgKSs3a99ZasGGrpGVdoHW5W\",\n          \"isRollbackCandidate\": true\n        },\n        {\n          \"id\": \"dpl_BHgXp1vz7c17TEUFri2mXqXemyTt\",\n          \"name\": \"fincopilot-web\",\n          \"url\": \"fincopilot-m49ziir3c-s2zxx0zxxs-projects.vercel.app\",\n          \"created\": 1792142568510,\n          \"state\": \"READY\",\n          \"target\": \"production\",\n          \"creator\": {\n            \"uid\": \"emoKh2yQORCSHHtNfLBUUHnS\",\n            \"username\": \"s2zxx0zxx\"\n          },\n          \"meta\": {\n            \"githubCommitRef\": \"main\",\n            \"githubCommitSha\": \"264a6ad75ef588f70402a7b1a44ca9b167840262\",\n            \"githubCommitMessage\": \"Merge pull request #97 from S2zxx0zxx/fix/neon-wordmark-header-sidebar-20261016\\n\\nstyle: replace shell F marks with neon wordmark badges\",\n            \"githubRepo\": \"FinCo-pilot\",\n            \"githubOrg\": \"S2zxx0zxx\"\n          },\n          \"inspectorUrl\": \"https://vercel.com/s2zxx0zxxs-projects/fincopilot-web/BHgXp1vz7c17TEUFri2mXqXemyTt\",\n          \"isRollbackCandidate\": true\n        },\n        {\n          \"id\": \"dpl_6hZWC2n2cmybWFhvKJXVYw8Jixyo\",\n          \"name\": \"fincopilot-web\",\n          \"url\": \"fincopilot-5ol9vynnd-s2zxx0zxxs-projects.vercel.app\",\n          \"created\": 1792137742510,\n          \"state\": \"READY\",\n          \"target\": \"production\",\n          \"creator\": {\n            \"uid\": \"emoKh2yQORCSHHtNfLBUUHnS\",\n            \"username\": \"s2zxx0zxx\"\n          },\n          \"meta\": {\n            \"githubCommitRef\": \"main\",\n            \"githubCommitSha\": \"9e9fbefbc79c180a201e6fd789ee701c3aac1f3e\",\n            \"githubCommitMessage\": \"fix(auth): link verified Clerk identity to existing user and fix sentry types\",\n            \"githubRepo\": \"FinCo-pilot\",\n            \"githubOrg\": \"S2zxx0zxx\"\n          },\n          \"inspectorUrl\": \"https://vercel.com/s2zxx0zxxs-projects/fincopilot-web/6hZWC2n2cmybWFhvKJXVYw8Jixyo\",\n          \"isRollbackCandidate\": false\n        }\n      ]\n    }\n  }\n}"
+      }
+    ],
+    "structuredContent": null,
+    "isError": false
+  },
+  "webDomains": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"result\": {\n    \"domains\": [\n      {\n        \"name\": \"www.fincopilot.app\",\n        \"apexName\": \"fincopilot.app\",\n        \"projectId\": \"prj_TI6Yg1OFOQDyMr22reNnNwAMPw5f\",\n        \"redirect\": null,\n        \"redirectStatusCode\": null,\n        \"gitBranch\": null,\n        \"customEnvironmentId\": null,\n        \"updatedAt\": 1791651011485,\n        \"createdAt\": 1791651011485,\n        \"verified\": true\n      },\n      {\n        \"name\": \"fincopilot.app\",\n        \"apexName\": \"fincopilot.app\",\n        \"projectId\": \"prj_TI6Yg1OFOQDyMr22reNnNwAMPw5f\",\n        \"redirect\": null,\n        \"redirectStatusCode\": null,\n        \"gitBranch\": null,\n        \"customEnvironmentId\": null,\n        \"updatedAt\": 1792035088471,\n        \"createdAt\": 1791651008353,\n        \"verified\": true\n      },\n      {\n        \"name\": \"fincopilot-web.vercel.app\",\n        \"apexName\": \"vercel.app\",\n        \"projectId\": \"prj_TI6Yg1OFOQDyMr22reNnNwAMPw5f\",\n        \"redirect\": null,\n        \"gitBranch\": null,\n        \"customEnvironmentId\": null,\n        \"updatedAt\": 1791646708453,\n        \"createdAt\": 1791646708453,\n        \"verified\": true\n      }\n    ],\n    \"pagination\": {\n      \"count\": 3,\n      \"next\": null,\n      \"prev\": 1791651011485\n    }\n  }\n}"
+      }
+    ],
+    "structuredContent": null,
+    "isError": false
+  },
+  "webConfig": {
+    "id": "prj_TI6Yg1OFOQDyMr22reNnNwAMPw5f",
+    "name": "fincopilot-web",
+    "framework": "vite",
+    "ssoProtection": {
+      "enabled": false,
+      "deploymentType": null
+    }
+  },
+  "tunnelObservations": [
+    {
+      "observedAtUtc": "2026-10-17T05:34Z",
+      "status": "down",
+      "connections": 0,
+      "inactiveSince": "2026-10-17T05:06:39.127851Z"
+    },
+    {
+      "observedAtUtc": "2026-10-17T05:38Z",
+      "status": "healthy",
+      "connections": 4,
+      "activeSince": "2026-10-17T05:36:21.200941Z"
+    }
+  ],
+  "scope": "No DNS, Worker, environment or deployment mutations."
+}

@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync, existsSync } from 'node:fs'
+import { landingAsset } from '../lib/asset.ts'
 const read = (path) => readFileSync(new URL('../' + path, import.meta.url), 'utf8')
 
 test('product sign-in and registration stay in the original Vite application', () => {
@@ -40,4 +41,31 @@ test('robots and sitemap support Next.js 16 static marketing export', () => {
     assert.match(read(`app/${page}.ts`), /export const dynamic = 'force-static'/)
   }
   assert.match(read('lib/marketing.ts'), /NEXT_PUBLIC_MARKETING_INDEXABLE/)
+})
+
+
+test('homepage footer links remain in the actual exported marketing namespace', () => {
+  const original = process.env.NEXT_PUBLIC_FINCO_LANDING_BASE_PATH
+  try {
+    process.env.NEXT_PUBLIC_FINCO_LANDING_BASE_PATH = '/welcome'
+    assert.equal(landingAsset('/features/'), '/welcome/features/')
+    assert.equal(landingAsset('/how-it-works/'), '/welcome/how-it-works/')
+    assert.equal(landingAsset('/guides/import-transactions/'), '/welcome/guides/import-transactions/')
+    delete process.env.NEXT_PUBLIC_FINCO_LANDING_BASE_PATH
+    assert.equal(landingAsset('/features/'), '/features/')
+  } finally {
+    if (original === undefined) delete process.env.NEXT_PUBLIC_FINCO_LANDING_BASE_PATH
+    else process.env.NEXT_PUBLIC_FINCO_LANDING_BASE_PATH = original
+  }
+  const home = read('components/landing-experience.tsx')
+  for (const destination of ['features/', 'how-it-works/', 'guides/import-transactions/']) {
+    assert.ok(home.includes(`landingAsset('/${destination}')`), `Missing crawlable homepage link to ${destination}`)
+  }
+})
+
+test('the SSR hero heading has text nodes before hydration, not hidden-only tokens', () => {
+  const reveal = read('components/spaceui/blur-reveal-text.tsx')
+  assert.match(reveal, /staticReveal\s*\? <span key=\{/)
+  assert.doesNotMatch(reveal, /staticReveal\s*\? <span[^>]+aria-hidden/)
+  assert.match(read('components/landing-experience.tsx'), /as="h1"[^\n]+text="Money makes more sense together\."/)
 })

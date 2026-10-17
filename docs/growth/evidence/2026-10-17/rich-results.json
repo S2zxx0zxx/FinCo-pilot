@@ -1,0 +1,10 @@
+{
+  "observed_at": "2026-10-17",
+  "tool": "Google Rich Results Test",
+  "source_sha": "cd652108f6e3438e7cc716b7019b246e7785af1a",
+  "source": "JSON-LD read from actual candidate preview DOM",
+  "code_mode_result": "1 valid Breadcrumb item detected",
+  "receipt": "https://search.google.com/test/rich-results/result?id=bjcIZ__CZD2L5fMvpzDheg",
+  "url_mode_result": "Preview URL blocked by robots.txt as intended",
+  "claim_limit": "Code-only schema validity; no live indexing/rich-result eligibility claim"
+}

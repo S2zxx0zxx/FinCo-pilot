@@ -104,7 +104,99 @@
     {
       "source": "/",
       "destination": "/welcome/",
-      "permanent": false
+      "permanent": true
+    },
+    {
+      "source": "/features",
+      "destination": "/welcome/features/",
+      "permanent": true
+    },
+    {
+      "source": "/how-it-works",
+      "destination": "/welcome/how-it-works/",
+      "permanent": true
+    },
+    {
+      "source": "/guides/import-transactions",
+      "destination": "/welcome/guides/import-transactions/",
+      "permanent": true
+    },
+    {
+      "source": "/welcome/",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.fincopilot.app"
+        }
+      ],
+      "destination": "https://fincopilot.app/welcome/",
+      "permanent": true
+    },
+    {
+      "source": "/welcome/features/",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.fincopilot.app"
+        }
+      ],
+      "destination": "https://fincopilot.app/welcome/features/",
+      "permanent": true
+    },
+    {
+      "source": "/welcome/how-it-works/",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.fincopilot.app"
+        }
+      ],
+      "destination": "https://fincopilot.app/welcome/how-it-works/",
+      "permanent": true
+    },
+    {
+      "source": "/welcome/guides/import-transactions/",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.fincopilot.app"
+        }
+      ],
+      "destination": "https://fincopilot.app/welcome/guides/import-transactions/",
+      "permanent": true
+    },
+    {
+      "source": "/welcome/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.fincopilot.app"
+        }
+      ],
+      "destination": "https://fincopilot.app/welcome/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/robots.txt",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.fincopilot.app"
+        }
+      ],
+      "destination": "https://fincopilot.app/robots.txt",
+      "permanent": true
+    },
+    {
+      "source": "/sitemap.xml",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.fincopilot.app"
+        }
+      ],
+      "destination": "https://fincopilot.app/sitemap.xml",
+      "permanent": true
     }
   ]
 }

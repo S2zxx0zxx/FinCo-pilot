@@ -25,6 +25,9 @@ export function getMarketingConfig(env: MarketingEnvironment = process.env) {
   // The combined frontend exports Next into /welcome with trailingSlash=true.
   // Keep page/schema/social URLs on that actual public namespace.
   const basePath = env.FINCO_EXPORT_MARKETING === 'true' ? '/welcome' : ''
+  if (indexable && basePath && (env.FINCO_MARKETING_PUBLICATION_APPROVED !== 'true' || origin !== 'https://fincopilot.app')) {
+    throw new Error('Same-origin indexing requires the approved production apex release')
+  }
   return { origin: origin ?? 'https://fincopilot.app', indexable, basePath }
 }
 

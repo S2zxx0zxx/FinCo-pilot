@@ -1,0 +1,1582 @@
+[
+  {
+    "mode": "public-entry",
+    "width": 320,
+    "path": "/welcome/",
+    "apiRequests": 0,
+    "axeViolations": 0
+  },
+  {
+    "mode": "public-entry",
+    "width": 390,
+    "path": "/welcome/",
+    "apiRequests": 0,
+    "axeViolations": 0
+  },
+  {
+    "mode": "public-entry",
+    "width": 768,
+    "path": "/welcome/",
+    "apiRequests": 0,
+    "axeViolations": 0
+  },
+  {
+    "mode": "public-entry",
+    "width": 1440,
+    "path": "/welcome/",
+    "apiRequests": 0,
+    "axeViolations": 0
+  },
+  {
+    "width": 390,
+    "reducedMotion": "no-preference",
+    "axeViolations": 0,
+    "decodedBytes": 1074286,
+    "jsRequests": 28,
+    "resources": [
+      {
+        "name": "/static/index-fZKnEDEB.js",
+        "transfer": 159987,
+        "decoded": 435862
+      },
+      {
+        "name": "/static/jsx-runtime-BaSZ_JNh.js",
+        "transfer": 3805,
+        "decoded": 8557
+      },
+      {
+        "name": "/static/react-dom-De0qrBDi.js",
+        "transfer": 1728,
+        "decoded": 3550
+      },
+      {
+        "name": "/static/preload-helper-Czpn1I53.js",
+        "transfer": 989,
+        "decoded": 1196
+      },
+      {
+        "name": "/static/QueryClientProvider-CtI-lycb.js",
+        "transfer": 680,
+        "decoded": 380
+      },
+      {
+        "name": "/static/useQuery-CVFqe2Np.js",
+        "transfer": 8570,
+        "decoded": 21831
+      },
+      {
+        "name": "/static/chunk-OB3PAWPO-BSZEu0pX.js",
+        "transfer": 16179,
+        "decoded": 39104
+      },
+      {
+        "name": "/static/createLucideIcon-B4SMjBwV.js",
+        "transfer": 1007,
+        "decoded": 1195
+      },
+      {
+        "name": "/static/utils-rjUKkjhC.js",
+        "transfer": 9671,
+        "decoded": 26507
+      },
+      {
+        "name": "/static/button-NSzDYv_8.js",
+        "transfer": 2261,
+        "decoded": 4421
+      },
+      {
+        "name": "/static/dist-BOFZdJVR.js",
+        "transfer": 898,
+        "decoded": 598
+      },
+      {
+        "name": "/static/dist-C2ZZlVUE.js",
+        "transfer": 2944,
+        "decoded": 6573
+      },
+      {
+        "name": "/static/dist-DPZKzI4T.js",
+        "transfer": 728,
+        "decoded": 428
+      },
+      {
+        "name": "/static/dist-CVzZWnIX.js",
+        "transfer": 1355,
+        "decoded": 2242
+      },
+      {
+        "name": "/static/floating-ui.utils.dom-CCuAvZI5.js",
+        "transfer": 2082,
+        "decoded": 3911
+      },
+      {
+        "name": "/static/dist-CE92P0NW.js",
+        "transfer": 10186,
+        "decoded": 23042
+      },
+      {
+        "name": "/static/api-1pyIO-s6.js",
+        "transfer": 29056,
+        "decoded": 80888
+      },
+      {
+        "name": "/static/index-CnOojLK8.css",
+        "transfer": 39703,
+        "decoded": 208354
+      },
+      {
+        "name": "/static/finco-logo-BcPXSQBk.js",
+        "transfer": 1064,
+        "decoded": 1231
+      },
+      {
+        "name": "/static/login-Ck0U3nqN.js",
+        "transfer": 5395,
+        "decoded": 14084
+      },
+      {
+        "name": "/static/inter-latin-wght-normal-Dx4kXJAl.woff2",
+        "transfer": 48556,
+        "decoded": 48256
+      },
+      {
+        "name": "/static/open-runde-semibold-latin-DBbbyP7b.woff2",
+        "transfer": 67992,
+        "decoded": 67692
+      },
+      {
+        "name": "/static/label-C1KSpKsm.js",
+        "transfer": 1013,
+        "decoded": 713
+      },
+      {
+        "name": "/static/input-CRWdUntC.js",
+        "transfer": 1173,
+        "decoded": 873
+      },
+      {
+        "name": "/static/webauthn-Dslg6BnL.js",
+        "transfer": 1473,
+        "decoded": 2774
+      },
+      {
+        "name": "/static/theme-utils-OtjRFV7Q.js",
+        "transfer": 1175,
+        "decoded": 875
+      },
+      {
+        "name": "/static/auth-config-utils-RONrEwuU.js",
+        "transfer": 363,
+        "decoded": 63
+      },
+      {
+        "name": "/static/auth-shell-emYcLWWi.js",
+        "transfer": 1210,
+        "decoded": 1656
+      },
+      {
+        "name": "/static/use-media-query-DqHaVcfp.js",
+        "transfer": 674,
+        "decoded": 374
+      },
+      {
+        "name": "/static/privacy-link-DNfOcp27.js",
+        "transfer": 938,
+        "decoded": 638
+      },
+      {
+        "name": "/static/card-reuAGd_P.js",
+        "transfer": 831,
+        "decoded": 531
+      },
+      {
+        "name": "/api/admin/registration-status",
+        "transfer": 316,
+        "decoded": 16
+      },
+      {
+        "name": "/api/auth/oidc/config",
+        "transfer": 367,
+        "decoded": 67
+      },
+      {
+        "name": "/api/admin/default-colors",
+        "transfer": 326,
+        "decoded": 26
+      },
+      {
+        "name": "/api/setup/status",
+        "transfer": 370,
+        "decoded": 70
+      },
+      {
+        "name": "/static/open-runde-regular-latin-BDzsDJHr.woff2",
+        "transfer": 66008,
+        "decoded": 65708
+      }
+    ]
+  },
+  {
+    "width": 390,
+    "reducedMotion": "reduce",
+    "axeViolations": 0,
+    "decodedBytes": 1074286,
+    "jsRequests": 28,
+    "resources": [
+      {
+        "name": "/static/index-fZKnEDEB.js",
+        "transfer": 159987,
+        "decoded": 435862
+      },
+      {
+        "name": "/static/jsx-runtime-BaSZ_JNh.js",
+        "transfer": 3805,
+        "decoded": 8557
+      },
+      {
+        "name": "/static/preload-helper-Czpn1I53.js",
+        "transfer": 989,
+        "decoded": 1196
+      },
+      {
+        "name": "/static/react-dom-De0qrBDi.js",
+        "transfer": 1728,
+        "decoded": 3550
+      },
+      {
+        "name": "/static/QueryClientProvider-CtI-lycb.js",
+        "transfer": 680,
+        "decoded": 380
+      },
+      {
+        "name": "/static/useQuery-CVFqe2Np.js",
+        "transfer": 8570,
+        "decoded": 21831
+      },
+      {
+        "name": "/static/createLucideIcon-B4SMjBwV.js",
+        "transfer": 1007,
+        "decoded": 1195
+      },
+      {
+        "name": "/static/chunk-OB3PAWPO-BSZEu0pX.js",
+        "transfer": 16179,
+        "decoded": 39104
+      },
+      {
+        "name": "/static/dist-BOFZdJVR.js",
+        "transfer": 898,
+        "decoded": 598
+      },
+      {
+        "name": "/static/button-NSzDYv_8.js",
+        "transfer": 2261,
+        "decoded": 4421
+      },
+      {
+        "name": "/static/utils-rjUKkjhC.js",
+        "transfer": 9671,
+        "decoded": 26507
+      },
+      {
+        "name": "/static/dist-C2ZZlVUE.js",
+        "transfer": 2944,
+        "decoded": 6573
+      },
+      {
+        "name": "/static/dist-CVzZWnIX.js",
+        "transfer": 1355,
+        "decoded": 2242
+      },
+      {
+        "name": "/static/dist-DPZKzI4T.js",
+        "transfer": 728,
+        "decoded": 428
+      },
+      {
+        "name": "/static/floating-ui.utils.dom-CCuAvZI5.js",
+        "transfer": 2082,
+        "decoded": 3911
+      },
+      {
+        "name": "/static/dist-CE92P0NW.js",
+        "transfer": 10186,
+        "decoded": 23042
+      },
+      {
+        "name": "/static/index-CnOojLK8.css",
+        "transfer": 39703,
+        "decoded": 208354
+      },
+      {
+        "name": "/static/finco-logo-BcPXSQBk.js",
+        "transfer": 1064,
+        "decoded": 1231
+      },
+      {
+        "name": "/static/api-1pyIO-s6.js",
+        "transfer": 29056,
+        "decoded": 80888
+      },
+      {
+        "name": "/static/login-Ck0U3nqN.js",
+        "transfer": 5395,
+        "decoded": 14084
+      },
+      {
+        "name": "/static/inter-latin-wght-normal-Dx4kXJAl.woff2",
+        "transfer": 48556,
+        "decoded": 48256
+      },
+      {
+        "name": "/static/open-runde-semibold-latin-DBbbyP7b.woff2",
+        "transfer": 67992,
+        "decoded": 67692
+      },
+      {
+        "name": "/static/label-C1KSpKsm.js",
+        "transfer": 1013,
+        "decoded": 713
+      },
+      {
+        "name": "/static/input-CRWdUntC.js",
+        "transfer": 1173,
+        "decoded": 873
+      },
+      {
+        "name": "/static/webauthn-Dslg6BnL.js",
+        "transfer": 1473,
+        "decoded": 2774
+      },
+      {
+        "name": "/static/theme-utils-OtjRFV7Q.js",
+        "transfer": 1175,
+        "decoded": 875
+      },
+      {
+        "name": "/static/auth-config-utils-RONrEwuU.js",
+        "transfer": 363,
+        "decoded": 63
+      },
+      {
+        "name": "/static/auth-shell-emYcLWWi.js",
+        "transfer": 1210,
+        "decoded": 1656
+      },
+      {
+        "name": "/static/use-media-query-DqHaVcfp.js",
+        "transfer": 674,
+        "decoded": 374
+      },
+      {
+        "name": "/static/privacy-link-DNfOcp27.js",
+        "transfer": 938,
+        "decoded": 638
+      },
+      {
+        "name": "/static/card-reuAGd_P.js",
+        "transfer": 831,
+        "decoded": 531
+      },
+      {
+        "name": "/api/admin/registration-status",
+        "transfer": 316,
+        "decoded": 16
+      },
+      {
+        "name": "/api/auth/oidc/config",
+        "transfer": 367,
+        "decoded": 67
+      },
+      {
+        "name": "/api/admin/default-colors",
+        "transfer": 326,
+        "decoded": 26
+      },
+      {
+        "name": "/api/setup/status",
+        "transfer": 370,
+        "decoded": 70
+      },
+      {
+        "name": "/static/open-runde-regular-latin-BDzsDJHr.woff2",
+        "transfer": 66008,
+        "decoded": 65708
+      }
+    ]
+  },
+  {
+    "width": 768,
+    "reducedMotion": "no-preference",
+    "axeViolations": 0,
+    "decodedBytes": 1074286,
+    "jsRequests": 28,
+    "resources": [
+      {
+        "name": "/static/index-fZKnEDEB.js",
+        "transfer": 159987,
+        "decoded": 435862
+      },
+      {
+        "name": "/static/jsx-runtime-BaSZ_JNh.js",
+        "transfer": 3805,
+        "decoded": 8557
+      },
+      {
+        "name": "/static/preload-helper-Czpn1I53.js",
+        "transfer": 989,
+        "decoded": 1196
+      },
+      {
+        "name": "/static/react-dom-De0qrBDi.js",
+        "transfer": 1728,
+        "decoded": 3550
+      },
+      {
+        "name": "/static/QueryClientProvider-CtI-lycb.js",
+        "transfer": 680,
+        "decoded": 380
+      },
+      {
+        "name": "/static/useQuery-CVFqe2Np.js",
+        "transfer": 8570,
+        "decoded": 21831
+      },
+      {
+        "name": "/static/chunk-OB3PAWPO-BSZEu0pX.js",
+        "transfer": 16179,
+        "decoded": 39104
+      },
+      {
+        "name": "/static/createLucideIcon-B4SMjBwV.js",
+        "transfer": 1007,
+        "decoded": 1195
+      },
+      {
+        "name": "/static/button-NSzDYv_8.js",
+        "transfer": 2261,
+        "decoded": 4421
+      },
+      {
+        "name": "/static/utils-rjUKkjhC.js",
+        "transfer": 9671,
+        "decoded": 26507
+      },
+      {
+        "name": "/static/dist-BOFZdJVR.js",
+        "transfer": 898,
+        "decoded": 598
+      },
+      {
+        "name": "/static/dist-C2ZZlVUE.js",
+        "transfer": 2944,
+        "decoded": 6573
+      },
+      {
+        "name": "/static/dist-CVzZWnIX.js",
+        "transfer": 1355,
+        "decoded": 2242
+      },
+      {
+        "name": "/static/dist-DPZKzI4T.js",
+        "transfer": 728,
+        "decoded": 428
+      },
+      {
+        "name": "/static/floating-ui.utils.dom-CCuAvZI5.js",
+        "transfer": 2082,
+        "decoded": 3911
+      },
+      {
+        "name": "/static/dist-CE92P0NW.js",
+        "transfer": 10186,
+        "decoded": 23042
+      },
+      {
+        "name": "/static/api-1pyIO-s6.js",
+        "transfer": 29056,
+        "decoded": 80888
+      },
+      {
+        "name": "/static/index-CnOojLK8.css",
+        "transfer": 39703,
+        "decoded": 208354
+      },
+      {
+        "name": "/static/finco-logo-BcPXSQBk.js",
+        "transfer": 1064,
+        "decoded": 1231
+      },
+      {
+        "name": "/static/login-Ck0U3nqN.js",
+        "transfer": 5395,
+        "decoded": 14084
+      },
+      {
+        "name": "/static/inter-latin-wght-normal-Dx4kXJAl.woff2",
+        "transfer": 48556,
+        "decoded": 48256
+      },
+      {
+        "name": "/static/open-runde-semibold-latin-DBbbyP7b.woff2",
+        "transfer": 67992,
+        "decoded": 67692
+      },
+      {
+        "name": "/static/label-C1KSpKsm.js",
+        "transfer": 1013,
+        "decoded": 713
+      },
+      {
+        "name": "/static/input-CRWdUntC.js",
+        "transfer": 1173,
+        "decoded": 873
+      },
+      {
+        "name": "/static/webauthn-Dslg6BnL.js",
+        "transfer": 1473,
+        "decoded": 2774
+      },
+      {
+        "name": "/static/theme-utils-OtjRFV7Q.js",
+        "transfer": 1175,
+        "decoded": 875
+      },
+      {
+        "name": "/static/auth-config-utils-RONrEwuU.js",
+        "transfer": 363,
+        "decoded": 63
+      },
+      {
+        "name": "/static/auth-shell-emYcLWWi.js",
+        "transfer": 1210,
+        "decoded": 1656
+      },
+      {
+        "name": "/static/use-media-query-DqHaVcfp.js",
+        "transfer": 674,
+        "decoded": 374
+      },
+      {
+        "name": "/static/privacy-link-DNfOcp27.js",
+        "transfer": 938,
+        "decoded": 638
+      },
+      {
+        "name": "/static/card-reuAGd_P.js",
+        "transfer": 831,
+        "decoded": 531
+      },
+      {
+        "name": "/api/admin/registration-status",
+        "transfer": 316,
+        "decoded": 16
+      },
+      {
+        "name": "/api/auth/oidc/config",
+        "transfer": 367,
+        "decoded": 67
+      },
+      {
+        "name": "/api/admin/default-colors",
+        "transfer": 326,
+        "decoded": 26
+      },
+      {
+        "name": "/api/setup/status",
+        "transfer": 370,
+        "decoded": 70
+      },
+      {
+        "name": "/static/open-runde-regular-latin-BDzsDJHr.woff2",
+        "transfer": 66008,
+        "decoded": 65708
+      }
+    ]
+  },
+  {
+    "width": 768,
+    "reducedMotion": "reduce",
+    "axeViolations": 0,
+    "decodedBytes": 1074286,
+    "jsRequests": 28,
+    "resources": [
+      {
+        "name": "/static/index-fZKnEDEB.js",
+        "transfer": 159987,
+        "decoded": 435862
+      },
+      {
+        "name": "/static/react-dom-De0qrBDi.js",
+        "transfer": 1728,
+        "decoded": 3550
+      },
+      {
+        "name": "/static/jsx-runtime-BaSZ_JNh.js",
+        "transfer": 3805,
+        "decoded": 8557
+      },
+      {
+        "name": "/static/preload-helper-Czpn1I53.js",
+        "transfer": 989,
+        "decoded": 1196
+      },
+      {
+        "name": "/static/QueryClientProvider-CtI-lycb.js",
+        "transfer": 680,
+        "decoded": 380
+      },
+      {
+        "name": "/static/useQuery-CVFqe2Np.js",
+        "transfer": 8570,
+        "decoded": 21831
+      },
+      {
+        "name": "/static/chunk-OB3PAWPO-BSZEu0pX.js",
+        "transfer": 16179,
+        "decoded": 39104
+      },
+      {
+        "name": "/static/createLucideIcon-B4SMjBwV.js",
+        "transfer": 1007,
+        "decoded": 1195
+      },
+      {
+        "name": "/static/dist-BOFZdJVR.js",
+        "transfer": 898,
+        "decoded": 598
+      },
+      {
+        "name": "/static/button-NSzDYv_8.js",
+        "transfer": 2261,
+        "decoded": 4421
+      },
+      {
+        "name": "/static/utils-rjUKkjhC.js",
+        "transfer": 9671,
+        "decoded": 26507
+      },
+      {
+        "name": "/static/dist-C2ZZlVUE.js",
+        "transfer": 2944,
+        "decoded": 6573
+      },
+      {
+        "name": "/static/dist-CVzZWnIX.js",
+        "transfer": 1355,
+        "decoded": 2242
+      },
+      {
+        "name": "/static/dist-DPZKzI4T.js",
+        "transfer": 728,
+        "decoded": 428
+      },
+      {
+        "name": "/static/floating-ui.utils.dom-CCuAvZI5.js",
+        "transfer": 2082,
+        "decoded": 3911
+      },
+      {
+        "name": "/static/dist-CE92P0NW.js",
+        "transfer": 10186,
+        "decoded": 23042
+      },
+      {
+        "name": "/static/api-1pyIO-s6.js",
+        "transfer": 29056,
+        "decoded": 80888
+      },
+      {
+        "name": "/static/finco-logo-BcPXSQBk.js",
+        "transfer": 1064,
+        "decoded": 1231
+      },
+      {
+        "name": "/static/index-CnOojLK8.css",
+        "transfer": 39703,
+        "decoded": 208354
+      },
+      {
+        "name": "/static/login-Ck0U3nqN.js",
+        "transfer": 5395,
+        "decoded": 14084
+      },
+      {
+        "name": "/static/inter-latin-wght-normal-Dx4kXJAl.woff2",
+        "transfer": 48556,
+        "decoded": 48256
+      },
+      {
+        "name": "/static/open-runde-semibold-latin-DBbbyP7b.woff2",
+        "transfer": 67992,
+        "decoded": 67692
+      },
+      {
+        "name": "/static/label-C1KSpKsm.js",
+        "transfer": 1013,
+        "decoded": 713
+      },
+      {
+        "name": "/static/input-CRWdUntC.js",
+        "transfer": 1173,
+        "decoded": 873
+      },
+      {
+        "name": "/static/webauthn-Dslg6BnL.js",
+        "transfer": 1473,
+        "decoded": 2774
+      },
+      {
+        "name": "/static/theme-utils-OtjRFV7Q.js",
+        "transfer": 1175,
+        "decoded": 875
+      },
+      {
+        "name": "/static/auth-config-utils-RONrEwuU.js",
+        "transfer": 363,
+        "decoded": 63
+      },
+      {
+        "name": "/static/auth-shell-emYcLWWi.js",
+        "transfer": 1210,
+        "decoded": 1656
+      },
+      {
+        "name": "/static/use-media-query-DqHaVcfp.js",
+        "transfer": 674,
+        "decoded": 374
+      },
+      {
+        "name": "/static/privacy-link-DNfOcp27.js",
+        "transfer": 938,
+        "decoded": 638
+      },
+      {
+        "name": "/static/card-reuAGd_P.js",
+        "transfer": 831,
+        "decoded": 531
+      },
+      {
+        "name": "/api/admin/registration-status",
+        "transfer": 316,
+        "decoded": 16
+      },
+      {
+        "name": "/api/auth/oidc/config",
+        "transfer": 367,
+        "decoded": 67
+      },
+      {
+        "name": "/api/admin/default-colors",
+        "transfer": 326,
+        "decoded": 26
+      },
+      {
+        "name": "/api/setup/status",
+        "transfer": 370,
+        "decoded": 70
+      },
+      {
+        "name": "/static/open-runde-regular-latin-BDzsDJHr.woff2",
+        "transfer": 66008,
+        "decoded": 65708
+      }
+    ]
+  },
+  {
+    "width": 1024,
+    "reducedMotion": "no-preference",
+    "axeViolations": 0,
+    "decodedBytes": 1196405,
+    "jsRequests": 30,
+    "resources": [
+      {
+        "name": "/static/index-fZKnEDEB.js",
+        "transfer": 159987,
+        "decoded": 435862
+      },
+      {
+        "name": "/static/jsx-runtime-BaSZ_JNh.js",
+        "transfer": 3805,
+        "decoded": 8557
+      },
+      {
+        "name": "/static/preload-helper-Czpn1I53.js",
+        "transfer": 989,
+        "decoded": 1196
+      },
+      {
+        "name": "/static/react-dom-De0qrBDi.js",
+        "transfer": 1728,
+        "decoded": 3550
+      },
+      {
+        "name": "/static/QueryClientProvider-CtI-lycb.js",
+        "transfer": 680,
+        "decoded": 380
+      },
+      {
+        "name": "/static/useQuery-CVFqe2Np.js",
+        "transfer": 8570,
+        "decoded": 21831
+      },
+      {
+        "name": "/static/chunk-OB3PAWPO-BSZEu0pX.js",
+        "transfer": 16179,
+        "decoded": 39104
+      },
+      {
+        "name": "/static/createLucideIcon-B4SMjBwV.js",
+        "transfer": 1007,
+        "decoded": 1195
+      },
+      {
+        "name": "/static/utils-rjUKkjhC.js",
+        "transfer": 9671,
+        "decoded": 26507
+      },
+      {
+        "name": "/static/button-NSzDYv_8.js",
+        "transfer": 2261,
+        "decoded": 4421
+      },
+      {
+        "name": "/static/dist-BOFZdJVR.js",
+        "transfer": 898,
+        "decoded": 598
+      },
+      {
+        "name": "/static/dist-C2ZZlVUE.js",
+        "transfer": 2944,
+        "decoded": 6573
+      },
+      {
+        "name": "/static/dist-CVzZWnIX.js",
+        "transfer": 1355,
+        "decoded": 2242
+      },
+      {
+        "name": "/static/dist-DPZKzI4T.js",
+        "transfer": 728,
+        "decoded": 428
+      },
+      {
+        "name": "/static/floating-ui.utils.dom-CCuAvZI5.js",
+        "transfer": 2082,
+        "decoded": 3911
+      },
+      {
+        "name": "/static/dist-CE92P0NW.js",
+        "transfer": 10186,
+        "decoded": 23042
+      },
+      {
+        "name": "/static/api-1pyIO-s6.js",
+        "transfer": 29056,
+        "decoded": 80888
+      },
+      {
+        "name": "/static/index-CnOojLK8.css",
+        "transfer": 39703,
+        "decoded": 208354
+      },
+      {
+        "name": "/static/finco-logo-BcPXSQBk.js",
+        "transfer": 1064,
+        "decoded": 1231
+      },
+      {
+        "name": "/static/login-Ck0U3nqN.js",
+        "transfer": 5395,
+        "decoded": 14084
+      },
+      {
+        "name": "/static/inter-latin-wght-normal-Dx4kXJAl.woff2",
+        "transfer": 48556,
+        "decoded": 48256
+      },
+      {
+        "name": "/static/open-runde-semibold-latin-DBbbyP7b.woff2",
+        "transfer": 67992,
+        "decoded": 67692
+      },
+      {
+        "name": "/static/label-C1KSpKsm.js",
+        "transfer": 1013,
+        "decoded": 713
+      },
+      {
+        "name": "/static/input-CRWdUntC.js",
+        "transfer": 1173,
+        "decoded": 873
+      },
+      {
+        "name": "/static/webauthn-Dslg6BnL.js",
+        "transfer": 1473,
+        "decoded": 2774
+      },
+      {
+        "name": "/static/theme-utils-OtjRFV7Q.js",
+        "transfer": 1175,
+        "decoded": 875
+      },
+      {
+        "name": "/static/auth-config-utils-RONrEwuU.js",
+        "transfer": 363,
+        "decoded": 63
+      },
+      {
+        "name": "/static/auth-shell-emYcLWWi.js",
+        "transfer": 1210,
+        "decoded": 1656
+      },
+      {
+        "name": "/static/use-media-query-DqHaVcfp.js",
+        "transfer": 674,
+        "decoded": 374
+      },
+      {
+        "name": "/static/privacy-link-DNfOcp27.js",
+        "transfer": 938,
+        "decoded": 638
+      },
+      {
+        "name": "/static/card-reuAGd_P.js",
+        "transfer": 831,
+        "decoded": 531
+      },
+      {
+        "name": "/api/admin/registration-status",
+        "transfer": 316,
+        "decoded": 16
+      },
+      {
+        "name": "/api/auth/oidc/config",
+        "transfer": 367,
+        "decoded": 67
+      },
+      {
+        "name": "/api/admin/default-colors",
+        "transfer": 326,
+        "decoded": 26
+      },
+      {
+        "name": "/static/auth-brand-panel-CgVMASoS.js",
+        "transfer": 31311,
+        "decoded": 76871
+      },
+      {
+        "name": "/static/identity-avatar-HrJ_Enem.js",
+        "transfer": 19938,
+        "decoded": 45248
+      },
+      {
+        "name": "/api/setup/status",
+        "transfer": 370,
+        "decoded": 70
+      },
+      {
+        "name": "/static/open-runde-regular-latin-BDzsDJHr.woff2",
+        "transfer": 66008,
+        "decoded": 65708
+      }
+    ]
+  },
+  {
+    "width": 1024,
+    "reducedMotion": "reduce",
+    "axeViolations": 0,
+    "decodedBytes": 1196405,
+    "jsRequests": 30,
+    "resources": [
+      {
+        "name": "/static/index-fZKnEDEB.js",
+        "transfer": 159987,
+        "decoded": 435862
+      },
+      {
+        "name": "/static/jsx-runtime-BaSZ_JNh.js",
+        "transfer": 3805,
+        "decoded": 8557
+      },
+      {
+        "name": "/static/react-dom-De0qrBDi.js",
+        "transfer": 1728,
+        "decoded": 3550
+      },
+      {
+        "name": "/static/preload-helper-Czpn1I53.js",
+        "transfer": 989,
+        "decoded": 1196
+      },
+      {
+        "name": "/static/QueryClientProvider-CtI-lycb.js",
+        "transfer": 680,
+        "decoded": 380
+      },
+      {
+        "name": "/static/useQuery-CVFqe2Np.js",
+        "transfer": 8570,
+        "decoded": 21831
+      },
+      {
+        "name": "/static/chunk-OB3PAWPO-BSZEu0pX.js",
+        "transfer": 16179,
+        "decoded": 39104
+      },
+      {
+        "name": "/static/createLucideIcon-B4SMjBwV.js",
+        "transfer": 1007,
+        "decoded": 1195
+      },
+      {
+        "name": "/static/utils-rjUKkjhC.js",
+        "transfer": 9671,
+        "decoded": 26507
+      },
+      {
+        "name": "/static/dist-BOFZdJVR.js",
+        "transfer": 898,
+        "decoded": 598
+      },
+      {
+        "name": "/static/button-NSzDYv_8.js",
+        "transfer": 2261,
+        "decoded": 4421
+      },
+      {
+        "name": "/static/dist-C2ZZlVUE.js",
+        "transfer": 2944,
+        "decoded": 6573
+      },
+      {
+        "name": "/static/dist-CVzZWnIX.js",
+        "transfer": 1355,
+        "decoded": 2242
+      },
+      {
+        "name": "/static/dist-DPZKzI4T.js",
+        "transfer": 728,
+        "decoded": 428
+      },
+      {
+        "name": "/static/floating-ui.utils.dom-CCuAvZI5.js",
+        "transfer": 2082,
+        "decoded": 3911
+      },
+      {
+        "name": "/static/index-CnOojLK8.css",
+        "transfer": 39703,
+        "decoded": 208354
+      },
+      {
+        "name": "/static/dist-CE92P0NW.js",
+        "transfer": 10186,
+        "decoded": 23042
+      },
+      {
+        "name": "/static/finco-logo-BcPXSQBk.js",
+        "transfer": 1064,
+        "decoded": 1231
+      },
+      {
+        "name": "/static/api-1pyIO-s6.js",
+        "transfer": 29056,
+        "decoded": 80888
+      },
+      {
+        "name": "/static/login-Ck0U3nqN.js",
+        "transfer": 5395,
+        "decoded": 14084
+      },
+      {
+        "name": "/static/inter-latin-wght-normal-Dx4kXJAl.woff2",
+        "transfer": 48556,
+        "decoded": 48256
+      },
+      {
+        "name": "/static/open-runde-semibold-latin-DBbbyP7b.woff2",
+        "transfer": 67992,
+        "decoded": 67692
+      },
+      {
+        "name": "/static/label-C1KSpKsm.js",
+        "transfer": 1013,
+        "decoded": 713
+      },
+      {
+        "name": "/static/input-CRWdUntC.js",
+        "transfer": 1173,
+        "decoded": 873
+      },
+      {
+        "name": "/static/webauthn-Dslg6BnL.js",
+        "transfer": 1473,
+        "decoded": 2774
+      },
+      {
+        "name": "/static/theme-utils-OtjRFV7Q.js",
+        "transfer": 1175,
+        "decoded": 875
+      },
+      {
+        "name": "/static/auth-config-utils-RONrEwuU.js",
+        "transfer": 363,
+        "decoded": 63
+      },
+      {
+        "name": "/static/auth-shell-emYcLWWi.js",
+        "transfer": 1210,
+        "decoded": 1656
+      },
+      {
+        "name": "/static/use-media-query-DqHaVcfp.js",
+        "transfer": 674,
+        "decoded": 374
+      },
+      {
+        "name": "/static/privacy-link-DNfOcp27.js",
+        "transfer": 938,
+        "decoded": 638
+      },
+      {
+        "name": "/static/card-reuAGd_P.js",
+        "transfer": 831,
+        "decoded": 531
+      },
+      {
+        "name": "/api/admin/registration-status",
+        "transfer": 316,
+        "decoded": 16
+      },
+      {
+        "name": "/api/auth/oidc/config",
+        "transfer": 367,
+        "decoded": 67
+      },
+      {
+        "name": "/api/admin/default-colors",
+        "transfer": 326,
+        "decoded": 26
+      },
+      {
+        "name": "/static/auth-brand-panel-CgVMASoS.js",
+        "transfer": 31311,
+        "decoded": 76871
+      },
+      {
+        "name": "/static/identity-avatar-HrJ_Enem.js",
+        "transfer": 19938,
+        "decoded": 45248
+      },
+      {
+        "name": "/api/setup/status",
+        "transfer": 370,
+        "decoded": 70
+      },
+      {
+        "name": "/static/open-runde-regular-latin-BDzsDJHr.woff2",
+        "transfer": 66008,
+        "decoded": 65708
+      }
+    ]
+  },
+  {
+    "width": 1440,
+    "reducedMotion": "no-preference",
+    "axeViolations": 0,
+    "decodedBytes": 1196405,
+    "jsRequests": 30,
+    "resources": [
+      {
+        "name": "/static/index-fZKnEDEB.js",
+        "transfer": 159987,
+        "decoded": 435862
+      },
+      {
+        "name": "/static/jsx-runtime-BaSZ_JNh.js",
+        "transfer": 3805,
+        "decoded": 8557
+      },
+      {
+        "name": "/static/react-dom-De0qrBDi.js",
+        "transfer": 1728,
+        "decoded": 3550
+      },
+      {
+        "name": "/static/preload-helper-Czpn1I53.js",
+        "transfer": 989,
+        "decoded": 1196
+      },
+      {
+        "name": "/static/QueryClientProvider-CtI-lycb.js",
+        "transfer": 680,
+        "decoded": 380
+      },
+      {
+        "name": "/static/useQuery-CVFqe2Np.js",
+        "transfer": 8570,
+        "decoded": 21831
+      },
+      {
+        "name": "/static/chunk-OB3PAWPO-BSZEu0pX.js",
+        "transfer": 16179,
+        "decoded": 39104
+      },
+      {
+        "name": "/static/createLucideIcon-B4SMjBwV.js",
+        "transfer": 1007,
+        "decoded": 1195
+      },
+      {
+        "name": "/static/button-NSzDYv_8.js",
+        "transfer": 2261,
+        "decoded": 4421
+      },
+      {
+        "name": "/static/dist-BOFZdJVR.js",
+        "transfer": 898,
+        "decoded": 598
+      },
+      {
+        "name": "/static/utils-rjUKkjhC.js",
+        "transfer": 9671,
+        "decoded": 26507
+      },
+      {
+        "name": "/static/dist-C2ZZlVUE.js",
+        "transfer": 2944,
+        "decoded": 6573
+      },
+      {
+        "name": "/static/dist-CVzZWnIX.js",
+        "transfer": 1355,
+        "decoded": 2242
+      },
+      {
+        "name": "/static/dist-DPZKzI4T.js",
+        "transfer": 728,
+        "decoded": 428
+      },
+      {
+        "name": "/static/floating-ui.utils.dom-CCuAvZI5.js",
+        "transfer": 2082,
+        "decoded": 3911
+      },
+      {
+        "name": "/static/dist-CE92P0NW.js",
+        "transfer": 10186,
+        "decoded": 23042
+      },
+      {
+        "name": "/static/api-1pyIO-s6.js",
+        "transfer": 29056,
+        "decoded": 80888
+      },
+      {
+        "name": "/static/index-CnOojLK8.css",
+        "transfer": 39703,
+        "decoded": 208354
+      },
+      {
+        "name": "/static/finco-logo-BcPXSQBk.js",
+        "transfer": 1064,
+        "decoded": 1231
+      },
+      {
+        "name": "/static/login-Ck0U3nqN.js",
+        "transfer": 5395,
+        "decoded": 14084
+      },
+      {
+        "name": "/static/inter-latin-wght-normal-Dx4kXJAl.woff2",
+        "transfer": 48556,
+        "decoded": 48256
+      },
+      {
+        "name": "/static/open-runde-semibold-latin-DBbbyP7b.woff2",
+        "transfer": 67992,
+        "decoded": 67692
+      },
+      {
+        "name": "/static/label-C1KSpKsm.js",
+        "transfer": 1013,
+        "decoded": 713
+      },
+      {
+        "name": "/static/input-CRWdUntC.js",
+        "transfer": 1173,
+        "decoded": 873
+      },
+      {
+        "name": "/static/webauthn-Dslg6BnL.js",
+        "transfer": 1473,
+        "decoded": 2774
+      },
+      {
+        "name": "/static/theme-utils-OtjRFV7Q.js",
+        "transfer": 1175,
+        "decoded": 875
+      },
+      {
+        "name": "/static/auth-config-utils-RONrEwuU.js",
+        "transfer": 363,
+        "decoded": 63
+      },
+      {
+        "name": "/static/auth-shell-emYcLWWi.js",
+        "transfer": 1210,
+        "decoded": 1656
+      },
+      {
+        "name": "/static/use-media-query-DqHaVcfp.js",
+        "transfer": 674,
+        "decoded": 374
+      },
+      {
+        "name": "/static/privacy-link-DNfOcp27.js",
+        "transfer": 938,
+        "decoded": 638
+      },
+      {
+        "name": "/static/card-reuAGd_P.js",
+        "transfer": 831,
+        "decoded": 531
+      },
+      {
+        "name": "/api/admin/registration-status",
+        "transfer": 316,
+        "decoded": 16
+      },
+      {
+        "name": "/api/auth/oidc/config",
+        "transfer": 367,
+        "decoded": 67
+      },
+      {
+        "name": "/api/admin/default-colors",
+        "transfer": 326,
+        "decoded": 26
+      },
+      {
+        "name": "/static/auth-brand-panel-CgVMASoS.js",
+        "transfer": 31311,
+        "decoded": 76871
+      },
+      {
+        "name": "/static/identity-avatar-HrJ_Enem.js",
+        "transfer": 19938,
+        "decoded": 45248
+      },
+      {
+        "name": "/api/setup/status",
+        "transfer": 370,
+        "decoded": 70
+      },
+      {
+        "name": "/static/open-runde-regular-latin-BDzsDJHr.woff2",
+        "transfer": 66008,
+        "decoded": 65708
+      }
+    ]
+  },
+  {
+    "width": 1440,
+    "reducedMotion": "reduce",
+    "axeViolations": 0,
+    "decodedBytes": 1196405,
+    "jsRequests": 30,
+    "resources": [
+      {
+        "name": "/static/index-fZKnEDEB.js",
+        "transfer": 159987,
+        "decoded": 435862
+      },
+      {
+        "name": "/static/jsx-runtime-BaSZ_JNh.js",
+        "transfer": 3805,
+        "decoded": 8557
+      },
+      {
+        "name": "/static/react-dom-De0qrBDi.js",
+        "transfer": 1728,
+        "decoded": 3550
+      },
+      {
+        "name": "/static/preload-helper-Czpn1I53.js",
+        "transfer": 989,
+        "decoded": 1196
+      },
+      {
+        "name": "/static/QueryClientProvider-CtI-lycb.js",
+        "transfer": 680,
+        "decoded": 380
+      },
+      {
+        "name": "/static/useQuery-CVFqe2Np.js",
+        "transfer": 8570,
+        "decoded": 21831
+      },
+      {
+        "name": "/static/chunk-OB3PAWPO-BSZEu0pX.js",
+        "transfer": 16179,
+        "decoded": 39104
+      },
+      {
+        "name": "/static/createLucideIcon-B4SMjBwV.js",
+        "transfer": 1007,
+        "decoded": 1195
+      },
+      {
+        "name": "/static/button-NSzDYv_8.js",
+        "transfer": 2261,
+        "decoded": 4421
+      },
+      {
+        "name": "/static/utils-rjUKkjhC.js",
+        "transfer": 9671,
+        "decoded": 26507
+      },
+      {
+        "name": "/static/dist-BOFZdJVR.js",
+        "transfer": 898,
+        "decoded": 598
+      },
+      {
+        "name": "/static/dist-C2ZZlVUE.js",
+        "transfer": 2944,
+        "decoded": 6573
+      },
+      {
+        "name": "/static/dist-CVzZWnIX.js",
+        "transfer": 1355,
+        "decoded": 2242
+      },
+      {
+        "name": "/static/dist-DPZKzI4T.js",
+        "transfer": 728,
+        "decoded": 428
+      },
+      {
+        "name": "/static/floating-ui.utils.dom-CCuAvZI5.js",
+        "transfer": 2082,
+        "decoded": 3911
+      },
+      {
+        "name": "/static/dist-CE92P0NW.js",
+        "transfer": 10186,
+        "decoded": 23042
+      },
+      {
+        "name": "/static/api-1pyIO-s6.js",
+        "transfer": 29056,
+        "decoded": 80888
+      },
+      {
+        "name": "/static/finco-logo-BcPXSQBk.js",
+        "transfer": 1064,
+        "decoded": 1231
+      },
+      {
+        "name": "/static/index-CnOojLK8.css",
+        "transfer": 39703,
+        "decoded": 208354
+      },
+      {
+        "name": "/static/login-Ck0U3nqN.js",
+        "transfer": 5395,
+        "decoded": 14084
+      },
+      {
+        "name": "/static/inter-latin-wght-normal-Dx4kXJAl.woff2",
+        "transfer": 48556,
+        "decoded": 48256
+      },
+      {
+        "name": "/static/open-runde-semibold-latin-DBbbyP7b.woff2",
+        "transfer": 67992,
+        "decoded": 67692
+      },
+      {
+        "name": "/static/label-C1KSpKsm.js",
+        "transfer": 1013,
+        "decoded": 713
+      },
+      {
+        "name": "/static/input-CRWdUntC.js",
+        "transfer": 1173,
+        "decoded": 873
+      },
+      {
+        "name": "/static/webauthn-Dslg6BnL.js",
+        "transfer": 1473,
+        "decoded": 2774
+      },
+      {
+        "name": "/static/auth-config-utils-RONrEwuU.js",
+        "transfer": 363,
+        "decoded": 63
+      },
+      {
+        "name": "/static/theme-utils-OtjRFV7Q.js",
+        "transfer": 1175,
+        "decoded": 875
+      },
+      {
+        "name": "/static/auth-shell-emYcLWWi.js",
+        "transfer": 1210,
+        "decoded": 1656
+      },
+      {
+        "name": "/static/use-media-query-DqHaVcfp.js",
+        "transfer": 674,
+        "decoded": 374
+      },
+      {
+        "name": "/static/privacy-link-DNfOcp27.js",
+        "transfer": 938,
+        "decoded": 638
+      },
+      {
+        "name": "/static/card-reuAGd_P.js",
+        "transfer": 831,
+        "decoded": 531
+      },
+      {
+        "name": "/api/admin/registration-status",
+        "transfer": 316,
+        "decoded": 16
+      },
+      {
+        "name": "/api/auth/oidc/config",
+        "transfer": 367,
+        "decoded": 67
+      },
+      {
+        "name": "/api/admin/default-colors",
+        "transfer": 326,
+        "decoded": 26
+      },
+      {
+        "name": "/static/auth-brand-panel-CgVMASoS.js",
+        "transfer": 31311,
+        "decoded": 76871
+      },
+      {
+        "name": "/static/identity-avatar-HrJ_Enem.js",
+        "transfer": 19938,
+        "decoded": 45248
+      },
+      {
+        "name": "/api/setup/status",
+        "transfer": 370,
+        "decoded": 70
+      },
+      {
+        "name": "/static/open-runde-regular-latin-BDzsDJHr.woff2",
+        "transfer": 66008,
+        "decoded": 65708
+      }
+    ]
+  }
+]

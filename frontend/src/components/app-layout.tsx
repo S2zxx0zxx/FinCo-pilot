@@ -32,7 +32,6 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { APP_VERSION } from '@/lib/build-info'
-import { FinCoLogo } from '@/components/finco-logo'
 import { UpdateAvailableBanner } from '@/components/update-available-banner'
 import { UpdateAvailableDialog } from '@/components/update-available-dialog'
 import { WorkspaceSwitcher } from '@/components/workspace-switcher'
@@ -65,6 +64,11 @@ import { Search, Sparkles } from 'lucide-react'
 import { setThemeBasedOnSystem } from '@/lib/theme-utils'
 import { useLocalAuthEnabled } from '@/hooks/use-local-auth'
 import { formatCurrency } from '@/lib/format'
+
+// The same wordmark treatment is used in the mobile header and navigation drawer.
+// Keep it independent of theme variables: the reference badge is always neon green with black text.
+const brandWordmarkClassName =
+  'inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-[14px] bg-[#D7FF00] px-3 py-2 text-base font-extrabold leading-none tracking-tight text-[#090909] transition-colors hover:bg-[#CEF400] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D7FF00] focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar'
 
 /** Placeholder rows shown while the workspace's module list is in flight. */
 function NavSkeleton() {
@@ -196,21 +200,16 @@ export function AppLayout() {
           )}
         >
           {!isDesktop && <DialogPrimitive.Title className="sr-only">{t('frontend.navigation')}</DialogPrimitive.Title>}
-          {/* Logo — clickable link to the dashboard. Replaces the
-              dedicated 'Painel' nav item so the sidebar stays focused
-              on the main destinations. */}
+          {/* Brand wordmark links to the dashboard; the dedicated nav item is omitted. */}
           <div className="flex h-16 min-h-16 items-center justify-between px-5 border-b border-sidebar-border shrink-0">
             <Link
               to="/dashboard"
-              className="flex items-center gap-2.5 -mx-1 px-1 py-1 rounded-md hover:bg-sidebar-accent transition-colors"
+              className={brandWordmarkClassName}
               onClick={() => setSidebarOpen(false)}
               aria-label={t('app.name')}
               title={t('nav.dashboard')}
             >
-              <FinCoLogo size={24} className="text-primary shrink-0" />
-              <span className="font-bold text-lg text-sidebar-foreground tracking-tight">
-                {t('app.name')}
-              </span>
+              {t('app.name')}
             </Link>
             <div className="flex items-center gap-0.5">
               <button
@@ -421,14 +420,11 @@ export function AppLayout() {
         </button>
         <Link
           to="/dashboard"
-          className="flex items-center gap-2 -mx-1 px-1 py-1 rounded-md hover:bg-sidebar-accent transition-colors"
+          className={brandWordmarkClassName}
           aria-label={t('app.name')}
           title={t('nav.dashboard')}
         >
-          <FinCoLogo size={22} className="text-primary shrink-0" />
-          <span className="font-bold text-sidebar-foreground">
-            {t('app.name')}
-          </span>
+          {t('app.name')}
         </Link>
         <div className="ml-auto flex items-center gap-2">
           <button

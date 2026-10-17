@@ -59,3 +59,11 @@ Exact-head CI/preview, owner merge/publication, real provider acceptance, qualif
 ## Post-merge refresh — 17 October 2026
 
 PR95 merged to52a4713 and production is READY. Publication remains excluded. Live slash-www redirect regression corrected in follow-up source; hosted acceptance pending. Full main Backend Tests failed identity-safety regression (expected403, got200;5,212 passed/7 skipped). See [post-merge release record](SEO_POSTMERGE_20261017.md) and postmerge-http.json. No publication/env/provider writes by this refresh; do not claim complete production readiness.
+
+## Approved public indexing release — 17 October 2026
+
+Owner explicitly requested completing the indexing fix. Only fincopilot-web production publication approval and canonical apex configuration were added, then exact merged source887eaee rebuilt. Deployment dpl_2jZttXaL3oWy7s4GCZSKmhqH2TJ6 is READY with apex/www aliases. Four public pages return200 index,follow; root XML has exactly four canonical URLs; robots allows public search crawling and advertises sitemap; all four www marketing paths redirect308. Six signed-out app/policy pages remain noindex, missing marketing route404, prior preview remains noindex,nofollow.
+
+This establishes first verified public-indexable publication. Existing GSC sitemap submission was observed pending with one error from before this release; indexed welcome snapshot still reports noindex from16Oct, not current live state. Engine re-fetch/processing/indexing pending; no duplicate submission or success claim. Both API readiness URLs returned530 in the bounded sweep, so complete application readiness is NOT certified. No API/auth/database/finance/DNS/Worker change.
+
+Raw receipt: [publication-release.json](evidence/2026-10-17/publication-release.json). Prior excluded deployment dpl_Da6iuujCwBZMdSu1FShctNcPient retained as rollback; remove scoped approval and rebuild to withdraw publication.

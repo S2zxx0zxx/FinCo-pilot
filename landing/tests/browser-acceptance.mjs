@@ -51,6 +51,8 @@ try {
       reducedMotion,
     })
     const page = await context.newPage()
+    // Match the declared touch context with real touchscreen input.
+    const activate = locator => width < 500 ? locator.tap() : locator.click()
     const errors = []
     const external = []
     page.on('pageerror', (e) => errors.push(e.message))
@@ -139,7 +141,7 @@ try {
     if (width === 390 || width === 1440)
       await accessibility(page, width + ':demo')
     const screens = page.locator('.product-tabs').getByRole('tablist')
-    await screens.getByRole('tab', { name: /Accounts$/ }).click()
+    await activate(screens.getByRole('tab', { name: /Accounts$/ }))
     const accountsPanel = page.getByRole('tabpanel', { name: 'Accounts', exact: true })
     await accountsPanel.waitFor({ state: 'visible' })
     const img = accountsPanel.locator('.product-capture img')
@@ -164,12 +166,12 @@ try {
         .getAttribute('aria-selected'),
       'true'
     )
-    await screens.getByRole('tab', { name: /Dashboard$/ }).click()
+    await activate(screens.getByRole('tab', { name: /Dashboard$/ }))
     const faq = page.getByRole('button', {
       name: 'Do I have to connect a bank account?',
       exact: true,
     })
-    await faq.click()
+    await activate(faq)
     assert.equal(await faq.getAttribute('aria-expanded'), 'true')
     assert.ok(
       await page
@@ -181,7 +183,7 @@ try {
     )
     if (width === 390 || width === 1440)
       await accessibility(page, width + ':FAQ-open')
-    await faq.click()
+    await activate(faq)
     assert.equal(await faq.getAttribute('aria-expanded'), 'false')
     await page.getByText('FinCo-Pilot supports managing financial accounts and transactions manually.', { exact: false }).waitFor({ state: 'hidden' })
     if (width <= 920) {
@@ -189,7 +191,7 @@ try {
         name: 'Open navigation',
         exact: true,
       })
-      await menu.click()
+      await activate(menu)
       await page
         .getByRole('navigation', { name: 'Mobile navigation' })
         .waitFor()
@@ -213,11 +215,10 @@ try {
           'Open navigation'
       )
       assert.equal(await menu.getAttribute('aria-expanded'), 'false')
-      await menu.click()
-      await page
+      await activate(menu)
+      await activate(page
         .getByRole('navigation', { name: 'Mobile navigation' })
-        .getByRole('link', { name: /Why FinCo/ })
-        .click()
+        .getByRole('link', { name: /Why FinCo/ }))
       await page
         .getByRole('navigation', { name: 'Mobile navigation' })
         .waitFor({ state: 'hidden' })

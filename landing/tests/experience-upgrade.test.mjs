@@ -88,3 +88,17 @@ test('public landing disclosure enhancements preserve original contracts', () =>
   assert.match(breadcrumb, /<Breadcrumbs\.Item href="\/">Home/)
   assert.doesNotMatch(breadcrumb, /Pricing/)
 })
+
+test('jump index exposes every expanded landing explanation without changing routes', () => {
+  const home = read('components/landing-experience.tsx')
+  const importer = read('components/import-walkthrough.tsx')
+  for (const anchor of ['perspective', 'how-it-works', 'import-walkthrough', 'trust', 'plans', 'questions']) {
+    assert.match(home, new RegExp('href="#' + anchor + '"'))
+  }
+  assert.match(home, /aria-label="Explore the details"/)
+  assert.match(home, /id="trust"/)
+  assert.match(importer, /id="import-walkthrough"/)
+  const breadcrumb = read('components/document-breadcrumbs.tsx')
+  assert.match(breadcrumb, /<nav aria-label="Breadcrumb">/)
+  assert.match(breadcrumb, /landingAsset\('\/'\)/)
+})

@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { Button, Card, Chip, Link, Table, Tabs } from '@heroui/react'
+import { Button, Card, Chip, Disclosure, Link, Table, Tabs } from '@heroui/react'
 import { ArrowRight, Check, Download, FileText } from 'lucide-react'
 import { landingAsset } from '@/lib/asset'
 const steps = [
@@ -11,7 +11,7 @@ const steps = [
 export function ImportWalkthrough() {
   const [step, setStep] = useState('file')
   return (
-    <Card className="import-callout">
+    <Card className="import-callout" id="import-walkthrough">
       <Card.Content>
         <div className="import-copy">
           <Chip size="sm" variant="soft">
@@ -144,6 +144,24 @@ export function ImportWalkthrough() {
             </Button>
           </Tabs.Panel>
         </Tabs>
+        <Disclosure className="detail-disclosure import-checklist">
+          <Disclosure.Heading>
+            <Disclosure.Trigger>
+              What should I check before confirming an import?
+              <Disclosure.Indicator />
+            </Disclosure.Trigger>
+          </Disclosure.Heading>
+          <Disclosure.Content>
+            <ul className="detail-checks">
+              <li>Destination: confirm the account type, account and currency.</li>
+              <li>Dates: verify the day/month interpretation against your source.</li>
+              <li>Amounts: check positive income and negative expenses where expected.</li>
+              <li>Currency: a currency label does not perform a conversion.</li>
+              <li>Duplicates: inspect proposed, skipped and failed rows against the source.</li>
+            </ul>
+            <p>Some QIF reference tags are not retained as unique transaction IDs. This synthetic example never submits records.</p>
+          </Disclosure.Content>
+        </Disclosure>
       </Card.Content>
     </Card>
   )

@@ -5,6 +5,7 @@ import {
   Button,
   Card,
   Chip,
+  Disclosure,
   Label,
   NumberField,
   Popover,
@@ -196,6 +197,35 @@ export function SpendingPlayground() {
             </>
           )}
         </div>
+        <Disclosure className="detail-disclosure spending-breakdown">
+          <Disclosure.Heading>
+            <Disclosure.Trigger>
+              How is this amount calculated?
+              <Disclosure.Indicator />
+            </Disclosure.Trigger>
+          </Disclosure.Heading>
+          <Disclosure.Content>
+            {remainder === null ? (
+              <p>Complete all three reserve amounts to see a breakdown.</p>
+            ) : (
+              <dl className="money-breakdown">
+                <div><dt>Sample cash balance</dt><dd>{formatMoney(SAMPLE_CASH)}</dd></div>
+                <div><dt>Bills and EMI</dt><dd>−{formatMoney(bills)}</dd></div>
+                <div><dt>Emergency buffer</dt><dd>−{formatMoney(buffer)}</dd></div>
+                <div><dt>Savings goal</dt><dd>−{formatMoney(goal)}</dd></div>
+                <div className="breakdown-total">
+                  <dt>{remainder < 0 ? 'Illustrative shortfall' : 'Illustrative remainder'}</dt>
+                  <dd>{formatMoney(Math.abs(remainder))}</dd>
+                </div>
+              </dl>
+            )}
+            <p>
+              This illustration excludes separate card debt, transaction timing,
+              interest and missing records. The application's spending plan
+              checks additional inputs and may withhold an estimate.
+            </p>
+          </Disclosure.Content>
+        </Disclosure>
         <Popover>
           <Button variant="tertiary" size="sm" className="calculation-help">
             <Info size={16} aria-hidden="true" />

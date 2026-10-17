@@ -380,6 +380,30 @@ try {
       await page
         .getByRole('tabpanel', { name: '1. Choose a file', exact: true })
         .waitFor()
+      if (width === 390 || width === 1440) {
+        for (const [label, visibleText] of [
+          ['How is this amount calculated?', 'Sample cash balance'],
+          ['What should I check before confirming an import?', 'Destination: confirm'],
+          ['Step 01 — Which account should I start with?', 'Begin with one manual account.'],
+          ['Who can access workspace records?', 'Access depends on authentication'],
+          ['Billing and availability: what should I check?', 'Monthly and annual choices above'],
+        ]) {
+          const trigger = page.getByRole('button', { name: label, exact: true })
+          await activate(trigger)
+          assert.equal(await trigger.getAttribute('aria-expanded'), 'true')
+          await page.getByText(visibleText, { exact: false }).last().waitFor()
+          await accessibility(page, width + ':detail-' + label.slice(0, 18))
+          await activate(trigger)
+          assert.equal(await trigger.getAttribute('aria-expanded'), 'false')
+        }
+        const stepOne = page.getByRole('button', { name: 'Step 01 — Which account should I start with?', exact: true })
+        const stepTwo = page.getByRole('button', { name: 'Step 02 — How do I review my first records?', exact: true })
+        await activate(stepOne)
+        await activate(stepTwo)
+        assert.equal(await stepOne.getAttribute('aria-expanded'), 'false')
+        assert.equal(await stepTwo.getAttribute('aria-expanded'), 'true')
+        await activate(stepTwo)
+      }
       const billing = page.getByRole('radiogroup', {
         name: 'Plan billing interval',
         exact: true,
@@ -605,6 +629,9 @@ try {
     'sample import mapping and review with accessible Table',
     'standard monthly/annual plan preview',
     'additional FAQ disclosure',
+    'HeroUI calculation, import, setup, trust and billing disclosures',
+    'single-expanded onboarding group',
+    'HeroUI supporting-page breadcrumbs',
     'mobile CTA visibility while editing and at final CTA',
     'keyboard product tabs',
     'Escape drawer focus and anchor close',

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { APP_LINKS } from '@/lib/links'
+import { DocumentBreadcrumbs } from '@/components/document-breadcrumbs'
 import { marketingUrl, PUBLIC_PAGES, serializeJsonLd } from '@/lib/marketing'
 
 /** Server-only documentation shell: no tracking, accounts, API calls or session state. */
@@ -19,7 +20,7 @@ export function MarketingDocument({ path, title, intro, children }: {
         <Link key={page.path} href={page.path} aria-current={page.path === path ? 'page' : undefined}>{page.label}</Link>)}</nav>
     </header>
     <main id="document-content" className="document-content shell">
-      <nav aria-label="Breadcrumb"><ol className="document-breadcrumb"><li><Link href="/">Home</Link></li><li aria-current="page">{title}</li></ol></nav>
+      <DocumentBreadcrumbs title={title} />
       <h1>{title}</h1><p className="document-intro">{intro}</p>
       {children}
       <section className="document-action" aria-labelledby="document-next"><h2 id="document-next">Explore the application</h2>

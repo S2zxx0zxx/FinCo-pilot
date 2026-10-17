@@ -64,3 +64,41 @@ test('all six original application specimens have traceable responsive assets', 
     ['budgets', 'goals', 'recurring', 'reports'],
   )
 })
+
+test('public landing disclosure enhancements preserve original contracts', () => {
+  const landing = read('components/landing-experience.tsx')
+  const spending = read('components/spending-playground.tsx')
+  const importer = read('components/import-walkthrough.tsx')
+  const pricing = read('components/plan-preview.tsx')
+  const document = read('components/marketing-document.tsx')
+  const breadcrumb = read('components/document-breadcrumbs.tsx')
+  assert.match(landing, /DisclosureGroup/)
+  assert.match(landing, /allowsMultipleExpanded/)
+  assert.match(landing, /Five more questions/)
+  assert.match(landing, /<ImportWalkthrough \/>/)
+  assert.match(spending, /<Popover>/)
+  assert.match(spending, /How is this amount calculated\?/)
+  assert.match(importer, /<Tabs/)
+  assert.match(importer, /<Table>/)
+  assert.match(importer, /What should I check before confirming an import\?/)
+  assert.match(pricing, /No standard annual option/)
+  assert.match(pricing, /Billing and availability/)
+  assert.match(document, /serializeJsonLd\(breadcrumbs\)/)
+  assert.match(document, /<DocumentBreadcrumbs title=\{title\}/)
+  assert.match(breadcrumb, /<Breadcrumbs\.Item href=\{landingAsset\('\/'\)\}>Home/)
+  assert.doesNotMatch(breadcrumb, /Pricing/)
+})
+
+test('jump index exposes every expanded landing explanation without changing routes', () => {
+  const home = read('components/landing-experience.tsx')
+  const importer = read('components/import-walkthrough.tsx')
+  for (const anchor of ['perspective', 'how-it-works', 'import-walkthrough', 'trust', 'plans', 'questions']) {
+    assert.match(home, new RegExp('href="#' + anchor + '"'))
+  }
+  assert.match(home, /aria-label="Explore the details"/)
+  assert.match(home, /id="trust"/)
+  assert.match(importer, /id="import-walkthrough"/)
+  const breadcrumb = read('components/document-breadcrumbs.tsx')
+  assert.match(breadcrumb, /<nav aria-label="Breadcrumb">/)
+  assert.match(breadcrumb, /landingAsset\('\/'\)/)
+})

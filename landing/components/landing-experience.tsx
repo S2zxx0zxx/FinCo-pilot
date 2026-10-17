@@ -1,8 +1,8 @@
 'use client'
 
 import {
-  Accordion,
   Disclosure,
+  DisclosureGroup,
   Meter,
   Button,
   Card,
@@ -607,6 +607,29 @@ function HowItWorks() {
           </li>
         ))}
       </ol>
+      <DisclosureGroup className="detail-group steps-details">
+        <Disclosure id="setup-account">
+          <Disclosure.Heading><Disclosure.Trigger>
+            Step 01 — Which account should I start with?
+            <Disclosure.Indicator />
+          </Disclosure.Trigger></Disclosure.Heading>
+          <Disclosure.Content><p>Begin with one manual account. Verify its type, currency and balance using a reliable source. A partial history is not proof of today's available balance.</p></Disclosure.Content>
+        </Disclosure>
+        <Disclosure id="setup-import">
+          <Disclosure.Heading><Disclosure.Trigger>
+            Step 02 — How do I review my first records?
+            <Disclosure.Indicator />
+          </Disclosure.Trigger></Disclosure.Heading>
+          <Disclosure.Content><p>Enter a few records or preview a synthetic CSV. Confirm the destination account, dates, amount signs and duplicates before committing an import.</p></Disclosure.Content>
+        </Disclosure>
+        <Disclosure id="setup-review">
+          <Disclosure.Heading><Disclosure.Trigger>
+            Step 03 — What should I review next?
+            <Disclosure.Indicator />
+          </Disclosure.Trigger></Disclosure.Heading>
+          <Disclosure.Content><p>Choose one budget, goal or report. Verify included accounts and dates. Check upcoming bills, debts and reserves before interpreting a spending estimate.</p></Disclosure.Content>
+        </Disclosure>
+      </DisclosureGroup>
       <Link className="section-link" href={landingAsset('/how-it-works/')}>
         Read the first-session checklist
         <Link.Icon />
@@ -666,6 +689,29 @@ function Privacy() {
             </Card>
           ))}
         </div>
+        <DisclosureGroup className="detail-group trust-details">
+          <Disclosure id="trust-access">
+            <Disclosure.Heading><Disclosure.Trigger>
+              Who can access workspace records?
+              <Disclosure.Indicator />
+            </Disclosure.Trigger></Disclosure.Heading>
+            <Disclosure.Content><p>Access depends on authentication and workspace roles. Review who can view or change records before sharing a workspace. This landing page does not read accounts or grant permissions.</p></Disclosure.Content>
+          </Disclosure>
+          <Disclosure id="trust-providers">
+            <Disclosure.Heading><Disclosure.Trigger>
+              Do I need a bank or AI connection?
+              <Disclosure.Indicator />
+            </Disclosure.Trigger></Disclosure.Heading>
+            <Disclosure.Content><p>No connection is required to start with manual records. Optional providers depend on deployment configuration, eligibility, permissions and plan availability.</p></Disclosure.Content>
+          </Disclosure>
+          <Disclosure id="trust-estimates">
+            <Disclosure.Heading><Disclosure.Trigger>
+              What can a spending estimate leave out?
+              <Disclosure.Indicator />
+            </Disclosure.Trigger></Disclosure.Heading>
+            <Disclosure.Content><p>Missing accounts, incorrect balances, future bills, debts and reserves can change the result. An estimate is not a guarantee of affordability or financial advice.</p></Disclosure.Content>
+          </Disclosure>
+        </DisclosureGroup>
         <Card className="product-principles">
           <Card.Header>
             <Chip size="sm" variant="soft">
@@ -722,28 +768,25 @@ function FAQList({
   initial?: boolean
 }) {
   return (
-    <Accordion
+    <DisclosureGroup
       className="faq-list"
-      variant="surface"
       defaultExpandedKeys={initial ? ['faq-1'] : []}
       allowsMultipleExpanded
     >
       {indexes.map((index) => (
-        <Accordion.Item id={'faq-' + (index + 1)} key={faqs[index][0]}>
-          <Accordion.Heading>
-            <Accordion.Trigger>
+        <Disclosure id={'faq-' + (index + 1)} key={faqs[index][0]}>
+          <Disclosure.Heading>
+            <Disclosure.Trigger>
               {faqs[index][0]}
-              <Accordion.Indicator />
-            </Accordion.Trigger>
-          </Accordion.Heading>
-          <Accordion.Panel>
-            <Accordion.Body>
-              <p>{faqs[index][1]}</p>
-            </Accordion.Body>
-          </Accordion.Panel>
-        </Accordion.Item>
+              <Disclosure.Indicator />
+            </Disclosure.Trigger>
+          </Disclosure.Heading>
+          <Disclosure.Content>
+            <p>{faqs[index][1]}</p>
+          </Disclosure.Content>
+        </Disclosure>
       ))}
-    </Accordion>
+    </DisclosureGroup>
   )
 }
 function Questions() {

@@ -3,6 +3,7 @@ import { useState } from 'react'
 import {
   Card,
   Chip,
+  Disclosure,
   Link,
   ToggleButton,
   ToggleButtonGroup,
@@ -155,6 +156,19 @@ export function PlanPreview() {
         configuration · Promotional offers and checkout availability are shown
         in the application.
       </p>
+      <Disclosure className="detail-disclosure pricing-details">
+        <Disclosure.Heading>
+          <Disclosure.Trigger>
+            Billing and availability: what should I check?
+            <Disclosure.Indicator />
+          </Disclosure.Trigger>
+        </Disclosure.Heading>
+        <Disclosure.Content>
+          <p>Monthly and annual choices above reflect the standard catalog preview. Not every plan offers annual billing.</p>
+          <p>Plan features and limits can depend on permissions and configuration. Check the live pricing page for promotional terms, tax treatment, eligibility, payment schedule and actual checkout availability.</p>
+          <Link href={APP_LINKS.pricing}>Review live pricing and terms <Link.Icon /></Link>
+        </Disclosure.Content>
+      </Disclosure>
     </section>
   )
 }

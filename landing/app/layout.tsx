@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import localFont from 'next/font/local'
 import { AntdRegistry } from '@ant-design/nextjs-registry'
+import '../styles/antd.generated.css'
 import './globals.css'
 import {
   getMarketingConfig,

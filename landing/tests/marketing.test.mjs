@@ -125,3 +125,15 @@ test('the SSR hero heading has text nodes before hydration, not hidden-only toke
     /<h1>\s*Bank balance\.\s*<br \/>\s*<span>Meet real life\.<\/span>\s*<\/h1>/
   )
 })
+
+
+test('Ant runtime and static stylesheet share the same fixed theme', () => {
+  const theme = read('lib/ant-theme.ts')
+  assert.match(theme, /zeroRuntime: true/)
+  assert.match(theme, /hashed: false/)
+  assert.match(theme, /key: 'finco-marketing'/)
+  assert.match(read('scripts/ant-styles.mjs'), /includes:/)
+  assert.match(read('scripts/ant-styles.mjs'), /marketingTheme, zeroRuntime: false/)
+  assert.match(read('app/layout.tsx'), /antd.generated.css/)
+  assert.match(read('package.json'), /\"prebuild\": \"node scripts\/ant-styles.mjs\"/)
+})

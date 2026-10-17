@@ -159,6 +159,7 @@ function ArrowLink({
 }
 function Navigation() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [menuReady, setMenuReady] = useState(false)
   const toggle = useRef<HTMLButtonElement>(null)
   return (
     <header className="site-header" id="top">
@@ -194,6 +195,7 @@ function Navigation() {
           open={menuOpen}
           onClose={() => setMenuOpen(false)}
           afterOpenChange={(open) => {
+            setMenuReady(open)
             if (!open) toggle.current?.focus()
           }}
           placement="right"
@@ -201,6 +203,7 @@ function Navigation() {
         >
           <nav
             id="mobile-menu"
+            aria-busy={!menuReady}
             className="mobile-nav"
             aria-label="Mobile navigation"
           >

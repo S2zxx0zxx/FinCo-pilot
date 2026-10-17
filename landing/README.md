@@ -1,6 +1,6 @@
 # FinCo-Pilot — Ant Design marketing landing
 
-The current homepage uses Ant Design 6: ConfigProvider tokens, Buttons, Cards, Tabs, Collapse, Steps, Drawer, InputNumber, Statistic, Progress, Alert, Tag, Flex and Divider. The App Router uses AntdRegistry to include first-screen styles in server HTML. The authenticated Vite application remains separate.
+The current homepage uses Ant Design 6: ConfigProvider tokens, Buttons, Cards, Tabs, Collapse, Steps, Drawer, InputNumber, Statistic, Progress, Alert, Tag, Flex and Divider. The build compiles a whitelist of Ant component CSS from the shared theme. Ant zero-runtime mode avoids regenerating component CSS during hydration; AntdRegistry includes first-screen token variables in server HTML. The authenticated Vite application remains separate.
 
 The design is white, ink and Ant blue, with self-hosted fonts, real synthetic-data product captures, a local arithmetic illustration, six feature explanations, import guidance, privacy boundaries and ten FAQs. Motion is subtle and respects reduced-motion preferences. No homepage Space UI, sound, avatar or motion dependency is loaded. Historical component files and licenses remain for provenance.
 

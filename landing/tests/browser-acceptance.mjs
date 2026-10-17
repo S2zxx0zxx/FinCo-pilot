@@ -174,10 +174,14 @@ try {
         .getByRole('navigation', { name: 'Mobile navigation' })
         .waitFor()
       assert.equal(await menu.getAttribute('aria-expanded'), 'true')
-      // Wait for Ant's opening transition before measuring rendered contrast.
-      await page.getByRole('dialog').evaluate(async (dialog) => {
-        await Promise.all(dialog.closest('.ant-drawer').getAnimations({ subtree: true }).map(animation => animation.finished))
-      })
+      // Ant's lifecycle callback confirms the opening transition has completed.
+      await page.waitForFunction(
+        () =>
+          document.querySelector('#mobile-menu')?.getAttribute('aria-busy') ===
+          'false',
+        null,
+        { timeout: 5000 }
+      )
       if (width === 390) await accessibility(page, '390:drawer-open')
       await page.keyboard.press('Escape')
       await page

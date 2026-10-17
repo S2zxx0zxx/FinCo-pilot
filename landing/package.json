@@ -15,7 +15,9 @@
     "test:browser": "node tests/browser-acceptance.mjs",
     "test:performance": "node scripts/performance.mjs",
     "capture:product": "node scripts/capture-product.mjs",
-    "generate:social": "node scripts/social-card.mjs"
+    "generate:social": "node scripts/social-card.mjs",
+    "prebuild": "node scripts/ant-styles.mjs",
+    "predev": "node scripts/ant-styles.mjs"
   },
   "dependencies": {
     "@ant-design/icons": "6.3.4",
@@ -37,6 +39,7 @@
     "tailwind-merge": "3.5.0"
   },
   "devDependencies": {
+    "@ant-design/static-style-extract": "2.1.0",
     "@tailwindcss/postcss": "4.3.3",
     "@types/node": "26.6.5",
     "@types/react": "19.3.0",

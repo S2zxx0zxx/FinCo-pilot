@@ -160,6 +160,7 @@ try {
     await screens.getByRole('tab', { name: /Dashboard$/ }).focus()
     await page.keyboard.press('ArrowRight')
     await page.keyboard.press('Enter')
+    await screens.getByRole('tab', { name: /Accounts$/, selected: true }).waitFor()
     assert.equal(
       await screens
         .getByRole('tab', { name: /Accounts$/ })
@@ -172,6 +173,7 @@ try {
       exact: true,
     })
     await activate(faq)
+    await page.getByRole('button', { name: 'Do I have to connect a bank account?', exact: true, expanded: true }).waitFor()
     assert.equal(await faq.getAttribute('aria-expanded'), 'true')
     assert.ok(
       await page
@@ -184,6 +186,7 @@ try {
     if (width === 390 || width === 1440)
       await accessibility(page, width + ':FAQ-open')
     await activate(faq)
+    await page.getByRole('button', { name: 'Do I have to connect a bank account?', exact: true, expanded: false }).waitFor()
     assert.equal(await faq.getAttribute('aria-expanded'), 'false')
     await page.getByText('FinCo-Pilot supports managing financial accounts and transactions manually.', { exact: false }).waitFor({ state: 'hidden' })
     if (width <= 920) {
@@ -196,14 +199,14 @@ try {
         .getByRole('navigation', { name: 'Mobile navigation' })
         .waitFor()
       assert.equal(await menu.getAttribute('aria-expanded'), 'true')
-      // React Aria exposes the mounted navigation within HeroUI's modal drawer.
-      await page.waitForFunction(
-        () =>
-          document.querySelector('#mobile-menu')?.getAttribute('aria-busy') ===
-          'false',
-        null,
-        { timeout: 5000 }
-      )
+      // Inspect the settled drawer, after HeroUI's native entering state and fades.
+      await page.waitForFunction(() => {
+        const backdrop = document.querySelector('.drawer__backdrop')
+        return backdrop &&
+          !backdrop.querySelector('[data-entering="true"]') &&
+          backdrop.getAttribute('data-entering') !== 'true' &&
+          backdrop.getAnimations({ subtree: true }).every(animation => animation.playState !== 'running' && !animation.pending)
+      }, null, { timeout: 5000 })
       if (width === 390) await accessibility(page, '390:drawer-open')
       await page.keyboard.press('Escape')
       await page

@@ -202,7 +202,6 @@ function Navigation() {
                 <Drawer.Body>
                   <nav
                     id="mobile-menu"
-                    aria-busy="false"
                     className="mobile-nav"
                     aria-label="Mobile navigation"
                   >

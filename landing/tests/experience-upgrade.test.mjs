@@ -85,7 +85,7 @@ test('public landing disclosure enhancements preserve original contracts', () =>
   assert.match(pricing, /Billing and availability/)
   assert.match(document, /serializeJsonLd\(breadcrumbs\)/)
   assert.match(document, /<DocumentBreadcrumbs title=\{title\}/)
-  assert.match(breadcrumb, /<Breadcrumbs\.Item href="\/">Home/)
+  assert.match(breadcrumb, /<Breadcrumbs\.Item href=\{landingAsset\('\/'\)\}>Home/)
   assert.doesNotMatch(breadcrumb, /Pricing/)
 })
 

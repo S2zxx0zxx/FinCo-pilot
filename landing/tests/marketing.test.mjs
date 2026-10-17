@@ -135,5 +135,5 @@ test('Ant runtime and static stylesheet share the same fixed theme', () => {
   assert.match(read('scripts/ant-styles.mjs'), /includes:/)
   assert.match(read('scripts/ant-styles.mjs'), /marketingTheme, zeroRuntime: false/)
   assert.match(read('app/layout.tsx'), /antd.generated.css/)
-  assert.match(read('package.json'), /\"prebuild\": \"node scripts\/ant-styles.mjs\"/)
+  assert.match(read('package.json'), /\"build\": \"node scripts\/ant-styles.mjs && next build\"/)
 })

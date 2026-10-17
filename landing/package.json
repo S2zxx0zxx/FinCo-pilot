@@ -6,8 +6,8 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "node scripts/ant-styles.mjs && next dev",
+    "build": "node scripts/ant-styles.mjs && next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/*.test.mjs",
@@ -15,9 +15,7 @@
     "test:browser": "node tests/browser-acceptance.mjs",
     "test:performance": "node scripts/performance.mjs",
     "capture:product": "node scripts/capture-product.mjs",
-    "generate:social": "node scripts/social-card.mjs",
-    "prebuild": "node scripts/ant-styles.mjs",
-    "predev": "node scripts/ant-styles.mjs"
+    "generate:social": "node scripts/social-card.mjs"
   },
   "dependencies": {
     "@ant-design/icons": "6.3.4",

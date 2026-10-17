@@ -11,7 +11,7 @@ const steps = [
 export function ImportWalkthrough() {
   const [step, setStep] = useState('file')
   return (
-    <Card className="import-callout">
+    <Card className="import-callout" id="import-walkthrough">
       <Card.Content>
         <div className="import-copy">
           <Chip size="sm" variant="soft">

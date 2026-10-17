@@ -10,6 +10,7 @@ the cost basis proportionally, leaving the per-unit average unchanged.
 """
 import logging
 import uuid
+
 from datetime import date, datetime, timezone
 from decimal import Decimal
 from typing import Optional
@@ -18,6 +19,8 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.services._workspace_references import require_workspace_reference
+from app.models.asset_group import AssetGroup
 from app.models.asset import Asset
 from app.models.asset_transaction import AssetTransaction
 from app.providers.market_price import MarketPriceProvider, get_market_price_provider
@@ -354,6 +357,7 @@ async def buy_into_holding(
 ) -> AssetRead:
     """Record a buy, consolidating onto the existing ticker holding in the
     chosen wallet (`group_id`) or creating a new market-priced holding."""
+    await require_workspace_reference(session, AssetGroup, data.group_id, workspace_id, "Wallet not found")
     _validate("buy", data.quantity, data.price)
     ticker = data.ticker.upper()
 

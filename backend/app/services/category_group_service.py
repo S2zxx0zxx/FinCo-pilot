@@ -86,9 +86,9 @@ async def get_groups(
     if not include_hidden:
         filters.append(CategoryGroup.is_hidden.is_(False))
 
-    category_loader = selectinload(CategoryGroup.categories)
+    category_loader = selectinload(CategoryGroup.categories.and_(Category.workspace_id == workspace_id))
     if not include_hidden:
-        category_loader = selectinload(CategoryGroup.categories.and_(Category.is_hidden.is_(False)))
+        category_loader = selectinload(CategoryGroup.categories.and_(Category.workspace_id == workspace_id, Category.is_hidden.is_(False)))
 
     result = await session.execute(
         select(CategoryGroup)
@@ -103,7 +103,7 @@ async def get_group(session: AsyncSession, group_id: uuid.UUID, workspace_id: uu
     result = await session.execute(
         select(CategoryGroup)
         .where(CategoryGroup.id == group_id, CategoryGroup.workspace_id == workspace_id)
-        .options(selectinload(CategoryGroup.categories))
+        .options(selectinload(CategoryGroup.categories.and_(Category.workspace_id == workspace_id)))
     )
     return result.scalar_one_or_none()
 

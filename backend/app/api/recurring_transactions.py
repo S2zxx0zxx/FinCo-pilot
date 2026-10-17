@@ -77,5 +77,5 @@ async def generate_recurring_transactions(
     ctx: WorkspaceContext = Depends(current_writable_workspace),
     session: AsyncSession = Depends(get_async_session),
 ):
-    count = await recurring_transaction_service.generate_pending(session, ctx.user_id)
+    count = await recurring_transaction_service.generate_pending(session, ctx.user_id, workspace_id=ctx.id)
     return {"generated": count}
